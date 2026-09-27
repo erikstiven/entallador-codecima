@@ -28,6 +28,7 @@ import { useGeneratorStore } from '@/modules/generator/generatorStore';
 import { useNestingStore } from '@/core/nesting/nestingStore';
 import { useInteractiveCanvas } from '@/modules/canvas/useInteractiveCanvas';
 import { NestingPieceInput } from '@/core/nesting/types';
+import { ExportModal } from '@/modules/export/ExportModal';
 
 export const ProductionNestingView: React.FC = () => {
   const { activeProfile } = useProfileStore();
@@ -64,6 +65,7 @@ export const ProductionNestingView: React.FC = () => {
   } = useInteractiveCanvas();
 
   const [isQueueOpen, setIsQueueOpen] = React.useState<boolean>(true);
+  const [isExportModalOpen, setIsExportModalOpen] = React.useState<boolean>(false);
 
   // Mapear piezas generadas al formato de entrada del motor de nesting
   const nestingPieceInputs: NestingPieceInput[] = useMemo(() => {
@@ -285,10 +287,11 @@ export const ProductionNestingView: React.FC = () => {
 
           <button 
             disabled={placedCount === 0}
+            onClick={() => setIsExportModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-sky-950 transition-colors disabled:opacity-50 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            Exportar para RasterLink
+            Exportar para RasterLink (1:1)
           </button>
         </div>
       </div>
@@ -638,6 +641,15 @@ export const ProductionNestingView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modal de Exportación 1:1 */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        placedPieces={placedPieces}
+        nestingResult={nestingResult}
+        printableWidthMm={activeProfile.printableWidthMm}
+      />
     </div>
   );
 };

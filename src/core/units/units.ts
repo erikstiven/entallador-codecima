@@ -72,12 +72,16 @@ export function mmToPdfPoints(valueMm: number): number {
   return fromMm(valueMm, 'pt');
 }
 
+export const mmToPt = mmToPdfPoints;
+
 /**
  * Convierte puntos tipográficos de PDF a milímetros exactos
  */
 export function pdfPointsToMm(valuePt: number): number {
   return toMm(valuePt, 'pt');
 }
+
+export const ptToMm = pdfPointsToMm;
 
 /**
  * Parsea un string que incluye valor y unidad (ej. "53.5cm", "1120mm", "14in", "250pt")
