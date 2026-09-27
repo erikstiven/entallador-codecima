@@ -22,7 +22,7 @@ function createWindow() {
     title: 'HMB Entallador — Sublimación Deportiva',
     backgroundColor: '#090d16',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,
       contextIsolation: false,
     },

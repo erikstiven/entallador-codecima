@@ -22,6 +22,23 @@ interface PatternStoreState {
   deletePatternSet: (id: string) => void;
 }
 
+const DEFAULT_DEMO_SVG = `<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600.00mm" height="1200.00mm" viewBox="0 0 1600.00 1200.00">
+  <g id="TALLA_28">
+    <path id="T28_DELANTERO" d="M 50,50 L 150,50 C 180,90 220,90 250,50 L 350,50 C 340,110 320,180 290,220 L 310,650 L 90,650 L 110,220 C 80,180 60,110 50,50 Z" />
+    <path id="T28_ESPALDA" d="M 400,50 L 500,50 C 530,65 570,65 600,50 L 700,50 C 690,110 670,180 640,220 L 660,670 L 440,670 L 460,220 C 430,180 410,110 400,50 Z" />
+    <path id="T28_MANGA_I" d="M 750,50 C 800,20 860,20 910,50 L 890,240 L 770,240 Z" />
+    <path id="T28_MANGA_D" d="M 950,50 C 1000,20 1060,20 1110,50 L 1090,240 L 970,240 Z" />
+    <path id="T28_SHORT_F" d="M 750,300 L 980,300 L 990,480 C 950,500 930,550 920,700 L 760,680 L 750,300 Z" />
+    <path id="T28_SHORT_A" d="M 1050,300 L 1300,300 L 1310,480 C 1270,510 1250,570 1240,720 L 1060,700 L 1050,300 Z" />
+  </g>
+  <g id="TALLA_30">
+    <path id="T30_DELANTERO" d="M 50,700 L 160,700 C 190,740 230,740 260,700 L 370,700 C 360,760 340,830 310,870 L 330,1330 L 90,1330 L 110,870 C 80,830 60,760 50,700 Z" />
+    <path id="T30_ESPALDA" d="M 420,700 L 530,700 C 560,715 600,715 630,700 L 740,700 C 730,760 710,830 680,870 L 700,1350 L 460,1350 L 480,870 C 450,830 430,760 420,700 Z" />
+  </g>
+  <path id="PIEZA_SUELTA_CUELLO" d="M 800,750 L 1050,750 L 1050,830 L 800,830 Z" />
+</svg>`;
+
 export const usePatternStore = create<PatternStoreState>((set, get) => ({
   patternSets: [],
   activePatternSet: null,
@@ -29,7 +46,17 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
 
   loadFromDatabase: () => {
     try {
-      const sets = getPatternSetsFromDb(dbService);
+      let sets = getPatternSetsFromDb(dbService);
+      if (sets.length === 0) {
+        const { patternSet } = parsePatternSvg(
+          DEFAULT_DEMO_SVG,
+          'MOLDES FUTBOL OFICIAL 2026',
+          'FUTBOL',
+          'moldes_futbol_2026.svg'
+        );
+        savePatternSetToDb(dbService, patternSet);
+        sets = [patternSet];
+      }
       set({ patternSets: sets });
       if (!get().activePatternSet && sets.length > 0) {
         set({ activePatternSet: sets[0] });

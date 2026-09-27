@@ -1,7 +1,5 @@
 import initSqlJs, { Database } from 'sql.js';
 import { INITIAL_SCHEMA_SQL } from './schema';
-import fs from 'node:fs';
-import path from 'node:path';
 
 export class DatabaseService {
   private db: Database | null = null;
@@ -11,15 +9,28 @@ export class DatabaseService {
    * Inicializa la base de datos SQLite y ejecuta las migraciones iniciales
    */
   async initialize(dbFilePath?: string): Promise<Database> {
+    const isBrowser = typeof window !== 'undefined';
+    let nodeFs: any = null;
+    let nodePath: any = null;
+
+    if (!isBrowser) {
+      try {
+        nodeFs = await import('node:fs');
+        nodePath = await import('node:path');
+      } catch (_) {}
+    }
+
     const SQL = await initSqlJs({
       locateFile: (file: string) => {
+        if (isBrowser) {
+          return `/${file}`;
+        }
         try {
-          if (typeof window !== 'undefined') {
-            return `/${file}`;
-          }
-          const wasmPath = path.resolve(process.cwd(), 'node_modules/sql.js/dist', file);
-          if (fs.existsSync && fs.existsSync(wasmPath)) {
-            return wasmPath;
+          if (nodePath && nodeFs) {
+            const wasmPath = nodePath.resolve(process.cwd(), 'node_modules/sql.js/dist', file);
+            if (nodeFs.existsSync(wasmPath)) {
+              return wasmPath;
+            }
           }
         } catch (_) {}
         return file;
@@ -28,8 +39,8 @@ export class DatabaseService {
 
     this.dbPath = dbFilePath || null;
 
-    if (this.dbPath && typeof fs.existsSync === 'function' && fs.existsSync(this.dbPath)) {
-      const fileBuffer = fs.readFileSync(this.dbPath);
+    if (this.dbPath && nodeFs && typeof nodeFs.existsSync === 'function' && nodeFs.existsSync(this.dbPath)) {
+      const fileBuffer = nodeFs.readFileSync(this.dbPath);
       this.db = new SQL.Database(fileBuffer);
     } else {
       this.db = new SQL.Database();
@@ -39,7 +50,7 @@ export class DatabaseService {
     this.db.run(INITIAL_SCHEMA_SQL);
 
     // Si hay ruta de archivo, persistir estado inicial
-    if (this.dbPath && typeof fs.writeFileSync === 'function') {
+    if (this.dbPath && nodeFs && typeof nodeFs.writeFileSync === 'function') {
       this.saveToDisk();
     }
 
@@ -93,21 +104,26 @@ export class DatabaseService {
   /**
    * Guarda el estado actual de la base de datos SQLite en disco
    */
-  saveToDisk(targetPath?: string): void {
+  async saveToDisk(targetPath?: string): Promise<void> {
+    if (typeof window !== 'undefined') return; // En navegador, SQLite se mantiene en memoria
+
     const savePath = targetPath || this.dbPath;
     if (!savePath) return;
 
-    const db = this.getDb();
-    const data = db.export();
-    const buffer = Buffer.from(data);
+    try {
+      const nodeFs = await import('node:fs');
+      const nodePath = await import('node:path');
+      const db = this.getDb();
+      const data = db.export();
+      const buffer = Buffer.from(data);
 
-    // Asegurar directorio padre
-    const dir = path.dirname(savePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+      const dir = nodePath.dirname(savePath);
+      if (!nodeFs.existsSync(dir)) {
+        nodeFs.mkdirSync(dir, { recursive: true });
+      }
 
-    fs.writeFileSync(savePath, buffer);
+      nodeFs.writeFileSync(savePath, buffer);
+    } catch (_) {}
   }
 
   /**

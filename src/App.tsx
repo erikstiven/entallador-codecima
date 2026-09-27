@@ -9,6 +9,8 @@ import { ProductionNestingView } from '@/views/ProductionNestingView';
 import { HistoryView } from '@/views/HistoryView';
 import { SettingsView } from '@/views/SettingsView';
 import { dbService } from '@/core/database/db';
+import { useDesignStore } from '@/modules/designs/designStore';
+import { usePatternStore } from '@/modules/patterns/patternStore';
 
 export const App: React.FC = () => {
   const { currentView } = useNavigationStore();
@@ -17,7 +19,11 @@ export const App: React.FC = () => {
   useEffect(() => {
     // Inicializar base de datos SQLite embebida
     dbService.initialize()
-      .then(() => setDbReady(true))
+      .then(() => {
+        setDbReady(true);
+        useDesignStore.getState().loadDesignsFromDatabase();
+        usePatternStore.getState().loadFromDatabase();
+      })
       .catch((err) => console.error('Error inicializando SQLite:', err));
   }, []);
 
