@@ -55,8 +55,8 @@ function detectSizeName(identifier: string): string | null {
     return matchNum[1];
   }
 
-  // Patrón 2: Talla alfanumérica al inicio o entre delimitadores: T_S, TALLA_M, T_XL
-  const matchAlpha = clean.match(/(?:TALLA|T|SZ)[-_]?(XXL|XL|XS|S|M|L)\b/i);
+  // Patrón 2: Talla alfanumérica al inicio o entre delimitadores: T_S, TALLA_M, T_XL, TS_
+  const matchAlpha = clean.match(/(?:TALLA|T|SZ)[-_]?(XXL|XL|XS|S|M|L)(?:[-_]|\b)/i);
   if (matchAlpha) {
     return matchAlpha[1];
   }
