@@ -138,63 +138,6 @@ export const NewOrderView: React.FC = () => {
         </div>
       </div>
 
-      {/* Metadata Form */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
-        <div>
-          <label className="block font-medium text-slate-400 mb-1.5">Cliente / Contacto</label>
-          <input
-            type="text"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-            placeholder="Ej: Prof. Roberto Morales"
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
-          />
-        </div>
-        <div>
-          <label className="block font-medium text-slate-400 mb-1.5">Equipo / Escuela</label>
-          <input
-            type="text"
-            value={teamName}
-            onChange={(e) => setTeamName(e.target.value)}
-            placeholder="Ej: Colegio Francia Sub-15"
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
-          />
-        </div>
-        <div>
-          <label className="block font-medium text-slate-400 mb-1.5">Deporte</label>
-          <select
-            value={sport}
-            onChange={(e) => setSport(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
-          >
-            <option value="FUTBOL">Fútbol</option>
-            <option value="BASKET">Básquetbol</option>
-            <option value="VOLEY">Voleibol</option>
-            <option value="CICLISMO">Ciclismo</option>
-          </select>
-        </div>
-        <div>
-          <label className="block font-medium text-slate-400 mb-1.5">Archivo Origen</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              readOnly
-              value={fileName || 'Ningún archivo seleccionado'}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-400 font-mono text-[11px] truncate"
-            />
-            {items.length > 0 && (
-              <button
-                onClick={clearOrder}
-                className="p-2 hover:bg-slate-800 text-slate-400 hover:text-red-400 rounded-lg transition-colors"
-                title="Limpiar pedido"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Drag & Drop Zone (if no items loaded) */}
       {items.length === 0 ? (
         <div
@@ -250,12 +193,15 @@ export const NewOrderView: React.FC = () => {
               </div>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
-              <div className="text-[11px] text-slate-400">Acción de Archivo</div>
+              <div className="text-[11px] text-slate-400">Archivo Cargado</div>
+              <div className="text-xs text-white font-mono truncate" title={fileName || ''}>
+                {fileName || 'pedido.xlsx'}
+              </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-xs text-emerald-400 hover:text-emerald-300 font-medium text-left"
+                className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium text-left mt-0.5"
               >
-                + Reemplazar Excel
+                + Cambiar Excel
               </button>
             </div>
           </div>
