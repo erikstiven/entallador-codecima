@@ -66,30 +66,35 @@ const DEFAULT_DEMO_SVG = `<?xml version="1.0" encoding="utf-8"?>
   </g>
 </svg>`;
 
+const defaultPatternParse = parsePatternSvg(
+  DEFAULT_DEMO_SVG,
+  'MOLDES FUTBOL OFICIAL 2026',
+  'FUTBOL',
+  'moldes_futbol_2026.svg'
+);
+export const DEFAULT_PATTERN_SET: PatternSet = defaultPatternParse.patternSet;
+
 export const usePatternStore = create<PatternStoreState>((set, get) => ({
-  patternSets: [],
-  activePatternSet: null,
+  patternSets: [DEFAULT_PATTERN_SET],
+  activePatternSet: DEFAULT_PATTERN_SET,
   selectedPieceForAssignment: null,
 
   loadFromDatabase: () => {
     try {
       let sets = getPatternSetsFromDb(dbService);
       if (sets.length === 0) {
-        const { patternSet } = parsePatternSvg(
-          DEFAULT_DEMO_SVG,
-          'MOLDES FUTBOL OFICIAL 2026',
-          'FUTBOL',
-          'moldes_futbol_2026.svg'
-        );
-        savePatternSetToDb(dbService, patternSet);
-        sets = [patternSet];
+        savePatternSetToDb(dbService, DEFAULT_PATTERN_SET);
+        sets = [DEFAULT_PATTERN_SET];
       }
       set({ patternSets: sets });
       if (!get().activePatternSet && sets.length > 0) {
         set({ activePatternSet: sets[0] });
       }
     } catch (err) {
-      console.error('Error cargando moldes de SQLite:', err);
+      console.warn('SQLite aún no disponible, usando moldes predeterminados en memoria:', err);
+      if (get().patternSets.length === 0) {
+        set({ patternSets: [DEFAULT_PATTERN_SET], activePatternSet: DEFAULT_PATTERN_SET });
+      }
     }
   },
 

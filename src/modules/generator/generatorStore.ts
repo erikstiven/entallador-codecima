@@ -41,16 +41,24 @@ export const useGeneratorStore = create<GeneratorStoreState>((set, get) => ({
 
   generatePieces: () => {
     const { items: orderItems } = useOrderStore.getState();
-    const { activePatternSet } = usePatternStore.getState();
-    const { activeDesign } = useDesignStore.getState();
-    const { generationConfig } = get();
+    let patternSet = activePatternSet || usePatternStore.getState().patternSets[0];
+    if (!patternSet) {
+      usePatternStore.getState().loadFromDatabase();
+      patternSet = usePatternStore.getState().activePatternSet || usePatternStore.getState().patternSets[0];
+    }
 
-    if (!activePatternSet) {
+    let design = activeDesign || useDesignStore.getState().designs[0];
+    if (!design) {
+      useDesignStore.getState().loadDesignsFromDatabase();
+      design = useDesignStore.getState().activeDesign || useDesignStore.getState().designs[0];
+    }
+
+    if (!patternSet) {
       console.warn('No hay conjunto de moldes activo para la generación.');
       return null;
     }
 
-    if (!activeDesign) {
+    if (!design) {
       console.warn('No hay diseño maestro activo para la generación.');
       return null;
     }
@@ -65,8 +73,8 @@ export const useGeneratorStore = create<GeneratorStoreState>((set, get) => ({
     try {
       const result = generateGarmentPieces(
         orderItems,
-        activePatternSet,
-        activeDesign,
+        patternSet,
+        design,
         generationConfig
       );
 

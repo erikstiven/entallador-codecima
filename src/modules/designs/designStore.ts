@@ -7,7 +7,8 @@ import {
   saveDesignToDb, 
   deleteDesignFromDb, 
   seedDefaultMasterDesigns,
-  createDefaultPlaceholderRules
+  createDefaultPlaceholderRules,
+  DEFAULT_SAMPLE_DESIGNS
 } from './designRepository';
 
 interface DesignStoreState {
@@ -27,19 +28,26 @@ interface DesignStoreState {
 }
 
 export const useDesignStore = create<DesignStoreState>((set, get) => ({
-  designs: [],
-  activeDesign: null,
+  designs: DEFAULT_SAMPLE_DESIGNS,
+  activeDesign: DEFAULT_SAMPLE_DESIGNS[0],
 
   loadDesignsFromDatabase: () => {
     try {
       seedDefaultMasterDesigns(dbService);
       const list = getDesignsFromDb(dbService);
-      set({ designs: list });
-      if (!get().activeDesign && list.length > 0) {
-        set({ activeDesign: list[0] });
+      if (list.length > 0) {
+        set({ designs: list });
+        if (!get().activeDesign) {
+          set({ activeDesign: list[0] });
+        }
+      } else {
+        set({ designs: DEFAULT_SAMPLE_DESIGNS, activeDesign: DEFAULT_SAMPLE_DESIGNS[0] });
       }
     } catch (err) {
-      console.error('Error cargando diseños de SQLite:', err);
+      console.warn('SQLite aún no disponible, usando diseños predeterminados en memoria:', err);
+      if (get().designs.length === 0) {
+        set({ designs: DEFAULT_SAMPLE_DESIGNS, activeDesign: DEFAULT_SAMPLE_DESIGNS[0] });
+      }
     }
   },
 

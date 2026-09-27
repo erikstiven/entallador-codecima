@@ -130,6 +130,69 @@ export function createDefaultPlaceholderRules(pieceType: PieceType): DynamicPlac
   return [];
 }
 
+export const DEFAULT_SAMPLE_DESIGNS: MasterDesign[] = [
+  {
+    id: 'des_holanda',
+    name: 'Holanda Naranja Clásico',
+    sport: 'FUTBOL',
+    colors: ['#ea580c', '#0284c7', '#ffffff'],
+    pieceArtworks: {
+      DELANTERO: {
+        pieceType: 'DELANTERO',
+        svgArtContent: '<rect width="500" height="700" fill="#ea580c" />',
+        placeholders: createDefaultPlaceholderRules('DELANTERO'),
+      },
+      ESPALDA: {
+        pieceType: 'ESPALDA',
+        svgArtContent: '<rect width="500" height="700" fill="#ea580c" />',
+        placeholders: createDefaultPlaceholderRules('ESPALDA'),
+      },
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'des_brasil',
+    name: 'Brasil Canarinho Oficial',
+    sport: 'FUTBOL',
+    colors: ['#eab308', '#16a34a', '#1e40af'],
+    pieceArtworks: {
+      DELANTERO: {
+        pieceType: 'DELANTERO',
+        svgArtContent: '<rect width="500" height="700" fill="#eab308" />',
+        placeholders: createDefaultPlaceholderRules('DELANTERO'),
+      },
+      ESPALDA: {
+        pieceType: 'ESPALDA',
+        svgArtContent: '<rect width="500" height="700" fill="#eab308" />',
+        placeholders: createDefaultPlaceholderRules('ESPALDA'),
+      },
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'des_argentina',
+    name: 'Argentina Albiceleste Rayas',
+    sport: 'FUTBOL',
+    colors: ['#38bdf8', '#ffffff', '#000000'],
+    pieceArtworks: {
+      DELANTERO: {
+        pieceType: 'DELANTERO',
+        svgArtContent: '<rect width="500" height="700" fill="#38bdf8" />',
+        placeholders: createDefaultPlaceholderRules('DELANTERO'),
+      },
+      ESPALDA: {
+        pieceType: 'ESPALDA',
+        svgArtContent: '<rect width="500" height="700" fill="#38bdf8" />',
+        placeholders: createDefaultPlaceholderRules('ESPALDA'),
+      },
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
 /**
  * Si la base de datos no tiene diseños, sembrar los 4 diseños maestros oficiales
  */
@@ -137,70 +200,7 @@ export function seedDefaultMasterDesigns(db: DatabaseService): void {
   const existing = db.query('SELECT id FROM designs LIMIT 1');
   if (existing.length > 0) return;
 
-  const sampleDesigns: MasterDesign[] = [
-    {
-      id: 'des_holanda',
-      name: 'Holanda Naranja Clásico',
-      sport: 'FUTBOL',
-      colors: ['#ea580c', '#0284c7', '#ffffff'],
-      pieceArtworks: {
-        DELANTERO: {
-          pieceType: 'DELANTERO',
-          svgArtContent: '<rect width="500" height="700" fill="#ea580c" />',
-          placeholders: createDefaultPlaceholderRules('DELANTERO'),
-        },
-        ESPALDA: {
-          pieceType: 'ESPALDA',
-          svgArtContent: '<rect width="500" height="700" fill="#ea580c" />',
-          placeholders: createDefaultPlaceholderRules('ESPALDA'),
-        },
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'des_brasil',
-      name: 'Brasil Canarinho Oficial',
-      sport: 'FUTBOL',
-      colors: ['#eab308', '#16a34a', '#1e40af'],
-      pieceArtworks: {
-        DELANTERO: {
-          pieceType: 'DELANTERO',
-          svgArtContent: '<rect width="500" height="700" fill="#eab308" />',
-          placeholders: createDefaultPlaceholderRules('DELANTERO'),
-        },
-        ESPALDA: {
-          pieceType: 'ESPALDA',
-          svgArtContent: '<rect width="500" height="700" fill="#eab308" />',
-          placeholders: createDefaultPlaceholderRules('ESPALDA'),
-        },
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'des_argentina',
-      name: 'Argentina Albiceleste Rayas',
-      sport: 'FUTBOL',
-      colors: ['#38bdf8', '#ffffff', '#000000'],
-      pieceArtworks: {
-        DELANTERO: {
-          pieceType: 'DELANTERO',
-          svgArtContent: '<rect width="500" height="700" fill="#38bdf8" />',
-          placeholders: createDefaultPlaceholderRules('DELANTERO'),
-        },
-        ESPALDA: {
-          pieceType: 'ESPALDA',
-          svgArtContent: '<rect width="500" height="700" fill="#38bdf8" />',
-          placeholders: createDefaultPlaceholderRules('ESPALDA'),
-        },
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  ];
-
-  for (const d of sampleDesigns) {
+  for (const d of DEFAULT_SAMPLE_DESIGNS) {
     saveDesignToDb(db, d);
   }
 }
