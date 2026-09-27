@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "clipper2-wasm": "^0.4.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
     "opentype.js": "^2.0.0",

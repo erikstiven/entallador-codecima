@@ -30,6 +30,9 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    worker: {
+      format: 'es',
+    },
     test: {
       globals: true,
       environment: 'node',

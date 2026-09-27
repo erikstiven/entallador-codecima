@@ -95,6 +95,29 @@ export function transformPolygon(
 }
 
 /**
+ * Rota un polígono y normaliza su origen a su Bounding Box mínimo (0, 0),
+ * aplicando luego traslación exacta a (targetXMm, targetYMm).
+ */
+export function getOrientedPolygon(
+  polygon: Polygon2D,
+  rotationDeg: number,
+  targetXMm: number,
+  targetYMm: number
+): Polygon2D {
+  if (rotationDeg === 0) {
+    return polygon.map((p) => ({ x: p.x + targetXMm, y: p.y + targetYMm }));
+  }
+
+  const rotated = polygon.map((p) => rotatePoint(p, rotationDeg, { x: 0, y: 0 }));
+  const bbox = computeBoundingBox(rotated);
+
+  return rotated.map((p) => ({
+    x: p.x - bbox.minX + targetXMm,
+    y: p.y - bbox.minY + targetYMm,
+  }));
+}
+
+/**
  * Determina si dos Bounding Boxes se superponen considerando un margen mínimo opcional (en mm)
  */
 export function doBoundingBoxesOverlap(

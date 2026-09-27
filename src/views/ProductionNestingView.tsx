@@ -33,8 +33,11 @@ export const ProductionNestingView: React.FC = () => {
     placedPieces, 
     nestingResult, 
     isNesting, 
+    nestingProgress,
     nestingMode, 
     setNestingMode,
+    nestingAlgorithm,
+    setNestingAlgorithm,
     runNesting, 
     toggleLockPiece, 
     rotatePiece,
@@ -69,9 +72,9 @@ export const ProductionNestingView: React.FC = () => {
   }, [generatedPieces]);
 
   // Ejecutar entallado completo
-  const handleRunNesting = () => {
+  const handleRunNesting = async () => {
     if (nestingPieceInputs.length === 0) return;
-    runNesting(nestingPieceInputs, {
+    await runNesting(nestingPieceInputs, {
       printableWidthMm: activeProfile.printableWidthMm,
       spacingMm: activeProfile.pieceSpacingMm || 7.0,
       groupingMode: nestingMode,
@@ -79,9 +82,9 @@ export const ProductionNestingView: React.FC = () => {
   };
 
   // Reoptimizar piezas no bloqueadas
-  const handleReoptimize = () => {
+  const handleReoptimize = async () => {
     if (nestingPieceInputs.length === 0) return;
-    reoptimizeUnlocked(nestingPieceInputs);
+    await reoptimizeUnlocked(nestingPieceInputs);
   };
 
   // Factor de escala milímetros -> píxeles de visualización
@@ -173,6 +176,33 @@ export const ProductionNestingView: React.FC = () => {
             </button>
           </div>
 
+          {/* Algorithm Selector */}
+          <div className="flex items-center bg-slate-950 border border-slate-700/80 rounded-lg p-1 text-xs">
+            <button
+              onClick={() => setNestingAlgorithm('POLYGONAL_CLIPPER2')}
+              className={`px-2.5 py-1.5 rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                nestingAlgorithm === 'POLYGONAL_CLIPPER2'
+                  ? 'bg-sky-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Nesting poligonal irregular con Clipper2: encaja piezas dentro de concavidades para máximo aprovechamiento"
+            >
+              <Sparkles className="w-3 h-3 text-amber-300" />
+              <span>Poligonal (Clipper2)</span>
+            </button>
+            <button
+              onClick={() => setNestingAlgorithm('BOUNDING_BOX')}
+              className={`px-2.5 py-1.5 rounded-md font-medium transition-all ${
+                nestingAlgorithm === 'BOUNDING_BOX'
+                  ? 'bg-sky-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Nesting rápido de cajas envolventes"
+            >
+              Bounding Box
+            </button>
+          </div>
+
           <div className="h-6 w-px bg-slate-800" />
 
           {/* Action Buttons */}
@@ -186,7 +216,7 @@ export const ProductionNestingView: React.FC = () => {
             }`}
           >
             <Play className="w-3.5 h-3.5 fill-current" />
-            {isNesting ? 'Optimizando...' : 'Optimizar Nesting'}
+            {isNesting ? `Optimizando (${nestingProgress}%)...` : 'Optimizar Nesting'}
           </button>
 
           <button 
@@ -268,6 +298,10 @@ export const ProductionNestingView: React.FC = () => {
           <div className="flex items-center gap-1.5 text-slate-400">
             <Percent className="w-3.5 h-3.5 text-emerald-400" />
             <span>Aprovechamiento: <strong className="text-emerald-400 font-mono">{efficiency}%</strong></span>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <Gauge className="w-3.5 h-3.5 text-slate-500" />
+            <span>Motor: <strong className="text-sky-400 font-mono text-[11px]">{nestingAlgorithm === 'POLYGONAL_CLIPPER2' ? 'Clipper2 WASM' : 'BLF (AABB)'}</strong></span>
           </div>
           {nestingResult && (
             <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-mono">
