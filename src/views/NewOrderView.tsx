@@ -17,6 +17,7 @@ import { useProfileStore } from '@/modules/settings/profileStore';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { GarmentType } from '@/modules/orders/types';
 import { exportOrderToCsvBySize, generateProductionSummaryWorkbook } from '@/modules/orders/excelParser';
+import { useGeneratorStore } from '@/modules/generator/generatorStore';
 
 export const NewOrderView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -458,11 +459,16 @@ export const NewOrderView: React.FC = () => {
 
             <button
               disabled={summary.hasErrors || items.length === 0}
-              onClick={() => setCurrentView('NESTING')}
+              onClick={() => {
+                // Generar prendas con el store
+                const { generatePieces } = useGeneratorStore.getState();
+                generatePieces();
+                setCurrentView('NESTING');
+              }}
               className={`px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all ${
                 summary.hasErrors || items.length === 0
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950 cursor-pointer'
               }`}
             >
               Generar Prendas y Avanzar al Entallado
