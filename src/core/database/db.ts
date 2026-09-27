@@ -14,8 +14,11 @@ export class DatabaseService {
     const SQL = await initSqlJs({
       locateFile: (file: string) => {
         try {
+          if (typeof window !== 'undefined') {
+            return `/${file}`;
+          }
           const wasmPath = path.resolve(process.cwd(), 'node_modules/sql.js/dist', file);
-          if (fs.existsSync(wasmPath)) {
+          if (fs.existsSync && fs.existsSync(wasmPath)) {
             return wasmPath;
           }
         } catch (_) {}
@@ -25,7 +28,7 @@ export class DatabaseService {
 
     this.dbPath = dbFilePath || null;
 
-    if (this.dbPath && fs.existsSync(this.dbPath)) {
+    if (this.dbPath && typeof fs.existsSync === 'function' && fs.existsSync(this.dbPath)) {
       const fileBuffer = fs.readFileSync(this.dbPath);
       this.db = new SQL.Database(fileBuffer);
     } else {
@@ -36,7 +39,7 @@ export class DatabaseService {
     this.db.run(INITIAL_SCHEMA_SQL);
 
     // Si hay ruta de archivo, persistir estado inicial
-    if (this.dbPath) {
+    if (this.dbPath && typeof fs.writeFileSync === 'function') {
       this.saveToDisk();
     }
 
