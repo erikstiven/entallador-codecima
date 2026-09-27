@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-electron/
+out/
+.vite/
+*.log
+*.sqlite
+*.sqlite-journal
+.DS_Store
+Thumbs.db
