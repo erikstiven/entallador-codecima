@@ -1,5 +1,6 @@
 import { DatabaseService } from '@/core/database/db';
 import { PatternSet, PatternSize, PatternPiece } from './types';
+import { computeBoundingBox } from '@/core/geometry/transform';
 
 /**
  * Guarda un conjunto completo de moldes con sus tallas y piezas en SQLite
@@ -80,20 +81,24 @@ export function getPatternSetsFromDb(db: DatabaseService): PatternSet[] {
         try { allowedRotations = JSON.parse(p.allowed_rotations_json); } catch (_) {}
         try { placeholders = JSON.parse(p.placeholders_json); } catch (_) {}
 
+        const bbox = cutPolygon.length > 0
+          ? computeBoundingBox(cutPolygon)
+          : {
+              minX: 0,
+              minY: 0,
+              maxX: p.bbox_width_mm,
+              maxY: p.bbox_height_mm,
+              width: p.bbox_width_mm,
+              height: p.bbox_height_mm,
+            };
+
         return {
           id: p.id,
           sizeName: s.size_name,
           pieceType: p.piece_type,
           pieceName: p.piece_name,
           cutPolygon,
-          bbox: {
-            minX: 0,
-            minY: 0,
-            maxX: p.bbox_width_mm,
-            maxY: p.bbox_height_mm,
-            width: p.bbox_width_mm,
-            height: p.bbox_height_mm,
-          },
+          bbox,
           areaMm2: p.area_mm2,
           allowedRotationsDeg: allowedRotations,
           svgPathData: p.svg_raw_content,

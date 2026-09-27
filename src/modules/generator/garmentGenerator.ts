@@ -97,12 +97,17 @@ export function generateGarmentPieces(
         const uniquePieceId = `gen_${orderItem.id}_${pieceType}_${q}_${Math.random().toString(36).substring(2, 6)}`;
 
         // Normalizar polígono de corte al origen local (0, 0)
-        const bbox = patternPiece.bbox;
+        const bbox = patternPiece.cutPolygon.length > 0
+          ? computeBoundingBox(patternPiece.cutPolygon)
+          : patternPiece.bbox;
         const localCutPolygon = patternPiece.cutPolygon.map((pt) => ({
           x: pt.x - bbox.minX,
           y: pt.y - bbox.minY,
         }));
         const localBbox = computeBoundingBox(localCutPolygon);
+        const translateTransform = (bbox.minX !== 0 || bbox.minY !== 0)
+          ? ` transform="translate(-${bbox.minX}, -${bbox.minY})"`
+          : '';
 
         // 2. Extraer o generar arte base del diseño maestro para esta pieza
         const artwork = masterDesign.pieceArtworks[pieceType];
@@ -201,7 +206,7 @@ export function generateGarmentPieces(
           <g id="${uniquePieceId}">
             <defs>
               <clipPath id="${maskId}">
-                <path d="${patternPiece.svgPathData}" />
+                <path d="${patternPiece.svgPathData}"${translateTransform} />
               </clipPath>
             </defs>
             <!-- Arte recortado exactamente con el molde -->
@@ -209,7 +214,7 @@ export function generateGarmentPieces(
               ${baseArtSvg}
             </g>
             <!-- Contorno de corte visible 1:1 -->
-            <path d="${patternPiece.svgPathData}" fill="none" stroke="#22c55e" stroke-width="1.0" opacity="0.6" />
+            <path d="${patternPiece.svgPathData}"${translateTransform} fill="none" stroke="#22c55e" stroke-width="1.0" opacity="0.6" />
             <!-- Etiqueta de confección -->
             ${labelSvg}
           </g>
