@@ -9,8 +9,7 @@ import {
   Plus, 
   Download, 
   ArrowRight,
-  RefreshCw,
-  FileCheck
+  RefreshCw
 } from 'lucide-react';
 import { useOrderStore } from '@/modules/orders/orderStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
@@ -74,35 +73,6 @@ export const NewOrderView: React.FC = () => {
     reader.readAsArrayBuffer(file);
   };
 
-  const handleLoadSample = (sampleType: 'valid' | 'errors') => {
-    const demoItems = sampleType === 'valid'
-      ? [
-          { playerName: 'MATEO', playerNumber: '10', sizeName: '28', garmentType: 'COMPLETO' as GarmentType, notes: 'Capitán' },
-          { playerName: 'CAMILA', playerNumber: '7', sizeName: '28', garmentType: 'COMPLETO' as GarmentType },
-          { playerName: 'CARLOS', playerNumber: '21', sizeName: '30', garmentType: 'CAMISETA' as GarmentType },
-          { playerName: 'CHRISTOPHER', playerNumber: '9', sizeName: '30', garmentType: 'COMPLETO' as GarmentType, notes: 'Nombre largo' },
-          { playerName: 'DANIELA', playerNumber: '15', sizeName: '32', garmentType: 'COMPLETO' as GarmentType },
-          { playerName: 'ÁLVARO', playerNumber: '4', sizeName: '32', garmentType: 'COMPLETO' as GarmentType },
-          { playerName: 'ÍÑIGO', playerNumber: '8', sizeName: 'S', garmentType: 'COMPLETO' as GarmentType },
-          { playerName: 'VALENTINA', playerNumber: '12', sizeName: 'M', garmentType: 'SHORT' as GarmentType },
-        ]
-      : [
-          { playerName: 'MATEO', playerNumber: '10', sizeName: '28', garmentType: 'COMPLETO' as GarmentType },
-          { playerName: 'CAMILA', playerNumber: '7', sizeName: '99', garmentType: 'COMPLETO' as GarmentType, notes: 'Talla 99 no existe' },
-          { playerName: '', playerNumber: '21', sizeName: '30', garmentType: 'CAMISETA' as GarmentType, notes: 'Nombre vacío' },
-          { playerName: 'CARLOS#2', playerNumber: '', sizeName: '30', garmentType: 'COMPLETO' as GarmentType, notes: 'Número vacío' },
-          { playerName: 'DANIELA', playerNumber: '10', sizeName: '32', garmentType: 'COMPLETO' as GarmentType, notes: 'Dorsal 10 duplicado' },
-        ];
-
-    clearOrder();
-    setClientName(sampleType === 'valid' ? 'Prof. Roberto Morales' : 'Prueba de Errores');
-    setTeamName(sampleType === 'valid' ? 'Colegio Francia Sub-15' : 'Equipo Prueba');
-    
-    for (const it of demoItems) {
-      addItem(it);
-    }
-  };
-
   const downloadCsv = (size: string) => {
     const csv = exportOrderToCsvBySize(items, size, { delimiter: ',', includeBom: true, includeHeader: true });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -164,14 +134,6 @@ export const NewOrderView: React.FC = () => {
           >
             <Download className="w-3.5 h-3.5" />
             Descargar Plantilla Excel (.xlsx)
-          </button>
-          <button
-            onClick={() => handleLoadSample('valid')}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center gap-1.5"
-            title="Cargar pedido de muestra para pruebas rápidas"
-          >
-            <FileCheck className="w-3.5 h-3.5 text-sky-400" />
-            Cargar Demo
           </button>
         </div>
       </div>
