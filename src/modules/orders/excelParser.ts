@@ -248,7 +248,6 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Dorsal': '10',
       'Tipo Prenda': 'COMPLETO',
       'Cantidad': 1,
-      'Observaciones': 'Capitán',
     },
     {
       'Talla': '28',
@@ -256,7 +255,6 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Dorsal': '7',
       'Tipo Prenda': 'COMPLETO',
       'Cantidad': 1,
-      'Observaciones': '',
     },
     {
       'Talla': '30',
@@ -264,7 +262,6 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Dorsal': '21',
       'Tipo Prenda': 'CAMISETA',
       'Cantidad': 1,
-      'Observaciones': 'Manga corta',
     },
     {
       'Talla': '30',
@@ -272,7 +269,6 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Dorsal': '9',
       'Tipo Prenda': 'COMPLETO',
       'Cantidad': 1,
-      'Observaciones': 'Nombre largo',
     },
     {
       'Talla': '32',
@@ -280,7 +276,6 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Dorsal': '15',
       'Tipo Prenda': 'COMPLETO',
       'Cantidad': 1,
-      'Observaciones': '',
     },
     {
       'Talla': '32',
@@ -288,7 +283,6 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Dorsal': '4',
       'Tipo Prenda': 'COMPLETO',
       'Cantidad': 1,
-      'Observaciones': '',
     },
     {
       'Talla': 'S',
@@ -296,7 +290,6 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Dorsal': '8',
       'Tipo Prenda': 'COMPLETO',
       'Cantidad': 1,
-      'Observaciones': '',
     },
     {
       'Talla': 'M',
@@ -304,7 +297,6 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Dorsal': '12',
       'Tipo Prenda': 'SHORT',
       'Cantidad': 1,
-      'Observaciones': '',
     },
   ];
 
@@ -315,7 +307,6 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
     { wch: 10 },
     { wch: 16 },
     { wch: 10 },
-    { wch: 24 },
   ];
 
   XLSX.utils.book_append_sheet(wb, ws, 'Lista Jugadores');

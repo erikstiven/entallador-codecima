@@ -377,7 +377,7 @@ export const NewOrderView: React.FC = () => {
                     <th className="py-2.5 px-3">Nombre Dorsal</th>
                     <th className="py-2.5 px-3 w-24">Número</th>
                     <th className="py-2.5 px-3 w-32">Tipo Prenda</th>
-                    <th className="py-2.5 px-3">Estado / Observaciones</th>
+                    <th className="py-2.5 px-3">Validación / Estado</th>
                     <th className="py-2.5 px-3 w-12 text-center"></th>
                   </tr>
                 </thead>
@@ -469,7 +469,7 @@ export const NewOrderView: React.FC = () => {
                         ) : (
                           <span className="text-emerald-400 flex items-center gap-1 font-sans">
                             <CheckCircle2 className="w-3 h-3" />
-                            {item.notes || 'Correcto'}
+                            Correcto
                           </span>
                         )}
                       </td>
