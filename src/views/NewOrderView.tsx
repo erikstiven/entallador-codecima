@@ -15,11 +15,7 @@ import { useOrderStore } from '@/modules/orders/orderStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { GarmentType } from '@/modules/orders/types';
-import { 
-  exportOrderToCsvBySize, 
-  generateProductionSummaryWorkbook,
-  generateOrderTemplateWorkbook 
-} from '@/modules/orders/excelParser';
+import { generateOrderTemplateWorkbook } from '@/modules/orders/excelParser';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
 
 export const NewOrderView: React.FC = () => {
@@ -73,27 +69,6 @@ export const NewOrderView: React.FC = () => {
     reader.readAsArrayBuffer(file);
   };
 
-  const downloadCsv = (size: string) => {
-    const csv = exportOrderToCsvBySize(items, size, { delimiter: ',', includeBom: true, includeHeader: true });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `talla_${size.toLowerCase()}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const downloadExcelSummary = () => {
-    const uint8 = generateProductionSummaryWorkbook(items, clientName, teamName);
-    const blob = new Blob([uint8.buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `resumen_produccion_${teamName || 'pedido'}.xlsx`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
 
   const handleDownloadTemplate = () => {
     const uint8 = generateOrderTemplateWorkbook();
@@ -165,35 +140,33 @@ export const NewOrderView: React.FC = () => {
         /* Order Items Table & Real-time Validation */
         <div className="space-y-4">
           {/* Summary Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
               <div className="text-[11px] text-slate-400">Total Jugadores</div>
               <div className="text-xl font-bold font-mono text-white mt-1">{summary.totalItems}</div>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-              <div className="text-[11px] text-slate-400">Registros Válidos</div>
-              <div className="text-xl font-bold font-mono text-emerald-400 mt-1 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" />
-                {summary.validCount}
-              </div>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-              <div className="text-[11px] text-slate-400">Registros con Error</div>
-              <div className={`text-xl font-bold font-mono mt-1 flex items-center gap-1.5 ${
-                summary.invalidCount > 0 ? 'text-red-400' : 'text-slate-500'
-              }`}>
-                {summary.invalidCount > 0 ? <AlertCircle className="w-4 h-4" /> : null}
-                {summary.invalidCount}
-              </div>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-              <div className="text-[11px] text-slate-400">Total Piezas Físicas</div>
+              <div className="text-[11px] text-slate-400">Total Piezas a Cortar</div>
               <div className="text-xl font-bold font-mono text-sky-400 mt-1">
                 {summary.totalPiecesCount} <span className="text-xs font-normal text-slate-400">piezas</span>
               </div>
             </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
+              <div className="text-[11px] text-slate-400">Estado de Nómina</div>
+              {summary.invalidCount > 0 ? (
+                <div className="text-xl font-bold font-mono text-red-400 mt-1 flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4" />
+                  {summary.invalidCount} con Error
+                </div>
+              ) : (
+                <div className="text-xl font-bold font-mono text-emerald-400 mt-1 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  100% Válido ({summary.validCount})
+                </div>
+              )}
+            </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
-              <div className="text-[11px] text-slate-400">Archivo Cargado</div>
+              <div className="text-[11px] text-slate-400">Archivo Excel Cargado</div>
               <div className="text-xs text-white font-mono truncate" title={fileName || ''}>
                 {fileName || 'pedido.xlsx'}
               </div>
@@ -201,7 +174,7 @@ export const NewOrderView: React.FC = () => {
                 onClick={() => fileInputRef.current?.click()}
                 className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium text-left mt-0.5"
               >
-                + Cambiar Excel
+                + Cambiar Archivo
               </button>
             </div>
           </div>
@@ -211,34 +184,13 @@ export const NewOrderView: React.FC = () => {
             <div className="p-3.5 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-slate-200">Nómina del Pedido</span>
-                <span className="text-[11px] text-slate-400">({items.length} filas procesadas)</span>
+                <span className="text-[11px] text-slate-400">({items.length} jugadores cargados)</span>
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Export CSV by size buttons */}
-                {Object.keys(summary.bySize).map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => downloadCsv(size)}
-                    className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-mono border border-slate-700 transition-colors flex items-center gap-1"
-                    title={`Descargar CSV para Talla ${size}`}
-                  >
-                    <Download className="w-2.5 h-2.5" />
-                    CSV T{size}
-                  </button>
-                ))}
-
-                <button
-                  onClick={downloadExcelSummary}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-[11px] font-medium border border-slate-700 transition-colors flex items-center gap-1"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
-                  Descargar Resumen Excel
-                </button>
-
                 <button
                   onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: '28', garmentType: 'COMPLETO' })}
-                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-medium shadow-sm transition-colors flex items-center gap-1"
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium shadow-sm transition-colors flex items-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Agregar Jugador
@@ -267,7 +219,7 @@ export const NewOrderView: React.FC = () => {
                         !item.isValid ? 'bg-red-950/20' : ''
                       }`}
                     >
-                      <td className="py-2 px-3 text-center text-slate-500">{item.rowNumber}</td>
+                      <td className="py-2 px-3 text-center text-slate-500" title={`Fila Excel: ${item.rowNumber}`}>{idx + 1}</td>
                       
                       {/* Editable Size */}
                       <td className="py-2 px-3">

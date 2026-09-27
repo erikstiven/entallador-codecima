@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, HardDrive, Cpu, Ruler } from 'lucide-react';
+import { ShieldCheck, Ruler } from 'lucide-react';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
 
@@ -48,12 +48,6 @@ export const Header: React.FC = () => {
         <div className="flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1.5 rounded-lg text-xs text-emerald-300">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
           <span className="font-medium text-[11px]">Escala 1:1 Certificada</span>
-        </div>
-
-        {/* Auto-save indicator */}
-        <div className="flex items-center gap-1.5 bg-slate-800/60 border border-slate-700/60 px-2.5 py-1.5 rounded-lg text-xs text-slate-400">
-          <HardDrive className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-[11px]">SQLite Local</span>
         </div>
       </div>
     </header>
