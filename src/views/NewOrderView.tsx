@@ -16,7 +16,11 @@ import { useOrderStore } from '@/modules/orders/orderStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { GarmentType } from '@/modules/orders/types';
-import { exportOrderToCsvBySize, generateProductionSummaryWorkbook } from '@/modules/orders/excelParser';
+import { 
+  exportOrderToCsvBySize, 
+  generateProductionSummaryWorkbook,
+  generateOrderTemplateWorkbook 
+} from '@/modules/orders/excelParser';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
 
 export const NewOrderView: React.FC = () => {
@@ -121,6 +125,17 @@ export const NewOrderView: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadTemplate = () => {
+    const uint8 = generateOrderTemplateWorkbook();
+    const blob = new Blob([uint8.buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'plantilla_pedido_uniformes.xlsx';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
       {/* Hidden file input */}
@@ -138,23 +153,25 @@ export const NewOrderView: React.FC = () => {
           <span className="text-xs uppercase font-bold tracking-wider text-emerald-400">Paso 1 de 4</span>
           <h2 className="text-xl font-bold text-white mt-1">Cargar Nómina y Pedido de Uniformes</h2>
           <p className="text-xs text-slate-400 mt-1 max-w-xl">
-            Importa el archivo Excel (.xlsx o .csv). El sistema valida nombres, números, tallas existentes y tipos de prenda antes de generar el entallado.
+            Sube el archivo Excel (.xlsx o .csv) de tu equipo. El sistema valida nombres, dorsales, tallas existentes y tipos de prenda antes de generar el entallado.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => handleLoadSample('valid')}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center gap-1.5"
+            onClick={handleDownloadTemplate}
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-950 transition-colors flex items-center gap-1.5"
+            title="Descargar archivo Excel con las columnas listas para llenar"
           >
-            <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
-            Cargar Demo Válido (8 Jugadores)
+            <Download className="w-3.5 h-3.5" />
+            Descargar Plantilla Excel (.xlsx)
           </button>
           <button
-            onClick={() => handleLoadSample('errors')}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center gap-1.5"
+            onClick={() => handleLoadSample('valid')}
+            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center gap-1.5"
+            title="Cargar pedido de muestra para pruebas rápidas"
           >
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-            Cargar Demo con Errores
+            <FileCheck className="w-3.5 h-3.5 text-sky-400" />
+            Cargar Demo
           </button>
         </div>
       </div>
@@ -218,23 +235,56 @@ export const NewOrderView: React.FC = () => {
 
       {/* Drag & Drop Zone (if no items loaded) */}
       {items.length === 0 ? (
-        <div
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-slate-700 hover:border-emerald-500 bg-slate-900/50 hover:bg-slate-900 transition-all rounded-2xl p-12 text-center flex flex-col items-center justify-center cursor-pointer group"
-        >
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <UploadCloud className="w-8 h-8" />
+        <div className="space-y-4">
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className="border-2 border-dashed border-slate-700 hover:border-emerald-500 bg-slate-900/50 hover:bg-slate-900 transition-all rounded-2xl p-10 text-center flex flex-col items-center justify-center cursor-pointer group"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <UploadCloud className="w-8 h-8" />
+            </div>
+            <h4 className="text-base font-semibold text-white">Arrastra aquí tu archivo Excel o haz clic para explorar</h4>
+            <p className="text-xs text-slate-400 mt-1.5 max-w-md">
+              Sube la nómina de tu equipo en formato <span className="text-slate-200 font-mono font-medium">.xlsx</span> o <span className="text-slate-200 font-mono font-medium">.csv</span>
+            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              <button 
+                type="button"
+                className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-950 transition-colors flex items-center gap-2"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Seleccionar Mi Archivo Excel
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownloadTemplate();
+                }}
+                className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-semibold transition-colors flex items-center gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Descargar Plantilla Oficial (.xlsx)
+              </button>
+            </div>
           </div>
-          <h4 className="text-base font-semibold text-white">Arrastra aquí tu archivo Excel o haz clic para explorar</h4>
-          <p className="text-xs text-slate-400 mt-1.5 max-w-md">
-            Soporta formatos <span className="text-slate-200 font-mono">.xlsx</span> y{' '}
-            <span className="text-slate-200 font-mono">.csv</span>.
-          </p>
-          <button className="mt-5 px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-950 transition-colors">
-            Seleccionar Archivo de Pedido
-          </button>
+
+          {/* Formato Requerido Card */}
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-slate-300">
+              <span className="font-semibold text-white">Columnas recomendadas en tu Excel:</span>
+              <span className="bg-slate-950 px-2.5 py-1 rounded text-emerald-400 font-mono border border-slate-800 font-medium">Talla</span>
+              <span className="bg-slate-950 px-2.5 py-1 rounded text-emerald-400 font-mono border border-slate-800 font-medium">Nombre</span>
+              <span className="bg-slate-950 px-2.5 py-1 rounded text-emerald-400 font-mono border border-slate-800 font-medium">Dorsal</span>
+              <span className="bg-slate-950 px-2.5 py-1 rounded text-emerald-400 font-mono border border-slate-800 font-medium">Tipo Prenda</span>
+              <span className="bg-slate-950 px-2.5 py-1 rounded text-emerald-400 font-mono border border-slate-800 font-medium">Cantidad</span>
+            </div>
+            <div className="text-slate-400 text-[11px]">
+              ✓ Compatible con acentos (Á, É, Í, Ó, Ú) y letra Ñ.
+            </div>
+          </div>
         </div>
       ) : (
         /* Order Items Table & Real-time Validation */

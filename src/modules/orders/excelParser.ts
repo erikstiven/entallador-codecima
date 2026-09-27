@@ -234,3 +234,92 @@ export function generateProductionSummaryWorkbook(
   const binary = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
   return new Uint8Array(binary);
 }
+
+/**
+ * Genera una plantilla Excel oficial limpia para pedidos de uniformes
+ */
+export function generateOrderTemplateWorkbook(): Uint8Array {
+  const wb = XLSX.utils.book_new();
+
+  const templateRows = [
+    {
+      'Talla': '28',
+      'Nombre': 'MATEO',
+      'Dorsal': '10',
+      'Tipo Prenda': 'COMPLETO',
+      'Cantidad': 1,
+      'Observaciones': 'Capitán',
+    },
+    {
+      'Talla': '28',
+      'Nombre': 'CAMILA',
+      'Dorsal': '7',
+      'Tipo Prenda': 'COMPLETO',
+      'Cantidad': 1,
+      'Observaciones': '',
+    },
+    {
+      'Talla': '30',
+      'Nombre': 'CARLOS',
+      'Dorsal': '21',
+      'Tipo Prenda': 'CAMISETA',
+      'Cantidad': 1,
+      'Observaciones': 'Manga corta',
+    },
+    {
+      'Talla': '30',
+      'Nombre': 'CHRISTOPHER',
+      'Dorsal': '9',
+      'Tipo Prenda': 'COMPLETO',
+      'Cantidad': 1,
+      'Observaciones': 'Nombre largo',
+    },
+    {
+      'Talla': '32',
+      'Nombre': 'DANIELA',
+      'Dorsal': '15',
+      'Tipo Prenda': 'COMPLETO',
+      'Cantidad': 1,
+      'Observaciones': '',
+    },
+    {
+      'Talla': '32',
+      'Nombre': 'ÁLVARO',
+      'Dorsal': '4',
+      'Tipo Prenda': 'COMPLETO',
+      'Cantidad': 1,
+      'Observaciones': '',
+    },
+    {
+      'Talla': 'S',
+      'Nombre': 'ÍÑIGO',
+      'Dorsal': '8',
+      'Tipo Prenda': 'COMPLETO',
+      'Cantidad': 1,
+      'Observaciones': '',
+    },
+    {
+      'Talla': 'M',
+      'Nombre': 'VALENTINA',
+      'Dorsal': '12',
+      'Tipo Prenda': 'SHORT',
+      'Cantidad': 1,
+      'Observaciones': '',
+    },
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(templateRows);
+  ws['!cols'] = [
+    { wch: 10 },
+    { wch: 22 },
+    { wch: 10 },
+    { wch: 16 },
+    { wch: 10 },
+    { wch: 24 },
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Lista Jugadores');
+
+  const binary = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+  return new Uint8Array(binary);
+}
