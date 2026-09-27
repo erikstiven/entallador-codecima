@@ -6,16 +6,16 @@ import {
   getDesignsFromDb, 
   saveDesignToDb, 
   deleteDesignFromDb, 
-  seedDefaultMasterDesigns,
-  createDefaultPlaceholderRules,
-  DEFAULT_SAMPLE_DESIGNS
+  createDefaultPlaceholderRules
 } from './designRepository';
+import { parseDesignSvg } from './designParser';
 
 interface DesignStoreState {
   designs: MasterDesign[];
   activeDesign: MasterDesign | null;
 
   loadDesignsFromDatabase: () => void;
+  importDesignSvg: (svgContent: string, name: string, sport?: string, fileName?: string) => MasterDesign;
   createDesign: (name: string, sport: string, colors: string[]) => MasterDesign;
   setActiveDesign: (design: MasterDesign | null) => void;
   updatePlaceholderRule: (
@@ -25,30 +25,40 @@ interface DesignStoreState {
     updates: Partial<DynamicPlaceholderRule>
   ) => void;
   deleteDesign: (id: string) => void;
+  clearAllDesigns: () => void;
 }
 
 export const useDesignStore = create<DesignStoreState>((set, get) => ({
-  designs: DEFAULT_SAMPLE_DESIGNS,
-  activeDesign: DEFAULT_SAMPLE_DESIGNS[0],
+  designs: [],
+  activeDesign: null,
 
   loadDesignsFromDatabase: () => {
     try {
-      seedDefaultMasterDesigns(dbService);
       const list = getDesignsFromDb(dbService);
-      if (list.length > 0) {
-        set({ designs: list });
-        if (!get().activeDesign) {
-          set({ activeDesign: list[0] });
-        }
-      } else {
-        set({ designs: DEFAULT_SAMPLE_DESIGNS, activeDesign: DEFAULT_SAMPLE_DESIGNS[0] });
+      set({ designs: list });
+      if (!get().activeDesign && list.length > 0) {
+        set({ activeDesign: list[0] });
       }
     } catch (err) {
-      console.warn('SQLite aún no disponible, usando diseños predeterminados en memoria:', err);
-      if (get().designs.length === 0) {
-        set({ designs: DEFAULT_SAMPLE_DESIGNS, activeDesign: DEFAULT_SAMPLE_DESIGNS[0] });
-      }
+      console.warn('SQLite aún no disponible para diseños:', err);
     }
+  },
+
+  importDesignSvg: (svgContent, name, sport = 'FUTBOL', fileName) => {
+    const newDesign = parseDesignSvg(svgContent, name, sport, fileName);
+    try {
+      saveDesignToDb(dbService, newDesign);
+    } catch (_) {}
+    const updated = [newDesign, ...get().designs.filter((d) => d.id !== newDesign.id)];
+    set({ designs: updated, activeDesign: newDesign });
+    return newDesign;
+  },
+
+  clearAllDesigns: () => {
+    try {
+      dbService.run('DELETE FROM designs');
+    } catch (_) {}
+    set({ designs: [], activeDesign: null });
   },
 
   createDesign: (name, sport, colors) => {

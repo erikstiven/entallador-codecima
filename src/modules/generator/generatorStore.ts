@@ -41,6 +41,10 @@ export const useGeneratorStore = create<GeneratorStoreState>((set, get) => ({
 
   generatePieces: () => {
     const { items: orderItems } = useOrderStore.getState();
+    const { activePatternSet } = usePatternStore.getState();
+    const { activeDesign } = useDesignStore.getState();
+    const { generationConfig } = get();
+
     let patternSet = activePatternSet || usePatternStore.getState().patternSets[0];
     if (!patternSet) {
       usePatternStore.getState().loadFromDatabase();

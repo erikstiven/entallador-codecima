@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   Palette, 
   Plus, 
@@ -10,20 +10,24 @@ import {
   Type, 
   Ruler,
   AlertTriangle,
-  Eye
+  Eye,
+  UploadCloud
 } from 'lucide-react';
 import { useDesignStore } from '@/modules/designs/designStore';
 import { MasterDesign } from '@/modules/designs/types';
 import { computeTextFitting } from '@/core/fonts/textVectorEngine';
 
 export const DesignsView: React.FC = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const {
     designs,
     activeDesign,
     loadDesignsFromDatabase,
     createDesign,
+    importDesignSvg,
     setActiveDesign,
     deleteDesign,
+    clearAllDesigns,
     updatePlaceholderRule,
   } = useDesignStore();
 
@@ -43,6 +47,21 @@ export const DesignsView: React.FC = () => {
     loadDesignsFromDatabase();
   }, []);
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        const designName = file.name.replace(/\.[^/.]+$/, '').toUpperCase();
+        importDesignSvg(content, designName, 'FUTBOL', file.name);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDesignName.trim()) return;
@@ -61,21 +80,42 @@ export const DesignsView: React.FC = () => {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
+      {/* Hidden file input for SVG upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".svg"
+        className="hidden"
+        onChange={handleFileUpload}
+      />
+
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-white">Biblioteca de Diseños Maestros</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Registra y gestiona los patrones artísticos base con reglas de dorsales y placeholders dinámicos
+            Registra y gestiona los modelos artísticos del uniforme con nombres y números vectoriales
           </p>
         </div>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-950 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Registrar Nuevo Diseño
-        </button>
+        <div className="flex items-center gap-3">
+          {designs.length > 0 && (
+            <button
+              onClick={clearAllDesigns}
+              className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+              title="Borrar todos los diseños y empezar limpio"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-red-400" />
+              Limpiar Diseños
+            </button>
+          )}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-950 transition-colors"
+          >
+            <UploadCloud className="w-4 h-4" />
+            Subir Mi Diseño SVG (desde Illustrator)
+          </button>
+        </div>
       </div>
 
       {/* Modal para crear diseño */}
@@ -163,8 +203,27 @@ export const DesignsView: React.FC = () => {
         </div>
       )}
 
-      {/* Main Grid: Design Cards and Live Preview Studio */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Grid or Clean Empty State */}
+      {designs.length === 0 ? (
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className="bg-slate-900 border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-2xl p-16 text-center flex flex-col items-center justify-center cursor-pointer transition-all group"
+        >
+          <Palette className="w-12 h-12 text-slate-600 group-hover:text-emerald-400 mb-3 transition-colors" />
+          <h3 className="text-base font-semibold text-white">No hay modelos de diseño cargados</h3>
+          <p className="text-xs text-slate-400 mt-1 max-w-md">
+            Arrastra aquí el archivo SVG de tu modelo (ej: <span className="font-mono text-slate-200">ESPAÑA PATRON 2026.svg</span>) exportado desde Illustrator o haz clic para seleccionarlo.
+          </p>
+          <button
+            type="button"
+            className="mt-5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-emerald-950 flex items-center gap-2"
+          >
+            <UploadCloud className="w-4 h-4" />
+            Subir Mi Diseño SVG (desde Illustrator)
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Design Cards List */}
         <div className="space-y-4">
           <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
@@ -387,6 +446,7 @@ export const DesignsView: React.FC = () => {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };
