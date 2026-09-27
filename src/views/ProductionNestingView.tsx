@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { 
   Play, 
   RotateCw, 
@@ -19,12 +19,15 @@ import {
   CheckCircle2,
   Clock,
   Percent,
-  Trash2
+  Trash2,
+  Move,
+  Magnet
 } from 'lucide-react';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
 import { useNestingStore } from '@/core/nesting/nestingStore';
-import { NestingPieceInput, NestingGroupingMode } from '@/core/nesting/types';
+import { useInteractiveCanvas } from '@/modules/canvas/useInteractiveCanvas';
+import { NestingPieceInput } from '@/core/nesting/types';
 
 export const ProductionNestingView: React.FC = () => {
   const { activeProfile } = useProfileStore();
@@ -47,8 +50,20 @@ export const ProductionNestingView: React.FC = () => {
     setSelectedPieceId
   } = useNestingStore();
 
-  const [zoomLevel, setZoomLevel] = useState<number>(65); // Zoom inicial optimizado para lienzo de bobina
-  const [isQueueOpen, setIsQueueOpen] = useState<boolean>(true);
+  const {
+    zoomLevel,
+    setZoomLevel,
+    pan,
+    setPan,
+    isPanning,
+    dragState,
+    mmToPx,
+    handlePieceMouseDown,
+    handleCanvasMouseDown,
+    handleWheel,
+  } = useInteractiveCanvas();
+
+  const [isQueueOpen, setIsQueueOpen] = React.useState<boolean>(true);
 
   // Mapear piezas generadas al formato de entrada del motor de nesting
   const nestingPieceInputs: NestingPieceInput[] = useMemo(() => {
@@ -87,8 +102,6 @@ export const ProductionNestingView: React.FC = () => {
     await reoptimizeUnlocked(nestingPieceInputs);
   };
 
-  // Factor de escala milímetros -> píxeles de visualización
-  const mmToPx = (zoomLevel / 100) * 0.75;
   const canvasWidthPx = activeProfile.printableWidthMm * mmToPx;
   const canvasHeightPx = Math.max(
     1000,
@@ -125,7 +138,7 @@ export const ProductionNestingView: React.FC = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-950 overflow-hidden select-none">
       {/* Top Nesting Control Ribbon */}
-      <div className="bg-slate-900 border-b border-slate-800 px-6 py-2.5 flex items-center justify-between flex-shrink-0">
+      <div className="bg-slate-900 border-b border-slate-800 px-6 py-2.5 flex items-center justify-between flex-shrink-0 z-30">
         <div className="flex items-center gap-3">
           {/* Nesting Mode Selector */}
           <div className="flex items-center bg-slate-950 border border-slate-700/80 rounded-lg p-1 text-xs">
@@ -259,9 +272,12 @@ export const ProductionNestingView: React.FC = () => {
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
             <button
-              onClick={() => setZoomLevel(65)}
+              onClick={() => {
+                setZoomLevel(65);
+                setPan({ x: 0, y: 0 });
+              }}
               className="px-2 py-0.5 hover:text-white hover:bg-slate-800 rounded font-mono text-[10px]"
-              title="Ajustar a pantalla"
+              title="Centrar y ajustar a pantalla"
             >
               Ajustar
             </button>
@@ -278,7 +294,7 @@ export const ProductionNestingView: React.FC = () => {
       </div>
 
       {/* Production Metrics Strip */}
-      <div className="bg-slate-900/60 border-b border-slate-800/80 px-6 py-2 flex items-center justify-between text-xs">
+      <div className="bg-slate-900/60 border-b border-slate-800/80 px-6 py-2 flex items-center justify-between text-xs z-20">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-1.5 text-slate-400">
             <Layers className="w-3.5 h-3.5 text-slate-500" />
@@ -324,14 +340,22 @@ export const ProductionNestingView: React.FC = () => {
 
       {/* Main Workspace Area with Interactive Paper Roll and Piece Queue */}
       <div className="flex-1 relative bg-[#0b0f19] overflow-hidden flex">
-        {/* Left / Center: Interactive Roll Viewport */}
-        <div className="flex-1 overflow-auto flex justify-center p-8 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
+        {/* Left / Center: Interactive Roll Viewport with Pan, Zoom & Snapping */}
+        <div 
+          onMouseDown={handleCanvasMouseDown}
+          onWheel={handleWheel}
+          className={`flex-1 overflow-hidden relative flex justify-center items-start p-8 select-none bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] ${
+            isPanning ? 'cursor-grabbing' : 'cursor-default'
+          }`}
+        >
+          {/* Paper Roll Mockup with Pan & Zoom Transform */}
           <div 
-            className="bg-slate-900/95 border-2 border-emerald-500/50 shadow-2xl relative transition-all"
+            className="bg-slate-900/95 border-2 border-emerald-500/50 shadow-2xl relative transition-transform duration-75"
             style={{
               width: `${canvasWidthPx}px`,
               minHeight: `${canvasHeightPx}px`,
-              boxShadow: '0 0 60px rgba(0,0,0,0.85)'
+              transform: `translate(${pan.x}px, ${pan.y}px)`,
+              boxShadow: '0 0 60px rgba(0,0,0,0.85)',
             }}
           >
             {/* Top Millimeter Ruler Guide */}
@@ -358,6 +382,37 @@ export const ProductionNestingView: React.FC = () => {
               )}
             </div>
 
+            {/* Magnetic Snapping Alignment Guide Lines */}
+            {dragState.isDragging && dragState.activeGuides.map((guide, idx) => {
+              if (guide.type === 'vertical') {
+                const leftPx = guide.positionMm * mmToPx;
+                return (
+                  <div
+                    key={`guide_v_${idx}`}
+                    className="absolute top-0 bottom-0 pointer-events-none z-40 border-l-2 border-dashed border-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+                    style={{ left: `${leftPx}px` }}
+                  >
+                    <span className="bg-cyan-950/95 text-cyan-300 border border-cyan-500/80 text-[9px] font-mono px-1.5 py-0.5 rounded shadow absolute top-9 -left-2 whitespace-nowrap">
+                      {guide.label || `${guide.positionMm.toFixed(0)} mm`}
+                    </span>
+                  </div>
+                );
+              } else {
+                const topPx = (guide.positionMm * mmToPx) + 28;
+                return (
+                  <div
+                    key={`guide_h_${idx}`}
+                    className="absolute left-0 right-0 pointer-events-none z-40 border-t-2 border-dashed border-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+                    style={{ top: `${topPx}px` }}
+                  >
+                    <span className="bg-cyan-950/95 text-cyan-300 border border-cyan-500/80 text-[9px] font-mono px-1.5 py-0.5 rounded shadow absolute left-2 -top-5 whitespace-nowrap">
+                      {guide.label || `${guide.positionMm.toFixed(0)} mm`}
+                    </span>
+                  </div>
+                );
+              }
+            })}
+
             {/* Roll Empty Watermark */}
             {placedCount === 0 && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
@@ -373,11 +428,15 @@ export const ProductionNestingView: React.FC = () => {
               </div>
             )}
 
-            {/* Render Placed Pieces on the Roll Canvas */}
+            {/* Render Placed Pieces on the Roll Canvas with Interactive Drag & Drop */}
             <div className="relative w-full h-full p-0">
               {placedPieces.map((piece) => {
-                const posX = piece.xMm * mmToPx;
-                const posY = (piece.yMm * mmToPx) + 28; // 28px por la barra superior de regla
+                const isCurrentlyDragged = dragState.isDragging && dragState.pieceId === piece.id;
+                const currentX = isCurrentlyDragged ? dragState.currentPieceX : piece.xMm;
+                const currentY = isCurrentlyDragged ? dragState.currentPieceY : piece.yMm;
+
+                const posX = currentX * mmToPx;
+                const posY = (currentY * mmToPx) + 28; // 28px por la barra superior de regla
                 const widthPx = piece.effectiveWidthMm * mmToPx;
                 const heightPx = piece.effectiveHeightMm * mmToPx;
                 const isSelected = selectedPieceId === piece.id;
@@ -385,11 +444,17 @@ export const ProductionNestingView: React.FC = () => {
                 return (
                   <div
                     key={piece.id}
+                    data-piece="true"
+                    onMouseDown={(e) => handlePieceMouseDown(e, piece.id, piece.xMm, piece.yMm)}
                     onClick={() => setSelectedPieceId(piece.id)}
-                    className={`absolute rounded transition-shadow group cursor-pointer border select-none overflow-hidden ${
+                    className={`absolute rounded transition-shadow group select-none overflow-hidden ${
+                      isCurrentlyDragged ? 'cursor-grabbing' : 'cursor-grab'
+                    } ${
                       getPieceBadgeColor(piece.pieceType)
                     } ${
-                      isSelected 
+                      isCurrentlyDragged
+                        ? 'ring-2 ring-cyan-400 border-cyan-400 shadow-2xl shadow-cyan-950/80 z-50 opacity-95 scale-[1.02]'
+                        : isSelected 
                         ? 'ring-2 ring-sky-400 border-sky-400 shadow-lg shadow-sky-950/60 z-30' 
                         : 'hover:border-slate-400 hover:shadow-md z-10'
                     }`}
@@ -401,6 +466,15 @@ export const ProductionNestingView: React.FC = () => {
                     }}
                     title={`${piece.playerName} #${piece.playerNumber} | T${piece.sizeName} | ${piece.pieceType} (${piece.effectiveWidthMm.toFixed(0)}x${piece.effectiveHeightMm.toFixed(0)}mm)`}
                   >
+                    {/* Floating pill while dragging */}
+                    {isCurrentlyDragged && (
+                      <div className="absolute -top-7 left-0 bg-cyan-950/95 border border-cyan-400 text-cyan-200 text-[9px] font-mono px-2 py-0.5 rounded shadow flex items-center gap-1.5 z-50">
+                        <Magnet className="w-3 h-3 text-cyan-400" />
+                        <span>X: {currentX.toFixed(1)} mm | Y: {currentY.toFixed(1)} mm</span>
+                        {piece.isLocked && <Lock className="w-2.5 h-2.5 text-amber-400" />}
+                      </div>
+                    )}
+
                     {/* Header bar of placed piece with controls */}
                     <div className="h-5 px-1.5 bg-black/40 border-b border-white/10 flex items-center justify-between text-[10px] font-mono">
                       <span className="truncate font-bold text-white max-w-[70%]">
@@ -440,7 +514,7 @@ export const ProductionNestingView: React.FC = () => {
                     </div>
 
                     {/* Body: Piece details and visual feedback */}
-                    <div className="p-2 flex flex-col justify-between h-[calc(100%-1.25rem)] text-[10px] font-mono">
+                    <div className="p-2 flex flex-col justify-between h-[calc(100%-1.25rem)] text-[10px] font-mono pointer-events-none">
                       <div>
                         <div className="flex items-center justify-between text-slate-300">
                           <span className="font-semibold text-white">{piece.pieceType}</span>
@@ -460,7 +534,7 @@ export const ProductionNestingView: React.FC = () => {
 
                       {/* Small Seam Label at bottom */}
                       <div className="text-[8px] text-slate-400/80 truncate border-t border-white/5 pt-1">
-                        X: {piece.xMm.toFixed(0)}mm | Y: {piece.yMm.toFixed(0)}mm
+                        X: {currentX.toFixed(0)}mm | Y: {currentY.toFixed(0)}mm
                       </div>
                     </div>
                   </div>
@@ -468,11 +542,23 @@ export const ProductionNestingView: React.FC = () => {
               })}
             </div>
           </div>
+
+          {/* Floating Workshop Instructions & Shortcuts Ribbon */}
+          <div className="absolute bottom-4 left-6 bg-slate-900/90 border border-slate-700/80 backdrop-blur-md px-3.5 py-1.5 rounded-lg text-[11px] font-mono text-slate-300 flex items-center gap-4 shadow-2xl z-20 pointer-events-none">
+            <span className="flex items-center gap-1.5 text-sky-400">
+              <Move className="w-3.5 h-3.5" />
+              <strong>Arrastrar con ratón</strong>
+            </span>
+            <span>🧲 Snapping 7 mm</span>
+            <span>⌨️ R: Rotar</span>
+            <span>🔒 L: Bloquear</span>
+            <span>📐 Flechas: Mover 1 mm</span>
+          </div>
         </div>
 
         {/* Right Slide-out Drawer: Generated Pieces Queue */}
         {isQueueOpen && (
-          <div className="w-80 bg-slate-900 border-l border-slate-800 flex flex-col justify-between flex-shrink-0 shadow-2xl">
+          <div className="w-80 bg-slate-900 border-l border-slate-800 flex flex-col justify-between flex-shrink-0 shadow-2xl z-20">
             <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
               <span className="text-xs font-bold text-white flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5 text-emerald-400" />
