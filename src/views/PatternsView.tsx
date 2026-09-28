@@ -28,6 +28,7 @@ export const PatternsView: React.FC = () => {
     assignPieceManually,
     setActivePatternSet,
     deletePatternSet,
+    clearAllPatterns,
   } = usePatternStore();
 
   const [activeSizeTab, setActiveSizeTab] = useState<string | null>(null);
@@ -139,6 +140,20 @@ exportMoldesParaHmb();`;
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {patternSets.length > 0 && (
+            <button
+              onClick={() => {
+                if (window.confirm('¿Deseas eliminar todos los conjuntos de moldes cargados?')) {
+                  clearAllPatterns();
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-red-950/40 hover:bg-red-900/60 text-red-300 rounded-lg text-xs font-medium border border-red-800/60 transition-colors"
+              title="Limpiar y borrar todos los moldes cargados"
+            >
+              <Trash2 className="w-4 h-4 text-red-400" />
+              Limpiar Moldes
+            </button>
+          )}
           <button
             onClick={handleDownloadScript}
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
@@ -152,7 +167,7 @@ exportMoldesParaHmb();`;
             className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-950 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Importar SVG de Moldes (desde Illustrator)
+            Subir Mi Molde SVG (desde Illustrator)
           </button>
         </div>
       </div>
@@ -161,42 +176,82 @@ exportMoldesParaHmb();`;
       {!activePatternSet ? (
         <div 
           onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const file = e.dataTransfer.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const content = event.target?.result as string;
+              if (content) {
+                const setName = file.name.replace(/\.[^/.]+$/, '').toUpperCase();
+                importSvg(content, setName, 'FUTBOL', file.name);
+              }
+            };
+            reader.readAsText(file);
+          }}
           className="bg-slate-900 border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-2xl p-16 text-center flex flex-col items-center justify-center cursor-pointer transition-all group"
         >
           <Scissors className="w-12 h-12 text-slate-600 group-hover:text-emerald-400 mb-3 transition-colors" />
           <h3 className="text-base font-semibold text-white">No hay conjunto de moldes activo</h3>
           <p className="text-xs text-slate-400 mt-1 max-w-md">
-            Arrastra aquí tu archivo SVG de moldería (ej: <span className="font-mono text-slate-200">moldes 2025.svg</span>) exportado desde Illustrator o haz clic para seleccionarlo.
+            Arrastra aquí tu archivo SVG de moldería graduada (ej: <span className="font-mono text-emerald-300">moldes 2025.svg</span>) exportado desde Illustrator o haz clic para seleccionarlo.
           </p>
           <button
             type="button"
             className="mt-5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-emerald-950 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Importar SVG de Moldes
+            Subir Mi Molde SVG
           </button>
         </div>
       ) : (
         <div className="space-y-6">
           {/* Active Pattern Set Header Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-emerald-400" />
-                <h3 className="text-base font-bold text-white">{activePatternSet.name}</h3>
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                  {activePatternSet.garmentType}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                {activePatternSet.sizes.length} tallas registradas •{' '}
-                {activePatternSet.sizes.reduce((acc, s) => acc + s.pieces.length, 0)} piezas asignadas
-                {activePatternSet.unassignedPieces.length > 0 && (
-                  <span className="text-amber-400 ml-2 font-semibold">
-                    • {activePatternSet.unassignedPieces.length} pieza(s) pendientes de asignar
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              {patternSets.length > 1 && (
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-400 font-mono uppercase block">Conjunto Activo:</label>
+                  <select
+                    value={activePatternSet.id}
+                    onChange={(e) => {
+                      const found = patternSets.find((s) => s.id === e.target.value);
+                      if (found) setActivePatternSet(found);
+                    }}
+                    className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-semibold"
+                  >
+                    {patternSets.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.sizes.length} tallas)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <span className="w-3 h-3 rounded-full bg-emerald-400" />
+                  <h3 className="text-base font-bold text-white">{activePatternSet.name}</h3>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                    {activePatternSet.garmentType}
                   </span>
-                )}
-              </p>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  {activePatternSet.sizes.length} tallas registradas •{' '}
+                  {activePatternSet.sizes.reduce((acc, s) => acc + s.pieces.length, 0)} piezas asignadas
+                  {activePatternSet.unassignedPieces.length > 0 && (
+                    <span className="text-amber-400 ml-2 font-semibold">
+                      • {activePatternSet.unassignedPieces.length} pieza(s) pendientes de asignar
+                    </span>
+                  )}
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -263,7 +318,6 @@ exportMoldesParaHmb();`;
                       <option value="MANGA_DER">MANGA DER</option>
                       <option value="SHORT_FRENTE">SHORT FRENTE</option>
                       <option value="SHORT_ESPALDA">SHORT ESPALDA</option>
-                      <option value="CUELLO">CUELLO</option>
                       <option value="OTRO">OTRO</option>
                     </select>
                   </div>

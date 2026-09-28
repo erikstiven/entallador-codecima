@@ -207,12 +207,31 @@ export const DesignsView: React.FC = () => {
       {designs.length === 0 ? (
         <div
           onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const file = e.dataTransfer.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const content = event.target?.result as string;
+              if (content) {
+                const designName = file.name.replace(/\.[^/.]+$/, '').toUpperCase();
+                importDesignSvg(content, designName, 'FUTBOL', file.name);
+              }
+            };
+            reader.readAsText(file);
+          }}
           className="bg-slate-900 border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-2xl p-16 text-center flex flex-col items-center justify-center cursor-pointer transition-all group"
         >
           <Palette className="w-12 h-12 text-slate-600 group-hover:text-emerald-400 mb-3 transition-colors" />
           <h3 className="text-base font-semibold text-white">No hay modelos de diseño cargados</h3>
           <p className="text-xs text-slate-400 mt-1 max-w-md">
-            Arrastra aquí el archivo SVG de tu modelo (ej: <span className="font-mono text-slate-200">ESPAÑA PATRON 2026.svg</span>) exportado desde Illustrator o haz clic para seleccionarlo.
+            Arrastra aquí el archivo SVG de tu modelo (ej: <span className="font-mono text-emerald-300">ESPAÑA PATRON 2026.svg</span>) exportado desde Illustrator o haz clic para seleccionarlo.
           </p>
           <button
             type="button"

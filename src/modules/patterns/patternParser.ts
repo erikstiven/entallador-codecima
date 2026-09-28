@@ -136,6 +136,12 @@ export function parsePatternSvg(
     const detectedSize = detectSizeName(originalId);
     const detectedType = detectPieceType(originalId);
 
+    // Los cuellos (rib/tejido) se confeccionan por separado y NO se incluyen en el entallado ni sublimación
+    if (detectedType === 'CUELLO') {
+      warnings.push(`Pieza "${originalId}" identificada como CUELLO: omitida del entallado (se confecciona en rib/tejido aparte).`);
+      continue;
+    }
+
     const isAutoAssigned = Boolean(detectedSize && detectedType);
     const sizeName = detectedSize || 'SIN_TALLA';
     const pieceType: PieceType = detectedType || 'OTRO';

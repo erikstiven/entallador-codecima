@@ -17,11 +17,15 @@ import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { GarmentType } from '@/modules/orders/types';
 import { generateOrderTemplateWorkbook } from '@/modules/orders/excelParser';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
+import { usePatternStore } from '@/modules/patterns/patternStore';
+import { useDesignStore } from '@/modules/designs/designStore';
 
 export const NewOrderView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { activeProfile } = useProfileStore();
   const { setCurrentView } = useNavigationStore();
+  const { activePatternSet } = usePatternStore();
+  const { activeDesign } = useDesignStore();
 
   const {
     items,
@@ -322,27 +326,63 @@ export const NewOrderView: React.FC = () => {
           </div>
 
           {/* Bottom Generation CTA Bar */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
-            <div className="text-xs text-slate-400">
-              {summary.hasErrors ? (
-                <span className="text-red-400 font-medium flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4" />
-                  Corrige los {summary.invalidCount} errores en la tabla antes de proceder a la generación.
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="text-xs text-slate-400">
+                {summary.hasErrors ? (
+                  <span className="text-red-400 font-medium flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4" />
+                    Corrige los {summary.invalidCount} errores en la tabla antes de proceder a la generación.
+                  </span>
+                ) : (
+                  <span className="text-emerald-400 font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Todos los {summary.validCount} registros son válidos y listos para producción.
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+                <span>
+                  Molde:{' '}
+                  {activePatternSet ? (
+                    <span className="text-emerald-400 font-semibold">{activePatternSet.name}</span>
+                  ) : (
+                    <span className="text-amber-400 font-semibold">⚠️ Sin Molde (ve a 'Moldes')</span>
+                  )}
                 </span>
-              ) : (
-                <span className="text-emerald-400 font-medium flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Todos los {summary.validCount} registros son válidos y listos para producción.
+                <span>•</span>
+                <span>
+                  Diseño:{' '}
+                  {activeDesign ? (
+                    <span className="text-emerald-400 font-semibold">{activeDesign.name}</span>
+                  ) : (
+                    <span className="text-amber-400 font-semibold">⚠️ Sin Diseño (ve a 'Diseños')</span>
+                  )}
                 </span>
-              )}
+              </div>
             </div>
 
             <button
               disabled={summary.hasErrors || items.length === 0}
               onClick={() => {
+                if (!activePatternSet) {
+                  alert("⚠️ No hay ningún molde cargado. Ve a la pestaña 'Moldes' y sube tu archivo SVG graduado (ej: moldes 2025.svg).");
+                  setCurrentView('PATTERNS');
+                  return;
+                }
+                if (!activeDesign) {
+                  alert("⚠️ No hay ningún diseño cargado. Ve a la pestaña 'Diseños' y sube tu archivo SVG de diseño (ej: ESPAÑA PATRON 2026.svg).");
+                  setCurrentView('DESIGNS');
+                  return;
+                }
+
                 // Generar prendas con el store
                 const { generatePieces } = useGeneratorStore.getState();
-                generatePieces();
+                const res = generatePieces();
+                if (!res) {
+                  alert("⚠️ No se pudieron generar las piezas. Verifica que las tallas del archivo de moldes coincidan con las solicitadas en el Excel.");
+                  return;
+                }
                 setCurrentView('NESTING');
               }}
               className={`px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all ${

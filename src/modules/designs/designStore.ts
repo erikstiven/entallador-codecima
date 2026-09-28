@@ -34,10 +34,18 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 
   loadDesignsFromDatabase: () => {
     try {
-      const list = getDesignsFromDb(dbService);
+      try {
+        dbService.run("DELETE FROM designs WHERE id IN ('des_holanda', 'des_brasil', 'des_argentina')");
+      } catch (_) {}
+
+      const list = getDesignsFromDb(dbService).filter(
+        (d) => !['des_holanda', 'des_brasil', 'des_argentina'].includes(d.id)
+      );
       set({ designs: list });
       if (!get().activeDesign && list.length > 0) {
         set({ activeDesign: list[0] });
+      } else if (list.length === 0) {
+        set({ activeDesign: null });
       }
     } catch (err) {
       console.warn('SQLite aún no disponible para diseños:', err);
