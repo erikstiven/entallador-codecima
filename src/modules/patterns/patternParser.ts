@@ -5,7 +5,7 @@ import {
   PieceType, 
   SvgParseResult 
 } from './types';
-import { extractSvgViewport, parseSvgPathToPolygon } from '@/core/svg/svgPathParser';
+import { extractSvgViewport, parseSvgPathToPolygon, SvgViewport } from '@/core/svg/svgPathParser';
 import { computeBoundingBox, calculatePolygonArea } from '@/core/geometry/transform';
 import { normalizeSizeName } from '@/modules/orders/orderValidator';
 
@@ -90,6 +90,53 @@ export function getDefaultRotationsForPieceType(pieceType: PieceType): number[] 
   }
 }
 
+interface ExtractedTextLabel {
+  text: string;
+  x: number;
+  y: number;
+}
+
+/**
+ * Extrae etiquetas de texto presentes en el SVG para asociar tallas flotantes a las piezas
+ */
+function extractTextLabels(svgContent: string, viewport: SvgViewport): ExtractedTextLabel[] {
+  const labels: ExtractedTextLabel[] = [];
+  const textTagRegex = /<text\b([^>]*)>([\s\S]*?)<\/text>/gi;
+  let match;
+
+  while ((match = textTagRegex.exec(svgContent)) !== null) {
+    const attrs = match[1];
+    let innerContent = match[2];
+    innerContent = innerContent.replace(/<[^>]+>/g, ' ').trim();
+    if (!innerContent) continue;
+
+    let x = 0;
+    let y = 0;
+
+    const matrixMatch = attrs.match(/transform\s*=\s*["']matrix\s*\(\s*([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)\s*\)["']/i);
+    if (matrixMatch) {
+      x = parseFloat(matrixMatch[5]) || 0;
+      y = parseFloat(matrixMatch[6]) || 0;
+    } else {
+      const xMatch = attrs.match(/\bx\s*=\s*["']([^"']+)["']/i);
+      const yMatch = attrs.match(/\by\s*=\s*["']([^"']+)["']/i);
+      if (xMatch) x = parseFloat(xMatch[1]) || 0;
+      if (yMatch) y = parseFloat(yMatch[1]) || 0;
+    }
+
+    const realX = (x - viewport.minX) * viewport.scaleX;
+    const realY = (y - viewport.minY) * viewport.scaleY;
+
+    labels.push({
+      text: innerContent,
+      x: realX,
+      y: realY,
+    });
+  }
+
+  return labels;
+}
+
 /**
  * Parsea un SVG completo extrayendo trazados vectoriales, calculando contornos 1:1 y agrupando por talla
  */
@@ -100,6 +147,7 @@ export function parsePatternSvg(
   sourceFileName?: string
 ): SvgParseResult {
   const viewport = extractSvgViewport(svgContent);
+  const textLabels = extractTextLabels(svgContent, viewport);
   const warnings: string[] = [];
 
   // Buscar todos los tags <path ...> con id y d
@@ -132,9 +180,38 @@ export function parsePatternSvg(
     const bbox = computeBoundingBox(cutPolygon);
     const areaMm2 = calculatePolygonArea(cutPolygon);
 
+    // Descartar trazados insignificantes o líneas guía internas (ej. líneas de escote o piquetes)
+    if (areaMm2 < 8000 || bbox.width < 60 || bbox.height < 60) continue;
+
     // Intentar clasificar automáticamente talla y tipo de pieza
-    const detectedSize = detectSizeName(originalId);
-    const detectedType = detectPieceType(originalId);
+    let detectedSize = detectSizeName(originalId);
+    let detectedType = detectPieceType(originalId);
+
+    // Si no se detectó talla por el ID, buscar si hay una etiqueta de texto dentro o cerca del bbox de la pieza
+    if (!detectedSize) {
+      for (const lbl of textLabels) {
+        if (
+          lbl.x >= bbox.minX - 25 &&
+          lbl.x <= bbox.maxX + 25 &&
+          lbl.y >= bbox.minY - 25 &&
+          lbl.y <= bbox.maxY + 25
+        ) {
+          const matchSize = detectSizeName(lbl.text) || (lbl.text.match(/^\d{2}$/) ? lbl.text : null);
+          if (matchSize) {
+            detectedSize = normalizeSizeName(matchSize);
+            break;
+          }
+        }
+      }
+    }
+
+    // Heurística para mangas si no se detectó tipo:
+    // Las mangas suelen ser más anchas que altas (width > height * 1.15) y altura menor a 450mm
+    if (!detectedType) {
+      if (bbox.width > bbox.height * 1.15 && bbox.height < 450) {
+        detectedType = 'MANGA_IZQ';
+      }
+    }
 
     // Los cuellos (rib/tejido) se confeccionan por separado y NO se incluyen en el entallado ni sublimación
     if (detectedType === 'CUELLO') {
