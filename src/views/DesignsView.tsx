@@ -109,6 +109,13 @@ export const DesignsView: React.FC = () => {
             </button>
           )}
           <button
+            onClick={() => setIsCreating(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+          >
+            <Plus className="w-4 h-4 text-emerald-400" />
+            Crear Modelo Base
+          </button>
+          <button
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-950 transition-colors"
           >
@@ -233,13 +240,30 @@ export const DesignsView: React.FC = () => {
           <p className="text-xs text-slate-400 mt-1 max-w-md">
             Arrastra aquí el archivo SVG de tu modelo (ej: <span className="font-mono text-emerald-300">ESPAÑA PATRON 2026.svg</span>) exportado desde Illustrator o haz clic para seleccionarlo.
           </p>
-          <button
-            type="button"
-            className="mt-5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-emerald-950 flex items-center gap-2"
-          >
-            <UploadCloud className="w-4 h-4" />
-            Subir Mi Diseño SVG (desde Illustrator)
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-emerald-950 flex items-center gap-2"
+            >
+              <UploadCloud className="w-4 h-4" />
+              Subir Mi Diseño SVG (desde Illustrator)
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsCreating(true);
+              }}
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4 text-emerald-400" />
+              Crear Modelo Base
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
