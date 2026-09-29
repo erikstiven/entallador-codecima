@@ -12,7 +12,9 @@ import {
   Eye,
   Check,
   Ruler,
-  Save
+  Save,
+  LayoutGrid,
+  Table
 } from 'lucide-react';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { PieceType, PatternPiece } from '@/modules/patterns/types';
@@ -40,6 +42,7 @@ export const PatternsView: React.FC = () => {
 
   const [activeSizeTab, setActiveSizeTab] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'CARDS' | 'TABLE'>('CARDS');
 
   const handleSavePatterns = () => {
     saveActiveSet();
@@ -434,29 +437,151 @@ exportMoldesParaHmb();`;
 
           {/* Sizes & Pieces Explorer */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-            {/* Size Tabs Header */}
-            <div className="p-3 bg-slate-950 border-b border-slate-800 flex items-center gap-2 overflow-x-auto">
-              <span className="text-xs font-medium text-slate-400 mr-2 flex items-center gap-1">
-                <Sliders className="w-3.5 h-3.5 text-slate-500" /> Tallas:
-              </span>
-              {activePatternSet.sizes.map((s) => (
+            {/* Size Tabs Header & View Mode Switcher */}
+            <div className="p-3 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 overflow-x-auto py-0.5">
+                {viewMode === 'CARDS' ? (
+                  <>
+                    <span className="text-xs font-medium text-slate-400 mr-1 flex items-center gap-1">
+                      <Sliders className="w-3.5 h-3.5 text-slate-500" /> Tallas:
+                    </span>
+                    {activePatternSet.sizes.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => setActiveSizeTab(s.sizeName)}
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                          activeSizeTab === s.sizeName
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                        }`}
+                      >
+                        Talla {s.sizeName} ({s.pieces.length} pzs)
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <span className="text-xs font-semibold text-slate-300 flex items-center gap-2">
+                    <Table className="w-4 h-4 text-emerald-400" />
+                    Tabla de Moldes y Graduación (Medidas en cm)
+                  </span>
+                )}
+              </div>
+
+              {/* View Switcher: Siluetas vs Tabla de Moldes */}
+              <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-lg shrink-0">
                 <button
-                  key={s.id}
-                  onClick={() => setActiveSizeTab(s.sizeName)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                    activeSizeTab === s.sizeName
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  onClick={() => setViewMode('CARDS')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                    viewMode === 'CARDS'
+                      ? 'bg-slate-800 text-emerald-400 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
                   }`}
+                  title="Ver piezas gráficas con siluetas vectoriales"
                 >
-                  Talla {s.sizeName} ({s.pieces.length} pzs)
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  Siluetas
                 </button>
-              ))}
+                <button
+                  onClick={() => setViewMode('TABLE')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                    viewMode === 'TABLE'
+                      ? 'bg-slate-800 text-emerald-400 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                  title="Ver tabla comparativa con medidas de todas las tallas"
+                >
+                  <Table className="w-3.5 h-3.5" />
+                  Tabla de Moldes
+                </button>
+              </div>
             </div>
 
-            {/* Pieces Grid for Selected Size */}
+            {/* Pieces Grid for Selected Size OR Full Graduation Table */}
             <div className="p-6">
-              {currentSizeObj ? (
+              {viewMode === 'TABLE' ? (
+                <div className="overflow-x-auto rounded-xl border border-slate-800">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-slate-950 text-slate-400 font-mono border-b border-slate-800 text-[11px] uppercase">
+                      <tr>
+                        <th className="py-3 px-4">Talla</th>
+                        <th className="py-3 px-4">Delantero</th>
+                        <th className="py-3 px-4">Espalda</th>
+                        <th className="py-3 px-4">Manga</th>
+                        <th className="py-3 px-4">Pantaloneta</th>
+                        <th className="py-3 px-4">Cuello / Rib</th>
+                        <th className="py-3 px-4 text-center">Total Piezas</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 font-mono bg-slate-950/40">
+                      {activePatternSet.sizes.map((size) => {
+                        const delantero = size.pieces.find((p) => p.pieceType.includes('DELANTERO'));
+                        const espalda = size.pieces.find((p) => p.pieceType === 'ESPALDA');
+                        const manga = size.pieces.find((p) => p.pieceType.includes('MANGA'));
+                        const shortP = size.pieces.find((p) => p.pieceType.includes('PANTALONETA') || p.pieceType.includes('SHORT'));
+                        const cuello = size.pieces.find((p) => p.pieceType === 'CUELLO');
+
+                        return (
+                          <tr key={size.id} className="hover:bg-slate-800/40 transition-colors">
+                            <td className="py-3 px-4 font-bold text-emerald-400 text-sm">
+                              Talla {size.sizeName}
+                            </td>
+                            <td className="py-3 px-4 text-slate-200">
+                              {delantero ? (
+                                <span className="bg-slate-900 border border-slate-800 px-2 py-1 rounded">
+                                  {(delantero.bbox.width / 10).toFixed(1)} × {(delantero.bbox.height / 10).toFixed(1)} cm
+                                </span>
+                              ) : (
+                                <span className="text-slate-600">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-slate-200">
+                              {espalda ? (
+                                <span className="bg-slate-900 border border-slate-800 px-2 py-1 rounded">
+                                  {(espalda.bbox.width / 10).toFixed(1)} × {(espalda.bbox.height / 10).toFixed(1)} cm
+                                </span>
+                              ) : (
+                                <span className="text-slate-600">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-slate-200">
+                              {manga ? (
+                                <span className="bg-slate-900 border border-slate-800 px-2 py-1 rounded">
+                                  {(manga.bbox.width / 10).toFixed(1)} × {(manga.bbox.height / 10).toFixed(1)} cm
+                                </span>
+                              ) : (
+                                <span className="text-slate-600">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-slate-200">
+                              {shortP ? (
+                                <span className="bg-slate-900 border border-slate-800 px-2 py-1 rounded">
+                                  {(shortP.bbox.width / 10).toFixed(1)} × {(shortP.bbox.height / 10).toFixed(1)} cm
+                                </span>
+                              ) : (
+                                <span className="text-slate-600">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-slate-200">
+                              {cuello ? (
+                                <span className="bg-slate-900 border border-slate-800 px-2 py-1 rounded">
+                                  {(cuello.bbox.width / 10).toFixed(1)} × {(cuello.bbox.height / 10).toFixed(1)} cm
+                                </span>
+                              ) : (
+                                <span className="text-slate-600">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <span className="bg-emerald-950/40 border border-emerald-800/40 text-emerald-400 px-2.5 py-1 rounded text-xs font-bold">
+                                {size.pieces.length} pzs
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : currentSizeObj ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {currentSizeObj.pieces.map((piece) => (
                     <div
