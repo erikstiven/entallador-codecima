@@ -348,7 +348,7 @@ exportMoldesParaHmb();`;
                     >
                       {activePatternSet.unassignedPieces.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.pieceName} ({p.bbox.width.toFixed(0)} × {p.bbox.height.toFixed(0)} mm)
+                          {p.pieceName} ({(p.bbox.width / 10).toFixed(1)} × {(p.bbox.height / 10).toFixed(1)} cm)
                         </option>
                       ))}
                     </select>
@@ -444,51 +444,12 @@ exportMoldesParaHmb();`;
                       key={piece.id}
                       className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition-all space-y-3"
                     >
-                      {/* SVG Thumbnail Mini Preview */}
-                      <div className="h-32 bg-slate-900/60 rounded-lg flex items-center justify-center p-3 relative border border-slate-800/80">
-                        {(() => {
-                          const pathD = polygonToSvgPath(piece.cutPolygon) || piece.svgPathData;
-                          const pad = Math.max(piece.bbox.width, piece.bbox.height) * 0.08;
-                          const vbX = piece.bbox.minX - pad;
-                          const vbY = piece.bbox.minY - pad;
-                          const vbW = piece.bbox.width + pad * 2;
-                          const vbH = piece.bbox.height + pad * 2;
-                          return (
-                            <svg
-                              viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
-                              preserveAspectRatio="xMidYMid meet"
-                              className="h-full w-full max-h-28 text-emerald-400 stroke-current fill-emerald-500/10"
-                            >
-                              <path
-                                d={pathD}
-                                strokeWidth="1.5"
-                                vectorEffect="non-scaling-stroke"
-                                strokeLinejoin="round"
-                                strokeLinecap="round"
-                              />
-                            </svg>
-                          );
-                        })()}
-                        {/* Delete Piece Button */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm(`¿Deseas omitir/eliminar la pieza "${piece.pieceName}" de la Talla ${currentSizeObj.sizeName}?`)) {
-                              deletePieceFromSize(currentSizeObj.sizeName, piece.id);
-                            }
-                          }}
-                          className="absolute top-2 left-2 p-1.5 rounded-lg bg-slate-950/90 text-slate-400 hover:text-red-400 hover:bg-red-950/80 border border-slate-800 transition-colors shadow-sm"
-                          title="Omitir o eliminar esta pieza si está de más o duplicada"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* Piece Type Selector */}
+                      {/* Top Header of Card: Piece Type Selector and Delete Action */}
+                      <div className="flex items-center justify-between gap-2">
                         <select
                           value={piece.pieceType}
                           onChange={(e) => updatePieceType(currentSizeObj.sizeName, piece.id, e.target.value as PieceType)}
-                          className="absolute top-2 right-2 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-950/90 text-emerald-400 border border-slate-700/80 hover:border-emerald-500 focus:outline-none cursor-pointer shadow-sm"
+                          className="flex-1 bg-slate-900 border border-slate-700 hover:border-emerald-500 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-emerald-400 focus:outline-none cursor-pointer transition-colors"
                           title="Cambiar tipo de pieza si fue clasificada incorrectamente"
                         >
                           <option value="DELANTERO_V">DELANTERO (CUELLO V)</option>
@@ -502,15 +463,56 @@ exportMoldesParaHmb();`;
                           <option value="PANTALONETA_DER">PANTALONETA (LADO DER)</option>
                           <option value="OTRO">OTRO / AUX</option>
                         </select>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`¿Deseas omitir/eliminar la pieza "${piece.pieceName}" de la Talla ${currentSizeObj.sizeName}?`)) {
+                              deletePieceFromSize(currentSizeObj.sizeName, piece.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-red-400 hover:bg-red-950/80 border border-slate-800 hover:border-red-800 transition-colors shrink-0"
+                          title="Omitir o eliminar esta pieza si está de más o duplicada"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
 
-                      {/* Piece Metric Details */}
-                      <div className="space-y-1 text-xs">
+                      {/* SVG Thumbnail Mini Preview — 100% Unobstructed & Centered */}
+                      <div className="h-40 bg-slate-900/60 rounded-lg flex items-center justify-center p-3 border border-slate-800/80 overflow-hidden">
+                        {(() => {
+                          const pathD = polygonToSvgPath(piece.cutPolygon) || piece.svgPathData;
+                          const pad = Math.max(piece.bbox.width, piece.bbox.height) * 0.08;
+                          const vbX = piece.bbox.minX - pad;
+                          const vbY = piece.bbox.minY - pad;
+                          const vbW = piece.bbox.width + pad * 2;
+                          const vbH = piece.bbox.height + pad * 2;
+                          return (
+                            <svg
+                              viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
+                              preserveAspectRatio="xMidYMid meet"
+                              className="h-full w-full max-h-36 text-emerald-400 stroke-current fill-emerald-500/10"
+                            >
+                              <path
+                                d={pathD}
+                                strokeWidth="1.5"
+                                vectorEffect="non-scaling-stroke"
+                                strokeLinejoin="round"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Piece Metric Details in Centimeters (cm) */}
+                      <div className="space-y-1 text-xs pt-1">
                         <div className="font-semibold text-white font-mono truncate">{piece.pieceName}</div>
                         <div className="text-[11px] text-slate-400 flex items-center justify-between font-mono">
                           <span>Dimensiones:</span>
-                          <span className="text-slate-200">
-                            {piece.bbox.width.toFixed(1)} × {piece.bbox.height.toFixed(1)} mm
+                          <span className="text-slate-100 font-bold">
+                            {(piece.bbox.width / 10).toFixed(1)} × {(piece.bbox.height / 10).toFixed(1)} cm
                           </span>
                         </div>
                         <div className="text-[11px] text-slate-400 flex items-center justify-between font-mono">
