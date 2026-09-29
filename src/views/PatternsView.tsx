@@ -322,8 +322,10 @@ exportMoldesParaHmb();`;
                           >
                             <path
                               d={pathD}
-                              strokeWidth={Math.max(selectedPieceForAssignment.bbox.width, selectedPieceForAssignment.bbox.height) * 0.02}
+                              strokeWidth="1.5"
                               vectorEffect="non-scaling-stroke"
+                              strokeLinejoin="round"
+                              strokeLinecap="round"
                             />
                           </svg>
                         );
@@ -456,8 +458,10 @@ exportMoldesParaHmb();`;
                             >
                               <path
                                 d={pathD}
-                                strokeWidth={Math.max(piece.bbox.width, piece.bbox.height) * 0.015}
+                                strokeWidth="1.5"
                                 vectorEffect="non-scaling-stroke"
+                                strokeLinejoin="round"
+                                strokeLinecap="round"
                               />
                             </svg>
                           );
