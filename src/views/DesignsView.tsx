@@ -23,18 +23,39 @@ import { computeTextFitting } from '@/core/fonts/textVectorEngine';
 
 function preparePreviewArt(svgArtContent?: string): string {
   if (!svgArtContent) return '';
-  if (svgArtContent.includes('<svg')) {
-    return svgArtContent.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
+  let content = svgArtContent;
+
+  // 1. Eliminar textos estáticos de plantilla (<text> con números o nombres de muestra como 10 o NOMBRE)
+  // para que no se superpongan ni colisionen con el dorsal dinámico del jugador
+  content = content.replace(/<text\b([^>]*)>([\s\S]*?)<\/text>/gi, (match, _attrs, inner) => {
+    const plain = inner.replace(/<[^>]+>/g, '').trim().toUpperCase();
+    if (
+      plain.match(/^\d{1,2}$/) ||
+      plain.includes('NUMERO') ||
+      plain.includes('NOMBRE') ||
+      plain.includes('NAME') ||
+      plain.includes('JUGADOR') ||
+      plain.includes('PLAYER') ||
+      plain.includes('{{')
+    ) {
+      return ''; // Ocultar texto estático de muestra
+    }
+    return match;
+  });
+
+  // 2. Si es un SVG completo, asegurar viewBox y preserveAspectRatio ajustados al mockup 500x650
+  if (content.includes('<svg')) {
+    return content.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
       const cleanAttrs = attrs
         .replace(/\bwidth\s*=\s*["'][^"']+["']/gi, '')
         .replace(/\bheight\s*=\s*["'][^"']+["']/gi, '')
         .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']+["']/gi, '')
         .replace(/\bx\s*=\s*["'][^"']+["']/gi, '')
         .replace(/\by\s*=\s*["'][^"']+["']/gi, '');
-      return `<svg x="0" y="0" width="500" height="700" preserveAspectRatio="xMidYMid slice" ${cleanAttrs}>`;
+      return `<svg x="0" y="0" width="500" height="650" preserveAspectRatio="xMidYMid slice" ${cleanAttrs}>`;
     });
   }
-  return svgArtContent;
+  return content;
 }
 
 export const DesignsView: React.FC = () => {
@@ -493,6 +514,67 @@ export const DesignsView: React.FC = () => {
                       Altura reglamentaria en espalda: 220 mm (22 cm). Ubicado debajo del nombre.
                     </span>
                   </div>
+
+                  {/* Selector rápido de color para nombres y números */}
+                  <div className="md:col-span-2 pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
+                    <span className="text-slate-400 font-medium">Color del Dorsal:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!activeDesign) return;
+                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NOMBRE', { fillColor: '#16a34a', strokeColor: '#ffffff', strokeWidthMm: 1.5 });
+                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NUMERO_ESPALDA', { fillColor: '#16a34a', strokeColor: '#ffffff', strokeWidthMm: 2.5 });
+                      }}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border flex items-center gap-1.5 transition-all ${
+                        nameRule?.fillColor === '#16a34a' ? 'bg-emerald-950/80 border-emerald-400 text-emerald-300' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#16a34a]" />
+                      Verde Brasil (Oficial)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!activeDesign) return;
+                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NOMBRE', { fillColor: '#ffffff', strokeColor: '#000000', strokeWidthMm: 2.0 });
+                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NUMERO_ESPALDA', { fillColor: '#ffffff', strokeColor: '#000000', strokeWidthMm: 3.5 });
+                      }}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border flex items-center gap-1.5 transition-all ${
+                        nameRule?.fillColor === '#ffffff' ? 'bg-slate-800 border-white text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-400" />
+                      Blanco
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!activeDesign) return;
+                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NOMBRE', { fillColor: '#1e40af', strokeColor: '#ffffff', strokeWidthMm: 1.5 });
+                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NUMERO_ESPALDA', { fillColor: '#1e40af', strokeColor: '#ffffff', strokeWidthMm: 2.5 });
+                      }}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border flex items-center gap-1.5 transition-all ${
+                        nameRule?.fillColor === '#1e40af' ? 'bg-blue-950/80 border-blue-400 text-blue-300' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#1e40af]" />
+                      Azul Marino
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!activeDesign) return;
+                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NOMBRE', { fillColor: '#000000', strokeColor: '#ffffff', strokeWidthMm: 1.5 });
+                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NUMERO_ESPALDA', { fillColor: '#000000', strokeColor: '#ffffff', strokeWidthMm: 2.5 });
+                      }}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border flex items-center gap-1.5 transition-all ${
+                        nameRule?.fillColor === '#000000' ? 'bg-slate-950 border-slate-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full bg-black border border-slate-600" />
+                      Negro
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -500,13 +582,19 @@ export const DesignsView: React.FC = () => {
               <div className="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-8 flex flex-col items-center justify-center relative overflow-hidden">
                 {/* SVG Silhouette representation with master design art and placeholders */}
                 <svg
-                  viewBox="0 0 500 700"
-                  className="w-72 max-w-full drop-shadow-2xl select-none"
+                  viewBox="0 0 500 650"
+                  className="w-80 md:w-96 max-w-full drop-shadow-2xl select-none"
                   style={{ filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.7))' }}
                 >
                   <defs>
                     <clipPath id="jerseyClip">
-                      <path d="M 50,50 L 150,50 C 180,90 220,90 250,50 L 350,50 C 340,110 320,180 290,220 L 310,650 L 90,650 L 110,220 C 80,180 60,110 50,50 Z" />
+                      <path
+                        d={
+                          selectedPieceView === 'DELANTERO'
+                            ? 'M 180,50 C 205,115 295,115 320,50 L 440,95 L 472,230 L 405,260 L 415,615 C 320,626 180,626 85,615 L 95,260 L 28,230 L 60,95 Z'
+                            : 'M 180,50 C 215,64 285,64 320,50 L 440,95 L 472,230 L 405,260 L 415,615 C 320,626 180,626 85,615 L 95,260 L 28,230 L 60,95 Z'
+                        }
+                      />
                     </clipPath>
                     <linearGradient id="jerseyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor={activeDesign.colors[0] || '#facc15'} />
@@ -517,13 +605,13 @@ export const DesignsView: React.FC = () => {
                   {/* Base Body with Clipping Mask */}
                   <g clipPath="url(#jerseyClip)">
                     {/* Fondo base con el color dominante del diseño */}
-                    <rect width="500" height="700" fill={activeDesign.colors[0] || '#facc15'} />
+                    <rect width="500" height="650" fill={activeDesign.colors[0] || '#facc15'} />
 
                     {/* Arte vectorial real subido por el usuario */}
                     {currentArtwork?.svgArtContent ? (
                       <g dangerouslySetInnerHTML={{ __html: preparePreviewArt(currentArtwork.svgArtContent) }} />
                     ) : (
-                      <rect width="500" height="700" fill="url(#jerseyGrad)" />
+                      <rect width="500" height="650" fill="url(#jerseyGrad)" />
                     )}
 
                     {/* Nombres y números vectoriales dinámicos (solo en espalda) */}
@@ -544,14 +632,25 @@ export const DesignsView: React.FC = () => {
                     )}
                   </g>
 
-                  {/* Cut Contour Outline */}
+                  {/* Cuello ribeteado deportivo */}
+                  {selectedPieceView === 'DELANTERO' ? (
+                    <path d="M 180,50 C 205,115 295,115 320,50 C 295,128 205,128 180,50 Z" fill={activeDesign.colors[1] || '#16a34a'} opacity="0.9" />
+                  ) : (
+                    <path d="M 180,50 C 215,64 285,64 320,50 C 285,76 215,76 180,50 Z" fill={activeDesign.colors[1] || '#16a34a'} opacity="0.9" />
+                  )}
+
+                  {/* Contorno de corte estético */}
                   <path
-                    d="M 50,50 L 150,50 C 180,90 220,90 250,50 L 350,50 C 340,110 320,180 290,220 L 310,650 L 90,650 L 110,220 C 80,180 60,110 50,50 Z"
+                    d={
+                      selectedPieceView === 'DELANTERO'
+                        ? 'M 180,50 C 205,115 295,115 320,50 L 440,95 L 472,230 L 405,260 L 415,615 C 320,626 180,626 85,615 L 95,260 L 28,230 L 60,95 Z'
+                        : 'M 180,50 C 215,64 285,64 320,50 L 440,95 L 472,230 L 405,260 L 415,615 C 320,626 180,626 85,615 L 95,260 L 28,230 L 60,95 Z'
+                    }
                     fill="none"
                     stroke="#ffffff"
                     strokeWidth="2"
                     strokeDasharray="4 4"
-                    opacity="0.5"
+                    opacity="0.4"
                   />
                 </svg>
 

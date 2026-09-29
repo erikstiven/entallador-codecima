@@ -152,5 +152,28 @@ export function applyPlaceholdersToArtwork(
     }
   }
 
+  // 3. Eliminar cualquier <text> estático residual de muestra para que no se superponga
+  resultSvg = resultSvg.replace(/<text\b([^>]*)>([\s\S]*?)<\/text>/gi, (fullMatch, _attrs, inner) => {
+    const plain = inner.replace(/<[^>]+>/g, '').trim().toUpperCase();
+    if (
+      plain.match(/^\d{1,2}$/) ||
+      plain.includes('NUMERO') ||
+      plain.includes('NOMBRE') ||
+      plain.includes('NAME') ||
+      plain.includes('JUGADOR') ||
+      plain.includes('PLAYER') ||
+      plain.includes('{{')
+    ) {
+      if (
+        plain === (playerName || '').trim().toUpperCase() ||
+        plain === (playerNumber || '').trim().toUpperCase()
+      ) {
+        return fullMatch;
+      }
+      return '';
+    }
+    return fullMatch;
+  });
+
   return resultSvg;
 }
