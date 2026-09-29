@@ -89,9 +89,31 @@ export function generateGarmentPieces(
       continue;
     }
 
+    // Si el molde solo tiene 1 manga dibujada, duplicar para producir ambas mangas (izquierda y derecha)
+    const piecesToGenerate = [...availablePieces];
+    const hasMangaIzq = availablePieces.some((p) => p.pieceType === 'MANGA_IZQ');
+    const hasMangaDer = availablePieces.some((p) => p.pieceType === 'MANGA_DER');
+    if (hasMangaIzq && !hasMangaDer && ['CAMISETA', 'COMPLETO'].includes(orderItem.garmentType)) {
+      const mangaRef = availablePieces.find((p) => p.pieceType === 'MANGA_IZQ')!;
+      piecesToGenerate.push({
+        ...mangaRef,
+        id: `${mangaRef.id}_der`,
+        pieceType: 'MANGA_DER',
+        pieceName: `${mangaRef.pieceName}_DER`,
+      });
+    } else if (hasMangaDer && !hasMangaIzq && ['CAMISETA', 'COMPLETO'].includes(orderItem.garmentType)) {
+      const mangaRef = availablePieces.find((p) => p.pieceType === 'MANGA_DER')!;
+      piecesToGenerate.push({
+        ...mangaRef,
+        id: `${mangaRef.id}_izq`,
+        pieceType: 'MANGA_IZQ',
+        pieceName: `${mangaRef.pieceName}_IZQ`,
+      });
+    }
+
     // Para cada pieza requerida, generar las variantes según la cantidad
     for (let q = 1; q <= orderItem.quantity; q++) {
-      for (const patternPiece of availablePieces) {
+      for (const patternPiece of piecesToGenerate) {
         const pieceType = patternPiece.pieceType;
         const maskId = `mask_${orderItem.id}_${patternPiece.id}_${q}`;
         const uniquePieceId = `gen_${orderItem.id}_${pieceType}_${q}_${Math.random().toString(36).substring(2, 6)}`;

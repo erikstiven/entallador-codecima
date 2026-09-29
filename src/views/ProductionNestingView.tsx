@@ -104,6 +104,13 @@ export const ProductionNestingView: React.FC = () => {
     await reoptimizeUnlocked(nestingPieceInputs);
   };
 
+  // Auto-iniciar entallado cuando se ingresa con piezas generadas no colocadas
+  React.useEffect(() => {
+    if (nestingPieceInputs.length > 0 && placedPieces.length === 0 && !isNesting) {
+      handleRunNesting();
+    }
+  }, [nestingPieceInputs.length]);
+
   const canvasWidthPx = activeProfile.printableWidthMm * mmToPx;
   const canvasHeightPx = Math.max(
     1000,

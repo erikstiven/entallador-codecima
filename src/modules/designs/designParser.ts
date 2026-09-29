@@ -30,15 +30,23 @@ export function parseDesignSvg(
     const attrs = textMatch[1];
     const textContent = textMatch[2].replace(/<[^>]+>/g, '').trim().toUpperCase();
 
-    // Extraer coordenadas x, y
-    const xMatch = attrs.match(/\bx\s*=\s*["']([^"']+)["']/i);
-    const yMatch = attrs.match(/\by\s*=\s*["']([^"']+)["']/i);
+    // Extraer coordenadas x, y (soportando tanto atributos x,y como transform="matrix(...)")
+    let x = 250;
+    let y = 180;
+    const matrixMatch = attrs.match(/transform\s*=\s*["']matrix\s*\(\s*([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)\s*\)["']/i);
+    if (matrixMatch) {
+      x = parseFloat(matrixMatch[5]) || 250;
+      y = parseFloat(matrixMatch[6]) || 180;
+    } else {
+      const xMatch = attrs.match(/\bx\s*=\s*["']([^"']+)["']/i);
+      const yMatch = attrs.match(/\by\s*=\s*["']([^"']+)["']/i);
+      if (xMatch) x = parseFloat(xMatch[1]);
+      if (yMatch) y = parseFloat(yMatch[1]);
+    }
     const fontSizeMatch = attrs.match(/\bfont-size\s*=\s*["']([^"']+)["']/i);
     const fillMatch = attrs.match(/\bfill\s*=\s*["']([^"']+)["']/i);
     const fontMatch = attrs.match(/\bfont-family\s*=\s*["']([^"']+)["']/i);
 
-    const x = xMatch ? parseFloat(xMatch[1]) : 250;
-    const y = yMatch ? parseFloat(yMatch[1]) : 180;
     const fontSize = fontSizeMatch ? parseFloat(fontSizeMatch[1]) : 55;
     const fill = fillMatch ? fillMatch[1] : '#ffffff';
     const font = fontMatch ? fontMatch[1].replace(/['"]/g, '') : 'SportsJerseyBold';
