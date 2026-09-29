@@ -12,7 +12,7 @@ import {
   Eye,
   Check,
   Ruler,
-  HardDrive
+  Save
 } from 'lucide-react';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { PieceType, PatternPiece } from '@/modules/patterns/types';
@@ -35,9 +35,17 @@ export const PatternsView: React.FC = () => {
     deletePieceFromSize,
     updatePieceType,
     clearAllPatterns,
+    saveActiveSet,
   } = usePatternStore();
 
   const [activeSizeTab, setActiveSizeTab] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+
+  const handleSavePatterns = () => {
+    saveActiveSet();
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2500);
+  };
 
   // Formulario de asignación manual
   const [assignSize, setAssignSize] = useState<string>('28');
@@ -201,12 +209,9 @@ exportMoldesParaHmb();`;
                 </div>
               )}
               <div>
-                <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="flex items-center gap-2.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
                   <h3 className="text-base font-bold text-white tracking-wide">{activePatternSet.name}</h3>
-                  <span className="text-[11px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm">
-                    <HardDrive className="w-3 h-3 text-emerald-400" /> Guardado permanente en base de datos local
-                  </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">
                   {activePatternSet.sizes.length} tallas registradas •{' '}
@@ -223,10 +228,31 @@ exportMoldesParaHmb();`;
             {/* Action Buttons in single unified row */}
             <div className="flex items-center gap-2 flex-wrap">
               <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+                onClick={handleSavePatterns}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all ${
+                  isSaved
+                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                    : 'bg-sky-600 hover:bg-sky-500 text-white'
+                }`}
+                title="Guardar moldes de forma permanente"
               >
-                <Plus className="w-3.5 h-3.5" />
+                {isSaved ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-white" />
+                    ¡Moldes Guardados!
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    Guardar Moldes
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 shadow-sm transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5 text-emerald-400" />
                 Cargar Otro Molde SVG
               </button>
               <button
