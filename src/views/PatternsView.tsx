@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { PieceType, PatternPiece } from '@/modules/patterns/types';
+import { polygonToSvgPath } from '@/core/geometry/transform';
 
 export const PatternsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,6 +30,7 @@ export const PatternsView: React.FC = () => {
     setActivePatternSet,
     deletePatternSet,
     discardUnassignedPiece,
+    discardAllUnassignedPieces,
     clearAllPatterns,
   } = usePatternStore();
 
@@ -269,21 +271,35 @@ exportMoldesParaHmb();`;
           {/* Unassigned Pieces Banner / Manual Assigner */}
           {activePatternSet.unassignedPieces.length > 0 && (
             <div className="bg-amber-950/20 border border-amber-800/40 rounded-xl p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-amber-300 font-semibold text-xs">
-                  <AlertTriangle className="w-4 h-4 text-amber-400" />
-                  <span>Asignador Visual: Hay {activePatternSet.unassignedPieces.length} trazo(s) adicionales detectados en el archivo</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 text-amber-300 font-semibold text-xs">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Trazos Auxiliares: {activePatternSet.unassignedPieces.length} trazo(s) adicionales detectados en el archivo</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Tus moldes principales por talla ya fueron clasificados con éxito. Estos trazos no tenían talla escrita (ej. shorts, pretinas o líneas auxiliares).
+                  </p>
                 </div>
-                {selectedPieceForAssignment && (
+                <div className="flex items-center gap-2 shrink-0">
                   <button
-                    onClick={() => discardUnassignedPiece(selectedPieceForAssignment.id)}
-                    className="flex items-center gap-1 px-2.5 py-1 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-950/50 rounded border border-red-900/50 transition-colors"
-                    title="Descartar este trazo si es una línea guía o marco de mesa de trabajo"
+                    onClick={() => discardAllUnassignedPieces()}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-700 transition-colors"
+                    title="Descartar todos los trazos auxiliares si no los necesitas"
                   >
-                    <Trash2 className="w-3 h-3" />
-                    Descartar este Trazo
+                    Descartar Todos ({activePatternSet.unassignedPieces.length})
                   </button>
-                )}
+                  {selectedPieceForAssignment && (
+                    <button
+                      onClick={() => discardUnassignedPiece(selectedPieceForAssignment.id)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-950/50 rounded-lg border border-red-900/50 transition-colors"
+                      title="Descartar solo este trazo específico"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Descartar Trazo
+                    </button>
+                  )}
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
@@ -291,15 +307,27 @@ exportMoldesParaHmb();`;
                 <div className="flex items-center gap-3">
                   {selectedPieceForAssignment ? (
                     <div className="w-20 h-20 bg-slate-950 rounded-lg border border-slate-800 p-1 flex items-center justify-center flex-shrink-0">
-                      <svg
-                        viewBox={`${selectedPieceForAssignment.bbox.minX} ${selectedPieceForAssignment.bbox.minY} ${selectedPieceForAssignment.bbox.width} ${selectedPieceForAssignment.bbox.height}`}
-                        className="w-full h-full text-amber-400 stroke-current fill-amber-500/10"
-                      >
-                        <path
-                          d={selectedPieceForAssignment.svgPathData}
-                          strokeWidth={Math.max(selectedPieceForAssignment.bbox.width, selectedPieceForAssignment.bbox.height) * 0.02}
-                        />
-                      </svg>
+                      {(() => {
+                        const pathD = polygonToSvgPath(selectedPieceForAssignment.cutPolygon) || selectedPieceForAssignment.svgPathData;
+                        const pad = Math.max(selectedPieceForAssignment.bbox.width, selectedPieceForAssignment.bbox.height) * 0.08;
+                        const vbX = selectedPieceForAssignment.bbox.minX - pad;
+                        const vbY = selectedPieceForAssignment.bbox.minY - pad;
+                        const vbW = selectedPieceForAssignment.bbox.width + pad * 2;
+                        const vbH = selectedPieceForAssignment.bbox.height + pad * 2;
+                        return (
+                          <svg
+                            viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
+                            preserveAspectRatio="xMidYMid meet"
+                            className="w-full h-full text-amber-400 stroke-current fill-amber-500/10"
+                          >
+                            <path
+                              d={pathD}
+                              strokeWidth={Math.max(selectedPieceForAssignment.bbox.width, selectedPieceForAssignment.bbox.height) * 0.02}
+                              vectorEffect="non-scaling-stroke"
+                            />
+                          </svg>
+                        );
+                      })()}
                     </div>
                   ) : (
                     <div className="w-20 h-20 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-center text-slate-600 text-xs flex-shrink-0">
@@ -413,12 +441,27 @@ exportMoldesParaHmb();`;
                     >
                       {/* SVG Thumbnail Mini Preview */}
                       <div className="h-32 bg-slate-900/60 rounded-lg flex items-center justify-center p-3 relative border border-slate-800/80">
-                        <svg
-                          viewBox={`${piece.bbox.minX} ${piece.bbox.minY} ${piece.bbox.width} ${piece.bbox.height}`}
-                          className="h-full w-full max-h-28 text-emerald-400 stroke-current fill-emerald-500/10"
-                        >
-                          <path d={piece.svgPathData} strokeWidth={Math.max(piece.bbox.width, piece.bbox.height) * 0.015} />
-                        </svg>
+                        {(() => {
+                          const pathD = polygonToSvgPath(piece.cutPolygon) || piece.svgPathData;
+                          const pad = Math.max(piece.bbox.width, piece.bbox.height) * 0.08;
+                          const vbX = piece.bbox.minX - pad;
+                          const vbY = piece.bbox.minY - pad;
+                          const vbW = piece.bbox.width + pad * 2;
+                          const vbH = piece.bbox.height + pad * 2;
+                          return (
+                            <svg
+                              viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
+                              preserveAspectRatio="xMidYMid meet"
+                              className="h-full w-full max-h-28 text-emerald-400 stroke-current fill-emerald-500/10"
+                            >
+                              <path
+                                d={pathD}
+                                strokeWidth={Math.max(piece.bbox.width, piece.bbox.height) * 0.015}
+                                vectorEffect="non-scaling-stroke"
+                              />
+                            </svg>
+                          );
+                        })()}
                         <span className="absolute top-2 right-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-950/80 text-emerald-400 border border-slate-800">
                           {piece.pieceType}
                         </span>

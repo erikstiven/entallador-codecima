@@ -150,3 +150,18 @@ export function isPointInsidePolygon(point: Point2D, polygon: Polygon2D): boolea
   }
   return inside;
 }
+
+/**
+ * Convierte un polígono 2D en mm a una cadena SVG path data (d="M ... L ... Z")
+ */
+export function polygonToSvgPath(polygon: Polygon2D): string {
+  if (!polygon || polygon.length === 0) return '';
+  const first = polygon[0];
+  let d = `M ${first.x.toFixed(2)} ${first.y.toFixed(2)}`;
+  for (let i = 1; i < polygon.length; i++) {
+    const pt = polygon[i];
+    d += ` L ${pt.x.toFixed(2)} ${pt.y.toFixed(2)}`;
+  }
+  d += ' Z';
+  return d;
+}

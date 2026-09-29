@@ -21,6 +21,7 @@ interface PatternStoreState {
   setActivePatternSet: (set: PatternSet | null) => void;
   deletePatternSet: (id: string) => void;
   discardUnassignedPiece: (pieceId: string) => void;
+  discardAllUnassignedPieces: () => void;
   clearAllPatterns: () => void;
 }
 
@@ -179,6 +180,23 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     set({
       activePatternSet: updated,
       selectedPieceForAssignment: remaining.length > 0 ? remaining[0] : null,
+    });
+    try {
+      savePatternSetToDb(dbService, updated);
+    } catch (_) {}
+  },
+
+  discardAllUnassignedPieces: () => {
+    const { activePatternSet } = get();
+    if (!activePatternSet) return;
+    const updated = {
+      ...activePatternSet,
+      unassignedPieces: [],
+      updatedAt: new Date().toISOString(),
+    };
+    set({
+      activePatternSet: updated,
+      selectedPieceForAssignment: null,
     });
     try {
       savePatternSetToDb(dbService, updated);

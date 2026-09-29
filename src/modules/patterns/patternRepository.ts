@@ -1,6 +1,6 @@
 import { DatabaseService } from '@/core/database/db';
 import { PatternSet, PatternSize, PatternPiece } from './types';
-import { computeBoundingBox } from '@/core/geometry/transform';
+import { computeBoundingBox, polygonToSvgPath } from '@/core/geometry/transform';
 
 /**
  * Guarda un conjunto completo de moldes con sus tallas y piezas en SQLite
@@ -81,27 +81,46 @@ export function getPatternSetsFromDb(db: DatabaseService): PatternSet[] {
         try { allowedRotations = JSON.parse(p.allowed_rotations_json); } catch (_) {}
         try { placeholders = JSON.parse(p.placeholders_json); } catch (_) {}
 
-        const bbox = cutPolygon.length > 0
-          ? computeBoundingBox(cutPolygon)
-          : {
-              minX: 0,
-              minY: 0,
-              maxX: p.bbox_width_mm,
-              maxY: p.bbox_height_mm,
-              width: p.bbox_width_mm,
-              height: p.bbox_height_mm,
-            };
+        const rawBbox = cutPolygon.length > 0 ? computeBoundingBox(cutPolygon) : null;
+        let normalizedCutPolygon = cutPolygon;
+        let bbox = rawBbox || {
+          minX: 0,
+          minY: 0,
+          maxX: p.bbox_width_mm,
+          maxY: p.bbox_height_mm,
+          width: p.bbox_width_mm,
+          height: p.bbox_height_mm,
+        };
+
+        if (rawBbox && (rawBbox.minX !== 0 || rawBbox.minY !== 0)) {
+          normalizedCutPolygon = cutPolygon.map((pt: { x: number; y: number }) => ({
+            x: Number((pt.x - rawBbox.minX).toFixed(2)),
+            y: Number((pt.y - rawBbox.minY).toFixed(2)),
+          }));
+          bbox = {
+            minX: 0,
+            minY: 0,
+            maxX: Number(rawBbox.width.toFixed(2)),
+            maxY: Number(rawBbox.height.toFixed(2)),
+            width: Number(rawBbox.width.toFixed(2)),
+            height: Number(rawBbox.height.toFixed(2)),
+          };
+        }
+
+        const svgPathData = normalizedCutPolygon.length > 0
+          ? polygonToSvgPath(normalizedCutPolygon)
+          : (p.svg_raw_content || '');
 
         return {
           id: p.id,
           sizeName: s.size_name,
           pieceType: p.piece_type,
           pieceName: p.piece_name,
-          cutPolygon,
+          cutPolygon: normalizedCutPolygon,
           bbox,
           areaMm2: p.area_mm2,
           allowedRotationsDeg: allowedRotations,
-          svgPathData: p.svg_raw_content,
+          svgPathData,
           originalElementId: p.piece_name,
           placeholders,
           isAssigned: true,

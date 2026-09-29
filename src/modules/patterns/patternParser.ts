@@ -6,7 +6,7 @@ import {
   SvgParseResult 
 } from './types';
 import { extractSvgViewport, parseSvgPathToPolygon, SvgViewport } from '@/core/svg/svgPathParser';
-import { computeBoundingBox, calculatePolygonArea } from '@/core/geometry/transform';
+import { computeBoundingBox, calculatePolygonArea, polygonToSvgPath } from '@/core/geometry/transform';
 import { normalizeSizeName } from '@/modules/orders/orderValidator';
 
 /**
@@ -237,16 +237,31 @@ export function parsePatternSvg(
     const allowedRotationsDeg = getDefaultRotationsForPieceType(pieceType);
     const humanPieceName = detectedSize ? `T${detectedSize}_${pieceType}` : originalId;
 
+    // Normalizar cutPolygon al origen local (0, 0) para que sea autocontenido e independiente del lienzo original
+    const normalizedPolygon = cutPolygon.map((p) => ({
+      x: Number((p.x - bbox.minX).toFixed(2)),
+      y: Number((p.y - bbox.minY).toFixed(2)),
+    }));
+    const normalizedBbox = {
+      minX: 0,
+      minY: 0,
+      maxX: Number(bbox.width.toFixed(2)),
+      maxY: Number(bbox.height.toFixed(2)),
+      width: Number(bbox.width.toFixed(2)),
+      height: Number(bbox.height.toFixed(2)),
+    };
+    const pathSvg = polygonToSvgPath(normalizedPolygon);
+
     const piece: PatternPiece = {
       id: `piece_${originalId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       sizeName,
       pieceType,
       pieceName: humanPieceName,
-      cutPolygon,
-      bbox,
+      cutPolygon: normalizedPolygon,
+      bbox: normalizedBbox,
       areaMm2,
       allowedRotationsDeg,
-      svgPathData: d,
+      svgPathData: pathSvg,
       originalElementId: originalId,
       placeholders: [],
       isAssigned: isAutoAssigned,
