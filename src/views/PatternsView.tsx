@@ -31,6 +31,8 @@ export const PatternsView: React.FC = () => {
     deletePatternSet,
     discardUnassignedPiece,
     discardAllUnassignedPieces,
+    deletePieceFromSize,
+    updatePieceType,
     clearAllPatterns,
   } = usePatternStore();
 
@@ -134,15 +136,13 @@ exportMoldesParaHmb();`;
         onChange={handleFileUpload}
       />
 
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* Top Action Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-slate-800/60">
         <div>
-          <h2 className="text-xl font-bold text-white">Biblioteca de Moldes Vectoriales</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Registra y gestiona los moldes base por prenda a escala 1:1 física para el nesting automático
-          </p>
+          <span className="text-xs font-semibold text-slate-300">Gestor de Moldería Vectorial</span>
+          <span className="text-xs text-slate-500 ml-2 hidden sm:inline">• Escala física 1:1 en mm para calce perfecto</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {patternSets.length > 0 && (
             <button
               onClick={() => {
@@ -150,27 +150,27 @@ exportMoldesParaHmb();`;
                   clearAllPatterns();
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-2 bg-red-950/40 hover:bg-red-900/60 text-red-300 rounded-lg text-xs font-medium border border-red-800/60 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950/30 hover:bg-red-900/50 text-red-300 rounded-lg text-xs font-medium border border-red-800/40 transition-colors"
               title="Limpiar y borrar todos los moldes cargados"
             >
-              <Trash2 className="w-4 h-4 text-red-400" />
+              <Trash2 className="w-3.5 h-3.5 text-red-400" />
               Limpiar Moldes
             </button>
           )}
           <button
             onClick={handleDownloadScript}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
             title="Descargar script JSX para Adobe Illustrator"
           >
-            <FileCode className="w-4 h-4 text-emerald-400" />
-            Descargar Script Illustrator (.jsx)
+            <FileCode className="w-3.5 h-3.5 text-emerald-400" />
+            Script JSX
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-950 transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            Subir Mi Molde SVG (desde Illustrator)
+            <Plus className="w-3.5 h-3.5" />
+            Cargar Otro Molde SVG
           </button>
         </div>
       </div>
@@ -462,9 +462,37 @@ exportMoldesParaHmb();`;
                             </svg>
                           );
                         })()}
-                        <span className="absolute top-2 right-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-950/80 text-emerald-400 border border-slate-800">
-                          {piece.pieceType}
-                        </span>
+                        {/* Delete Piece Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`¿Deseas omitir/eliminar la pieza "${piece.pieceName}" de la Talla ${currentSizeObj.sizeName}?`)) {
+                              deletePieceFromSize(currentSizeObj.sizeName, piece.id);
+                            }
+                          }}
+                          className="absolute top-2 left-2 p-1.5 rounded-lg bg-slate-950/90 text-slate-400 hover:text-red-400 hover:bg-red-950/80 border border-slate-800 transition-colors shadow-sm"
+                          title="Omitir o eliminar esta pieza si está de más o duplicada"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Piece Type Selector */}
+                        <select
+                          value={piece.pieceType}
+                          onChange={(e) => updatePieceType(currentSizeObj.sizeName, piece.id, e.target.value as PieceType)}
+                          className="absolute top-2 right-2 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-950/90 text-emerald-400 border border-slate-700/80 hover:border-emerald-500 focus:outline-none cursor-pointer shadow-sm"
+                          title="Cambiar tipo de pieza si fue clasificada incorrectamente"
+                        >
+                          <option value="DELANTERO">DELANTERO</option>
+                          <option value="ESPALDA">ESPALDA</option>
+                          <option value="MANGA_IZQ">MANGA IZQ</option>
+                          <option value="MANGA_DER">MANGA DER</option>
+                          <option value="SHORT_FRENTE">SHORT FRENTE</option>
+                          <option value="SHORT_ESPALDA">SHORT ESPALDA</option>
+                          <option value="CUELLO">CUELLO</option>
+                          <option value="OTRO">OTRO / AUX</option>
+                        </select>
                       </div>
 
                       {/* Piece Metric Details */}

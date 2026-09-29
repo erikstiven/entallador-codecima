@@ -22,6 +22,8 @@ interface PatternStoreState {
   deletePatternSet: (id: string) => void;
   discardUnassignedPiece: (pieceId: string) => void;
   discardAllUnassignedPieces: () => void;
+  deletePieceFromSize: (sizeName: string, pieceId: string) => void;
+  updatePieceType: (sizeName: string, pieceId: string, newType: PieceType) => void;
   clearAllPatterns: () => void;
 }
 
@@ -201,6 +203,69 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     try {
       savePatternSetToDb(dbService, updated);
     } catch (_) {}
+  },
+
+  deletePieceFromSize: (sizeName: string, pieceId: string) => {
+    const { activePatternSet } = get();
+    if (!activePatternSet) return;
+
+    const newSizes = activePatternSet.sizes.map((s) => {
+      if (s.sizeName.toUpperCase() !== sizeName.toUpperCase()) return s;
+      return {
+        ...s,
+        pieces: s.pieces.filter((p) => p.id !== pieceId),
+      };
+    });
+
+    const updatedSet: PatternSet = {
+      ...activePatternSet,
+      sizes: newSizes,
+      updatedAt: new Date().toISOString(),
+    };
+
+    set({ activePatternSet: updatedSet });
+
+    try {
+      dbService.run('DELETE FROM pattern_pieces WHERE id = ?', [pieceId]);
+      savePatternSetToDb(dbService, updatedSet);
+    } catch (err) {
+      console.error('Error eliminando pieza de SQLite:', err);
+    }
+  },
+
+  updatePieceType: (sizeName: string, pieceId: string, newType: PieceType) => {
+    const { activePatternSet } = get();
+    if (!activePatternSet) return;
+
+    const newSizes = activePatternSet.sizes.map((s) => {
+      if (s.sizeName.toUpperCase() !== sizeName.toUpperCase()) return s;
+      return {
+        ...s,
+        pieces: s.pieces.map((p) => {
+          if (p.id !== pieceId) return p;
+          return {
+            ...p,
+            pieceType: newType,
+            pieceName: `T${s.sizeName}_${newType}`,
+            allowedRotationsDeg: getDefaultRotationsForPieceType(newType),
+          };
+        }),
+      };
+    });
+
+    const updatedSet: PatternSet = {
+      ...activePatternSet,
+      sizes: newSizes,
+      updatedAt: new Date().toISOString(),
+    };
+
+    set({ activePatternSet: updatedSet });
+
+    try {
+      savePatternSetToDb(dbService, updatedSet);
+    } catch (err) {
+      console.error('Error actualizando tipo de pieza en SQLite:', err);
+    }
   },
 
   clearAllPatterns: () => {
