@@ -296,7 +296,7 @@ export function generateGarmentPieces(
               .replace(/\bwidth\s*=\s*["'][^"']+["']/gi, '')
               .replace(/\bheight\s*=\s*["'][^"']+["']/gi, '')
               .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']+["']/gi, '');
-            return `<svg x="0" y="0" width="${localBbox.width}" height="${localBbox.height}" preserveAspectRatio="none" ${clean}>`;
+            return `<svg x="0" y="0" width="${localBbox.width}" height="${localBbox.height}" preserveAspectRatio="xMidYMid slice" ${clean}>`;
           });
         }
 
