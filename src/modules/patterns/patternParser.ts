@@ -229,7 +229,7 @@ export function parsePatternSvg(
       if (bbox.width > bbox.height * 1.15 && bbox.height < 450) {
         // Manga: típicamente más ancha que alta
         detectedType = 'MANGA_IZQ';
-      } else if (bbox.height >= 450) {
+      } else if (bbox.height >= 450 && bbox.height > bbox.width) {
         // Torso: delantero o espalda (se refinará en post-procesamiento por área)
         const existingForSize = sizeMap[detectedSize || ''] || [];
         const hasDelantero = existingForSize.some((p) => p.pieceType.includes('DELANTERO'));
@@ -299,7 +299,7 @@ export function parsePatternSvg(
   // Post-procesado inteligente por talla (resolución de variantes de cuello y lados de pantaloneta):
   for (const sizeName of Object.keys(sizeMap)) {
     const piecesInSize = sizeMap[sizeName];
-    const torsoPieces = piecesInSize.filter((p) => p.bbox.height >= 450);
+    const torsoPieces = piecesInSize.filter((p) => p.bbox.height >= 450 && p.bbox.height > p.bbox.width);
 
     if (torsoPieces.length === 3) {
       // 3 piezas de torso en la misma talla:

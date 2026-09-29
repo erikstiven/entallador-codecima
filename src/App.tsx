@@ -17,12 +17,14 @@ export const App: React.FC = () => {
   const [dbReady, setDbReady] = useState(false);
 
   useEffect(() => {
-    // Inicializar base de datos SQLite embebida
+    // Inicializar base de datos SQLite embebida con persistencia local IndexedDB
     dbService.initialize()
-      .then(() => {
+      .then(async () => {
         setDbReady(true);
         useDesignStore.getState().loadDesignsFromDatabase();
         usePatternStore.getState().loadFromDatabase();
+        // Asegurar que cualquier molde o diseño en memoria se persista de inmediato
+        await dbService.persistBrowserDb();
       })
       .catch((err) => console.error('Error inicializando SQLite:', err));
   }, []);

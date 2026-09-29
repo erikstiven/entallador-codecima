@@ -67,6 +67,7 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     try {
       savePatternSetToDb(dbService, patternSet);
       get().loadFromDatabase();
+      dbService.persistBrowserDb();
     } catch (err) {
       console.error('Error persistiendo molde en SQLite:', err);
     }

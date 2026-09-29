@@ -11,7 +11,8 @@ import {
   Download,
   Eye,
   Check,
-  Ruler
+  Ruler,
+  HardDrive
 } from 'lucide-react';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { PieceType, PatternPiece } from '@/modules/patterns/types';
@@ -200,9 +201,12 @@ exportMoldesParaHmb();`;
                 </div>
               )}
               <div>
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 flex-wrap">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
                   <h3 className="text-base font-bold text-white tracking-wide">{activePatternSet.name}</h3>
+                  <span className="text-[11px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                    <HardDrive className="w-3 h-3 text-emerald-400" /> Guardado permanente en base de datos local
+                  </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">
                   {activePatternSet.sizes.length} tallas registradas •{' '}

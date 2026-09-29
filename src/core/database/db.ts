@@ -1,9 +1,84 @@
 import initSqlJs, { Database } from 'sql.js';
 import { INITIAL_SCHEMA_SQL } from './schema';
 
+const IDB_NAME = 'hmb_entallador_db';
+const IDB_STORE = 'sqlite_storage';
+const IDB_KEY = 'sqlite_binary';
+
+function openIndexedDb(): Promise<IDBDatabase | null> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || typeof indexedDB === 'undefined') {
+      return resolve(null);
+    }
+    try {
+      const request = indexedDB.open(IDB_NAME, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) {
+          db.createObjectStore(IDB_STORE);
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+    } catch (_) {
+      resolve(null);
+    }
+  });
+}
+
+async function loadDbFromIndexedDb(): Promise<Uint8Array | null> {
+  try {
+    const idb = await openIndexedDb();
+    if (!idb) return null;
+    return new Promise((resolve) => {
+      try {
+        const tx = idb.transaction(IDB_STORE, 'readonly');
+        const store = tx.objectStore(IDB_STORE);
+        const req = store.get(IDB_KEY);
+        req.onsuccess = () => {
+          const result = req.result;
+          if (result instanceof Uint8Array) {
+            resolve(result);
+          } else if (result instanceof ArrayBuffer) {
+            resolve(new Uint8Array(result));
+          } else {
+            resolve(null);
+          }
+        };
+        req.onerror = () => resolve(null);
+      } catch (_) {
+        resolve(null);
+      }
+    });
+  } catch (_) {
+    return null;
+  }
+}
+
+async function saveDbToIndexedDb(data: Uint8Array): Promise<void> {
+  try {
+    const idb = await openIndexedDb();
+    if (!idb) return;
+    return new Promise((resolve, reject) => {
+      try {
+        const tx = idb.transaction(IDB_STORE, 'readwrite');
+        const store = tx.objectStore(IDB_STORE);
+        const req = store.put(data, IDB_KEY);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  } catch (err) {
+    console.error('Error guardando en IndexedDB:', err);
+  }
+}
+
 export class DatabaseService {
   private db: Database | null = null;
   private dbPath: string | null = null;
+  private saveDebounceTimer: any = null;
 
   /**
    * Inicializa la base de datos SQLite y ejecuta las migraciones iniciales
@@ -39,19 +114,36 @@ export class DatabaseService {
 
     this.dbPath = dbFilePath || null;
 
-    if (this.dbPath && nodeFs && typeof nodeFs.existsSync === 'function' && nodeFs.existsSync(this.dbPath)) {
-      const fileBuffer = nodeFs.readFileSync(this.dbPath);
-      this.db = new SQL.Database(fileBuffer);
-    } else {
-      this.db = new SQL.Database();
+    let loadedFromStorage = false;
+    if (isBrowser) {
+      const savedBytes = await loadDbFromIndexedDb();
+      if (savedBytes && savedBytes.length > 0) {
+        try {
+          this.db = new SQL.Database(savedBytes);
+          loadedFromStorage = true;
+        } catch (e) {
+          console.warn('No se pudo restaurar base de datos previa de IndexedDB:', e);
+        }
+      }
     }
 
-    // Ejecutar migraciones iniciales
+    if (!this.db) {
+      if (this.dbPath && nodeFs && typeof nodeFs.existsSync === 'function' && nodeFs.existsSync(this.dbPath)) {
+        const fileBuffer = nodeFs.readFileSync(this.dbPath);
+        this.db = new SQL.Database(fileBuffer);
+      } else {
+        this.db = new SQL.Database();
+      }
+    }
+
+    // Ejecutar migraciones iniciales de manera idempotente
     this.db.run(INITIAL_SCHEMA_SQL);
 
     // Si hay ruta de archivo, persistir estado inicial
     if (this.dbPath && nodeFs && typeof nodeFs.writeFileSync === 'function') {
       this.saveToDisk();
+    } else if (isBrowser && !loadedFromStorage) {
+      this.persistBrowserDb();
     }
 
     return this.db;
@@ -68,11 +160,48 @@ export class DatabaseService {
   }
 
   /**
-   * Ejecuta una sentencia SQL (INSERT, UPDATE, DELETE)
+   * Ejecuta una sentencia SQL (INSERT, UPDATE, DELETE, REPLACE)
    */
   run(sql: string, params: any[] = []): void {
     const db = this.getDb();
     db.run(sql, params);
+
+    // Auto-guardar en IndexedDB si la consulta modifica datos en el navegador
+    const upper = sql.trim().toUpperCase();
+    if (
+      upper.startsWith('INSERT') ||
+      upper.startsWith('UPDATE') ||
+      upper.startsWith('DELETE') ||
+      upper.startsWith('REPLACE')
+    ) {
+      this.scheduleAutoSave();
+    }
+  }
+
+  /**
+   * Programa el auto-guardado en IndexedDB con debounce para alto rendimiento
+   */
+  scheduleAutoSave(): void {
+    if (typeof window === 'undefined') return;
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+    }
+    this.saveDebounceTimer = setTimeout(() => {
+      this.persistBrowserDb();
+    }, 200);
+  }
+
+  /**
+   * Exporta y persiste de forma inmediata la base de datos completa en IndexedDB
+   */
+  async persistBrowserDb(): Promise<void> {
+    if (typeof window === 'undefined' || !this.db) return;
+    try {
+      const data = this.db.export();
+      await saveDbToIndexedDb(data);
+    } catch (e) {
+      console.error('Error persistiendo SQLite en IndexedDB:', e);
+    }
   }
 
   /**
@@ -102,10 +231,13 @@ export class DatabaseService {
   }
 
   /**
-   * Guarda el estado actual de la base de datos SQLite en disco
+   * Guarda el estado actual de la base de datos SQLite en disco o en IndexedDB
    */
   async saveToDisk(targetPath?: string): Promise<void> {
-    if (typeof window !== 'undefined') return; // En navegador, SQLite se mantiene en memoria
+    if (typeof window !== 'undefined') {
+      await this.persistBrowserDb();
+      return;
+    }
 
     const savePath = targetPath || this.dbPath;
     if (!savePath) return;
