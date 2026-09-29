@@ -288,6 +288,18 @@ export function generateGarmentPieces(
           ? `<text x="${labelInfo.anchorX}" y="${labelInfo.anchorY}" font-family="monospace" font-size="${labelInfo.fontSizeMm}" fill="${config.labelColor}" text-anchor="middle" font-weight="bold">${labelText}</text>`
           : '';
 
+        // Asegurar que el arte vectorial escale y llene el ancho y alto del molde de esta talla
+        let scaledArtSvg = baseArtSvg;
+        if (scaledArtSvg.includes('<svg')) {
+          scaledArtSvg = scaledArtSvg.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
+            const clean = attrs
+              .replace(/\bwidth\s*=\s*["'][^"']+["']/gi, '')
+              .replace(/\bheight\s*=\s*["'][^"']+["']/gi, '')
+              .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']+["']/gi, '');
+            return `<svg x="0" y="0" width="${localBbox.width}" height="${localBbox.height}" preserveAspectRatio="none" ${clean}>`;
+          });
+        }
+
         const fullPieceSvg = `
           <g id="${uniquePieceId}">
             <defs>
@@ -297,7 +309,7 @@ export function generateGarmentPieces(
             </defs>
             <!-- Arte recortado exactamente con el molde -->
             <g clip-path="url(#${maskId})">
-              ${baseArtSvg}
+              ${scaledArtSvg}
             </g>
             <!-- Contorno de corte visible 1:1 -->
             <path d="${patternPiece.svgPathData}"${translateTransform} fill="none" stroke="#22c55e" stroke-width="1.0" opacity="0.6" />

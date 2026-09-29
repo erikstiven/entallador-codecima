@@ -97,36 +97,66 @@ export function parseDesignSvg(
     numeroRule || defaultEspaldaRules.find((r) => r.id.includes('NUMERO'))!,
   ].filter(Boolean);
 
-  // Intentar buscar piezas aisladas por grupo o usar el SVG completo
+  // Intentar buscar piezas aisladas por grupo/capa o usar el SVG completo
   const pieceArtworks: Partial<Record<PieceType, PieceArtwork>> = {};
 
-  const pieceTypes: PieceType[] = [
-    'DELANTERO',
-    'ESPALDA',
-    'MANGA_IZQ',
-    'MANGA_DER',
-    'SHORT_FRENTE',
-    'SHORT_ESPALDA',
+  const piecePatterns: { type: PieceType; regex: RegExp }[] = [
+    { type: 'DELANTERO', regex: /id=["'][^"']*(?:DELANTERO|FRENTE|FRONT)[^"']*["']/i },
+    { type: 'ESPALDA', regex: /id=["'][^"']*(?:ESPALDA|DORSAL|TRASERO|BACK)[^"']*["']/i },
+    { type: 'MANGA_IZQ', regex: /id=["'][^"']*(?:MANGA_IZQ|MANGA_I|MANGA|SLEEVE)[^"']*["']/i },
+    { type: 'MANGA_DER', regex: /id=["'][^"']*(?:MANGA_DER|MANGA_D)[^"']*["']/i },
+    { type: 'SHORT_FRENTE', regex: /id=["'][^"']*(?:SHORT_FRENTE|SHORT_I|PANTALONETA_I|PANTALONETA)[^"']*["']/i },
+    { type: 'SHORT_ESPALDA', regex: /id=["'][^"']*(?:SHORT_ESPALDA|SHORT_D|PANTALONETA_D)[^"']*["']/i },
   ];
 
-  for (const pt of pieceTypes) {
-    // Buscar si existe un grupo <g id="...PT...">
-    const groupRegex = new RegExp(`<g\\b[^>]*id=["'][^"']*${pt}[^"']*["'][^>]*>([\\s\\S]*?)<\\/g>`, 'i');
-    const groupMatch = svgContent.match(groupRegex);
+  for (const entry of piecePatterns) {
+    const groupRegex = new RegExp(`<g\\b[^>]*${entry.regex.source}[^>]*>([\\s\\S]*?)<\\/g>`, 'i');
+    const match = svgContent.match(groupRegex);
+    if (match) {
+      pieceArtworks[entry.type] = {
+        pieceType: entry.type,
+        svgArtContent: match[0],
+        placeholders: entry.type === 'ESPALDA' ? espaldaPlaceholders : createDefaultPlaceholderRules(entry.type),
+      };
+    }
+  }
 
-    if (groupMatch) {
-      pieceArtworks[pt] = {
-        pieceType: pt,
-        svgArtContent: groupMatch[1],
-        placeholders: pt === 'ESPALDA' ? espaldaPlaceholders : createDefaultPlaceholderRules(pt),
+  // Si no se encontraron por nombre explícito pero hay múltiples grupos principales:
+  if (!pieceArtworks['DELANTERO'] && !pieceArtworks['ESPALDA']) {
+    const allGroups = Array.from(svgContent.matchAll(/<g\b([^>]*)>([\s\S]*?)<\/g>/gi));
+    if (allGroups.length >= 2) {
+      pieceArtworks['DELANTERO'] = {
+        pieceType: 'DELANTERO',
+        svgArtContent: allGroups[0][0],
+        placeholders: createDefaultPlaceholderRules('DELANTERO'),
       };
+      pieceArtworks['ESPALDA'] = {
+        pieceType: 'ESPALDA',
+        svgArtContent: allGroups[1][0],
+        placeholders: espaldaPlaceholders,
+      };
+      if (allGroups.length >= 3) {
+        pieceArtworks['MANGA_IZQ'] = {
+          pieceType: 'MANGA_IZQ',
+          svgArtContent: allGroups[2][0],
+          placeholders: createDefaultPlaceholderRules('MANGA_IZQ'),
+        };
+        pieceArtworks['MANGA_DER'] = {
+          pieceType: 'MANGA_DER',
+          svgArtContent: allGroups[2][0],
+          placeholders: createDefaultPlaceholderRules('MANGA_DER'),
+        };
+      }
     } else {
-      // Si no hay grupos separados, usar el SVG completo del modelo
-      pieceArtworks[pt] = {
-        pieceType: pt,
-        svgArtContent: svgContent,
-        placeholders: pt === 'ESPALDA' ? espaldaPlaceholders : createDefaultPlaceholderRules(pt),
-      };
+      // Fallback: usar el contenido completo
+      const defaultTypes: PieceType[] = ['DELANTERO', 'ESPALDA', 'MANGA_IZQ', 'MANGA_DER'];
+      for (const pt of defaultTypes) {
+        pieceArtworks[pt] = {
+          pieceType: pt,
+          svgArtContent: svgContent,
+          placeholders: pt === 'ESPALDA' ? espaldaPlaceholders : createDefaultPlaceholderRules(pt),
+        };
+      }
     }
   }
 
