@@ -24,16 +24,34 @@ const DEFAULT_CONFIG: GenerationConfig = {
 function getRequiredPieceTypes(garmentType: string): PieceType[] {
   switch (garmentType) {
     case 'CAMISETA':
-      return ['DELANTERO', 'ESPALDA', 'MANGA_IZQ', 'MANGA_DER'];
+      return [
+        'DELANTERO',
+        'DELANTERO_V',
+        'DELANTERO_REDONDO',
+        'ESPALDA',
+        'MANGA_IZQ',
+        'MANGA_DER',
+        'CUELLO',
+      ];
     case 'SHORT':
-      return ['SHORT_FRENTE', 'SHORT_ESPALDA'];
+      return [
+        'PANTALONETA_IZQ',
+        'PANTALONETA_DER',
+        'SHORT_FRENTE',
+        'SHORT_ESPALDA',
+      ];
     case 'COMPLETO':
     default:
       return [
         'DELANTERO',
+        'DELANTERO_V',
+        'DELANTERO_REDONDO',
         'ESPALDA',
         'MANGA_IZQ',
         'MANGA_DER',
+        'CUELLO',
+        'PANTALONETA_IZQ',
+        'PANTALONETA_DER',
         'SHORT_FRENTE',
         'SHORT_ESPALDA',
       ];
@@ -80,9 +98,34 @@ export function generateGarmentPieces(
     const requiredTypes = getRequiredPieceTypes(orderItem.garmentType);
 
     // Filtrar piezas del molde que corresponden al tipo de uniforme solicitado
-    const availablePieces = sizeObj.pieces.filter((p) =>
+    const allMatchingPieces = sizeObj.pieces.filter((p) =>
       requiredTypes.includes(p.pieceType)
     );
+
+    // Si la talla contiene tanto DELANTERO_V como DELANTERO_REDONDO:
+    // Seleccionar solo una variante de cuello para evitar duplicar el delantero:
+    const delanterosDisponibles = allMatchingPieces.filter((p) =>
+      p.pieceType === 'DELANTERO' || p.pieceType === 'DELANTERO_V' || p.pieceType === 'DELANTERO_REDONDO'
+    );
+
+    let chosenDelantero: PatternPiece | undefined;
+    if (delanterosDisponibles.length > 1) {
+      const wantsV = (orderItem.notes || '').toUpperCase().includes('V') || false;
+      if (wantsV) {
+        chosenDelantero = delanterosDisponibles.find((p) => p.pieceType === 'DELANTERO_V') || delanterosDisponibles[0];
+      } else {
+        chosenDelantero = delanterosDisponibles.find((p) => p.pieceType === 'DELANTERO_REDONDO') || delanterosDisponibles[0];
+      }
+    } else if (delanterosDisponibles.length === 1) {
+      chosenDelantero = delanterosDisponibles[0];
+    }
+
+    const availablePieces = allMatchingPieces.filter((p) => {
+      if (p.pieceType === 'DELANTERO' || p.pieceType === 'DELANTERO_V' || p.pieceType === 'DELANTERO_REDONDO') {
+        return p.id === chosenDelantero?.id;
+      }
+      return true;
+    });
 
     if (availablePieces.length === 0) {
       warnings.push(`Jugador ${orderItem.playerName}: No hay piezas de tipo "${orderItem.garmentType}" en la talla ${orderItem.sizeName}.`);
@@ -108,6 +151,27 @@ export function generateGarmentPieces(
         id: `${mangaRef.id}_izq`,
         pieceType: 'MANGA_IZQ',
         pieceName: `${mangaRef.pieceName}_IZQ`,
+      });
+    }
+
+    // Si la pantaloneta solo tiene 1 lado dibujado, duplicar para producir ambos lados (izq y der)
+    const hasPantaIzq = piecesToGenerate.some((p) => p.pieceType === 'PANTALONETA_IZQ');
+    const hasPantaDer = piecesToGenerate.some((p) => p.pieceType === 'PANTALONETA_DER');
+    if (hasPantaIzq && !hasPantaDer && ['SHORT', 'COMPLETO'].includes(orderItem.garmentType)) {
+      const pantaRef = piecesToGenerate.find((p) => p.pieceType === 'PANTALONETA_IZQ')!;
+      piecesToGenerate.push({
+        ...pantaRef,
+        id: `${pantaRef.id}_der`,
+        pieceType: 'PANTALONETA_DER',
+        pieceName: `${pantaRef.pieceName}_DER`,
+      });
+    } else if (hasPantaDer && !hasPantaIzq && ['SHORT', 'COMPLETO'].includes(orderItem.garmentType)) {
+      const pantaRef = piecesToGenerate.find((p) => p.pieceType === 'PANTALONETA_DER')!;
+      piecesToGenerate.push({
+        ...pantaRef,
+        id: `${pantaRef.id}_izq`,
+        pieceType: 'PANTALONETA_IZQ',
+        pieceName: `${pantaRef.pieceName}_IZQ`,
       });
     }
 

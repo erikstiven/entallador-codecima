@@ -35,7 +35,7 @@ describe('Pattern SVG Parser (Pruebas sobre Molde Real de Illustrator)', () => {
     expect(mangaT28).toBeDefined();
     expect(mangaT28?.allowedRotationsDeg).toEqual([0, 180]); // Mangas permiten rotación 180°
 
-    const shortFrontT28 = size28?.pieces.find((p) => p.pieceType === 'SHORT_FRENTE');
+    const shortFrontT28 = size28?.pieces.find((p) => p.pieceType === 'PANTALONETA_IZQ' || p.pieceType === 'SHORT_FRENTE');
     expect(shortFrontT28).toBeDefined();
 
     // Talla 30

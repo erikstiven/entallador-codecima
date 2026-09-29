@@ -374,13 +374,16 @@ exportMoldesParaHmb();`;
                       onChange={(e) => setAssignType(e.target.value as PieceType)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-200 text-[11px]"
                     >
-                      <option value="DELANTERO">DELANTERO</option>
+                      <option value="DELANTERO_V">DELANTERO (CUELLO V)</option>
+                      <option value="DELANTERO_REDONDO">DELANTERO (CUELLO REDONDO)</option>
+                      <option value="DELANTERO">DELANTERO (ESTÁNDAR)</option>
                       <option value="ESPALDA">ESPALDA</option>
                       <option value="MANGA_IZQ">MANGA IZQ</option>
                       <option value="MANGA_DER">MANGA DER</option>
-                      <option value="SHORT_FRENTE">SHORT FRENTE</option>
-                      <option value="SHORT_ESPALDA">SHORT ESPALDA</option>
-                      <option value="OTRO">OTRO</option>
+                      <option value="CUELLO">CUELLO / RIB</option>
+                      <option value="PANTALONETA_IZQ">PANTALONETA (LADO IZQ)</option>
+                      <option value="PANTALONETA_DER">PANTALONETA (LADO DER)</option>
+                      <option value="OTRO">OTRO / AUXILIAR</option>
                     </select>
                   </div>
                 </div>
@@ -488,13 +491,15 @@ exportMoldesParaHmb();`;
                           className="absolute top-2 right-2 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-950/90 text-emerald-400 border border-slate-700/80 hover:border-emerald-500 focus:outline-none cursor-pointer shadow-sm"
                           title="Cambiar tipo de pieza si fue clasificada incorrectamente"
                         >
-                          <option value="DELANTERO">DELANTERO</option>
+                          <option value="DELANTERO_V">DELANTERO (CUELLO V)</option>
+                          <option value="DELANTERO_REDONDO">DELANTERO (CUELLO REDONDO)</option>
+                          <option value="DELANTERO">DELANTERO (ESTÁNDAR)</option>
                           <option value="ESPALDA">ESPALDA</option>
                           <option value="MANGA_IZQ">MANGA IZQ</option>
                           <option value="MANGA_DER">MANGA DER</option>
-                          <option value="SHORT_FRENTE">SHORT FRENTE</option>
-                          <option value="SHORT_ESPALDA">SHORT ESPALDA</option>
-                          <option value="CUELLO">CUELLO</option>
+                          <option value="CUELLO">CUELLO / RIB</option>
+                          <option value="PANTALONETA_IZQ">PANTALONETA (LADO IZQ)</option>
+                          <option value="PANTALONETA_DER">PANTALONETA (LADO DER)</option>
                           <option value="OTRO">OTRO / AUX</option>
                         </select>
                       </div>

@@ -15,6 +15,12 @@ import { normalizeSizeName } from '@/modules/orders/orderValidator';
 function detectPieceType(identifier: string): PieceType | null {
   const clean = identifier.toUpperCase();
 
+  if (clean.includes('CUELLO_V') || clean.includes('DELANTERO_V') || clean.includes('FRENTE_V') || clean.includes('V_NECK') || clean.includes('_V')) {
+    return 'DELANTERO_V';
+  }
+  if (clean.includes('CUELLO_RED') || clean.includes('DELANTERO_RED') || clean.includes('ROUND_NECK') || clean.includes('_REDONDO')) {
+    return 'DELANTERO_REDONDO';
+  }
   if (clean.includes('DELANTERO') || clean.includes('FRENTE') || clean.includes('FRONT')) {
     return 'DELANTERO';
   }
@@ -30,11 +36,20 @@ function detectPieceType(identifier: string): PieceType | null {
   if (clean.includes('MANGA') || clean.includes('SLEEVE')) {
     return 'MANGA_IZQ'; // Predeterminado para mangas no especificadas
   }
-  if (clean.includes('SHORT_F') || clean.includes('SHORT_FRENTE') || clean.includes('PANTALONETA_F')) {
+  if (clean.includes('SHORT_FRENTE')) {
     return 'SHORT_FRENTE';
   }
-  if (clean.includes('SHORT_A') || clean.includes('SHORT_E') || clean.includes('SHORT_ESPALDA') || clean.includes('SHORT_TRASERO')) {
+  if (clean.includes('SHORT_ESPALDA') || clean.includes('SHORT_TRASERO')) {
     return 'SHORT_ESPALDA';
+  }
+  if (clean.includes('PANTALONETA_I') || clean.includes('PANTALONETA_IZQ') || clean.includes('SHORT_I') || clean.includes('SHORT_IZQ') || clean.includes('SHORT_F')) {
+    return 'PANTALONETA_IZQ';
+  }
+  if (clean.includes('PANTALONETA_D') || clean.includes('PANTALONETA_DER') || clean.includes('SHORT_D') || clean.includes('SHORT_DER') || clean.includes('SHORT_E') || clean.includes('SHORT_A')) {
+    return 'PANTALONETA_DER';
+  }
+  if (clean.includes('PANTALONETA') || clean.includes('SHORT')) {
+    return 'PANTALONETA_IZQ';
   }
   if (clean.includes('CUELLO') || clean.includes('COLLAR') || clean.includes('RIB')) {
     return 'CUELLO';
@@ -76,15 +91,19 @@ function detectSizeName(identifier: string): string | null {
 export function getDefaultRotationsForPieceType(pieceType: PieceType): number[] {
   switch (pieceType) {
     case 'DELANTERO':
+    case 'DELANTERO_V':
+    case 'DELANTERO_REDONDO':
     case 'ESPALDA':
       return [0]; // Estricto: 0° únicamente (diseño frontal o dorsal vertical)
     case 'MANGA_IZQ':
     case 'MANGA_DER':
+    case 'PANTALONETA_IZQ':
+    case 'PANTALONETA_DER':
     case 'SHORT_FRENTE':
     case 'SHORT_ESPALDA':
       return [0, 180]; // Permite giro de 180° si la trama del diseño lo admite
     case 'CUELLO':
-      return [0, 90, 180, 270]; // Rotación libre para piezas pequeñas de rib
+      return [0, 90, 180, 270]; // Rotación libre para piezas pequeñas de rib / cuello
     default:
       return [0];
   }
@@ -211,24 +230,21 @@ export function parsePatternSvg(
         // Manga: típicamente más ancha que alta
         detectedType = 'MANGA_IZQ';
       } else if (bbox.height >= 450) {
-        // Torso: delantero o espalda
+        // Torso: delantero o espalda (se refinará en post-procesamiento por área)
         const existingForSize = sizeMap[detectedSize || ''] || [];
-        const hasDelantero = existingForSize.some((p) => p.pieceType === 'DELANTERO');
+        const hasDelantero = existingForSize.some((p) => p.pieceType.includes('DELANTERO'));
         detectedType = hasDelantero ? 'ESPALDA' : 'DELANTERO';
       } else if (bbox.height >= 250 && bbox.width >= 250) {
         // Short / Pantaloneta
         const existingForSize = sizeMap[detectedSize || ''] || [];
-        const hasShortF = existingForSize.some((p) => p.pieceType === 'SHORT_FRENTE');
-        detectedType = hasShortF ? 'SHORT_ESPALDA' : 'SHORT_FRENTE';
+        const hasShortIzq = existingForSize.some((p) => p.pieceType === 'PANTALONETA_IZQ' || p.pieceType === 'SHORT_FRENTE');
+        detectedType = hasShortIzq ? 'PANTALONETA_DER' : 'PANTALONETA_IZQ';
+      } else if (bbox.width > bbox.height * 2.2 && bbox.height <= 140) {
+        // Cuello / Rib
+        detectedType = 'CUELLO';
       } else {
         detectedType = 'OTRO';
       }
-    }
-
-    // Los cuellos (rib/tejido) se confeccionan por separado y NO se incluyen en el entallado ni sublimación
-    if (detectedType === 'CUELLO') {
-      warnings.push(`Pieza "${originalId}" identificada como CUELLO: omitida del entallado (se confecciona en rib/tejido aparte).`);
-      continue;
     }
 
     const isAutoAssigned = Boolean(detectedSize);
@@ -278,6 +294,43 @@ export function parsePatternSvg(
     }
 
     parsedPieces.push(piece);
+  }
+
+  // Post-procesado inteligente por talla (resolución de variantes de cuello y lados de pantaloneta):
+  for (const sizeName of Object.keys(sizeMap)) {
+    const piecesInSize = sizeMap[sizeName];
+    const torsoPieces = piecesInSize.filter((p) => p.bbox.height >= 450);
+
+    if (torsoPieces.length === 3) {
+      // 3 piezas de torso en la misma talla:
+      // 1. Mayor área física: ESPALDA (escote alto cerrado conserva mayor superficie)
+      // 2. Área media: DELANTERO CUELLO REDONDO
+      // 3. Menor área física: DELANTERO CUELLO EN V (el escote en V cala más profundo y resta tela)
+      torsoPieces.sort((a, b) => b.areaMm2 - a.areaMm2);
+
+      torsoPieces[0].pieceType = 'ESPALDA';
+      torsoPieces[0].pieceName = `T${sizeName}_ESPALDA`;
+      torsoPieces[0].allowedRotationsDeg = getDefaultRotationsForPieceType('ESPALDA');
+
+      torsoPieces[1].pieceType = 'DELANTERO_REDONDO';
+      torsoPieces[1].pieceName = `T${sizeName}_DELANTERO_REDONDO`;
+      torsoPieces[1].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO_REDONDO');
+
+      torsoPieces[2].pieceType = 'DELANTERO_V';
+      torsoPieces[2].pieceName = `T${sizeName}_DELANTERO_V`;
+      torsoPieces[2].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO_V');
+    } else if (torsoPieces.length === 2) {
+      torsoPieces.sort((a, b) => b.areaMm2 - a.areaMm2);
+      torsoPieces[0].pieceType = 'ESPALDA';
+      torsoPieces[0].pieceName = `T${sizeName}_ESPALDA`;
+      torsoPieces[0].allowedRotationsDeg = getDefaultRotationsForPieceType('ESPALDA');
+
+      if (!torsoPieces[1].pieceType || torsoPieces[1].pieceType === 'ESPALDA') {
+        torsoPieces[1].pieceType = 'DELANTERO';
+        torsoPieces[1].pieceName = `T${sizeName}_DELANTERO`;
+        torsoPieces[1].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO');
+      }
+    }
   }
 
   // Construir estructura jerárquica de tallas

@@ -21,9 +21,13 @@ export type Polygon2D = Point2D[];
 
 export type PieceType = 
   | 'DELANTERO' 
+  | 'DELANTERO_V' 
+  | 'DELANTERO_REDONDO' 
   | 'ESPALDA' 
   | 'MANGA_IZQ' 
   | 'MANGA_DER' 
+  | 'PANTALONETA_IZQ' 
+  | 'PANTALONETA_DER' 
   | 'SHORT_FRENTE' 
   | 'SHORT_ESPALDA' 
   | 'CUELLO' 
