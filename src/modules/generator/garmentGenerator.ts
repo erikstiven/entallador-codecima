@@ -249,7 +249,6 @@ export function generateGarmentPieces(
           const numberFitting = computeTextFitting(orderItem.playerNumber, numberRule);
 
           baseArtSvg = applyPlaceholdersToArtwork(baseArtSvg, orderItem.playerName, orderItem.playerNumber, [nameRule, numberRule]);
-          baseArtSvg += `\n${nameFitting.svgContent}\n${numberFitting.svgContent}`;
         } else if (pieceType === 'DELANTERO') {
           // Número pequeño frontal
           const frontNumRule = {

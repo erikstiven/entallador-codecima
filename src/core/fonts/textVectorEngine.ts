@@ -132,9 +132,10 @@ export function applyPlaceholdersToArtwork(
     const fitting = computeTextFitting(playerName, nameRule);
     if (resultSvg.includes('{{NOMBRE}}')) {
       resultSvg = resultSvg.replace('{{NOMBRE}}', fitting.svgContent);
-    } else {
-      // Inyectar antes del cierre de svg
+    } else if (resultSvg.includes('</svg>')) {
       resultSvg = resultSvg.replace('</svg>', `${fitting.svgContent}\n</svg>`);
+    } else {
+      resultSvg += `\n${fitting.svgContent}`;
     }
   }
 
@@ -144,8 +145,10 @@ export function applyPlaceholdersToArtwork(
     const fitting = computeTextFitting(playerNumber, numberRule);
     if (resultSvg.includes('{{NUMERO}}')) {
       resultSvg = resultSvg.replace('{{NUMERO}}', fitting.svgContent);
-    } else {
+    } else if (resultSvg.includes('</svg>')) {
       resultSvg = resultSvg.replace('</svg>', `${fitting.svgContent}\n</svg>`);
+    } else {
+      resultSvg += `\n${fitting.svgContent}`;
     }
   }
 

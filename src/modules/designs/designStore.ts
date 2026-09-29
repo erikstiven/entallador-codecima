@@ -24,6 +24,7 @@ interface DesignStoreState {
     ruleId: string,
     updates: Partial<DynamicPlaceholderRule>
   ) => void;
+  updateDesignName: (id: string, newName: string) => void;
   deleteDesign: (id: string) => void;
   clearAllDesigns: () => void;
 }
@@ -190,6 +191,30 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     const updatedDesigns = designs.map((d) => (d.id === updatedDesign.id ? updatedDesign : d));
     saveDesignsToLocalStorage(updatedDesigns, updatedDesign);
     set({ designs: updatedDesigns, activeDesign: updatedDesign });
+  },
+
+  updateDesignName: (id: string, newName: string) => {
+    const clean = newName.trim().toUpperCase();
+    if (!clean) return;
+    const { designs, activeDesign } = get();
+    const target = designs.find((d) => d.id === id);
+    if (!target) return;
+
+    const updatedDesign: MasterDesign = {
+      ...target,
+      name: clean,
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      saveDesignToDb(dbService, updatedDesign);
+      dbService.persistBrowserDb();
+    } catch (_) {}
+
+    const updatedDesigns = designs.map((d) => (d.id === id ? updatedDesign : d));
+    const newActive = activeDesign?.id === id ? updatedDesign : activeDesign;
+    saveDesignsToLocalStorage(updatedDesigns, newActive);
+    set({ designs: updatedDesigns, activeDesign: newActive });
   },
 
   deleteDesign: (id) => {

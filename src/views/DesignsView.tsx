@@ -11,11 +11,31 @@ import {
   Ruler,
   AlertTriangle,
   Eye,
-  UploadCloud
+  UploadCloud,
+  Pencil,
+  Check,
+  X
 } from 'lucide-react';
 import { useDesignStore } from '@/modules/designs/designStore';
 import { MasterDesign } from '@/modules/designs/types';
+import { PieceType } from '@/core/geometry/types';
 import { computeTextFitting } from '@/core/fonts/textVectorEngine';
+
+function preparePreviewArt(svgArtContent?: string): string {
+  if (!svgArtContent) return '';
+  if (svgArtContent.includes('<svg')) {
+    return svgArtContent.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
+      const cleanAttrs = attrs
+        .replace(/\bwidth\s*=\s*["'][^"']+["']/gi, '')
+        .replace(/\bheight\s*=\s*["'][^"']+["']/gi, '')
+        .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']+["']/gi, '')
+        .replace(/\bx\s*=\s*["'][^"']+["']/gi, '')
+        .replace(/\by\s*=\s*["'][^"']+["']/gi, '');
+      return `<svg x="0" y="0" width="500" height="700" preserveAspectRatio="xMidYMid slice" ${cleanAttrs}>`;
+    });
+  }
+  return svgArtContent;
+}
 
 export const DesignsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,7 +49,15 @@ export const DesignsView: React.FC = () => {
     deleteDesign,
     clearAllDesigns,
     updatePlaceholderRule,
+    updateDesignName,
   } = useDesignStore();
+
+  // Vista activa de la prenda en el mockup (Espalda, Delantero o Mangas)
+  const [selectedPieceView, setSelectedPieceView] = useState<PieceType>('ESPALDA');
+
+  // Estado para renombrar diseño en vivo
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
 
   // Estado para la prueba en vivo de placeholders
   const [testPlayerName, setTestPlayerName] = useState<string>('CHRISTOPHER');
@@ -71,12 +99,17 @@ export const DesignsView: React.FC = () => {
     setIsCreating(false);
   };
 
-  const currentArtwork = activeDesign?.pieceArtworks['ESPALDA'];
-  const nameRule = currentArtwork?.placeholders.find((p) => p.id === 'NOMBRE');
-  const numberRule = currentArtwork?.placeholders.find((p) => p.id.includes('NUMERO'));
+  const currentArtwork = activeDesign?.pieceArtworks[selectedPieceView] || activeDesign?.pieceArtworks['ESPALDA'] || activeDesign?.pieceArtworks['DELANTERO'];
+  const espaldaArtwork = activeDesign?.pieceArtworks['ESPALDA'];
+  const nameRule = espaldaArtwork?.placeholders.find((p) => p.id === 'NOMBRE');
+  const numberRule = espaldaArtwork?.placeholders.find((p) => p.id.includes('NUMERO'));
 
   const nameFitting = nameRule ? computeTextFitting(testPlayerName, nameRule) : null;
   const numberFitting = numberRule ? computeTextFitting(testPlayerNumber, numberRule) : null;
+
+  const delanteroArtwork = activeDesign?.pieceArtworks['DELANTERO'];
+  const frontNumRule = delanteroArtwork?.placeholders.find((p) => p.id.includes('NUMERO'));
+  const frontFitting = frontNumRule ? computeTextFitting(testPlayerNumber, frontNumRule) : null;
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -321,10 +354,59 @@ export const DesignsView: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                    <h3 className="text-base font-bold text-white">{activeDesign.name}</h3>
+                    {isEditingName ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={editedName}
+                          onChange={(e) => setEditedName(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              updateDesignName(activeDesign.id, editedName);
+                              setIsEditingName(false);
+                            } else if (e.key === 'Escape') {
+                              setIsEditingName(false);
+                            }
+                          }}
+                          className="bg-slate-950 border border-emerald-500 rounded px-2.5 py-1 text-sm font-bold text-white focus:outline-none"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => {
+                            updateDesignName(activeDesign.id, editedName);
+                            setIsEditingName(false);
+                          }}
+                          className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+                          title="Guardar nombre"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setIsEditingName(false)}
+                          className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded transition-colors"
+                          title="Cancelar"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-white">{activeDesign.name}</h3>
+                        <button
+                          onClick={() => {
+                            setEditedName(activeDesign.name);
+                            setIsEditingName(true);
+                          }}
+                          className="p-1 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded transition-colors"
+                          title="Renombrar este diseño (ej: Brasil Amarillo 2026)"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Estudio de previsualización en vivo y ajuste automático de dorsales
+                    Estudio de previsualización en vivo con tu arte SVG real y ajuste automático de dorsales
                   </p>
                 </div>
                 <button
@@ -336,40 +418,83 @@ export const DesignsView: React.FC = () => {
                 </button>
               </div>
 
-              {/* Interactive Player Name & Number Testing Controls */}
-              <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <label className="text-slate-300 font-medium block mb-1">
-                    Prueba en Vivo — Nombre Jugador:
-                  </label>
-                  <input
-                    type="text"
-                    value={testPlayerName}
-                    onChange={(e) => setTestPlayerName(e.target.value.toUpperCase())}
-                    placeholder="Escribe un nombre..."
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-bold font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                  <span className="text-[11px] text-slate-500 mt-1 block">
-                    Prueba con "CAROL" (normal) o "CHRISTOPHER" (compresión automática).
-                  </span>
-                </div>
-
-                <div>
-                  <label className="text-slate-300 font-medium block mb-1">
-                    Prueba en Vivo — Número Dorsal:
-                  </label>
-                  <input
-                    type="text"
-                    value={testPlayerNumber}
-                    onChange={(e) => setTestPlayerNumber(e.target.value)}
-                    placeholder="Ej: 9, 10, 21"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-emerald-400 font-bold font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                  <span className="text-[11px] text-slate-500 mt-1 block">
-                    Altura reglamentaria en espalda: 220 mm (22 cm).
-                  </span>
-                </div>
+              {/* Selector de Vistas de la Prenda (Espalda vs Delantero vs Mangas) */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPieceView('ESPALDA')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                    selectedPieceView === 'ESPALDA'
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/50'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700/60'
+                  }`}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  👕 Vista Espalda (Dorsal + Nombre)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPieceView('DELANTERO')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                    selectedPieceView === 'DELANTERO'
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/50'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700/60'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  🎽 Vista Frente (Logos y Patrón)
+                </button>
+                {activeDesign.pieceArtworks['MANGA_IZQ'] && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPieceView('MANGA_IZQ')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                      selectedPieceView === 'MANGA_IZQ'
+                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/50'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700/60'
+                    }`}
+                  >
+                    🦾 Vista Mangas
+                  </button>
+                )}
               </div>
+
+              {/* Interactive Player Name & Number Testing Controls */}
+              {selectedPieceView === 'ESPALDA' && (
+                <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="text-slate-300 font-medium block mb-1">
+                      Prueba en Vivo — Nombre Jugador:
+                    </label>
+                    <input
+                      type="text"
+                      value={testPlayerName}
+                      onChange={(e) => setTestPlayerName(e.target.value.toUpperCase())}
+                      placeholder="Escribe un nombre..."
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-bold font-mono focus:outline-none focus:border-emerald-500"
+                    />
+                    <span className="text-[11px] text-slate-500 mt-1 block">
+                      Prueba con "CAROL" (normal) o "CHRISTOPHER" (compresión automática).
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-300 font-medium block mb-1">
+                      Prueba en Vivo — Número Dorsal:
+                    </label>
+                    <input
+                      type="text"
+                      value={testPlayerNumber}
+                      onChange={(e) => setTestPlayerNumber(e.target.value)}
+                      placeholder="Ej: 9, 10, 21"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-emerald-400 font-bold font-mono focus:outline-none focus:border-emerald-500"
+                    />
+                    <span className="text-[11px] text-slate-500 mt-1 block">
+                      Altura reglamentaria en espalda: 220 mm (22 cm). Ubicado debajo del nombre.
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Live Vector Jersey Simulation Stage */}
               <div className="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-8 flex flex-col items-center justify-center relative overflow-hidden">
@@ -384,27 +509,38 @@ export const DesignsView: React.FC = () => {
                       <path d="M 50,50 L 150,50 C 180,90 220,90 250,50 L 350,50 C 340,110 320,180 290,220 L 310,650 L 90,650 L 110,220 C 80,180 60,110 50,50 Z" />
                     </clipPath>
                     <linearGradient id="jerseyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor={activeDesign.colors[0] || '#ea580c'} />
-                      <stop offset="100%" stopColor={activeDesign.colors[1] || '#0284c7'} />
+                      <stop offset="0%" stopColor={activeDesign.colors[0] || '#facc15'} />
+                      <stop offset="100%" stopColor={activeDesign.colors[1] || '#16a34a'} />
                     </linearGradient>
                   </defs>
 
                   {/* Base Body with Clipping Mask */}
                   <g clipPath="url(#jerseyClip)">
-                    {/* Master Design Pattern Layer */}
-                    <rect width="500" height="700" fill="url(#jerseyGrad)" />
-                    {/* Graphic Dynamic Accents */}
-                    <path d="M 0,220 L 500,320 L 500,360 L 0,260 Z" fill={activeDesign.colors[1] || '#0284c7'} opacity="0.4" />
-                    <path d="M 0,420 L 500,520 L 500,560 L 0,460 Z" fill={activeDesign.colors[2] || '#ffffff'} opacity="0.3" />
+                    {/* Fondo base con el color dominante del diseño */}
+                    <rect width="500" height="700" fill={activeDesign.colors[0] || '#facc15'} />
 
-                    {/* Vectorized Name Placeholder */}
-                    {nameFitting && (
-                      <g dangerouslySetInnerHTML={{ __html: nameFitting.svgContent }} />
+                    {/* Arte vectorial real subido por el usuario */}
+                    {currentArtwork?.svgArtContent ? (
+                      <g dangerouslySetInnerHTML={{ __html: preparePreviewArt(currentArtwork.svgArtContent) }} />
+                    ) : (
+                      <rect width="500" height="700" fill="url(#jerseyGrad)" />
                     )}
 
-                    {/* Vectorized Number Placeholder */}
-                    {numberFitting && (
-                      <g dangerouslySetInnerHTML={{ __html: numberFitting.svgContent }} />
+                    {/* Nombres y números vectoriales dinámicos (solo en espalda) */}
+                    {selectedPieceView === 'ESPALDA' && (
+                      <>
+                        {nameFitting && (
+                          <g dangerouslySetInnerHTML={{ __html: nameFitting.svgContent }} />
+                        )}
+                        {numberFitting && (
+                          <g dangerouslySetInnerHTML={{ __html: numberFitting.svgContent }} />
+                        )}
+                      </>
+                    )}
+
+                    {/* Número frontal si aplica */}
+                    {selectedPieceView === 'DELANTERO' && frontFitting && (
+                      <g dangerouslySetInnerHTML={{ __html: frontFitting.svgContent }} />
                     )}
                   </g>
 
@@ -420,20 +556,31 @@ export const DesignsView: React.FC = () => {
                 </svg>
 
                 {/* Auto-fitting Live Status Pill */}
-                {nameFitting && (
-                  <div className="mt-4 flex items-center gap-3 text-xs">
-                    <span className="text-slate-400">Estado del Nombre:</span>
+                {selectedPieceView === 'ESPALDA' && nameFitting && (
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs">
+                    <span className="text-slate-400">Ajuste de Dorsal:</span>
                     {nameFitting.isCompressed ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono text-[11px]">
                         <Sliders className="w-3.5 h-3.5" />
-                        Compresión activa: {(nameFitting.scaleX * 100).toFixed(0)}% (Ancho: {nameFitting.fittedWidthMm.toFixed(1)} mm)
+                        Compresión nombre: {(nameFitting.scaleX * 100).toFixed(0)}% ({nameFitting.fittedWidthMm.toFixed(1)} mm)
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono text-[11px]">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        Escala 100% natural (Ancho: {nameFitting.fittedWidthMm.toFixed(1)} mm)
+                        Nombre 100% natural ({nameFitting.fittedWidthMm.toFixed(1)} mm)
                       </span>
                     )}
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/20 font-mono text-[11px]">
+                      <Ruler className="w-3.5 h-3.5" />
+                      Número reglamentario: 220 mm (separado debajo)
+                    </span>
+                  </div>
+                )}
+
+                {selectedPieceView === 'DELANTERO' && (
+                  <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>Visualizando frente del uniforme con escudos y marcas en escala 1:1 proporcional.</span>
                   </div>
                 )}
               </div>
