@@ -14,7 +14,7 @@ export const Header: React.FC = () => {
       case 'DESIGNS':
         return { title: 'Biblioteca de Diseños Maestros', subtitle: 'Patrones artísticos, dorsales y placeholders' };
       case 'PATTERNS':
-        return { title: 'Biblioteca de Moldes Vectoriales', subtitle: 'Geometrías por talla y contornos de corte 1:1' };
+        return { title: 'Moldes', subtitle: 'Patrones base y contornos de corte por talla (cm)' };
       case 'NESTING':
         return { title: 'Lienzo de Entallado y Nesting 2D', subtitle: 'Optimización de consumo sobre bobina continua' };
       case 'HISTORY':

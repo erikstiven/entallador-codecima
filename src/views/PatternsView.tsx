@@ -136,44 +136,6 @@ exportMoldesParaHmb();`;
         onChange={handleFileUpload}
       />
 
-      {/* Top Action Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-slate-800/60">
-        <div>
-          <span className="text-xs font-semibold text-slate-300">Gestor de Moldería Vectorial</span>
-          <span className="text-xs text-slate-500 ml-2 hidden sm:inline">• Escala física 1:1 en mm para calce perfecto</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {patternSets.length > 0 && (
-            <button
-              onClick={() => {
-                if (window.confirm('¿Deseas eliminar todos los conjuntos de moldes cargados?')) {
-                  clearAllPatterns();
-                }
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950/30 hover:bg-red-900/50 text-red-300 rounded-lg text-xs font-medium border border-red-800/40 transition-colors"
-              title="Limpiar y borrar todos los moldes cargados"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-red-400" />
-              Limpiar Moldes
-            </button>
-          )}
-          <button
-            onClick={handleDownloadScript}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
-            title="Descargar script JSX para Adobe Illustrator"
-          >
-            <FileCode className="w-3.5 h-3.5 text-emerald-400" />
-            Script JSX
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Cargar Otro Molde SVG
-          </button>
-        </div>
-      </div>
 
       {/* Main Pattern View or Empty State */}
       {!activePatternSet ? (
@@ -216,7 +178,7 @@ exportMoldesParaHmb();`;
       ) : (
         <div className="space-y-6">
           {/* Active Pattern Set Header Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex flex-col md:flex-row md:items-center gap-4">
               {patternSets.length > 1 && (
                 <div className="space-y-1">
@@ -239,13 +201,10 @@ exportMoldesParaHmb();`;
               )}
               <div>
                 <div className="flex items-center gap-2.5">
-                  <span className="w-3 h-3 rounded-full bg-emerald-400" />
-                  <h3 className="text-base font-bold text-white">{activePatternSet.name}</h3>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                    {activePatternSet.garmentType}
-                  </span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
+                  <h3 className="text-base font-bold text-white tracking-wide">{activePatternSet.name}</h3>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-400 mt-0.5">
                   {activePatternSet.sizes.length} tallas registradas •{' '}
                   {activePatternSet.sizes.reduce((acc, s) => acc + s.pieces.length, 0)} piezas asignadas
                   {activePatternSet.unassignedPieces.length > 0 && (
@@ -257,10 +216,40 @@ exportMoldesParaHmb();`;
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Action Buttons in single unified row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Cargar Otro Molde SVG
+              </button>
+              <button
+                onClick={handleDownloadScript}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+                title="Descargar script JSX para Adobe Illustrator"
+              >
+                <FileCode className="w-3.5 h-3.5 text-emerald-400" />
+                Script JSX
+              </button>
+              {patternSets.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (window.confirm('¿Deseas eliminar todos los conjuntos de moldes cargados?')) {
+                      clearAllPatterns();
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950/30 hover:bg-red-900/50 text-red-300 rounded-lg text-xs font-medium border border-red-800/40 transition-colors"
+                  title="Limpiar y borrar todos los moldes cargados"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                  Limpiar Moldes
+                </button>
+              )}
               <button
                 onClick={() => deletePatternSet(activePatternSet.id)}
-                className="p-2 hover:bg-slate-800 text-slate-500 hover:text-red-400 rounded-lg transition-colors"
+                className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-red-400 rounded-lg transition-colors border border-transparent hover:border-slate-700"
                 title="Eliminar este conjunto de moldes"
               >
                 <Trash2 className="w-4 h-4" />
@@ -509,23 +498,15 @@ exportMoldesParaHmb();`;
                       {/* Piece Metric Details in Centimeters (cm) */}
                       <div className="space-y-1 text-xs pt-1">
                         <div className="font-semibold text-white font-mono truncate">{piece.pieceName}</div>
-                        <div className="text-[11px] text-slate-400 flex items-center justify-between font-mono">
-                          <span>Dimensiones:</span>
-                          <span className="text-slate-100 font-bold">
-                            {(piece.bbox.width / 10).toFixed(1)} × {(piece.bbox.height / 10).toFixed(1)} cm
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-400 flex items-center justify-between font-mono">
-                          <span>Área física:</span>
-                          <span className="text-slate-200">
-                            {(piece.areaMm2 / 100).toFixed(1)} cm²
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-400 flex items-center justify-between font-mono">
-                          <span>Rotaciones:</span>
-                          <span className="text-sky-400 font-semibold">
-                            {piece.allowedRotationsDeg.join('°, ')}°
-                          </span>
+                        <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
+                          <div className="bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+                            <span className="text-slate-400 text-[11px]">Ancho:</span>
+                            <span className="text-emerald-400 font-bold text-xs">{(piece.bbox.width / 10).toFixed(1)} cm</span>
+                          </div>
+                          <div className="bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+                            <span className="text-slate-400 text-[11px]">Alto:</span>
+                            <span className="text-emerald-400 font-bold text-xs">{(piece.bbox.height / 10).toFixed(1)} cm</span>
+                          </div>
                         </div>
                       </div>
                     </div>
