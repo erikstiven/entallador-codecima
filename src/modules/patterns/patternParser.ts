@@ -205,11 +205,23 @@ export function parsePatternSvg(
       }
     }
 
-    // Heurística para mangas si no se detectó tipo:
-    // Las mangas suelen ser más anchas que altas (width > height * 1.15) y altura menor a 450mm
+    // Heurística geométrica para clasificar el tipo de pieza si no viene en el ID:
     if (!detectedType) {
       if (bbox.width > bbox.height * 1.15 && bbox.height < 450) {
+        // Manga: típicamente más ancha que alta
         detectedType = 'MANGA_IZQ';
+      } else if (bbox.height >= 450) {
+        // Torso: delantero o espalda
+        const existingForSize = sizeMap[detectedSize || ''] || [];
+        const hasDelantero = existingForSize.some((p) => p.pieceType === 'DELANTERO');
+        detectedType = hasDelantero ? 'ESPALDA' : 'DELANTERO';
+      } else if (bbox.height >= 250 && bbox.width >= 250) {
+        // Short / Pantaloneta
+        const existingForSize = sizeMap[detectedSize || ''] || [];
+        const hasShortF = existingForSize.some((p) => p.pieceType === 'SHORT_FRENTE');
+        detectedType = hasShortF ? 'SHORT_ESPALDA' : 'SHORT_FRENTE';
+      } else {
+        detectedType = 'OTRO';
       }
     }
 
@@ -219,16 +231,17 @@ export function parsePatternSvg(
       continue;
     }
 
-    const isAutoAssigned = Boolean(detectedSize && detectedType);
+    const isAutoAssigned = Boolean(detectedSize);
     const sizeName = detectedSize || 'SIN_TALLA';
     const pieceType: PieceType = detectedType || 'OTRO';
     const allowedRotationsDeg = getDefaultRotationsForPieceType(pieceType);
+    const humanPieceName = detectedSize ? `T${detectedSize}_${pieceType}` : originalId;
 
     const piece: PatternPiece = {
       id: `piece_${originalId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       sizeName,
       pieceType,
-      pieceName: originalId,
+      pieceName: humanPieceName,
       cutPolygon,
       bbox,
       areaMm2,

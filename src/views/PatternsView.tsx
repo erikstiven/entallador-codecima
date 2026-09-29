@@ -28,6 +28,7 @@ export const PatternsView: React.FC = () => {
     assignPieceManually,
     setActivePatternSet,
     deletePatternSet,
+    discardUnassignedPiece,
     clearAllPatterns,
   } = usePatternStore();
 
@@ -267,34 +268,65 @@ exportMoldesParaHmb();`;
 
           {/* Unassigned Pieces Banner / Manual Assigner */}
           {activePatternSet.unassignedPieces.length > 0 && (
-            <div className="bg-amber-950/30 border border-amber-800/60 rounded-xl p-5 space-y-4">
-              <div className="flex items-center gap-2 text-amber-300 font-semibold text-xs">
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
-                <span>Asignador Gráfico Manual: Se encontraron piezas sin clasificar en el SVG</span>
+            <div className="bg-amber-950/20 border border-amber-800/40 rounded-xl p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-amber-300 font-semibold text-xs">
+                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                  <span>Asignador Visual: Hay {activePatternSet.unassignedPieces.length} trazo(s) adicionales detectados en el archivo</span>
+                </div>
+                {selectedPieceForAssignment && (
+                  <button
+                    onClick={() => discardUnassignedPiece(selectedPieceForAssignment.id)}
+                    className="flex items-center gap-1 px-2.5 py-1 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-950/50 rounded border border-red-900/50 transition-colors"
+                    title="Descartar este trazo si es una línea guía o marco de mesa de trabajo"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Descartar este Trazo
+                  </button>
+                )}
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                {/* Selector de pieza no asignada */}
-                <div className="space-y-2">
-                  <label className="text-xs text-slate-300 font-medium block">Pieza Detectada:</label>
-                  <select
-                    value={selectedPieceForAssignment?.id || ''}
-                    onChange={(e) => {
-                      const found = activePatternSet.unassignedPieces.find((p) => p.id === e.target.value);
-                      selectPieceForAssignment(found || null);
-                    }}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono"
-                  >
-                    {activePatternSet.unassignedPieces.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.pieceName} ({p.bbox.width.toFixed(0)} × {p.bbox.height.toFixed(0)} mm)
-                      </option>
-                    ))}
-                  </select>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+                {/* Visual Thumbnail Preview */}
+                <div className="flex items-center gap-3">
+                  {selectedPieceForAssignment ? (
+                    <div className="w-20 h-20 bg-slate-950 rounded-lg border border-slate-800 p-1 flex items-center justify-center flex-shrink-0">
+                      <svg
+                        viewBox={`${selectedPieceForAssignment.bbox.minX} ${selectedPieceForAssignment.bbox.minY} ${selectedPieceForAssignment.bbox.width} ${selectedPieceForAssignment.bbox.height}`}
+                        className="w-full h-full text-amber-400 stroke-current fill-amber-500/10"
+                      >
+                        <path
+                          d={selectedPieceForAssignment.svgPathData}
+                          strokeWidth={Math.max(selectedPieceForAssignment.bbox.width, selectedPieceForAssignment.bbox.height) * 0.02}
+                        />
+                      </svg>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-center text-slate-600 text-xs flex-shrink-0">
+                      Sin pieza
+                    </div>
+                  )}
+                  <div className="space-y-1 flex-1">
+                    <label className="text-xs text-slate-300 font-medium block">Pieza Detectada:</label>
+                    <select
+                      value={selectedPieceForAssignment?.id || ''}
+                      onChange={(e) => {
+                        const found = activePatternSet.unassignedPieces.find((p) => p.id === e.target.value);
+                        selectPieceForAssignment(found || null);
+                      }}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                    >
+                      {activePatternSet.unassignedPieces.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.pieceName} ({p.bbox.width.toFixed(0)} × {p.bbox.height.toFixed(0)} mm)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* Formulario de asignación */}
-                <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="grid grid-cols-2 gap-3 text-xs col-span-2">
                   <div>
                     <label className="text-slate-400 block mb-1">Asignar a Talla:</label>
                     <input
@@ -341,7 +373,7 @@ exportMoldesParaHmb();`;
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md flex items-center justify-center gap-1.5"
                   >
                     <Check className="w-3.5 h-3.5" />
-                    Confirmar Asignación de Pieza
+                    Confirmar Asignación
                   </button>
                 </div>
               </div>

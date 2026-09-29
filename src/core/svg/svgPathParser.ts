@@ -47,12 +47,18 @@ export function extractSvgViewport(svgString: string): SvgViewport {
     try {
       physicalWidthMm = parseUnitStringToMm(widthMatch[1]);
     } catch (_) {}
+  } else if (vbWidth > 0) {
+    // Si no hay width explícito (ej: exportado directo de Adobe Illustrator sin unidades),
+    // las unidades del viewBox están en puntos tipográficos (1 pt = 25.4/72 mm = 0.352778 mm)
+    physicalWidthMm = vbWidth * (25.4 / 72.0);
   }
 
   if (heightMatch) {
     try {
       physicalHeightMm = parseUnitStringToMm(heightMatch[1]);
     } catch (_) {}
+  } else if (vbHeight > 0) {
+    physicalHeightMm = vbHeight * (25.4 / 72.0);
   }
 
   if (vbWidth <= 0) vbWidth = physicalWidthMm;
