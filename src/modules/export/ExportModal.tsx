@@ -3,16 +3,13 @@ import {
   X, 
   Download, 
   FileText, 
-  FileSpreadsheet, 
   Printer, 
   Sparkles, 
   CheckCircle2, 
   Scissors, 
-  Layers, 
-  Ruler,
-  AlertCircle
+  Ruler
 } from 'lucide-react';
-import { ExportFormat, RipProfileType, ExportOptions } from './types';
+import { ExportFormat, ExportOptions } from './types';
 import { exportProductionRoll, triggerFileDownload } from './exportService';
 import { PlacedNestingPiece, NestingResult } from '@/core/nesting/types';
 
@@ -31,10 +28,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   nestingResult,
   printableWidthMm,
 }) => {
-  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('PDF');
-  const [ripProfile, setRipProfile] = useState<RipProfileType>('MIMAKI_RASTERLINK');
-  const [includeCutContour, setIncludeCutContour] = useState<boolean>(true);
-  const [includeSeamLabels, setIncludeSeamLabels] = useState<boolean>(true);
+  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('SVG');
+  const includeCutContour = false;
+  const [includeSeamLabels] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string>(
     `PRODUCCION_UNIFORMES_${new Date().toISOString().slice(0, 10)}`
   );
@@ -45,6 +41,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   const totalLengthM = (nestingResult.totalRollLengthMm / 1000.0).toFixed(2);
   const efficiency = nestingResult.utilizationPercent.toFixed(1);
+  const hasEmbeddedRaster = placedPieces.some((piece) => /<image\b/i.test(piece.svgContent || ''));
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -54,7 +51,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       const options: ExportOptions = {
         format: selectedFormat,
         fileName: fileName.trim() || 'PRODUCCION_TEXTIL',
-        ripProfile,
+        ripProfile: 'MIMAKI_RASTERLINK',
         includeCutContour,
         cutContourColor: '#ff0000',
         cutContourWidthMm: 0.25,
@@ -77,7 +74,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       setTimeout(() => setExportSuccess(false), 3000);
     } catch (err) {
       console.error('Error al exportar bobina:', err);
-      alert('Error generando el archivo de exportación.');
+      const message = err instanceof Error ? err.message : 'No fue posible generar el archivo.';
+      alert(`Error de exportación: ${message}`);
     } finally {
       setIsExporting(false);
     }
@@ -96,11 +94,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 Exportar Bobina para Impresión
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40 font-mono">
-                  Escala 1:1 Físico
+                  Escala física 1:1
                 </span>
               </h2>
               <p className="text-xs text-slate-400">
-                Archivos vectoriales puros calibrados para Mimaki RasterLink, Epson y mesa de corte
+                Archivos de producción a tamaño real para Illustrator y software RIP
               </p>
             </div>
           </div>
@@ -116,11 +114,35 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         <div className="p-6 overflow-y-auto space-y-6">
           {/* Format Selection Cards */}
           <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-2.5">
-              Selecciona el Formato de Salida
-            </label>
+            <div className="flex items-center justify-between mb-2.5">
+              <label className="text-xs font-semibold text-slate-300 block">Formato</label>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
-              {/* Option 1: PDF para RasterLink */}
+              {/* Option 1: SVG Vectorial (Recomendado para Illustrator) */}
+              <div
+                onClick={() => setSelectedFormat('SVG')}
+                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  selectedFormat === 'SVG'
+                    ? 'bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-500/30 shadow-lg'
+                    : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2 text-white font-bold text-sm">
+                    <Sparkles className="w-4 h-4 text-emerald-400" />
+                    <span>SVG 1:1 (Illustrator)</span>
+                  </div>
+                  <span className="text-[10px] bg-emerald-900/60 text-emerald-300 px-1.5 py-0.5 rounded font-mono font-bold">
+                    Recomendado
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-tight">
+                  Conserva el arte, los colores, nombres, números y la distribución física del rollo.
+                </p>
+              </div>
+
+              {/* Option 2: PDF para RasterLink */}
               <div
                 onClick={() => setSelectedFormat('PDF')}
                 className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
@@ -135,120 +157,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     <span>PDF RasterLink</span>
                   </div>
                   <span className="text-[10px] bg-sky-900/60 text-sky-300 px-1.5 py-0.5 rounded font-mono">
-                    Recomendado
+                    Para RIP / Plotter
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-tight">
-                  Página continua 1:1 calibrada para Mimaki RasterLink 6/7 y Epson Edge Print.
+                  Archivo de impresión 1:1 con el mismo arte visible del SVG.
                 </p>
               </div>
 
-              {/* Option 2: SVG Vectorial */}
-              <div
-                onClick={() => setSelectedFormat('SVG')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                  selectedFormat === 'SVG'
-                    ? 'bg-sky-950/40 border-sky-500 ring-2 ring-sky-500/30 shadow-lg'
-                    : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2 text-white font-bold text-sm">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>SVG 1:1 (Illustrator)</span>
-                  </div>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-tight">
-                  Dimensiones en mm reales. Listo para abrir y revisar en Adobe Illustrator o CorelDRAW.
-                </p>
-              </div>
-
-              {/* Option 3: EPS PostScript */}
-              <div
-                onClick={() => setSelectedFormat('EPS')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                  selectedFormat === 'EPS'
-                    ? 'bg-sky-950/40 border-sky-500 ring-2 ring-sky-500/30 shadow-lg'
-                    : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2 text-white font-bold text-sm">
-                    <Printer className="w-4 h-4 text-purple-400" />
-                    <span>EPS PostScript</span>
-                  </div>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-tight">
-                  Encapsulated PostScript Level 3 para RIPs y plotters legados con BoundingBox exacto.
-                </p>
-              </div>
-
-              {/* Option 4: Excel y CSV */}
-              <div
-                onClick={() => setSelectedFormat('EXCEL_SUMMARY')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                  selectedFormat === 'EXCEL_SUMMARY'
-                    ? 'bg-sky-950/40 border-sky-500 ring-2 ring-sky-500/30 shadow-lg'
-                    : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2 text-white font-bold text-sm">
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                    <span>Excel Resumen Taller</span>
-                  </div>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-tight">
-                  Hoja de cálculo con detalle de corte por jugador, consumos y desglose por talla.
-                </p>
-              </div>
             </div>
           </div>
 
-          {/* Options for PDF / SVG */}
-          {selectedFormat !== 'EXCEL_SUMMARY' && selectedFormat !== 'CSV_SUMMARY' && (
-            <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
-              <span className="text-xs font-semibold text-slate-300 block">
-                Opciones de Salida para Taller
-              </span>
-
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={includeCutContour}
-                    onChange={(e) => setIncludeCutContour(e.target.checked)}
-                    className="w-4 h-4 rounded text-sky-600 bg-slate-900 border-slate-700"
-                  />
-                  <span>Trazado de corte exterior (Rojo 0.5 pt)</span>
-                </label>
-
-                <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={includeSeamLabels}
-                    onChange={(e) => setIncludeSeamLabels(e.target.checked)}
-                    className="w-4 h-4 rounded text-sky-600 bg-slate-900 border-slate-700"
-                  />
-                  <span>Etiquetas de confección en margen</span>
-                </label>
-              </div>
-
-              {selectedFormat === 'PDF' && (
-                <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Perfil RIP Objetivo:</span>
-                  <select
-                    value={ripProfile}
-                    onChange={(e) => setRipProfile(e.target.value as RipProfileType)}
-                    className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white"
-                  >
-                    <option value="MIMAKI_RASTERLINK">Mimaki RasterLink 6 / 7</option>
-                    <option value="EPSON_EDGE_PRINT">Epson Edge Print</option>
-                    <option value="GENERIC_RIP">RIP Genérico (Wasatch / Caldera)</option>
-                  </select>
-                </div>
-              )}
-            </div>
+          {hasEmbeddedRaster && (
+            <p className="text-[11px] leading-relaxed text-amber-300 bg-amber-950/30 border border-amber-800/50 rounded-lg px-3 py-2">
+              El diseño contiene imágenes incrustadas. Se conservarán tal como fueron cargadas; su nitidez depende de la resolución del archivo original.
+            </p>
           )}
 
           {/* File Name */}

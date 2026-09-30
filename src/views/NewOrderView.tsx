@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { 
   UploadCloud, 
   FileSpreadsheet, 
@@ -24,8 +24,16 @@ export const NewOrderView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { activeProfile } = useProfileStore();
   const { setCurrentView } = useNavigationStore();
-  const { activePatternSet } = usePatternStore();
-  const { activeDesign } = useDesignStore();
+  const { activePatternSet, patternSets, loadFromDatabase, setActivePatternSet } = usePatternStore();
+  const { activeDesign, designs, loadDesignsFromDatabase, setActiveDesign } = useDesignStore();
+
+  useEffect(() => {
+    loadFromDatabase();
+    loadDesignsFromDatabase();
+  }, []);
+
+  const currentPatternSet = activePatternSet || patternSets[0] || null;
+  const currentDesign = activeDesign || designs[0] || null;
 
   const {
     items,
@@ -42,6 +50,7 @@ export const NewOrderView: React.FC = () => {
     removeItem,
     addItem,
     clearOrder,
+    setAllGarmentTypes,
   } = useOrderStore();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,26 +105,27 @@ export const NewOrderView: React.FC = () => {
         onChange={handleFileUpload}
       />
 
-      {/* Top Banner & Profile Overview */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <span className="text-xs uppercase font-bold tracking-wider text-emerald-400">Paso 1 de 4</span>
-          <h2 className="text-xl font-bold text-white mt-1">Cargar Nómina y Pedido de Uniformes</h2>
-          <p className="text-xs text-slate-400 mt-1 max-w-xl">
-            Sube el archivo Excel (.xlsx o .csv) de tu equipo. El sistema valida nombres, dorsales, tallas existentes y tipos de prenda antes de generar el entallado.
-          </p>
+      {/* Top Banner: Solo cuando aún no hay archivo cargado */}
+      {items.length === 0 && (
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-white mt-1">Cargar Pedido de Uniformes</h2>
+            <p className="text-xs text-slate-400 mt-1 max-w-xl">
+              Sube el archivo Excel (.xlsx o .csv) de tu equipo. El sistema valida nombres, dorsales, tallas y tipos de prenda.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleDownloadTemplate}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-950 transition-colors flex items-center gap-1.5"
+              title="Descargar archivo Excel con las columnas listas para llenar"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Descargar Plantilla Excel (.xlsx)
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleDownloadTemplate}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-950 transition-colors flex items-center gap-1.5"
-            title="Descargar archivo Excel con las columnas listas para llenar"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Descargar Plantilla Excel (.xlsx)
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Drag & Drop Zone (if no items loaded) */}
       {items.length === 0 ? (
@@ -185,16 +195,59 @@ export const NewOrderView: React.FC = () => {
 
           {/* Table Container */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-            <div className="p-3.5 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-200">Nómina del Pedido</span>
-                <span className="text-[11px] text-slate-400">({items.length} jugadores cargados)</span>
+            <div className="p-3.5 bg-slate-950/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-200">Nómina del Pedido</span>
+                  <span className="text-[11px] text-slate-400">({items.length} jugadores cargados)</span>
+                </div>
+
+                {/* Selector Rápido de Producción: Solo Camisetas / Solo Shorts / Completo */}
+                <div className="flex items-center bg-slate-900 border border-slate-700/80 rounded-lg p-0.5 text-xs">
+                  <span className="text-[10px] uppercase font-mono text-slate-400 px-2 font-bold">Producción:</span>
+                  <button
+                    type="button"
+                    onClick={() => setAllGarmentTypes('CAMISETA')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      items.length > 0 && items.every((i) => i.garmentType === 'CAMISETA')
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                    title="Cambiar todo el pedido a solo camisetas (Frente, Espalda y Mangas)"
+                  >
+                    👕 Solo Camisetas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllGarmentTypes('SHORT')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      items.length > 0 && items.every((i) => i.garmentType === 'SHORT')
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                    title="Cambiar todo el pedido a solo shorts"
+                  >
+                    🩳 Solo Shorts
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllGarmentTypes('COMPLETO')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      items.length > 0 && items.every((i) => i.garmentType === 'COMPLETO')
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                    title="Conjunto completo (Camiseta + Short)"
+                  >
+                    🎽 Completo
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: '28', garmentType: 'COMPLETO' })}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium shadow-sm transition-colors flex items-center gap-1.5"
+                  onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: '28', garmentType: 'CAMISETA' })}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Agregar Jugador
@@ -344,8 +397,8 @@ export const NewOrderView: React.FC = () => {
               <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
                 <span>
                   Molde:{' '}
-                  {activePatternSet ? (
-                    <span className="text-emerald-400 font-semibold">{activePatternSet.name}</span>
+                  {currentPatternSet ? (
+                    <span className="text-emerald-400 font-semibold">{currentPatternSet.name}</span>
                   ) : (
                     <span className="text-amber-400 font-semibold">⚠️ Sin Molde (ve a 'Moldes')</span>
                   )}
@@ -353,8 +406,8 @@ export const NewOrderView: React.FC = () => {
                 <span>•</span>
                 <span>
                   Diseño:{' '}
-                  {activeDesign ? (
-                    <span className="text-emerald-400 font-semibold">{activeDesign.name}</span>
+                  {currentDesign ? (
+                    <span className="text-emerald-400 font-semibold">{currentDesign.name}</span>
                   ) : (
                     <span className="text-amber-400 font-semibold">⚠️ Sin Diseño (ve a 'Diseños')</span>
                   )}
@@ -365,15 +418,22 @@ export const NewOrderView: React.FC = () => {
             <button
               disabled={summary.hasErrors || items.length === 0}
               onClick={() => {
-                if (!activePatternSet) {
+                if (!currentPatternSet) {
                   alert("⚠️ No hay ningún molde cargado. Ve a la pestaña 'Moldes' y sube tu archivo SVG graduado (ej: moldes 2025.svg).");
                   setCurrentView('PATTERNS');
                   return;
                 }
-                if (!activeDesign) {
+                if (!currentDesign) {
                   alert("⚠️ No hay ningún diseño cargado. Ve a la pestaña 'Diseños' y sube tu archivo SVG de diseño (ej: ESPAÑA PATRON 2026.svg).");
                   setCurrentView('DESIGNS');
                   return;
+                }
+
+                if (!activePatternSet && currentPatternSet) {
+                  setActivePatternSet(currentPatternSet);
+                }
+                if (!activeDesign && currentDesign) {
+                  setActiveDesign(currentDesign);
                 }
 
                 // Generar prendas con el store

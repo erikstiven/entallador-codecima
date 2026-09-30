@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { 
   OrderItem, 
   OrderSummary, 
-  OrderValidationConfig 
+  OrderValidationConfig,
+  GarmentType 
 } from './types';
 import { 
   parseExcelBuffer 
@@ -28,6 +29,7 @@ interface OrderState {
   setSport: (sport: string) => void;
   setAvailableSizes: (sizes: string[]) => void;
   setStrictNumberUniqueness: (strict: boolean) => void;
+  setAllGarmentTypes: (garmentType: GarmentType) => void;
   
   loadFromBuffer: (buffer: ArrayBuffer | Uint8Array, fileName: string) => void;
   updateItem: (id: string, updates: Partial<OrderItem>) => void;
@@ -63,6 +65,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ strictNumberUniqueness: strict });
     const { items, availableSizes } = get();
     const validated = validateOrderList(items, { availableSizes, strictNumberUniqueness: strict });
+    set({ items: validated, summary: calculateOrderSummary(validated) });
+  },
+
+  setAllGarmentTypes: (garmentType) => {
+    const { items, availableSizes, strictNumberUniqueness } = get();
+    const updated = items.map((it) => ({ ...it, garmentType }));
+    const validated = validateOrderList(updated, { availableSizes, strictNumberUniqueness });
     set({ items: validated, summary: calculateOrderSummary(validated) });
   },
 

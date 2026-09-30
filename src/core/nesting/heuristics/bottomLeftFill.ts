@@ -123,6 +123,15 @@ export function executeBottomLeftFill(
         return b.bbox.height - a.bbox.height;
       });
       break;
+
+    default:
+      // First-Fit Decreasing Height (FFDH) por defecto
+      sortedFreePieces = [...freePieces].sort((a, b) => {
+        const diffH = b.bbox.height - a.bbox.height;
+        if (Math.abs(diffH) > 0.001) return diffH;
+        return b.areaMm2 - a.areaMm2;
+      });
+      break;
   }
 
   // 3. Inicializar el lecho de colocación con las piezas bloqueadas

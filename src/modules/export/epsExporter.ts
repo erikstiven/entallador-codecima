@@ -13,8 +13,9 @@ export function generateFullRollEps(
   heightMm: number,
   options: Partial<ExportOptions> = {}
 ): string {
-  const includeContour = options.includeCutContour !== false;
-  const includeLabels = options.includeSeamLabels !== false;
+  // Las guías visibles son opt-in: nunca deben aparecer por omitir opciones.
+  const includeContour = options.includeCutContour === true;
+  const includeLabels = options.includeSeamLabels === true;
   const contourWidthPt = mmToPt(options.cutContourWidthMm || 0.25).toFixed(3);
 
   const widthPt = mmToPt(widthMm);
@@ -45,7 +46,8 @@ export function generateFullRollEps(
 %%Page: 1 1
 gsave
 
-% Fondo transparente / blanco de la bobina
+% Fondo blanco de la bobina
+1.0 1.0 1.0 rgb
 0 0 ${widthPt.toFixed(2)} ${heightPt.toFixed(2)} rectfill
 `;
 
@@ -68,7 +70,7 @@ gsave
       };
     });
 
-    // Trazar silueta
+    // Trazar silueta con fondo claro
     ps += `\n% Pieza: ${piece.playerName} #${piece.playerNumber} (${piece.pieceType})\n`;
     ps += `newpath\n`;
     ps += `${transformed[0].xPt.toFixed(2)} ${transformed[0].yPt.toFixed(2)} m\n`;
@@ -76,9 +78,10 @@ gsave
       ps += `${transformed[i].xPt.toFixed(2)} ${transformed[i].yPt.toFixed(2)} l\n`;
     }
     ps += `cp\n`;
-    ps += `0.12 0.16 0.24 rgb fill\n`;
+    // Relleno suave amarillo/dorado textil si es camiseta
+    ps += `0.98 0.88 0.35 rgb fill\n`;
 
-    // Trazo de corte CutContour en rojo (1 0 0 rgb)
+    // Trazo de corte CutContour en rojo puro (1 0 0 rgb)
     if (includeContour) {
       ps += `newpath\n`;
       ps += `${transformed[0].xPt.toFixed(2)} ${transformed[0].yPt.toFixed(2)} m\n`;
@@ -89,6 +92,17 @@ gsave
       ps += `${contourWidthPt} lw 1.0 0.0 0.0 rgb stroke\n`;
     }
 
+    // Texto interior: Nombre y Número centrados
+    const centerXPt = (mmToPt(piece.xMm + piece.effectiveWidthMm / 2)).toFixed(2);
+    const centerYPt = (heightPt - mmToPt(piece.yMm + piece.effectiveHeightMm / 2)).toFixed(2);
+    const cleanName = (piece.playerName || '').replace(/[()]/g, '');
+    const cleanNum = (piece.playerNumber || '').replace(/[()]/g, '');
+
+    ps += `/Helvetica-Bold findfont 16 scalefont setfont\n`;
+    ps += `0.1 0.1 0.1 rgb\n`;
+    ps += `${centerXPt} ${centerYPt} m\n`;
+    ps += `(${cleanName} #${cleanNum}) show\n`;
+
     // Etiqueta de texto de identificación en costura
     if (includeLabels) {
       const cleanLabel = `${piece.playerName} #${piece.playerNumber} T${piece.sizeName} ${piece.pieceType}`.replace(/[()]/g, '');
@@ -96,7 +110,7 @@ gsave
       const labelY = (heightPt - mmToPt(piece.yMm) + 3).toFixed(2);
 
       ps += `/Helvetica-Bold findfont 8.5 scalefont setfont\n`;
-      ps += `0.1 0.1 0.1 rgb\n`;
+      ps += `0.2 0.2 0.2 rgb\n`;
       ps += `${labelX} ${labelY} m\n`;
       ps += `(${cleanLabel}) show\n`;
     }

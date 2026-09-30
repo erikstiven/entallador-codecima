@@ -8,9 +8,9 @@ export interface ExportOptions {
   format: ExportFormat;
   fileName: string;
   ripProfile: RipProfileType;
-  includeCutContour: boolean; // Línea roja exterior de corte (0.5 pt) para plotters con corte
-  cutContourColor: string; // ej: '#ff0000'
-  cutContourWidthMm: number; // ej: 0.25 mm
+  includeCutContour: boolean; // Guía visible opcional; debe permanecer false en impresión textil normal
+  cutContourColor: string; // Color de la guía cuando se solicita explícitamente
+  cutContourWidthMm: number; // Grosor físico de la guía
   includeSeamLabels: boolean; // Etiquetas exteriores de identificación de jugador/talla
   paperRollWidthMm: number;
   totalRollLengthMm: number;

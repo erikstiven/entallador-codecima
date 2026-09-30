@@ -35,6 +35,14 @@ export default defineConfig(() => {
     test: {
       globals: true,
       environment: 'node',
+      // svg2pdf.js solo registra jsPDF.API.svg al cargarse: su build UMD busca
+      // window.jsPDF (inexistente en Node). Inlinándolo, Vitest lo empaqueta con
+      // Vite y usa el entrypoint ESM que importa jspdf directamente.
+      server: {
+        deps: {
+          inline: ['svg2pdf.js'],
+        },
+      },
     },
   } as any;
 })

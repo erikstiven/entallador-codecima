@@ -16,6 +16,8 @@ export interface DynamicPlaceholderRule {
   strokeColor?: string; // Color de contorno exterior
   strokeWidthMm?: number; // Grosor del contorno en mm
   textAlign: 'center' | 'left' | 'right';
+  customScaleX?: number; // Factor de ancho manual (ej: 1.0 = 100%)
+  customScaleY?: number; // Factor de alto manual (ej: 1.0 = 100%)
 }
 
 export interface PieceArtwork {
@@ -44,5 +46,5 @@ export interface TextFittingResult {
   isCompressed: boolean;
   hasOverflowWarning: boolean;
   warningMessage?: string;
-  svgContent: string; // SVG <g> con paths vectorizados
+  svgContent: string; // SVG <g> con texto ajustado y métricas físicas
 }

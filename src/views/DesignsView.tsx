@@ -1,71 +1,68 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { 
   Palette, 
-  Plus, 
-  Layers, 
-  Sliders, 
   Trash2, 
-  CheckCircle2, 
-  Sparkles, 
   Type, 
-  Ruler,
-  AlertTriangle,
-  Eye,
-  UploadCloud,
-  Pencil,
-  Check,
-  X
+  UploadCloud, 
+  Pencil, 
+  Check, 
+  X,
+  Plus,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useDesignStore } from '@/modules/designs/designStore';
-import { MasterDesign } from '@/modules/designs/types';
 import { PieceType } from '@/core/geometry/types';
-import { computeTextFitting } from '@/core/fonts/textVectorEngine';
+import { POPULAR_SPORTS_FONTS, loadGoogleFont } from '@/core/fonts/googleFonts';
+import { cmykToHex, hexToCmyk, CMYK } from '@/core/color/cmykColor';
 
-function preparePreviewArt(svgArtContent?: string): string {
-  if (!svgArtContent) return '';
-  let content = svgArtContent;
+function cleanSvgForDisplay(svgContent?: string): string {
+  if (!svgContent) return '';
+  let content = svgContent.trim();
+  if (!content.includes('<svg')) return content;
 
-  // 1. Eliminar textos estáticos de plantilla (<text> con números o nombres de muestra como 10 o NOMBRE)
-  // para que no se superpongan ni colisionen con el dorsal dinámico del jugador
-  content = content.replace(/<text\b([^>]*)>([\s\S]*?)<\/text>/gi, (match, _attrs, inner) => {
-    const plain = inner.replace(/<[^>]+>/g, '').trim().toUpperCase();
-    if (
-      plain.match(/^\d{1,2}$/) ||
-      plain.includes('NUMERO') ||
-      plain.includes('NOMBRE') ||
-      plain.includes('NAME') ||
-      plain.includes('JUGADOR') ||
-      plain.includes('PLAYER') ||
-      plain.includes('{{')
-    ) {
-      return ''; // Ocultar texto estático de muestra
+  // 1. Extraer o asegurar viewBox si no tiene
+  const hasViewBox = /viewBox\s*=\s*["'][^"']+["']/i.test(content);
+  let viewBoxAttr = '';
+  if (!hasViewBox) {
+    const widthMatch = content.match(/\bwidth\s*=\s*["']?([\d.]+)/i);
+    const heightMatch = content.match(/\bheight\s*=\s*["']?([\d.]+)/i);
+    if (widthMatch && heightMatch) {
+      viewBoxAttr = `viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`;
+    } else {
+      viewBoxAttr = 'viewBox="0 0 500 700"';
     }
-    return match;
+  }
+
+  // 2. Normalizar la etiqueta <svg> para llenar el 100% de la ranura visual
+  content = content.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
+    const cleanAttrs = attrs
+      .replace(/\bwidth\s*=\s*["'][^"']+["']/gi, '')
+      .replace(/\bheight\s*=\s*["'][^"']+["']/gi, '')
+      .replace(/\bstyle\s*=\s*["'][^"']+["']/gi, '')
+      .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']+["']/gi, '');
+
+    return `<svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: 100%; display: block;" ${viewBoxAttr} ${cleanAttrs}>`;
   });
 
-  // 2. Si es un SVG completo, asegurar viewBox y preserveAspectRatio ajustados al mockup 500x650
-  if (content.includes('<svg')) {
-    return content.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
-      const cleanAttrs = attrs
-        .replace(/\bwidth\s*=\s*["'][^"']+["']/gi, '')
-        .replace(/\bheight\s*=\s*["'][^"']+["']/gi, '')
-        .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']+["']/gi, '')
-        .replace(/\bx\s*=\s*["'][^"']+["']/gi, '')
-        .replace(/\by\s*=\s*["'][^"']+["']/gi, '');
-      return `<svg x="0" y="0" width="500" height="650" preserveAspectRatio="xMidYMid slice" ${cleanAttrs}>`;
-    });
-  }
   return content;
 }
 
 export const DesignsView: React.FC = () => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const frenteInputRef = useRef<HTMLInputElement>(null);
+  const espaldaInputRef = useRef<HTMLInputElement>(null);
+  const mangaIzqInputRef = useRef<HTMLInputElement>(null);
+  const mangaDerInputRef = useRef<HTMLInputElement>(null);
+  const multiInputRef = useRef<HTMLInputElement>(null);
+
   const {
     designs,
     activeDesign,
     loadDesignsFromDatabase,
-    createDesign,
-    importDesignSvg,
+    createNewDesign,
+    setPieceArtwork,
+    removePieceArtwork,
+    importMultiBlockFiles,
     setActiveDesign,
     deleteDesign,
     clearAllDesigns,
@@ -73,268 +70,261 @@ export const DesignsView: React.FC = () => {
     updateDesignName,
   } = useDesignStore();
 
-  // Vista activa de la prenda en el mockup (Espalda, Delantero o Mangas)
-  const [selectedPieceView, setSelectedPieceView] = useState<PieceType>('ESPALDA');
-
-  // Estado para renombrar diseño en vivo
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
 
-  // Estado para la prueba en vivo de placeholders
-  const [testPlayerName, setTestPlayerName] = useState<string>('CHRISTOPHER');
-  const [testPlayerNumber, setTestPlayerNumber] = useState<string>('9');
+  // Tipografía seleccionada de Google Fonts
+  const [activeFontFamily, setActiveFontFamily] = useState<string>('Bebas Neue');
+  const [isCustomFont, setIsCustomFont] = useState(false);
+  const [customFontInput, setCustomFontInput] = useState('');
 
-  // Estado para crear nuevo diseño
-  const [isCreating, setIsCreating] = useState<boolean>(false);
-  const [newDesignName, setNewDesignName] = useState<string>('');
-  const [newDesignSport, setNewDesignSport] = useState<string>('FUTBOL');
-  const [color1, setColor1] = useState<string>('#ea580c');
-  const [color2, setColor2] = useState<string>('#0284c7');
-  const [color3, setColor3] = useState<string>('#ffffff');
+  // Colores CMYK de Relleno (Fill)
+  const [fillHex, setFillHex] = useState<string>('#FFFFFF');
+  const [fillCmyk, setFillCmyk] = useState<CMYK>({ c: 0, m: 0, y: 0, k: 0 });
+
+  // Colores CMYK de Contorno / Borde (Stroke)
+  const [hasStroke, setHasStroke] = useState<boolean>(true);
+  const [strokeHex, setStrokeHex] = useState<string>('#000000');
+  const [strokeCmyk, setStrokeCmyk] = useState<CMYK>({ c: 0, m: 0, y: 0, k: 100 });
+  const [strokeWidth, setStrokeWidth] = useState<number>(2.5);
+
+  // Muestra de prueba para el dorsal
+  const [sampleName, setSampleName] = useState<string>('CHRISTOPHER');
+  const [sampleNumber, setSampleNumber] = useState<string>('9');
 
   useEffect(() => {
     loadDesignsFromDatabase();
   }, []);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Sincronizar reglas del diseño activo
+  useEffect(() => {
+    if (activeDesign) {
+      const espaldaArt = activeDesign.pieceArtworks['ESPALDA'];
+      const nameR = espaldaArt?.placeholders.find((p) => p.id === 'NOMBRE');
+      const numR = espaldaArt?.placeholders.find((p) => p.id.includes('NUMERO'));
+      const activeRule = nameR || numR;
 
+      if (activeRule) {
+        if (activeRule.fontFamily) {
+          setActiveFontFamily(activeRule.fontFamily);
+          loadGoogleFont(activeRule.fontFamily);
+        }
+        if (activeRule.fillColor) {
+          setFillHex(activeRule.fillColor);
+          setFillCmyk(hexToCmyk(activeRule.fillColor));
+        }
+        if (activeRule.strokeColor) {
+          setStrokeHex(activeRule.strokeColor);
+          setStrokeCmyk(hexToCmyk(activeRule.strokeColor));
+          setHasStroke(Boolean((activeRule.strokeWidthMm || 0) > 0));
+        }
+        if (activeRule.strokeWidthMm !== undefined) {
+          setStrokeWidth(activeRule.strokeWidthMm);
+        }
+      }
+    }
+  }, [activeDesign?.id]);
+
+  const applyStyleUpdates = (updates: {
+    fontFamily?: string;
+    fillColor?: string;
+    strokeColor?: string;
+    strokeWidthMm?: number;
+  }) => {
+    if (!activeDesign) return;
+    updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NOMBRE', updates);
+    updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NUMERO_ESPALDA', updates);
+    if (activeDesign.pieceArtworks['DELANTERO']) {
+      updatePlaceholderRule(activeDesign.id, 'DELANTERO', 'NUMERO_DELANTERO', updates);
+    }
+  };
+
+  const handleSelectFont = (fontFamily: string) => {
+    setActiveFontFamily(fontFamily);
+    setIsCustomFont(false);
+    loadGoogleFont(fontFamily);
+    applyStyleUpdates({ fontFamily });
+  };
+
+  const handleApplyCustomFont = () => {
+    const clean = customFontInput.trim();
+    if (!clean) return;
+    setActiveFontFamily(clean);
+    loadGoogleFont(clean);
+    applyStyleUpdates({ fontFamily: clean });
+  };
+
+  const handleFillCmykChange = (channel: keyof CMYK, val: number) => {
+    const safeVal = Math.max(0, Math.min(100, Math.round(Number(val) || 0)));
+    const newCmyk = { ...fillCmyk, [channel]: safeVal };
+    setFillCmyk(newCmyk);
+    const hex = cmykToHex(newCmyk);
+    setFillHex(hex);
+    applyStyleUpdates({ fillColor: hex });
+  };
+
+  const handleFillHexChange = (hex: string) => {
+    setFillHex(hex);
+    const cmyk = hexToCmyk(hex);
+    setFillCmyk(cmyk);
+    applyStyleUpdates({ fillColor: hex });
+  };
+
+  const handleStrokeCmykChange = (channel: keyof CMYK, val: number) => {
+    const safeVal = Math.max(0, Math.min(100, Math.round(Number(val) || 0)));
+    const newCmyk = { ...strokeCmyk, [channel]: safeVal };
+    setStrokeCmyk(newCmyk);
+    const hex = cmykToHex(newCmyk);
+    setStrokeHex(hex);
+    if (hasStroke) {
+      applyStyleUpdates({ strokeColor: hex });
+    }
+  };
+
+  const handleStrokeHexChange = (hex: string) => {
+    setStrokeHex(hex);
+    const cmyk = hexToCmyk(hex);
+    setStrokeCmyk(cmyk);
+    if (hasStroke) {
+      applyStyleUpdates({ strokeColor: hex });
+    }
+  };
+
+  const handleToggleStroke = (enabled: boolean) => {
+    setHasStroke(enabled);
+    if (enabled) {
+      applyStyleUpdates({ strokeColor: strokeHex, strokeWidthMm: strokeWidth || 2.5 });
+    } else {
+      applyStyleUpdates({ strokeWidthMm: 0 });
+    }
+  };
+
+  const handleStrokeWidthChange = (widthMm: number) => {
+    const safe = Math.max(0, Number(widthMm) || 0);
+    setStrokeWidth(safe);
+    if (hasStroke) {
+      applyStyleUpdates({ strokeWidthMm: safe });
+    }
+  };
+
+  // Carga de archivo individual por ranura
+  const handleUploadSingleBlock = (pieceType: PieceType, file?: File) => {
+    if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
       if (content) {
-        const designName = file.name.replace(/\.[^/.]+$/, '').toUpperCase();
-        importDesignSvg(content, designName, 'FUTBOL', file.name);
+        setPieceArtwork(pieceType, content);
       }
     };
     reader.readAsText(file);
   };
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newDesignName.trim()) return;
+  // Carga masiva de múltiples archivos juntos
+  const handleUploadMultipleFiles = (fileList: FileList | File[]) => {
+    const files = Array.from(fileList);
+    if (files.length === 0) return;
 
-    createDesign(newDesignName.trim(), newDesignSport, [color1, color2, color3]);
-    setNewDesignName('');
-    setIsCreating(false);
+    const readFiles: { name: string; content: string }[] = [];
+    let completed = 0;
+
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        if (content) {
+          readFiles.push({ name: file.name, content });
+        }
+        completed++;
+        if (completed === files.length) {
+          importMultiBlockFiles(readFiles);
+        }
+      };
+      reader.readAsText(file);
+    });
   };
 
-  const currentArtwork = activeDesign?.pieceArtworks[selectedPieceView] || activeDesign?.pieceArtworks['ESPALDA'] || activeDesign?.pieceArtworks['DELANTERO'];
-  const espaldaArtwork = activeDesign?.pieceArtworks['ESPALDA'];
-  const nameRule = espaldaArtwork?.placeholders.find((p) => p.id === 'NOMBRE');
-  const numberRule = espaldaArtwork?.placeholders.find((p) => p.id.includes('NUMERO'));
+  const frenteArt = activeDesign?.pieceArtworks['DELANTERO'];
+  const espaldaArt = activeDesign?.pieceArtworks['ESPALDA'];
+  const mangaIzqArt = activeDesign?.pieceArtworks['MANGA_IZQ'];
+  const mangaDerArt = activeDesign?.pieceArtworks['MANGA_DER'];
 
-  const nameFitting = nameRule ? computeTextFitting(testPlayerName, nameRule) : null;
-  const numberFitting = numberRule ? computeTextFitting(testPlayerNumber, numberRule) : null;
-
-  const delanteroArtwork = activeDesign?.pieceArtworks['DELANTERO'];
-  const frontNumRule = delanteroArtwork?.placeholders.find((p) => p.id.includes('NUMERO'));
-  const frontFitting = frontNumRule ? computeTextFitting(testPlayerNumber, frontNumRule) : null;
+  const handleCopyMangaIzqToDer = () => {
+    if (!activeDesign || !mangaIzqArt) return;
+    setPieceArtwork('MANGA_DER', mangaIzqArt.svgArtContent);
+  };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      {/* Hidden file input for SVG upload */}
+    <div className="p-6 max-w-7xl mx-auto space-y-5">
+      {/* Inputs ocultos de carga */}
       <input
-        ref={fileInputRef}
+        ref={frenteInputRef}
         type="file"
         accept=".svg"
         className="hidden"
-        onChange={handleFileUpload}
+        onChange={(e) => handleUploadSingleBlock('DELANTERO', e.target.files?.[0])}
+      />
+      <input
+        ref={espaldaInputRef}
+        type="file"
+        accept=".svg"
+        className="hidden"
+        onChange={(e) => handleUploadSingleBlock('ESPALDA', e.target.files?.[0])}
+      />
+      <input
+        ref={mangaIzqInputRef}
+        type="file"
+        accept=".svg"
+        className="hidden"
+        onChange={(e) => handleUploadSingleBlock('MANGA_IZQ', e.target.files?.[0])}
+      />
+      <input
+        ref={mangaDerInputRef}
+        type="file"
+        accept=".svg"
+        className="hidden"
+        onChange={(e) => handleUploadSingleBlock('MANGA_DER', e.target.files?.[0])}
+      />
+      <input
+        ref={multiInputRef}
+        type="file"
+        accept=".svg"
+        multiple
+        className="hidden"
+        onChange={(e) => e.target.files && handleUploadMultipleFiles(e.target.files)}
       />
 
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-white">Biblioteca de Diseños Maestros</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Registra y gestiona los modelos artísticos del uniforme con nombres y números vectoriales
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {designs.length > 0 && (
+      {/* Grilla Principal */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+        {/* Columna Izquierda: Modelos */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Modelos ({designs.length})
+            </h3>
             <button
-              onClick={clearAllDesigns}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
-              title="Borrar todos los diseños y empezar limpio"
+              onClick={() => createNewDesign()}
+              className="text-xs text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1"
+              title="Crear nuevo modelo"
             >
-              <Trash2 className="w-3.5 h-3.5 text-red-400" />
-              Limpiar Diseños
-            </button>
-          )}
-          <button
-            onClick={() => setIsCreating(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
-          >
-            <Plus className="w-4 h-4 text-emerald-400" />
-            Crear Modelo Base
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-950 transition-colors"
-          >
-            <UploadCloud className="w-4 h-4" />
-            Subir Mi Diseño SVG (desde Illustrator)
-          </button>
-        </div>
-      </div>
-
-      {/* Modal para crear diseño */}
-      {isCreating && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
-            <h3 className="text-base font-bold text-white">Crear Nuevo Diseño Maestro</h3>
-            <form onSubmit={handleCreate} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-400 mb-1">Nombre del Diseño:</label>
-                <input
-                  type="text"
-                  value={newDesignName}
-                  onChange={(e) => setNewDesignName(e.target.value)}
-                  placeholder="Ej: Barcelona Blaugrana 2026"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium focus:outline-none focus:border-emerald-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 mb-1">Deporte:</label>
-                <select
-                  value={newDesignSport}
-                  onChange={(e) => setNewDesignSport(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="FUTBOL">Fútbol</option>
-                  <option value="BASKET">Básquetbol</option>
-                  <option value="VOLEY">Voleibol</option>
-                  <option value="CICLISMO">Ciclismo</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-400 mb-1">Paleta de Colores:</label>
-                <div className="flex items-center gap-3">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block mb-0.5">Principal</span>
-                    <input
-                      type="color"
-                      value={color1}
-                      onChange={(e) => setColor1(e.target.value)}
-                      className="w-10 h-10 rounded border border-slate-700 bg-transparent cursor-pointer"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block mb-0.5">Secundario</span>
-                    <input
-                      type="color"
-                      value={color2}
-                      onChange={(e) => setColor2(e.target.value)}
-                      className="w-10 h-10 rounded border border-slate-700 bg-transparent cursor-pointer"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block mb-0.5">Dorsales</span>
-                    <input
-                      type="color"
-                      value={color3}
-                      onChange={(e) => setColor3(e.target.value)}
-                      className="w-10 h-10 rounded border border-slate-700 bg-transparent cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsCreating(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold"
-                >
-                  Guardar Diseño
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Main Grid or Clean Empty State */}
-      {designs.length === 0 ? (
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onDrop={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const file = e.dataTransfer.files?.[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              const content = event.target?.result as string;
-              if (content) {
-                const designName = file.name.replace(/\.[^/.]+$/, '').toUpperCase();
-                importDesignSvg(content, designName, 'FUTBOL', file.name);
-              }
-            };
-            reader.readAsText(file);
-          }}
-          className="bg-slate-900 border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-2xl p-16 text-center flex flex-col items-center justify-center cursor-pointer transition-all group"
-        >
-          <Palette className="w-12 h-12 text-slate-600 group-hover:text-emerald-400 mb-3 transition-colors" />
-          <h3 className="text-base font-semibold text-white">No hay modelos de diseño cargados</h3>
-          <p className="text-xs text-slate-400 mt-1 max-w-md">
-            Arrastra aquí el archivo SVG de tu modelo (ej: <span className="font-mono text-emerald-300">ESPAÑA PATRON 2026.svg</span>) exportado desde Illustrator o haz clic para seleccionarlo.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 mt-5">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                fileInputRef.current?.click();
-              }}
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-emerald-950 flex items-center gap-2"
-            >
-              <UploadCloud className="w-4 h-4" />
-              Subir Mi Diseño SVG (desde Illustrator)
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsCreating(true);
-              }}
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4 text-emerald-400" />
-              Crear Modelo Base
+              <Plus className="w-3.5 h-3.5" />
+              Nuevo
             </button>
           </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Design Cards List */}
-        <div className="space-y-4">
-          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Diseños Registrados ({designs.length})
-          </h3>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {designs.map((d) => {
               const isSelected = activeDesign?.id === d.id;
+              const hasFrente = Boolean(d.pieceArtworks['DELANTERO']);
+              const hasEspalda = Boolean(d.pieceArtworks['ESPALDA']);
+              const hasMangaIzq = Boolean(d.pieceArtworks['MANGA_IZQ']);
+              const hasMangaDer = Boolean(d.pieceArtworks['MANGA_DER']);
+              const blocksReady = [hasFrente, hasEspalda, hasMangaIzq, hasMangaDer].filter(Boolean).length;
               return (
                 <div
                   key={d.id}
                   onClick={() => setActiveDesign(d)}
-                  className={`bg-slate-900 border rounded-xl p-4 cursor-pointer transition-all hover:border-slate-600 ${
+                  className={`bg-slate-900 border rounded-xl p-3 cursor-pointer transition-all hover:border-slate-600 ${
                     isSelected
                       ? 'border-emerald-500 shadow-md shadow-emerald-950/40 bg-slate-850'
                       : 'border-slate-800'
@@ -342,400 +332,642 @@ export const DesignsView: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-sm text-white">{d.name}</span>
-                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">
-                      {d.sport}
-                    </span>
-                  </div>
-
-                  {/* Swatches */}
-                  <div className="flex items-center gap-1.5 mt-3">
-                    {d.colors.map((c, i) => (
-                      <span
-                        key={i}
-                        className="w-4 h-4 rounded-full border border-slate-700 shadow-sm"
-                        style={{ backgroundColor: c }}
-                      />
-                    ))}
-                    <span className="text-[11px] text-slate-500 ml-auto font-mono">
-                      {Object.keys(d.pieceArtworks).length} piezas
+                    <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded ${
+                      blocksReady >= 3 
+                        ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/30' 
+                        : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      {blocksReady === 4 ? 'Listo (4/4)' : `${blocksReady}/4 bloques`}
                     </span>
                   </div>
                 </div>
               );
             })}
           </div>
+
+          {designs.length > 0 && (
+            <button
+              onClick={clearAllDesigns}
+              className="w-full mt-2 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-red-400 rounded-lg text-xs font-medium border border-slate-800 transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Limpiar todos
+            </button>
+          )}
         </div>
 
-        {/* Right: Live Interactive Jersey Preview & Placeholder Testing Studio */}
-        {activeDesign && (
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6">
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                    {isEditingName ? (
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="text"
-                          value={editedName}
-                          onChange={(e) => setEditedName(e.target.value.toUpperCase())}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              updateDesignName(activeDesign.id, editedName);
-                              setIsEditingName(false);
-                            } else if (e.key === 'Escape') {
-                              setIsEditingName(false);
-                            }
-                          }}
-                          className="bg-slate-950 border border-emerald-500 rounded px-2.5 py-1 text-sm font-bold text-white focus:outline-none"
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => {
+        {/* Columna Derecha: Configuración y Ranuras de Bloques */}
+        {activeDesign ? (
+          <div className="lg:col-span-3 space-y-5">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-5">
+              {/* Título editable del modelo */}
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                  {isEditingName ? (
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={editedName}
+                        onChange={(e) => setEditedName(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
                             updateDesignName(activeDesign.id, editedName);
                             setIsEditingName(false);
-                          }}
-                          className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
-                          title="Guardar nombre"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setIsEditingName(false)}
-                          className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded transition-colors"
-                          title="Cancelar"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base font-bold text-white">{activeDesign.name}</h3>
-                        <button
-                          onClick={() => {
-                            setEditedName(activeDesign.name);
-                            setIsEditingName(true);
-                          }}
-                          className="p-1 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded transition-colors"
-                          title="Renombrar este diseño (ej: Brasil Amarillo 2026)"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Estudio de previsualización en vivo con tu arte SVG real y ajuste automático de dorsales
-                  </p>
+                          } else if (e.key === 'Escape') {
+                            setIsEditingName(false);
+                          }
+                        }}
+                        className="bg-slate-950 border border-emerald-500 rounded px-2.5 py-1 text-sm font-bold text-white focus:outline-none"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => {
+                          updateDesignName(activeDesign.id, editedName);
+                          setIsEditingName(false);
+                        }}
+                        className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setIsEditingName(false)}
+                        className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-white">{activeDesign.name}</h3>
+                      <button
+                        onClick={() => {
+                          setEditedName(activeDesign.name);
+                          setIsEditingName(true);
+                        }}
+                        className="p-1 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded transition-colors"
+                        title="Renombrar este modelo"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/70 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold ml-2">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                        Guardado automático
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={() => deleteDesign(activeDesign.id)}
-                  className="p-2 hover:bg-slate-800 text-slate-500 hover:text-red-400 rounded-lg transition-colors"
-                  title="Eliminar este diseño"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
 
-              {/* Selector de Vistas de la Prenda (Espalda vs Delantero vs Mangas) */}
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setSelectedPieceView('ESPALDA')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                    selectedPieceView === 'ESPALDA'
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/50'
-                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700/60'
-                  }`}
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  👕 Vista Espalda (Dorsal + Nombre)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPieceView('DELANTERO')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                    selectedPieceView === 'DELANTERO'
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/50'
-                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700/60'
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  🎽 Vista Frente (Logos y Patrón)
-                </button>
-                {activeDesign.pieceArtworks['MANGA_IZQ'] && (
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setSelectedPieceView('MANGA_IZQ')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                      selectedPieceView === 'MANGA_IZQ'
-                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/50'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700/60'
-                    }`}
+                    onClick={() => multiInputRef.current?.click()}
+                    className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    🦾 Vista Mangas
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    Subir bloques del modelo (SVG)
                   </button>
-                )}
+                  <button
+                    onClick={() => deleteDesign(activeDesign.id)}
+                    className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-red-400 rounded-lg transition-colors"
+                    title="Eliminar este modelo"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
-              {/* Interactive Player Name & Number Testing Controls */}
-              {selectedPieceView === 'ESPALDA' && (
-                <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <label className="text-slate-300 font-medium block mb-1">
-                      Prueba en Vivo — Nombre Jugador:
+              {/* Barra de Estilo del Dorsal (Google Fonts + CMYK + Muestra) */}
+              <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-4 text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                  {/* Tipografía */}
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-semibold flex items-center gap-1.5">
+                      <Type className="w-3.5 h-3.5 text-emerald-400" />
+                      Tipografía (Google Fonts):
                     </label>
-                    <input
-                      type="text"
-                      value={testPlayerName}
-                      onChange={(e) => setTestPlayerName(e.target.value.toUpperCase())}
-                      placeholder="Escribe un nombre..."
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-bold font-mono focus:outline-none focus:border-emerald-500"
-                    />
-                    <span className="text-[11px] text-slate-500 mt-1 block">
-                      Prueba con "CAROL" (normal) o "CHRISTOPHER" (compresión automática).
-                    </span>
+                    <select
+                      value={isCustomFont ? 'CUSTOM' : activeFontFamily}
+                      onChange={(e) => {
+                        if (e.target.value === 'CUSTOM') {
+                          setIsCustomFont(true);
+                        } else {
+                          handleSelectFont(e.target.value);
+                        }
+                      }}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    >
+                      <optgroup label="Fuentes Deportivas">
+                        {POPULAR_SPORTS_FONTS.map((f) => (
+                          <option key={f.family} value={f.family}>
+                            {f.family} ({f.category})
+                          </option>
+                        ))}
+                      </optgroup>
+                      <option value="CUSTOM">➕ Escribir otra fuente...</option>
+                    </select>
+
+                    {isCustomFont && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <input
+                          type="text"
+                          value={customFontInput}
+                          onChange={(e) => setCustomFontInput(e.target.value)}
+                          placeholder="Nombre en Google Fonts..."
+                          className="flex-1 bg-slate-900 border border-emerald-500 rounded px-2 py-1 text-white text-xs focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyCustomFont}
+                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs"
+                        >
+                          OK
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="text-slate-300 font-medium block mb-1">
-                      Prueba en Vivo — Número Dorsal:
-                    </label>
-                    <input
-                      type="text"
-                      value={testPlayerNumber}
-                      onChange={(e) => setTestPlayerNumber(e.target.value)}
-                      placeholder="Ej: 9, 10, 21"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-emerald-400 font-bold font-mono focus:outline-none focus:border-emerald-500"
-                    />
-                    <span className="text-[11px] text-slate-500 mt-1 block">
-                      Altura reglamentaria en espalda: 220 mm (22 cm). Ubicado debajo del nombre.
-                    </span>
+                  {/* Relleno CMYK */}
+                  <div className="space-y-1.5 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-200 font-semibold flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full border border-slate-600" style={{ backgroundColor: fillHex }} />
+                        Relleno:
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="color"
+                          value={fillHex}
+                          onChange={(e) => handleFillHexChange(e.target.value)}
+                          className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                        />
+                        <span className="font-mono text-[10px] text-slate-400">{fillHex}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1">
+                      <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
+                        <span className="text-[9px] font-mono text-cyan-400 block font-bold">C%</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={fillCmyk.c}
+                          onChange={(e) => handleFillCmykChange('c', Number(e.target.value))}
+                          className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
+                        />
+                      </div>
+                      <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
+                        <span className="text-[9px] font-mono text-pink-400 block font-bold">M%</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={fillCmyk.m}
+                          onChange={(e) => handleFillCmykChange('m', Number(e.target.value))}
+                          className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
+                        />
+                      </div>
+                      <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
+                        <span className="text-[9px] font-mono text-yellow-400 block font-bold">Y%</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={fillCmyk.y}
+                          onChange={(e) => handleFillCmykChange('y', Number(e.target.value))}
+                          className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
+                        />
+                      </div>
+                      <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
+                        <span className="text-[9px] font-mono text-slate-300 block font-bold">K%</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={fillCmyk.k}
+                          onChange={(e) => handleFillCmykChange('k', Number(e.target.value))}
+                          className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Selector rápido de color para nombres y números */}
-                  <div className="md:col-span-2 pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
-                    <span className="text-slate-400 font-medium">Color del Dorsal:</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!activeDesign) return;
-                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NOMBRE', { fillColor: '#16a34a', strokeColor: '#ffffff', strokeWidthMm: 1.5 });
-                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NUMERO_ESPALDA', { fillColor: '#16a34a', strokeColor: '#ffffff', strokeWidthMm: 2.5 });
-                      }}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border flex items-center gap-1.5 transition-all ${
-                        nameRule?.fillColor === '#16a34a' ? 'bg-emerald-950/80 border-emerald-400 text-emerald-300' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
-                      }`}
-                    >
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#16a34a]" />
-                      Verde Brasil (Oficial)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!activeDesign) return;
-                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NOMBRE', { fillColor: '#ffffff', strokeColor: '#000000', strokeWidthMm: 2.0 });
-                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NUMERO_ESPALDA', { fillColor: '#ffffff', strokeColor: '#000000', strokeWidthMm: 3.5 });
-                      }}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border flex items-center gap-1.5 transition-all ${
-                        nameRule?.fillColor === '#ffffff' ? 'bg-slate-800 border-white text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
-                      }`}
-                    >
-                      <span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-400" />
-                      Blanco
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!activeDesign) return;
-                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NOMBRE', { fillColor: '#1e40af', strokeColor: '#ffffff', strokeWidthMm: 1.5 });
-                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NUMERO_ESPALDA', { fillColor: '#1e40af', strokeColor: '#ffffff', strokeWidthMm: 2.5 });
-                      }}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border flex items-center gap-1.5 transition-all ${
-                        nameRule?.fillColor === '#1e40af' ? 'bg-blue-950/80 border-blue-400 text-blue-300' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
-                      }`}
-                    >
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#1e40af]" />
-                      Azul Marino
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!activeDesign) return;
-                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NOMBRE', { fillColor: '#000000', strokeColor: '#ffffff', strokeWidthMm: 1.5 });
-                        updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NUMERO_ESPALDA', { fillColor: '#000000', strokeColor: '#ffffff', strokeWidthMm: 2.5 });
-                      }}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border flex items-center gap-1.5 transition-all ${
-                        nameRule?.fillColor === '#000000' ? 'bg-slate-950 border-slate-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
-                      }`}
-                    >
-                      <span className="w-2.5 h-2.5 rounded-full bg-black border border-slate-600" />
-                      Negro
-                    </button>
+                  {/* Borde / Filete CMYK */}
+                  <div className="space-y-1.5 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hasStroke}
+                          onChange={(e) => handleToggleStroke(e.target.checked)}
+                          className="rounded border-slate-700 text-emerald-600 w-3 h-3"
+                        />
+                        <span className="text-slate-200 font-semibold flex items-center gap-1">
+                          {hasStroke && (
+                            <span className="w-3 h-3 rounded-full border border-slate-600" style={{ backgroundColor: strokeHex }} />
+                          )}
+                          Borde / Filete:
+                        </span>
+                      </label>
+                      {hasStroke && (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="color"
+                            value={strokeHex}
+                            onChange={(e) => handleStrokeHexChange(e.target.value)}
+                            className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                          />
+                          <span className="font-mono text-[10px] text-slate-400">{strokeHex}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {hasStroke ? (
+                      <>
+                        <div className="grid grid-cols-4 gap-1">
+                          <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
+                            <span className="text-[9px] font-mono text-cyan-400 block font-bold">C%</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={strokeCmyk.c}
+                              onChange={(e) => handleStrokeCmykChange('c', Number(e.target.value))}
+                              className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
+                            />
+                          </div>
+                          <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
+                            <span className="text-[9px] font-mono text-pink-400 block font-bold">M%</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={strokeCmyk.m}
+                              onChange={(e) => handleStrokeCmykChange('m', Number(e.target.value))}
+                              className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
+                            />
+                          </div>
+                          <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
+                            <span className="text-[9px] font-mono text-yellow-400 block font-bold">Y%</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={strokeCmyk.y}
+                              onChange={(e) => handleStrokeCmykChange('y', Number(e.target.value))}
+                              className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
+                            />
+                          </div>
+                          <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
+                            <span className="text-[9px] font-mono text-slate-300 block font-bold">K%</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={strokeCmyk.k}
+                              onChange={(e) => handleStrokeCmykChange('k', Number(e.target.value))}
+                              className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
+                          <span>Grosor:</span>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="range"
+                              min="0.5"
+                              max="6.0"
+                              step="0.5"
+                              value={strokeWidth}
+                              onChange={(e) => handleStrokeWidthChange(Number(e.target.value))}
+                              className="w-16 accent-emerald-500 cursor-pointer"
+                            />
+                            <span className="font-mono font-bold text-white">{strokeWidth.toFixed(1)} mm</span>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-[10px] text-slate-500 italic py-2 text-center">
+                        Sin borde exterior
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
 
-              {/* Live Vector Jersey Simulation Stage */}
-              <div className="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-8 flex flex-col items-center justify-center relative overflow-hidden">
-                {/* SVG Silhouette representation with master design art and placeholders */}
-                <svg
-                  viewBox="0 0 500 650"
-                  className="w-80 md:w-96 max-w-full drop-shadow-2xl select-none"
-                  style={{ filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.7))' }}
-                >
-                  <defs>
-                    <clipPath id="jerseyClip">
-                      <path
-                        d={
-                          selectedPieceView === 'DELANTERO'
-                            ? 'M 180,50 C 205,115 295,115 320,50 L 440,95 L 472,230 L 405,260 L 415,615 C 320,626 180,626 85,615 L 95,260 L 28,230 L 60,95 Z'
-                            : 'M 180,50 C 215,64 285,64 320,50 L 440,95 L 472,230 L 405,260 L 415,615 C 320,626 180,626 85,615 L 95,260 L 28,230 L 60,95 Z'
-                        }
-                      />
-                    </clipPath>
-                    <linearGradient id="jerseyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor={activeDesign.colors[0] || '#facc15'} />
-                      <stop offset="100%" stopColor={activeDesign.colors[1] || '#16a34a'} />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Base Body with Clipping Mask */}
-                  <g clipPath="url(#jerseyClip)">
-                    {/* Fondo base con el color dominante del diseño */}
-                    <rect width="500" height="650" fill={activeDesign.colors[0] || '#facc15'} />
-
-                    {/* Arte vectorial real subido por el usuario */}
-                    {currentArtwork?.svgArtContent ? (
-                      <g dangerouslySetInnerHTML={{ __html: preparePreviewArt(currentArtwork.svgArtContent) }} />
-                    ) : (
-                      <rect width="500" height="650" fill="url(#jerseyGrad)" />
-                    )}
-
-                    {/* Nombres y números vectoriales dinámicos (solo en espalda) */}
-                    {selectedPieceView === 'ESPALDA' && (
-                      <>
-                        {nameFitting && (
-                          <g dangerouslySetInnerHTML={{ __html: nameFitting.svgContent }} />
-                        )}
-                        {numberFitting && (
-                          <g dangerouslySetInnerHTML={{ __html: numberFitting.svgContent }} />
-                        )}
-                      </>
-                    )}
-
-                    {/* Número frontal si aplica */}
-                    {selectedPieceView === 'DELANTERO' && frontFitting && (
-                      <g dangerouslySetInnerHTML={{ __html: frontFitting.svgContent }} />
-                    )}
-                  </g>
-
-                  {/* Cuello ribeteado deportivo */}
-                  {selectedPieceView === 'DELANTERO' ? (
-                    <path d="M 180,50 C 205,115 295,115 320,50 C 295,128 205,128 180,50 Z" fill={activeDesign.colors[1] || '#16a34a'} opacity="0.9" />
-                  ) : (
-                    <path d="M 180,50 C 215,64 285,64 320,50 C 285,76 215,76 180,50 Z" fill={activeDesign.colors[1] || '#16a34a'} opacity="0.9" />
-                  )}
-
-                  {/* Contorno de corte estético */}
-                  <path
-                    d={
-                      selectedPieceView === 'DELANTERO'
-                        ? 'M 180,50 C 205,115 295,115 320,50 L 440,95 L 472,230 L 405,260 L 415,615 C 320,626 180,626 85,615 L 95,260 L 28,230 L 60,95 Z'
-                        : 'M 180,50 C 215,64 285,64 320,50 L 440,95 L 472,230 L 405,260 L 415,615 C 320,626 180,626 85,615 L 95,260 L 28,230 L 60,95 Z'
-                    }
-                    fill="none"
-                    stroke="#ffffff"
-                    strokeWidth="2"
-                    strokeDasharray="4 4"
-                    opacity="0.4"
-                  />
-                </svg>
-
-                {/* Auto-fitting Live Status Pill */}
-                {selectedPieceView === 'ESPALDA' && nameFitting && (
-                  <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs">
-                    <span className="text-slate-400">Ajuste de Dorsal:</span>
-                    {nameFitting.isCompressed ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono text-[11px]">
-                        <Sliders className="w-3.5 h-3.5" />
-                        Compresión nombre: {(nameFitting.scaleX * 100).toFixed(0)}% ({nameFitting.fittedWidthMm.toFixed(1)} mm)
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono text-[11px]">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Nombre 100% natural ({nameFitting.fittedWidthMm.toFixed(1)} mm)
-                      </span>
-                    )}
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/20 font-mono text-[11px]">
-                      <Ruler className="w-3.5 h-3.5" />
-                      Número reglamentario: 220 mm (separado debajo)
-                    </span>
+                {/* Muestra en vivo del dorsal */}
+                <div className="bg-slate-900 border border-slate-800/80 rounded-lg p-2.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-slate-400 uppercase font-mono">Muestra:</span>
+                    <input
+                      type="text"
+                      value={sampleName}
+                      onChange={(e) => setSampleName(e.target.value.toUpperCase())}
+                      className="bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-white font-mono text-xs w-28 focus:outline-none"
+                      placeholder="NOMBRE"
+                    />
+                    <input
+                      type="text"
+                      value={sampleNumber}
+                      onChange={(e) => setSampleNumber(e.target.value)}
+                      className="bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-emerald-400 font-mono text-xs w-10 text-center focus:outline-none"
+                      placeholder="N°"
+                    />
                   </div>
-                )}
 
-                {selectedPieceView === 'DELANTERO' && (
-                  <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Visualizando frente del uniforme con escudos y marcas en escala 1:1 proporcional.</span>
+                  <div className="flex items-center justify-center bg-slate-950/80 rounded-lg px-4 py-1.5 border border-slate-800/60">
+                    <svg viewBox="0 0 280 40" className="w-64 h-10">
+                      <text
+                        x="140"
+                        y="14"
+                        fontFamily={`'${activeFontFamily}', 'Impact', sans-serif`}
+                        fontSize="14"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill={fillHex}
+                        stroke={hasStroke ? strokeHex : 'none'}
+                        strokeWidth={hasStroke ? strokeWidth * 0.6 : 0}
+                        strokeLinejoin="round"
+                        style={{ paintOrder: 'stroke fill' }}
+                      >
+                        {sampleName || 'CHRISTOPHER'}
+                      </text>
+                      <text
+                        x="140"
+                        y="30"
+                        fontFamily={`'${activeFontFamily}', 'Impact', sans-serif`}
+                        fontSize="20"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill={fillHex}
+                        stroke={hasStroke ? strokeHex : 'none'}
+                        strokeWidth={hasStroke ? strokeWidth * 0.8 : 0}
+                        strokeLinejoin="round"
+                        style={{ paintOrder: 'stroke fill' }}
+                      >
+                        {sampleNumber || '9'}
+                      </text>
+                    </svg>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Placeholder Rules Inspector */}
-              <div className="border-t border-slate-800 pt-4 space-y-3">
-                <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Ruler className="w-4 h-4 text-emerald-400" />
-                  Reglas Paramétricas de Impresión para este Diseño
-                </h4>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
-                  <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1">
-                    <div className="text-white font-bold flex justify-between">
-                      <span>{"{{NOMBRE}}"}</span>
-                      <span className="text-emerald-400">Espalda Superior</span>
-                    </div>
-                    <div className="text-slate-400 text-[11px] flex justify-between">
-                      <span>Ancho Máximo:</span>
-                      <span className="text-slate-200">{nameRule?.maxWidthMm} mm</span>
-                    </div>
-                    <div className="text-slate-400 text-[11px] flex justify-between">
-                      <span>Alto Nominal:</span>
-                      <span className="text-slate-200">{nameRule?.defaultFontSizeMm} mm</span>
-                    </div>
-                    <div className="text-slate-400 text-[11px] flex justify-between">
-                      <span>Compresión Mínima:</span>
-                      <span className="text-slate-200">{((nameRule?.minScaleFactor || 0.6) * 100)}%</span>
-                    </div>
+              {/* LAS 4 RANURAS DE BLOQUES DE ARTE: FRENTE, ESPALDA, MANGA IZQ, MANGA DER */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* RANURA 1: FRENTE */}
+                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-white">🎽 Bloque Frente</span>
+                    {frenteArt ? (
+                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
+                        <CheckCircle2 className="w-3 h-3" /> Cargado
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-400 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> Pendiente
+                      </span>
+                    )}
                   </div>
 
-                  <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1">
-                    <div className="text-white font-bold flex justify-between">
-                      <span>{"{{NUMERO}}"}</span>
-                      <span className="text-emerald-400">Espalda Central</span>
-                    </div>
-                    <div className="text-slate-400 text-[11px] flex justify-between">
-                      <span>Ancho Máximo:</span>
-                      <span className="text-slate-200">{numberRule?.maxWidthMm} mm</span>
-                    </div>
-                    <div className="text-slate-400 text-[11px] flex justify-between">
-                      <span>Alto Nominal:</span>
-                      <span className="text-slate-200">{numberRule?.defaultFontSizeMm} mm</span>
-                    </div>
-                    <div className="text-slate-400 text-[11px] flex justify-between">
-                      <span>Contorno Exterior:</span>
-                      <span className="text-slate-200">{numberRule?.strokeWidthMm} mm</span>
-                    </div>
+                  <div 
+                    onClick={() => frenteInputRef.current?.click()}
+                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
+                      frenteArt
+                        ? 'border-slate-700 bg-slate-900/80 hover:border-emerald-500'
+                        : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
+                    }`}
+                  >
+                    {frenteArt?.svgArtContent ? (
+                      <div 
+                        className="w-full h-full flex items-center justify-center"
+                        dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(frenteArt.svgArtContent) }}
+                      />
+                    ) : (
+                      <div className="text-center space-y-1.5">
+                        <UploadCloud className="w-7 h-7 text-slate-600 mx-auto" />
+                        <span className="text-xs font-semibold text-slate-300 block">Cargar Frente.svg</span>
+                      </div>
+                    )}
                   </div>
+
+                  {frenteArt && (
+                    <div className="flex items-center justify-between pt-1 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => frenteInputRef.current?.click()}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        Reemplazar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removePieceArtwork('DELANTERO')}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* RANURA 2: ESPALDA */}
+                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-white">👕 Bloque Espalda</span>
+                    {espaldaArt ? (
+                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
+                        <CheckCircle2 className="w-3 h-3" /> Cargado
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-400 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> Pendiente
+                      </span>
+                    )}
+                  </div>
+
+                  <div 
+                    onClick={() => espaldaInputRef.current?.click()}
+                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
+                      espaldaArt
+                        ? 'border-slate-700 bg-slate-900/80 hover:border-emerald-500'
+                        : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
+                    }`}
+                  >
+                    {espaldaArt?.svgArtContent ? (
+                      <div 
+                        className="w-full h-full flex items-center justify-center"
+                        dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(espaldaArt.svgArtContent) }}
+                      />
+                    ) : (
+                      <div className="text-center space-y-1.5">
+                        <UploadCloud className="w-7 h-7 text-slate-600 mx-auto" />
+                        <span className="text-xs font-semibold text-slate-300 block">Cargar Espalda.svg</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {espaldaArt && (
+                    <div className="flex items-center justify-between pt-1 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => espaldaInputRef.current?.click()}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        Reemplazar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removePieceArtwork('ESPALDA')}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* RANURA 3: MANGA IZQUIERDA */}
+                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-white">🦾 Manga Izquierda</span>
+                    {mangaIzqArt ? (
+                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
+                        <CheckCircle2 className="w-3 h-3" /> Cargada
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-400 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> Pendiente
+                      </span>
+                    )}
+                  </div>
+
+                  <div 
+                    onClick={() => mangaIzqInputRef.current?.click()}
+                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
+                      mangaIzqArt
+                        ? 'border-slate-700 bg-slate-900/80 hover:border-emerald-500'
+                        : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
+                    }`}
+                  >
+                    {mangaIzqArt?.svgArtContent ? (
+                      <div 
+                        className="w-full h-full flex items-center justify-center"
+                        dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(mangaIzqArt.svgArtContent) }}
+                      />
+                    ) : (
+                      <div className="text-center space-y-1.5">
+                        <UploadCloud className="w-7 h-7 text-slate-600 mx-auto" />
+                        <span className="text-xs font-semibold text-slate-300 block">Cargar Manga Izq.svg</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {mangaIzqArt && (
+                    <div className="flex items-center justify-between pt-1 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => mangaIzqInputRef.current?.click()}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        Reemplazar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removePieceArtwork('MANGA_IZQ')}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* RANURA 4: MANGA DERECHA */}
+                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-white">🦾 Manga Derecha</span>
+                    {mangaDerArt ? (
+                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
+                        <CheckCircle2 className="w-3 h-3" /> Cargada
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-400 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> Pendiente
+                      </span>
+                    )}
+                  </div>
+
+                  <div 
+                    onClick={() => mangaDerInputRef.current?.click()}
+                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
+                      mangaDerArt
+                        ? 'border-slate-700 bg-slate-900/80 hover:border-emerald-500'
+                        : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
+                    }`}
+                  >
+                    {mangaDerArt?.svgArtContent ? (
+                      <div 
+                        className="w-full h-full flex items-center justify-center"
+                        dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(mangaDerArt.svgArtContent) }}
+                      />
+                    ) : (
+                      <div className="text-center space-y-1.5 p-1">
+                        <UploadCloud className="w-7 h-7 text-slate-600 mx-auto" />
+                        <span className="text-xs font-semibold text-slate-300 block">Cargar Manga Der.svg</span>
+                        {mangaIzqArt && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyMangaIzqToDer();
+                            }}
+                            className="mt-1 px-2.5 py-1 bg-emerald-700/80 hover:bg-emerald-600 text-white rounded text-[11px] font-medium shadow-sm transition-colors"
+                          >
+                            🔄 Copiar de Manga Izq
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {mangaDerArt && (
+                    <div className="flex items-center justify-between pt-1 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => mangaDerInputRef.current?.click()}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        Reemplazar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removePieceArtwork('MANGA_DER')}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
+        ) : (
+          <div className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-16 text-center space-y-3">
+            <Palette className="w-12 h-12 text-slate-600 mx-auto" />
+            <h3 className="text-base font-bold text-white">Selecciona o crea un modelo de diseño</h3>
+            <button
+              onClick={() => createNewDesign()}
+              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold"
+            >
+              Crear Nuevo Modelo
+            </button>
+          </div>
         )}
       </div>
-      )}
     </div>
   );
 };

@@ -10,12 +10,13 @@ import { generateGarmentPieces } from '@/modules/generator/garmentGenerator';
 import { runPolygonalNesting } from '@/core/nesting/polygonal/polygonalNestingEngine';
 import { checkPolygonsOverlap, calculatePolygonalIntersectionArea } from '@/core/geometry/clipperService';
 import { getOrientedPolygon, computeBoundingBox } from '@/core/geometry/transform';
-import { generateFullRollPdf } from '@/modules/export/pdfExporter';
+import { buildPdfSourceSvg, generateFullRollPdf } from '@/modules/export/pdfExporter';
 import { generateFullRollSvg } from '@/modules/export/svgExporter';
 import { generateFullRollEps } from '@/modules/export/epsExporter';
 import { generateProductionExcel, generateProductionCsv } from '@/modules/export/productionSummaryExporter';
 import { exportProductionRoll } from '@/modules/export/exportService';
 import { mmToPt } from '@/core/units/units';
+import { PDFDocument, PDFName, PDFNumber } from 'pdf-lib';
 
 describe('FASE 10 — QA Exhaustivo y Pipeline de Producción End-to-End (E2E)', () => {
   it('Flujo Industrial Completo: Excel con Tildes/Ñ -> Moldes -> Diseño -> Generador -> Nesting Clipper2 -> Exportación PDF/SVG/EPS 1:1', async () => {
@@ -172,20 +173,73 @@ describe('FASE 10 — QA Exhaustivo y Pipeline de Producción End-to-End (E2E)',
     const totalRollLength = nestingResult.totalRollLengthMm;
 
     // A. SVG para Illustrator
-    const svgOutput = generateFullRollSvg(placed, printableWidthMm, totalRollLength);
+    const cleanExportOptions = {
+      includeCutContour: false,
+      includeSeamLabels: false,
+    };
+
+    const svgOutput = generateFullRollSvg(
+      placed,
+      printableWidthMm,
+      totalRollLength,
+      cleanExportOptions
+    );
     expect(svgOutput).toContain(`width="${printableWidthMm.toFixed(2)}mm"`);
     expect(svgOutput).toContain(`height="${totalRollLength.toFixed(2)}mm"`);
     expect(svgOutput).toContain(`viewBox="0 0 ${printableWidthMm.toFixed(2)} ${totalRollLength.toFixed(2)}"`);
     expect(svgOutput).toContain('clipPath');
-    expect(svgOutput).toContain('stroke="#ff0000"'); // CutContour rojo para plotter de corte
+    expect(svgOutput).not.toContain('stroke="#ff0000"');
+    expect(svgOutput).not.toContain('stroke="#22c55e"');
+
+    // El archivo limpio conserva el arte real y la personalización, no solo siluetas.
+    for (const player of testPlayers) {
+      expect(svgOutput).toContain(player.playerName);
+      expect(svgOutput).toContain(player.playerNumber);
+    }
+
+    // El PDF toma exactamente esta misma fuente gráfica; así no puede volver
+    // a reemplazar camisetas, nombres y dorsales por siluetas oscuras.
+    const pdfSourceSvg = buildPdfSourceSvg(
+      placed,
+      printableWidthMm,
+      totalRollLength,
+      cleanExportOptions
+    );
+    expect(pdfSourceSvg).toBe(svgOutput);
 
     // B. PDF para Mimaki RasterLink / Epson Edge Print
-    const pdfOutput = await generateFullRollPdf(placed, printableWidthMm, totalRollLength);
+    // La conversión del arte SVG necesita DOM del navegador. En Node validamos
+    // por separado la geometría PDF 1:1 sin fingir un PDF que omita el arte.
+    const geometryOnlyPlaced = placed.map((piece) => ({
+      ...piece,
+      svgContent: undefined,
+    }));
+    const pdfOutput = await generateFullRollPdf(
+      geometryOnlyPlaced,
+      printableWidthMm,
+      totalRollLength,
+      cleanExportOptions
+    );
     expect(pdfOutput).toBeDefined();
     expect(pdfOutput.length).toBeGreaterThan(1500);
 
     const pdfHeader = String.fromCharCode(...pdfOutput.slice(0, 5));
     expect(pdfHeader).toBe('%PDF-');
+
+    // MediaBox * UserUnit debe representar exactamente las dimensiones físicas del rollo.
+    const parsedPdf = await PDFDocument.load(pdfOutput);
+    expect(parsedPdf.getPageCount()).toBe(1);
+    const pdfPage = parsedPdf.getPage(0);
+    const userUnitRef = pdfPage.node.get(PDFName.of('UserUnit'));
+    const userUnitObject = userUnitRef
+      ? parsedPdf.context.lookup(userUnitRef)
+      : undefined;
+    const userUnit = userUnitObject instanceof PDFNumber
+      ? userUnitObject.asNumber()
+      : 1;
+
+    expect(pdfPage.getWidth() * userUnit).toBeCloseTo(mmToPt(printableWidthMm), 3);
+    expect(pdfPage.getHeight() * userUnit).toBeCloseTo(mmToPt(totalRollLength), 3);
 
     // C. EPS PostScript Level 3
     const epsOutput = generateFullRollEps(placed, printableWidthMm, totalRollLength);
@@ -211,18 +265,18 @@ describe('FASE 10 — QA Exhaustivo y Pipeline de Producción End-to-End (E2E)',
 
     // F. Servicio central unificado
     const exportResult = await exportProductionRoll(excelPayload, {
-      format: 'PDF',
-      fileName: 'BOBINA_FINAL_RASTERLINK',
+      format: 'SVG',
+      fileName: 'BOBINA_FINAL_ILLUSTRATOR',
       ripProfile: 'MIMAKI_RASTERLINK',
-      includeCutContour: true,
+      includeCutContour: false,
       cutContourColor: '#ff0000',
       cutContourWidthMm: 0.25,
-      includeSeamLabels: true,
+      includeSeamLabels: false,
       paperRollWidthMm: printableWidthMm,
       totalRollLengthMm: totalRollLength,
     });
 
-    expect(exportResult.fileName).toBe('BOBINA_FINAL_RASTERLINK.pdf');
+    expect(exportResult.fileName).toBe('BOBINA_FINAL_ILLUSTRATOR.svg');
     expect(exportResult.fileSizeBytes).toBeGreaterThan(1000);
     expect(exportResult.widthMm).toBe(1120.0);
     expect(exportResult.heightMm).toBe(totalRollLength);

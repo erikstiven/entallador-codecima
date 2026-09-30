@@ -2,17 +2,166 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   HMB Entallador — Tema Oscuro (base) y Tema Claro (html.light)
+   El modo claro remapea la paleta de Tailwind usada en las vistas,
+   sin alterar el marcado de ningún componente.
+   ============================================================ */
+
 :root {
   color-scheme: dark;
+
+  /* Paleta taller (oscura) — referencias para utilidades con opacidad */
+  --hmb-bg: #020617;
+  --hmb-surface: #0f172a;
+  --hmb-raised: #1e293b;
+  --hmb-line: #334155;
+  --hmb-text: #f1f5f9;
 }
+
+html.light {
+  color-scheme: light;
+
+  /* Remapeo claro: cada token conserva su rol (fondo, superficie, elevación,
+     borde, texto principal, secundario, terciario y acento). */
+  --hmb-bg: #f1f5f9;
+  --hmb-surface: #ffffff;
+  --hmb-raised: #f8fafc;
+  --hmb-line: #cbd5e1;
+  --hmb-text: #1e293b;
+
+  /* slate */
+  --tw-slate-50: #0f172a;
+  --tw-slate-100: #1e293b;
+  --tw-slate-200: #334155;
+  --tw-slate-300: #475569;
+  --tw-slate-400: #64748b;
+  --tw-slate-500: #64748b;
+  --tw-slate-600: #94a3b8;
+  --tw-slate-700: #cbd5e1;
+  --tw-slate-800: #e2e8f0;
+  --tw-slate-850: #eef2f7;
+  --tw-slate-900: #ffffff;
+  --tw-slate-950: #f8fafc;
+
+  /* emerald */
+  --tw-emerald-300: #047857;
+  --tw-emerald-400: #059669;
+  --tw-emerald-500: #059669;
+  --tw-emerald-600: #059669;
+  --tw-emerald-700: #047857;
+  --tw-emerald-800: #d1fae5;
+  --tw-emerald-900: #a7f3d0;
+  --tw-emerald-950: #ecfdf5;
+
+  /* sky */
+  --tw-sky-300: #0369a1;
+  --tw-sky-400: #0284c7;
+  --tw-sky-500: #0284c7;
+  --tw-sky-600: #0284c7;
+  --tw-sky-800: #e0f2fe;
+  --tw-sky-900: #bae6fd;
+  --tw-sky-950: #f0f9ff;
+
+  /* amber */
+  --tw-amber-300: #b45309;
+  --tw-amber-400: #d97706;
+  --tw-amber-500: #d97706;
+  --tw-amber-800: #fef3c7;
+  --tw-amber-900: #fde68a;
+  --tw-amber-950: #fffbeb;
+
+  /* red */
+  --tw-red-300: #b91c1c;
+  --tw-red-400: #dc2626;
+  --tw-red-800: #fee2e2;
+  --tw-red-900: #fecaca;
+  --tw-red-950: #fef2f2;
+}
+
+/* Override de la paleta Tailwind únicamente en modo claro. */
+html.light .bg-slate-950 { background-color: var(--tw-slate-950) !important; }
+html.light .bg-slate-900 { background-color: var(--tw-slate-900) !important; }
+html.light .bg-slate-850 { background-color: var(--tw-slate-850) !important; }
+html.light .bg-slate-800 { background-color: var(--tw-slate-800) !important; }
+html.light .bg-slate-700 { background-color: var(--tw-slate-700) !important; }
+html.light .text-slate-100,
+html.light .text-slate-50 { color: var(--tw-slate-50) !important; }
+html.light .text-slate-200 { color: var(--tw-slate-200) !important; }
+html.light .text-slate-300 { color: var(--tw-slate-300) !important; }
+html.light .text-slate-400 { color: var(--tw-slate-400) !important; }
+html.light .text-slate-500 { color: var(--tw-slate-500) !important; }
+html.light .text-slate-600 { color: var(--tw-slate-600) !important; }
+html.light .text-slate-950 { color: var(--tw-slate-950) !important; }
+html.light .border-slate-800 { border-color: var(--tw-slate-800) !important; }
+html.light .border-slate-700 { border-color: var(--tw-slate-700) !important; }
+html.light .border-slate-600 { border-color: var(--tw-slate-600) !important; }
+html.light .divide-slate-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--tw-slate-800) !important;
+}
+
+html.light .text-emerald-300 { color: var(--tw-emerald-300) !important; }
+html.light .text-emerald-400 { color: var(--tw-emerald-400) !important; }
+html.light .bg-emerald-950 { background-color: var(--tw-emerald-950) !important; }
+html.light .border-emerald-800 { border-color: var(--tw-emerald-800) !important; }
+
+html.light .text-sky-300 { color: var(--tw-sky-300) !important; }
+html.light .text-sky-400 { color: var(--tw-sky-400) !important; }
+html.light .bg-sky-950 { background-color: var(--tw-sky-950) !important; }
+html.light .border-sky-800 { border-color: var(--tw-sky-800) !important; }
+
+html.light .text-amber-300 { color: var(--tw-amber-300) !important; }
+html.light .text-amber-400 { color: var(--tw-amber-400) !important; }
+html.light .bg-amber-950 { background-color: var(--tw-amber-950) !important; }
+html.light .border-amber-800 { border-color: var(--tw-amber-800) !important; }
+
+html.light .text-red-300 { color: var(--tw-red-300) !important; }
+html.light .text-red-400 { color: var(--tw-red-400) !important; }
+html.light .bg-red-950 { background-color: var(--tw-red-950) !important; }
+html.light .border-red-800 { border-color: var(--tw-red-800) !important; }
+
+/* Utilidades con opacidad (bg-slate-950/90, bg-emerald-950/40, …): se
+   sustituyen por versiones claras sólidas para evitar tintes oscuros. */
+html.light [class*="bg-slate-900/"],
+html.light [class*="bg-slate-950/"] { background-color: rgba(226, 232, 240, 0.6) !important; }
+html.light [class*="bg-slate-800/"] { background-color: rgba(241, 245, 249, 0.8) !important; }
+html.light [class*="bg-emerald-950/"],
+html.light [class*="bg-emerald-900/"] { background-color: rgba(236, 253, 245, 0.9) !important; }
+html.light [class*="bg-emerald-500/"],
+html.light [class*="bg-emerald-600/"] { background-color: rgba(5, 150, 105, 0.12) !important; }
+html.light [class*="bg-sky-950/"],
+html.light [class*="bg-sky-900/"] { background-color: rgba(240, 249, 255, 0.9) !important; }
+html.light [class*="bg-amber-950/"] { background-color: rgba(255, 251, 235, 0.9) !important; }
+html.light [class*="bg-red-950/"],
+html.light [class*="bg-red-900/"] { background-color: rgba(254, 242, 242, 0.9) !important; }
+html.light [class*="border-slate-800/"],
+html.light [class*="border-slate-700/"] { border-color: rgba(203, 213, 225, 0.9) !important; }
+html.light [class*="border-emerald-800/"] { border-color: rgba(167, 243, 208, 0.8) !important; }
+html.light [class*="border-emerald-500/"] { border-color: rgba(5, 150, 105, 0.45) !important; }
+html.light [class*="border-sky-800/"] { border-color: rgba(186, 230, 253, 0.8) !important; }
+html.light [class*="border-sky-500/"] { border-color: rgba(2, 132, 199, 0.45) !important; }
+html.light [class*="border-amber-800/"] { border-color: rgba(253, 230, 138, 0.8) !important; }
+html.light [class*="border-amber-500/"] { border-color: rgba(217, 119, 6, 0.45) !important; }
+html.light [class*="border-red-900/"],
+html.light [class*="border-red-800/"] { border-color: rgba(254, 202, 202, 0.8) !important; }
+
+/* Gradiente de banner en modo claro: superficie clara en lugar de panel oscuro */
+html.light .from-slate-900 { --tw-gradient-from: var(--tw-slate-800) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)) !important; }
+html.light .via-slate-800 { --tw-gradient-via: #ffffff !important; }
+html.light .to-slate-900 { --tw-gradient-to: var(--tw-slate-800) !important; }
+
+/* Sombras de brand en botones primarios: pasar de glow oscuro a sombra suave */
+html.light .shadow-emerald-950 { --tw-shadow-color: rgba(5, 150, 105, 0.25) !important; }
+html.light .shadow-sky-950 { --tw-shadow-color: rgba(2, 132, 199, 0.25) !important; }
 
 body {
   margin: 0;
   padding: 0;
   user-select: none;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: #090d16;
-  color: #f1f5f9;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background-color: var(--hmb-bg);
+  color: var(--hmb-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom scrollbars for CAD / Workshop look */
@@ -22,14 +171,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: var(--hmb-surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--hmb-line);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: var(--hmb-raised);
 }

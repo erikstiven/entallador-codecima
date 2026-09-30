@@ -17,6 +17,7 @@ interface GeneratorStoreState {
   generationConfig: GenerationConfig;
 
   updateConfig: (updates: Partial<GenerationConfig>) => void;
+  setProductionScope: (scope: 'ALL' | 'CAMISETA_ONLY' | 'SHORT_ONLY') => GenerationResult | null;
   generatePieces: () => GenerationResult | null;
   getReprintPieces: (filter: { playerName?: string; sizeName?: string; pieceType?: PieceType }) => GeneratedPiece[];
   clearGenerated: () => void;
@@ -37,6 +38,16 @@ export const useGeneratorStore = create<GeneratorStoreState>((set, get) => ({
     set((state) => ({
       generationConfig: { ...state.generationConfig, ...updates },
     }));
+    if (get().generatedPieces.length > 0) {
+      return get().generatePieces();
+    }
+  },
+
+  setProductionScope: (scope) => {
+    set((state) => ({
+      generationConfig: { ...state.generationConfig, productionScope: scope },
+    }));
+    return get().generatePieces();
   },
 
   generatePieces: () => {

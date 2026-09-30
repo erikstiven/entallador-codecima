@@ -31,6 +31,19 @@ export interface GenerationConfig {
   labelDistanceMm: number; // Separación fuera de la costura (ej: 6 mm)
   labelFontSizeMm: number; // Tamaño de letra de la etiqueta (ej: 5 mm)
   labelColor: string;
+  productionScope?: 'ALL' | 'CAMISETA_ONLY' | 'SHORT_ONLY'; // Permite producir solo camisetas o solo shorts
+
+  // Calibración fina del entallado y dorsal
+  nameVerticalOffsetPercent?: number; // Ajuste Y del nombre (-15 a +15%)
+  nameScaleX?: number; // Ancho del nombre (0.6 a 1.6, default 1.0)
+  nameScaleY?: number; // Alto del nombre (0.6 a 1.6, default 1.0)
+  numberVerticalOffsetPercent?: number; // Ajuste Y del número (-15 a +15%)
+  numberScaleFactor?: number; // Escala general del número (legacy / alias a scaleY)
+  numberScaleX?: number; // Ancho del número (0.6 a 1.6, default 1.0)
+  numberScaleY?: number; // Alto del número (0.6 a 1.6, default 1.0)
+  sleeveArtOffsetYMm?: number; // Desplazamiento Y del arte de la manga en mm (ej: -15 para alejar de costura)
+  frontArtOffsetYMm?: number; // Desplazamiento Y del arte del frente en mm (subir/bajar logos)
+  backArtOffsetYMm?: number; // Desplazamiento Y del arte de la espalda en mm
 }
 
 export interface GenerationResult {

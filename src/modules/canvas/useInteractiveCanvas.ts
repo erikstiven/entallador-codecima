@@ -15,7 +15,7 @@ export function useInteractiveCanvas() {
     toggleLockPiece,
   } = useNestingStore();
 
-  const [zoomLevel, setZoomLevel] = useState<number>(65); // Zoom en %
+  const [zoomLevel, setZoomLevel] = useState<number>(100); // Vista fija y legible del rollo
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState<boolean>(false);
   const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -153,15 +153,40 @@ export function useInteractiveCanvas() {
     }
   }, [isPanning, dragState, movePiece]);
 
-  // Manejador de rueda para zoom suave centrado
+  // Ajustar el rollo al ancho visible de la pantalla (Modo óptimo de taller)
+  const fitToWidth = useCallback((containerWidthPx: number = 1100) => {
+    const targetWidthMm = activeProfile.printableWidthMm || 1120;
+    const desiredZoom = Math.round(((containerWidthPx * 0.82) / (targetWidthMm * 0.75)) * 100);
+    const clampedZoom = Math.max(30, Math.min(160, desiredZoom));
+    setZoomLevel(clampedZoom);
+    setPan({ x: 0, y: 20 });
+  }, [activeProfile.printableWidthMm]);
+
+  // Ajustar el rollo completo (largo y ancho) para ver la bobina entera
+  const fitToAll = useCallback((containerHeightPx: number = 650, rollLengthMm: number = 4000) => {
+    const totalRollMm = Math.max(800, rollLengthMm);
+    const desiredZoom = Math.round(((containerHeightPx * 0.85) / (totalRollMm * 0.75)) * 100);
+    const clampedZoom = Math.max(12, Math.min(80, desiredZoom));
+    setZoomLevel(clampedZoom);
+    setPan({ x: 0, y: 10 });
+  }, []);
+
+  // Manejador de rueda: Rueda normal = scroll vertical / horizontal; Ctrl+Rueda = Zoom
   const handleWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey || true) {
-      e.preventDefault();
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
+      // Zoom con Ctrl + Rueda
       const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
       setZoomLevel((current) => {
         const next = Math.round(current * zoomFactor);
-        return Math.max(15, Math.min(300, next));
+        return Math.max(12, Math.min(300, next));
       });
+    } else if (e.shiftKey) {
+      // Scroll horizontal con Shift + Rueda
+      setPan((p) => ({ ...p, x: p.x - e.deltaY }));
+    } else {
+      // Scroll vertical natural con rueda del ratón
+      setPan((p) => ({ ...p, y: p.y - e.deltaY }));
     }
   };
 
@@ -228,5 +253,7 @@ export function useInteractiveCanvas() {
     handlePieceMouseDown,
     handleCanvasMouseDown,
     handleWheel,
+    fitToWidth,
+    fitToAll,
   };
 }

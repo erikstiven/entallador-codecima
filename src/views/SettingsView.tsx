@@ -1,9 +1,58 @@
-import React from 'react';
-import { Sliders, Save, Ruler, CheckCircle2, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Sun, Moon, Monitor, Ruler, CheckCircle2 } from 'lucide-react';
 import { useProfileStore } from '@/modules/settings/profileStore';
+import { useThemeStore, applyThemeToDocument, ThemeMode } from '@/modules/settings/themeStore';
+
+type ThemeSelection = ThemeMode | 'system';
+
+const THEME_OPTIONS: Array<{
+  id: ThemeSelection;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  { id: 'light', label: 'Claro', description: 'Ideal para talleres con buena iluminación', icon: Sun },
+  { id: 'dark', label: 'Oscuro', description: 'Menos fatiga visual en jornadas largas', icon: Moon },
+  { id: 'system', label: 'Sistema', description: 'Sigue la preferencia de tu equipo', icon: Monitor },
+];
 
 export const SettingsView: React.FC = () => {
   const { profiles, activeProfile, setActiveProfile, updateActiveProfile } = useProfileStore();
+  const { theme, setTheme } = useThemeStore();
+  const [savedFlash, setSavedFlash] = useState(false);
+  const [systemPrefersLight, setSystemPrefersLight] = useState<boolean>(
+    () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: light)').matches === true
+  );
+
+  // El modo "Sistema" reacciona en vivo si el usuario cambia el tema de su equipo
+  useEffect(() => {
+    const media = window.matchMedia?.('(prefers-color-scheme: light)');
+    if (!media) return;
+    const onChange = (event: MediaQueryListEvent) => setSystemPrefersLight(event.matches);
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, []);
+
+  const activeThemeId: ThemeSelection = THEME_OPTIONS.some((option) => option.id === theme)
+    ? theme
+    : 'system';
+
+  const selectTheme = (optionId: ThemeSelection) => {
+    if (optionId === 'system') {
+      try {
+        localStorage.removeItem('hmb_theme');
+      } catch {
+        // Sin persistencia disponible: la decisión vive en la sesión
+      }
+      const resolved = systemPrefersLight ? 'light' : 'dark';
+      useThemeStore.setState({ theme: resolved });
+      applyThemeToDocument(resolved);
+    } else {
+      setTheme(optionId);
+    }
+    setSavedFlash(true);
+    window.setTimeout(() => setSavedFlash(false), 1500);
+  };
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
@@ -12,6 +61,49 @@ export const SettingsView: React.FC = () => {
         <p className="text-xs text-slate-400 mt-0.5">
           Ajusta las medidas físicas del papel transfer y los márgenes de seguridad para el plotter Epson
         </p>
+      </div>
+
+      {/* Appearance */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-200">Apariencia</h3>
+          <span
+            className={`text-[11px] font-medium flex items-center gap-1 transition-opacity duration-300 ${
+              savedFlash ? 'text-emerald-400 opacity-100' : 'opacity-0'
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" /> Guardado
+          </span>
+        </div>
+        <p className="text-[11px] text-slate-500 -mt-2">
+          El tema se recuerda entre sesiones. Atajos visuales también en la barra superior.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {THEME_OPTIONS.map((option) => {
+            const isSelected = activeThemeId === option.id;
+            const Icon = option.icon;
+            return (
+              <button
+                key={option.id}
+                onClick={() => selectTheme(option.id)}
+                className={`p-3.5 rounded-lg border text-left transition-all ${
+                  isSelected
+                    ? 'bg-emerald-600/10 border-emerald-500 text-white shadow-sm'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 font-semibold text-xs text-white">
+                    <Icon className="w-4 h-4 text-emerald-400" />
+                    {option.label}
+                  </span>
+                  {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">{option.description}</div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Profile Selector */}

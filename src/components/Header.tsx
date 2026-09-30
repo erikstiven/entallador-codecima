@@ -1,15 +1,18 @@
 import React from 'react';
+import { Sun, Moon } from 'lucide-react';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
+import { useThemeStore } from '@/modules/settings/themeStore';
 
 export const Header: React.FC = () => {
   const { currentView } = useNavigationStore();
+  const { theme, toggleTheme } = useThemeStore();
 
   const getTitle = () => {
     switch (currentView) {
       case 'NEW_ORDER':
         return { title: 'Nuevo Pedido de Uniformes', subtitle: 'Carga el Excel del pedido y valida la nómina de jugadores' };
       case 'DESIGNS':
-        return { title: 'Biblioteca de Diseños Maestros', subtitle: 'Patrones artísticos, dorsales y placeholders' };
+        return { title: 'Diseños', subtitle: 'Bloques de arte de Illustrator (Frente, Espalda y Manga)' };
       case 'PATTERNS':
         return { title: 'Moldes', subtitle: 'Patrones base y contornos de corte por talla (cm)' };
       case 'NESTING':
@@ -29,6 +32,14 @@ export const Header: React.FC = () => {
         <h2 className="text-base font-semibold text-white tracking-tight">{info.title}</h2>
         <p className="text-xs text-slate-400">{info.subtitle}</p>
       </div>
+
+      <button
+        onClick={toggleTheme}
+        title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+      >
+        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
     </header>
   );
 };

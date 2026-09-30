@@ -400,11 +400,11 @@ exportMoldesParaHmb();`;
                       <option value="DELANTERO_REDONDO">DELANTERO (CUELLO REDONDO)</option>
                       <option value="DELANTERO">DELANTERO (ESTÁNDAR)</option>
                       <option value="ESPALDA">ESPALDA</option>
-                      <option value="MANGA_IZQ">MANGA IZQ</option>
-                      <option value="MANGA_DER">MANGA DER</option>
+                      <option value="MANGA_IZQ">MANGA (CORTA / SIMÉTRICA)</option>
+                      <option value="MANGA_DER">MANGA DER (SI ES DISTINTA)</option>
                       <option value="CUELLO">CUELLO / RIB</option>
-                      <option value="PANTALONETA_IZQ">PANTALONETA (LADO IZQ)</option>
-                      <option value="PANTALONETA_DER">PANTALONETA (LADO DER)</option>
+                      <option value="PANTALONETA_IZQ">PANTALONETA (PIERNA / ESPEJO)</option>
+                      <option value="PANTALONETA_DER">PANTALONETA DER (SI ES DISTINTA)</option>
                       <option value="OTRO">OTRO / AUXILIAR</option>
                     </select>
                   </div>
@@ -600,11 +600,11 @@ exportMoldesParaHmb();`;
                           <option value="DELANTERO_REDONDO">DELANTERO (CUELLO REDONDO)</option>
                           <option value="DELANTERO">DELANTERO (ESTÁNDAR)</option>
                           <option value="ESPALDA">ESPALDA</option>
-                          <option value="MANGA_IZQ">MANGA IZQ</option>
-                          <option value="MANGA_DER">MANGA DER</option>
+                          <option value="MANGA_IZQ">MANGA (CORTA / SIMÉTRICA)</option>
+                          <option value="MANGA_DER">MANGA DER (SI ES DISTINTA)</option>
                           <option value="CUELLO">CUELLO / RIB</option>
-                          <option value="PANTALONETA_IZQ">PANTALONETA (LADO IZQ)</option>
-                          <option value="PANTALONETA_DER">PANTALONETA (LADO DER)</option>
+                          <option value="PANTALONETA_IZQ">PANTALONETA (PIERNA / ESPEJO)</option>
+                          <option value="PANTALONETA_DER">PANTALONETA DER (SI ES DISTINTA)</option>
                           <option value="OTRO">OTRO / AUX</option>
                         </select>
 

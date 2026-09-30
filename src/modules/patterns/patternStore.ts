@@ -30,12 +30,39 @@ interface PatternStoreState {
 const PATTERNS_STORAGE_KEY = 'hmb_pattern_sets';
 const ACTIVE_PATTERN_ID_KEY = 'hmb_active_pattern_set_id';
 
+export function sanitizePatternSet(patternSet: PatternSet): PatternSet {
+  patternSet.sizes.forEach((s) => {
+    // 1. Corregir piezas mal clasificadas como manga que en realidad son pantaloneta
+    s.pieces.forEach((p) => {
+      if (p.pieceType.startsWith('MANGA') && p.bbox.height >= 320 && p.areaMm2 >= 130000) {
+        p.pieceType = 'PANTALONETA_IZQ';
+        p.pieceName = `T${s.sizeName}_PANTALONETA`;
+        p.allowedRotationsDeg = [0, 180];
+      }
+    });
+
+    // 2. Nombres amigables para piezas únicas de confección
+    const mangas = s.pieces.filter((p) => p.pieceType.startsWith('MANGA'));
+    if (mangas.length === 1) {
+      mangas[0].pieceName = `T${s.sizeName}_MANGA`;
+      mangas[0].pieceType = 'MANGA_IZQ';
+    }
+    const pantas = s.pieces.filter((p) => p.pieceType.startsWith('PANTALONETA'));
+    if (pantas.length === 1) {
+      pantas[0].pieceName = `T${s.sizeName}_PANTALONETA`;
+      pantas[0].pieceType = 'PANTALONETA_IZQ';
+    }
+  });
+  return patternSet;
+}
+
 function loadFromLocalStorage(): { sets: PatternSet[]; activeSet: PatternSet | null } {
   if (typeof window === 'undefined') return { sets: [], activeSet: null };
   try {
     const raw = localStorage.getItem(PATTERNS_STORAGE_KEY);
     if (!raw) return { sets: [], activeSet: null };
-    const sets: PatternSet[] = JSON.parse(raw);
+    const rawSets: PatternSet[] = JSON.parse(raw);
+    const sets: PatternSet[] = rawSets.map(sanitizePatternSet);
     const activeId = localStorage.getItem(ACTIVE_PATTERN_ID_KEY);
     const activeSet = sets.find((s) => s.id === activeId) || (sets.length > 0 ? sets[0] : null);
     return { sets, activeSet };
@@ -70,9 +97,10 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
         dbService.run("DELETE FROM pattern_sets WHERE name = 'MOLDES FUTBOL OFICIAL 2026' OR id LIKE '%demo%' OR id = 'set_moldes_futbol_2026'");
       } catch (_) {}
 
-      const sets = getPatternSetsFromDb(dbService).filter(
+      const rawSets = getPatternSetsFromDb(dbService).filter(
         (s) => s.name !== 'MOLDES FUTBOL OFICIAL 2026' && !s.id.includes('demo') && s.id !== 'set_moldes_futbol_2026'
       );
+      const sets = rawSets.map(sanitizePatternSet);
 
       if (sets.length > 0) {
         set({ patternSets: sets });
@@ -81,6 +109,10 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
         const finalActive = matching || sets[0];
         set({ activePatternSet: finalActive });
         saveToLocalStorage(sets, finalActive);
+        for (const s of sets) {
+          savePatternSetToDb(dbService, s);
+        }
+        dbService.persistBrowserDb();
       } else {
         // Si SQLite está vacío pero localStorage tiene moldes guardados, restaurarlos a SQLite
         const local = loadFromLocalStorage();

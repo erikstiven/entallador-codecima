@@ -226,16 +226,16 @@ export function parsePatternSvg(
 
     // Heurística geométrica para clasificar el tipo de pieza si no viene en el ID:
     if (!detectedType) {
-      if (bbox.width > bbox.height * 1.15 && bbox.height < 450) {
-        // Manga: típicamente más ancha que alta
-        detectedType = 'MANGA_IZQ';
-      } else if (bbox.height >= 450 && bbox.height > bbox.width) {
+      if (bbox.height >= 450 && bbox.height > bbox.width) {
         // Torso: delantero o espalda (se refinará en post-procesamiento por área)
         const existingForSize = sizeMap[detectedSize || ''] || [];
         const hasDelantero = existingForSize.some((p) => p.pieceType.includes('DELANTERO'));
         detectedType = hasDelantero ? 'ESPALDA' : 'DELANTERO';
-      } else if (bbox.height >= 250 && bbox.width >= 250) {
-        // Short / Pantaloneta
+      } else if (bbox.height <= 300 && bbox.width > bbox.height * 1.15 && areaMm2 < 130000) {
+        // Manga corta de fútbol: altura entre 130 y 300 mm y área menor a 130.000 mm²
+        detectedType = 'MANGA_IZQ';
+      } else if (bbox.height >= 320 && areaMm2 >= 130000) {
+        // Pantaloneta / Short: pierna deportiva con tiro, altura >= 320 mm y área mayor a 130.000 mm²
         const existingForSize = sizeMap[detectedSize || ''] || [];
         const hasShortIzq = existingForSize.some((p) => p.pieceType === 'PANTALONETA_IZQ' || p.pieceType === 'SHORT_FRENTE');
         detectedType = hasShortIzq ? 'PANTALONETA_DER' : 'PANTALONETA_IZQ';
@@ -325,11 +325,32 @@ export function parsePatternSvg(
       torsoPieces[0].pieceName = `T${sizeName}_ESPALDA`;
       torsoPieces[0].allowedRotationsDeg = getDefaultRotationsForPieceType('ESPALDA');
 
-      if (!torsoPieces[1].pieceType || torsoPieces[1].pieceType === 'ESPALDA') {
+        if (!torsoPieces[1].pieceType || torsoPieces[1].pieceType === 'ESPALDA') {
         torsoPieces[1].pieceType = 'DELANTERO';
         torsoPieces[1].pieceName = `T${sizeName}_DELANTERO`;
         torsoPieces[1].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO');
       }
+    }
+
+    // Post-procesado para mangas y pantalonetas en esta talla:
+    const nonTorsoPieces = piecesInSize.filter((p) => !(p.bbox.height >= 450 && p.bbox.height > p.bbox.width));
+    const sleeveCandidates = nonTorsoPieces.filter(p => p.bbox.height <= 300 && p.bbox.width > p.bbox.height * 1.15 && p.areaMm2 < 130000);
+    const pantalonetaCandidates = nonTorsoPieces.filter(p => p.bbox.height >= 320 && p.areaMm2 >= 130000);
+
+    if (sleeveCandidates.length > 0) {
+      sleeveCandidates.forEach((slv, idx) => {
+        slv.pieceType = idx === 0 ? 'MANGA_IZQ' : 'MANGA_DER';
+        slv.pieceName = `T${sizeName}_MANGA`;
+        slv.allowedRotationsDeg = getDefaultRotationsForPieceType(slv.pieceType);
+      });
+    }
+
+    if (pantalonetaCandidates.length > 0) {
+      pantalonetaCandidates.forEach((pnt, idx) => {
+        pnt.pieceType = idx === 0 ? 'PANTALONETA_IZQ' : 'PANTALONETA_DER';
+        pnt.pieceName = `T${sizeName}_PANTALONETA`;
+        pnt.allowedRotationsDeg = getDefaultRotationsForPieceType(pnt.pieceType);
+      });
     }
   }
 

@@ -15,11 +15,173 @@ const GLYPH_WIDTH_MAP: Record<string, number> = {
   '-': 380, '.': 300, '\'': 250, '#': 650,
 };
 
+function stripInvalidXmlCharacters(value: string): string {
+  return value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+}
+
+function escapeSvgText(value: string): string {
+  return stripInvalidXmlCharacters(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function escapeSvgAttribute(value: string): string {
+  return escapeSvgText(value)
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function safeScale(value: number | undefined): number {
+  return Number.isFinite(value) ? Math.max(0.05, value as number) : 1;
+}
+
+function safeCoordinate(value: number): number {
+  return Number.isFinite(value) ? value : 0;
+}
+
+function safePositive(value: number, fallback: number): number {
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function normalizeFontFamily(value: string | undefined): string {
+  const clean = stripInvalidXmlCharacters(value || '')
+    .replace(/[^\p{L}\p{N}\s_.-]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return clean || 'Bebas Neue';
+}
+
+function normalizeColor(value: string | undefined, fallback: string): string {
+  const clean = stripInvalidXmlCharacters(value || '').trim();
+  return /^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\([0-9.,%\s+-]+\)|[a-z]+)$/i.test(clean)
+    ? clean
+    : fallback;
+}
+
+function normalizeText(value: string): string {
+  return stripInvalidXmlCharacters(value || '').trim().toUpperCase();
+}
+
+function textAnchorFor(rule: DynamicPlaceholderRule): 'middle' | 'start' | 'end' {
+  if (rule.textAlign === 'left') return 'start';
+  if (rule.textAlign === 'right') return 'end';
+  return 'middle';
+}
+
+function formatSvgNumber(value: number, decimals = 4): string {
+  const rounded = Number(value.toFixed(decimals));
+  return Object.is(rounded, -0) ? '0' : String(rounded);
+}
+
+function buildStrokeAttributes(rule: DynamicPlaceholderRule): string {
+  const strokeWidth = Number.isFinite(rule.strokeWidthMm)
+    ? Math.max(0, rule.strokeWidthMm as number)
+    : 0;
+  if (!rule.strokeColor || strokeWidth <= 0) return '';
+
+  return [
+    `stroke="${escapeSvgAttribute(normalizeColor(rule.strokeColor, '#000000'))}"`,
+    `stroke-width="${formatSvgNumber(strokeWidth)}"`,
+    'stroke-linejoin="round"',
+    'stroke-miterlimit="4"',
+    'paint-order="stroke fill"',
+  ].join(' ');
+}
+
+function calculateCurrentTextWidth(text: string, fontSizeMm: number): number {
+  return Math.max(0.1, estimateTextWidthMm(text, fontSizeMm));
+}
+
+function calculateVisualTextWidth(
+  text: string,
+  fontSizeMm: number,
+  autoScaleX: number,
+  customScaleX: number
+): number {
+  return calculateCurrentTextWidth(text, fontSizeMm) * autoScaleX * customScaleX;
+}
+
+/**
+ * Kept as explicit text instead of pretending to contain vector outlines.
+ * textLength fixes the physical width in Illustrator even when it substitutes
+ * a missing font; converting arbitrary user-selected fonts to paths requires
+ * the original font file, which is not available synchronously here.
+ */
+function buildSvgText(
+  text: string,
+  rule: DynamicPlaceholderRule,
+  fontSizeMm: number,
+  visualWidthMm: number,
+  customScaleY: number
+): string {
+  const safeText = escapeSvgText(text);
+  const fontFamily = escapeSvgAttribute(normalizeFontFamily(rule.fontFamily));
+  const fillColor = escapeSvgAttribute(normalizeColor(rule.fillColor, '#ffffff'));
+  const strokeAttrs = buildStrokeAttributes(rule);
+  const anchorX = safeCoordinate(rule.anchorX);
+  const anchorY = safeCoordinate(rule.anchorY);
+
+  return `
+    <g transform="translate(${formatSvgNumber(anchorX)} ${formatSvgNumber(anchorY)})">
+      <g transform="scale(1 ${formatSvgNumber(customScaleY)})">
+        <text
+          x="0"
+          y="0"
+          font-family="'${fontFamily}', Impact, 'Arial Narrow', Arial, sans-serif"
+          font-size="${formatSvgNumber(fontSizeMm)}"
+          font-weight="700"
+          font-style="normal"
+          font-variant="normal"
+          letter-spacing="0"
+          text-anchor="${textAnchorFor(rule)}"
+          textLength="${formatSvgNumber(Math.max(0.1, visualWidthMm))}"
+          lengthAdjust="spacingAndGlyphs"
+          dy="0.35em"
+          text-rendering="geometricPrecision"
+          fill="${fillColor}"
+          ${strokeAttrs}
+        >${safeText}</text>
+      </g>
+    </g>
+  `.trim();
+}
+
+/*
+ * Calculates the natural width using a deterministic sports-font metric map.
+ * This value becomes an explicit SVG textLength, so browsers and Illustrator
+ * agree on physical width despite minor font-engine differences.
+ */
+function normalizedMinimumScale(value: number | undefined): number {
+  return Number.isFinite(value) ? Math.min(1, Math.max(0.05, value as number)) : 0.6;
+}
+
+function normalizedMaxWidth(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+
+function normalizedMinimumFontSize(value: number, defaultSize: number): number {
+  const safe = safePositive(value, Math.min(defaultSize, 1));
+  return Math.min(safe, defaultSize);
+}
+
+function normalizedDefaultFontSize(value: number): number {
+  return safePositive(value, 1);
+}
+
+function escapedWarningText(value: string): string {
+  return stripInvalidXmlCharacters(value);
+}
+
+function createOverflowWarning(cleanText: string, maxWidth: number): string {
+  return `El nombre "${escapedWarningText(cleanText)}" supera el ancho máximo de ${maxWidth.toFixed(0)} mm tras compresión máxima.`;
+}
+
 /**
  * Calcula el ancho natural de una cadena de texto en milímetros a un tamaño de fuente dado
  */
 export function estimateTextWidthMm(text: string, fontSizeMm: number): number {
-  if (!text) return 0;
+  if (!text || !Number.isFinite(fontSizeMm) || fontSizeMm <= 0) return 0;
   const upper = text.toUpperCase();
   let totalEm = 0;
 
@@ -42,14 +204,14 @@ export function computeTextFitting(
   text: string,
   rule: DynamicPlaceholderRule
 ): TextFittingResult {
-  const cleanText = (text || '').trim().toUpperCase();
-  const naturalWidth = estimateTextWidthMm(cleanText, rule.defaultFontSizeMm);
-  const maxWidth = rule.maxWidthMm;
-  const minScale = rule.minScaleFactor || 0.60;
+  const cleanText = normalizeText(text);
+  const defaultFontSize = normalizedDefaultFontSize(rule.defaultFontSizeMm);
+  const minimumFontSize = normalizedMinimumFontSize(rule.minFontSizeMm, defaultFontSize);
+  const naturalWidth = estimateTextWidthMm(cleanText, defaultFontSize);
+  const maxWidth = normalizedMaxWidth(rule.maxWidthMm);
+  const minScale = normalizedMinimumScale(rule.minScaleFactor);
 
-  let fittedWidth = naturalWidth;
-  let fittedHeight = rule.defaultFontSizeMm;
-  let currentFontSize = rule.defaultFontSizeMm;
+  let currentFontSize = defaultFontSize;
   let scaleX = 1.0;
   let isCompressed = false;
   let hasOverflowWarning = false;
@@ -62,50 +224,42 @@ export function computeTextFitting(
     if (requiredScale >= minScale) {
       // 1. Compresión horizontal proporcional directa (mantiene altura visual)
       scaleX = requiredScale;
-      fittedWidth = naturalWidth * scaleX;
     } else {
       // 2. Si la compresión horizontal sola supera el límite, reducir además fontSize progresivamente
       scaleX = minScale;
       const widthWithMinScale = naturalWidth * minScale;
       const fontReductionFactor = maxWidth / widthWithMinScale;
-      currentFontSize = Math.max(rule.defaultFontSizeMm * fontReductionFactor, rule.minFontSizeMm);
-      fittedHeight = currentFontSize;
-      fittedWidth = estimateTextWidthMm(cleanText, currentFontSize) * scaleX;
+      currentFontSize = Math.max(defaultFontSize * fontReductionFactor, minimumFontSize);
+      const fittedWidth = estimateTextWidthMm(cleanText, currentFontSize) * scaleX;
 
       if (fittedWidth > maxWidth * 1.02) {
         hasOverflowWarning = true;
-        warningMessage = `El nombre "${cleanText}" supera el ancho máximo de ${maxWidth.toFixed(0)} mm tras compresión máxima.`;
+        warningMessage = createOverflowWarning(cleanText, maxWidth);
       }
     }
   }
 
-  // Generar elemento SVG vectorial
-  const strokeAttrs = rule.strokeColor && rule.strokeWidthMm
-    ? `stroke="${rule.strokeColor}" stroke-width="${rule.strokeWidthMm}" stroke-linejoin="round" paint-order="stroke fill"`
-    : '';
-
-  const svgContent = `
-    <g transform="translate(${rule.anchorX}, ${rule.anchorY})">
-      <g transform="scale(${scaleX.toFixed(4)}, 1)">
-        <text
-          x="0"
-          y="0"
-          font-family="${rule.fontFamily}, 'Impact', 'Arial Black', sans-serif"
-          font-size="${currentFontSize.toFixed(2)}"
-          font-weight="bold"
-          text-anchor="${rule.textAlign === 'center' ? 'middle' : rule.textAlign === 'left' ? 'start' : 'end'}"
-          dominant-baseline="central"
-          fill="${rule.fillColor}"
-          ${strokeAttrs}
-        >${cleanText}</text>
-      </g>
-    </g>
-  `.trim();
+  const effectiveCustomScaleX = safeScale(rule.customScaleX);
+  const effectiveCustomScaleY = safeScale(rule.customScaleY);
+  const visualWidth = calculateVisualTextWidth(
+    cleanText,
+    currentFontSize,
+    scaleX,
+    effectiveCustomScaleX
+  );
+  const visualHeight = currentFontSize * effectiveCustomScaleY;
+  const svgContent = buildSvgText(
+    cleanText,
+    rule,
+    currentFontSize,
+    visualWidth,
+    effectiveCustomScaleY
+  );
 
   return {
     text: cleanText,
-    fittedWidthMm: fittedWidth,
-    fittedHeightMm: fittedHeight,
+    fittedWidthMm: visualWidth,
+    fittedHeightMm: visualHeight,
     fontSizeMm: currentFontSize,
     scaleX,
     isCompressed,

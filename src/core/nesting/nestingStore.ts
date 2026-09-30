@@ -67,11 +67,16 @@ export const useNestingStore = create<NestingState>((set, get) => ({
 
     let result: NestingResult;
 
-    if (nestingAlgorithm === 'POLYGONAL_CLIPPER2') {
-      result = await executePolygonalNestingWithWorker(pieces, options, (progress) => {
-        set({ nestingProgress: progress });
-      });
-    } else {
+    try {
+      if (nestingAlgorithm === 'POLYGONAL_CLIPPER2') {
+        result = await executePolygonalNestingWithWorker(pieces, options, (progress) => {
+          set({ nestingProgress: progress });
+        });
+      } else {
+        result = runNestingEngine(pieces, options);
+      }
+    } catch (err) {
+      console.warn('Error en algoritmo de nesting, ejecutando motor de respaldo:', err);
       result = runNestingEngine(pieces, options);
     }
 
@@ -206,11 +211,16 @@ export const useNestingStore = create<NestingState>((set, get) => ({
 
     let result: NestingResult;
 
-    if (nestingAlgorithm === 'POLYGONAL_CLIPPER2') {
-      result = await executePolygonalNestingWithWorker(inputPieces, options, (progress) => {
-        set({ nestingProgress: progress });
-      });
-    } else {
+    try {
+      if (nestingAlgorithm === 'POLYGONAL_CLIPPER2') {
+        result = await executePolygonalNestingWithWorker(inputPieces, options, (progress) => {
+          set({ nestingProgress: progress });
+        });
+      } else {
+        result = runNestingEngine(inputPieces, options);
+      }
+    } catch (err) {
+      console.warn('Error en reoptimización, ejecutando motor de respaldo:', err);
       result = runNestingEngine(inputPieces, options);
     }
 
