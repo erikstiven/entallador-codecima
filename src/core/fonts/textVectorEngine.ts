@@ -241,6 +241,7 @@ export function computeTextFitting(
 
   const effectiveCustomScaleX = safeScale(rule.customScaleX);
   const effectiveCustomScaleY = safeScale(rule.customScaleY);
+  const isScaledOrCompressed = isCompressed || Math.abs(scaleX - 1.0) > 0.01 || Math.abs(effectiveCustomScaleX - 1.0) > 0.01;
   const visualWidth = calculateVisualTextWidth(
     cleanText,
     currentFontSize,

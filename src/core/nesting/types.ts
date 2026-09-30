@@ -40,6 +40,8 @@ export interface NestingOptions {
   spacingMm: number; // minimum distance between any two pieces, e.g. 7.0 mm
   groupingMode: NestingGroupingMode;
   allowRotation?: boolean; // whether to allow piece rotations if allowed by piece
+  sideMarginMm?: number; // margen de seguridad lateral izquierdo y derecho (ej. 5.0 mm = 0.5 cm)
+  topMarginMm?: number; // margen de seguridad superior e inferior
 }
 
 export interface NestingResult {

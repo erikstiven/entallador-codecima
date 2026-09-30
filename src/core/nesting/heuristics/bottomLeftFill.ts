@@ -56,6 +56,9 @@ export function executeBottomLeftFill(
 ): NestingResult {
   const startTime = performance.now();
   const { printableWidthMm, spacingMm, groupingMode } = options;
+  const sideMarginMm = options.sideMarginMm !== undefined ? Math.max(0, options.sideMarginMm) : 5.0;
+  const topMarginMm = options.topMarginMm !== undefined ? Math.max(0, options.topMarginMm) : 5.0;
+  const effectivePrintableWidth = Math.max(10, printableWidthMm - sideMarginMm);
 
   // 1. Separar piezas fijadas (Locked) de piezas libres
   const lockedPieces: PlacedNestingPiece[] = [];
@@ -67,11 +70,13 @@ export function executeBottomLeftFill(
       const isSwapped = rot === 90 || rot === 270;
       const effW = isSwapped ? p.bbox.height : p.bbox.width;
       const effH = isSwapped ? p.bbox.width : p.bbox.height;
+      const minX = sideMarginMm;
+      const maxX = Math.max(minX, effectivePrintableWidth - effW);
 
       lockedPieces.push({
         ...p,
-        xMm: Math.max(0, Math.min(p.xMm, printableWidthMm - effW)),
-        yMm: Math.max(0, p.yMm),
+        xMm: Math.max(minX, Math.min(p.xMm, maxX)),
+        yMm: Math.max(topMarginMm, p.yMm),
         rotationDeg: rot,
         effectiveWidthMm: effW,
         effectiveHeightMm: effH,
@@ -139,7 +144,7 @@ export function executeBottomLeftFill(
 
   // Helper para determinar el baseline actual (en modo BY_SIZE, si queremos separación clara)
   let currentGroupKey: string | null = null;
-  let groupBaselineY = 0;
+  let groupBaselineY = topMarginMm;
 
   // 4. Colocar iterativamente cada pieza libre usando Bottom-Left Search
   for (const piece of sortedFreePieces) {
@@ -154,7 +159,7 @@ export function executeBottomLeftFill(
           const top = pl.yMm + pl.effectiveHeightMm;
           if (top > maxExistingY) maxExistingY = top;
         }
-        groupBaselineY = maxExistingY > 0 ? maxExistingY + spacingMm : 0;
+        groupBaselineY = maxExistingY > 0 ? maxExistingY + spacingMm : topMarginMm;
         currentGroupKey = piece.sizeName;
       }
     }
@@ -177,20 +182,20 @@ export function executeBottomLeftFill(
       const effW = isSwapped ? piece.bbox.height : piece.bbox.width;
       const effH = isSwapped ? piece.bbox.width : piece.bbox.height;
 
-      // Si la pieza sola es más ancha que el rollo, no cabe en esta rotación
-      if (effW > printableWidthMm) continue;
+      // Si la pieza sola es más ancha que el área imprimible con margen, no cabe en esta rotación
+      if (effW > effectivePrintableWidth - sideMarginMm) continue;
 
       // Generar coordenadas candidatas X e Y
       const candidateXs = new Set<number>();
       const candidateYs = new Set<number>();
 
-      candidateXs.add(0);
+      candidateXs.add(sideMarginMm);
       candidateYs.add(groupBaselineY);
 
       for (const pl of placedPieces) {
         // Candidato a la derecha de pieza colocada
         const rightX = pl.xMm + pl.effectiveWidthMm + spacingMm;
-        if (rightX + effW <= printableWidthMm) {
+        if (rightX + effW <= effectivePrintableWidth) {
           candidateXs.add(rightX);
         }
 
@@ -212,8 +217,8 @@ export function executeBottomLeftFill(
         if (y >= bestScore) break;
 
         for (const x of sortedXs) {
-          // Validar contención en el ancho útil
-          if (x + effW > printableWidthMm) continue;
+          // Validar contención en el ancho útil con márgenes
+          if (x < sideMarginMm || x + effW > effectivePrintableWidth) continue;
 
           // Validar colisión contra todas las piezas ya colocadas
           let collision = false;
@@ -254,7 +259,7 @@ export function executeBottomLeftFill(
         const top = pl.yMm + pl.effectiveHeightMm;
         if (top > maxExistingY) maxExistingY = top;
       }
-      bestX = 0;
+      bestX = sideMarginMm;
       bestY = maxExistingY > 0 ? maxExistingY + spacingMm : groupBaselineY;
       bestRotation = 0;
       bestEffW = piece.bbox.width;

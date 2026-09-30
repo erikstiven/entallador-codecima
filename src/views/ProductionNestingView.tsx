@@ -6,7 +6,9 @@ import {
   Sparkles,
   Trash2,
   Eye,
-  Printer
+  Printer,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
@@ -34,9 +36,18 @@ export const ProductionNestingView: React.FC = () => {
   } = useNestingStore();
 
   const {
+    zoomLevel,
+    setZoomLevel,
+    pan,
+    setPan,
+    isPanning,
     dragState,
     mmToPx,
     handlePieceMouseDown,
+    handleCanvasMouseDown,
+    handleWheel,
+    fitToWidth,
+    fitToAll,
   } = useInteractiveCanvas();
 
   // Pestaña activa: 'INSPECTION' (Revisión de prendas por jugador/talla) o 'ROLL' (Acomodo en rollo de 1120 mm)
@@ -136,7 +147,47 @@ export const ProductionNestingView: React.FC = () => {
 
         {/* Acciones del Extremo Derecho (Solo cuando se visualiza el Rollo) */}
         {activeTab === 'ROLL' && (
-          <div>
+          <div className="flex items-center gap-3">
+            {/* Controles de Zoom del Rollo */}
+            <div className="flex items-center bg-slate-950 border border-slate-700 rounded-lg p-1 text-xs text-slate-400">
+              <button
+                onClick={() => setZoomLevel((z) => Math.max(z - 10, 15))}
+                className="p-1 hover:text-white hover:bg-slate-800 rounded cursor-pointer"
+                title="Reducir zoom"
+              >
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+              <span className="px-2 font-mono text-[11px] text-slate-200 min-w-[42px] text-center">{zoomLevel}%</span>
+              <button
+                onClick={() => setZoomLevel((z) => Math.min(z + 10, 300))}
+                className="p-1 hover:text-white hover:bg-slate-800 rounded cursor-pointer"
+                title="Aumentar zoom"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => {
+                  const w = typeof window !== 'undefined' ? window.innerWidth : 1100;
+                  fitToWidth(w - 80);
+                }}
+                className="px-2 py-0.5 hover:text-white hover:bg-slate-800 rounded font-mono text-[10px] text-emerald-400 font-semibold cursor-pointer"
+                title="Ajustar ancho del rollo a la pantalla para ver prendas grandes"
+              >
+                Ajustar Ancho
+              </button>
+              <button
+                onClick={() => {
+                  const w = typeof window !== 'undefined' ? window.innerWidth : 1100;
+                  const h = typeof window !== 'undefined' ? window.innerHeight : 800;
+                  fitToAll(w - 80, h - 160);
+                }}
+                className="px-2 py-0.5 hover:text-white hover:bg-slate-800 rounded font-mono text-[10px] text-sky-400 cursor-pointer"
+                title="Ver todo el largo del rollo"
+              >
+                Ver Todo
+              </button>
+            </div>
+
             <button 
               disabled={placedCount === 0}
               onClick={() => setIsExportModalOpen(true)}
@@ -297,13 +348,20 @@ export const ProductionNestingView: React.FC = () => {
 
           {/* Lienzo del Rollo de Papel Interactivo con Renderizado Vectorial */}
           <div className="flex-1 relative bg-[#0b0f19] overflow-hidden flex">
-            <div className="flex-1 overflow-auto relative flex justify-center items-start p-8 select-none bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
+            <div 
+              onMouseDown={handleCanvasMouseDown}
+              onWheel={handleWheel}
+              className={`flex-1 overflow-hidden relative flex justify-center items-start p-8 select-none bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] ${
+                isPanning ? 'cursor-grabbing' : 'cursor-default'
+              }`}
+            >
               {/* Rollo de papel 1120 mm */}
               <div 
                 className="bg-slate-900 border-2 border-emerald-500/50 shadow-2xl relative transition-transform duration-75"
                 style={{
                   width: `${canvasWidthPx}px`,
                   minHeight: `${canvasHeightPx}px`,
+                  transform: `translate(${pan.x}px, ${pan.y}px)`,
                   boxShadow: '0 0 60px rgba(0,0,0,0.85)',
                 }}
               >

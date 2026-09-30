@@ -36,6 +36,8 @@ export function runNestingEngine(
   const sanitizedOptions: NestingOptions = {
     printableWidthMm: Math.max(100.0, options.printableWidthMm || 1120.0),
     spacingMm: Math.max(0.0, options.spacingMm !== undefined ? options.spacingMm : 7.0),
+    sideMarginMm: Math.max(0.0, options.sideMarginMm !== undefined ? options.sideMarginMm : 5.0),
+    topMarginMm: Math.max(0.0, options.topMarginMm !== undefined ? options.topMarginMm : 5.0),
     groupingMode: options.groupingMode || 'MAX_SAVINGS',
     allowRotation: options.allowRotation !== undefined ? options.allowRotation : true,
   };
