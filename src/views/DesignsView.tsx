@@ -737,46 +737,41 @@ export const DesignsView: React.FC = () => {
                       type="text"
                       value={sampleNumber}
                       onChange={(e) => setSampleNumber(e.target.value)}
-                      className="bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-emerald-400 font-mono text-xs w-10 text-center focus:outline-none"
+                      className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-emerald-400 font-mono text-xs w-14 text-center focus:border-emerald-500 focus:outline-none font-bold"
                       placeholder="N°"
                     />
                   </div>
 
-                  <div className="flex items-center justify-center bg-slate-950/80 rounded-lg px-4 py-1.5 border border-slate-800/60">
-                    <svg viewBox="0 0 280 40" className="w-64 h-10">
-                      <text
-                        x="140"
-                        y="14"
-                        fontFamily={`'${activeFontFamily}', 'Impact', sans-serif`}
-                        fontSize="14"
-                        fontWeight="bold"
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fill={fillHex}
-                        stroke={hasStroke ? strokeHex : 'none'}
-                        strokeWidth={hasStroke ? strokeWidth * 0.6 : 0}
-                        strokeLinejoin="round"
-                        style={{ paintOrder: 'stroke fill' }}
+                  {/* Banner de previsualización tipográfica grande y legible */}
+                  <div className="flex-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-center min-h-[65px] overflow-hidden">
+                    <div className="text-center flex items-center justify-center gap-4 flex-wrap">
+                      <span
+                        className="font-bold tracking-wider uppercase leading-none transition-all"
+                        style={{
+                          fontFamily: `'${activeFontFamily}', Impact, 'Arial Narrow', sans-serif`,
+                          fontSize: '28px',
+                          color: fillHex,
+                          WebkitTextStroke: hasStroke ? `${Math.max(0.8, strokeWidth * 0.5)}px ${strokeHex}` : 'none',
+                          paintOrder: 'stroke fill',
+                          textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                        }}
                       >
                         {sampleName || 'CHRISTOPHER'}
-                      </text>
-                      <text
-                        x="140"
-                        y="30"
-                        fontFamily={`'${activeFontFamily}', 'Impact', sans-serif`}
-                        fontSize="20"
-                        fontWeight="bold"
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fill={fillHex}
-                        stroke={hasStroke ? strokeHex : 'none'}
-                        strokeWidth={hasStroke ? strokeWidth * 0.8 : 0}
-                        strokeLinejoin="round"
-                        style={{ paintOrder: 'stroke fill' }}
+                      </span>
+                      <span
+                        className="font-bold tracking-tight leading-none transition-all"
+                        style={{
+                          fontFamily: `'${activeFontFamily}', Impact, 'Arial Narrow', sans-serif`,
+                          fontSize: '44px',
+                          color: fillHex,
+                          WebkitTextStroke: hasStroke ? `${Math.max(1.2, strokeWidth * 0.7)}px ${strokeHex}` : 'none',
+                          paintOrder: 'stroke fill',
+                          textShadow: '0 3px 10px rgba(0,0,0,0.9)',
+                        }}
                       >
                         {sampleNumber || '9'}
-                      </text>
-                    </svg>
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -824,14 +819,14 @@ export const DesignsView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => frenteInputRef.current?.click()}
-                        className="text-slate-400 hover:text-white"
+                        className="text-slate-400 hover:text-white cursor-pointer"
                       >
                         Reemplazar
                       </button>
                       <button
                         type="button"
                         onClick={() => removePieceArtwork('DELANTERO')}
-                        className="text-red-400 hover:text-red-300"
+                        className="text-red-400 hover:text-red-300 cursor-pointer"
                       >
                         Quitar
                       </button>
@@ -839,10 +834,10 @@ export const DesignsView: React.FC = () => {
                   )}
                 </div>
 
-                {/* RANURA 2: ESPALDA */}
+                {/* RANURA 2: ESPALDA CON DORSAL EN VIVO */}
                 <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-white">👕 Bloque Espalda</span>
+                    <span className="font-bold text-xs text-white">👕 Bloque Espalda (Con Dorsal)</span>
                     {espaldaArt ? (
                       <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
                         <CheckCircle2 className="w-3 h-3" /> Cargado
@@ -856,17 +851,48 @@ export const DesignsView: React.FC = () => {
 
                   <div 
                     onClick={() => espaldaInputRef.current?.click()}
-                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
+                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all relative overflow-hidden group ${
                       espaldaArt
                         ? 'border-slate-700 bg-slate-900/80 hover:border-emerald-500'
                         : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
                     }`}
                   >
                     {espaldaArt?.svgArtContent ? (
-                      <div 
-                        className="w-full h-full flex items-center justify-center"
-                        dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(espaldaArt.svgArtContent) }}
-                      />
+                      <div className="w-full h-full relative flex items-center justify-center">
+                        <div 
+                          className="w-full h-full flex items-center justify-center"
+                          dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(espaldaArt.svgArtContent) }}
+                        />
+                        {/* Overlay Real del Dorsal con la tipografía seleccionada */}
+                        <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-10 pt-4">
+                          <span 
+                            className="font-bold tracking-wider text-center drop-shadow transition-all uppercase leading-none"
+                            style={{
+                              fontFamily: `'${activeFontFamily}', Impact, 'Arial Narrow', sans-serif`,
+                              fontSize: '15px',
+                              color: fillHex,
+                              WebkitTextStroke: hasStroke ? `${Math.max(0.5, strokeWidth * 0.35)}px ${strokeHex}` : 'none',
+                              paintOrder: 'stroke fill',
+                              textShadow: '0 2px 4px rgba(0,0,0,0.6)',
+                            }}
+                          >
+                            {sampleName || 'CHRISTOPHER'}
+                          </span>
+                          <span 
+                            className="font-bold tracking-tight text-center drop-shadow transition-all leading-none mt-1"
+                            style={{
+                              fontFamily: `'${activeFontFamily}', Impact, 'Arial Narrow', sans-serif`,
+                              fontSize: '56px',
+                              color: fillHex,
+                              WebkitTextStroke: hasStroke ? `${Math.max(1, strokeWidth * 0.6)}px ${strokeHex}` : 'none',
+                              paintOrder: 'stroke fill',
+                              textShadow: '0 3px 6px rgba(0,0,0,0.7)',
+                            }}
+                          >
+                            {sampleNumber || '9'}
+                          </span>
+                        </div>
+                      </div>
                     ) : (
                       <div className="text-center space-y-1.5">
                         <UploadCloud className="w-7 h-7 text-slate-600 mx-auto" />
@@ -880,14 +906,14 @@ export const DesignsView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => espaldaInputRef.current?.click()}
-                        className="text-slate-400 hover:text-white"
+                        className="text-slate-400 hover:text-white cursor-pointer"
                       >
                         Reemplazar
                       </button>
                       <button
                         type="button"
                         onClick={() => removePieceArtwork('ESPALDA')}
-                        className="text-red-400 hover:text-red-300"
+                        className="text-red-400 hover:text-red-300 cursor-pointer"
                       >
                         Quitar
                       </button>
