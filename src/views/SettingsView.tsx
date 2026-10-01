@@ -84,25 +84,32 @@ export const SettingsView: React.FC = () => {
     <div className="p-8 max-w-5xl mx-auto space-y-8 pb-16 text-slate-200">
       {/* Encabezado Principal */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-violet-500/20 text-purple-400 font-mono text-xs font-bold uppercase">
-              Configuración General
-            </span>
-            <span
-              className={`text-xs font-semibold flex items-center gap-1 transition-opacity duration-300 ${
-                savedFlash ? 'text-purple-400 opacity-100' : 'opacity-0'
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" /> Cambios guardados automáticamente
-            </span>
+        <div className="flex items-center gap-4">
+          <img 
+            src="/cimapattern-icon.png" 
+            alt="CimaPattern" 
+            className="w-12 h-12 object-contain filter drop-shadow-md"
+          />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-violet-500/20 text-purple-400 font-mono text-xs font-bold uppercase">
+                Configuración General
+              </span>
+              <span
+                className={`text-xs font-semibold flex items-center gap-1 transition-opacity duration-300 ${
+                  savedFlash ? 'text-purple-400 opacity-100' : 'opacity-0'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" /> Cambios guardados automáticamente
+              </span>
+            </div>
+            <h2 className="text-2xl font-black text-white mt-1 tracking-tight flex items-center gap-2">
+              CimaPattern <span className="text-purple-400 font-medium">PRO</span>
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Personaliza la empresa, temas, unidades de medida, parámetros de bobina y tolerancias de corte 1:1
+            </p>
           </div>
-          <h2 className="text-2xl font-black text-white mt-1 tracking-tight flex items-center gap-2">
-            CimaPattern <span className="text-purple-400 font-medium">PRO</span>
-          </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Personaliza la empresa, temas, unidades de medida, parámetros de bobina y tolerancias de corte 1:1
-          </p>
         </div>
 
         <button
