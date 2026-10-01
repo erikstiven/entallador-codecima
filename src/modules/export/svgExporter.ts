@@ -92,6 +92,14 @@ export function stripLegacyWorkshopLabel(svgFragment: string): string {
   return withoutLabel.replace(/<!--\s*Etiqueta de confección\s*-->\s*/gi, '');
 }
 
+function stripInternalPieceMask(svgFragment: string): string {
+  return svgFragment
+    .replace(/<defs>\s*<clipPath id="[^"]+">\s*<path[^>]*\/>\s*<\/clipPath>\s*<\/defs>/gi, '')
+    .replace(/<g clip-path="url\(#[^)]+\)">/gi, '<g>')
+    .replace(/^\s*<g id="gen_[^"]+">\s*/i, '')
+    .replace(/\s*<\/g>\s*$/i, '');
+}
+
 function stripNestedDocumentPreamble(svgFragment: string): string {
   return svgFragment
     .replace(/^\s*<\?xml[\s\S]*?\?>\s*/i, '')
@@ -115,7 +123,9 @@ export function namespaceSvgFragment(svgFragment: string, namespace: string): st
   const classMap = new Map<string, string>();
 
   let result = stripNestedDocumentPreamble(
-    stripLegacyWorkshopLabel(stripLegacyTechnicalContour(svgFragment))
+    stripInternalPieceMask(
+      stripLegacyWorkshopLabel(stripLegacyTechnicalContour(svgFragment))
+    )
   );
 
   result.replace(/\bid\s*=\s*(["'])([^"']+)\1/gi, (_match, _quote, id: string) => {

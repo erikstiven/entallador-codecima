@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useDesignStore } from '@/modules/designs/designStore';
 import { PieceType } from '@/core/geometry/types';
-import { POPULAR_SPORTS_FONTS, loadGoogleFont } from '@/core/fonts/googleFonts';
+import { POPULAR_SPORTS_FONTS, loadGoogleFont, getLocalSystemFonts, loadCustomFontFromFile } from '@/core/fonts/googleFonts';
 import { cmykToHex, hexToCmyk, CMYK } from '@/core/color/cmykColor';
 
 function cleanSvgForDisplay(svgContent?: string): string {
@@ -54,6 +54,7 @@ export const DesignsView: React.FC = () => {
   const mangaIzqInputRef = useRef<HTMLInputElement>(null);
   const mangaDerInputRef = useRef<HTMLInputElement>(null);
   const multiInputRef = useRef<HTMLInputElement>(null);
+  const fontFileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     designs,
@@ -73,10 +74,44 @@ export const DesignsView: React.FC = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
 
-  // Tipografía seleccionada de Google Fonts
+  // Tipografía seleccionada
   const [activeFontFamily, setActiveFontFamily] = useState<string>('Bebas Neue');
   const [isCustomFont, setIsCustomFont] = useState(false);
   const [customFontInput, setCustomFontInput] = useState('');
+  const [localFonts, setLocalFonts] = useState<string[]>([]);
+  const [isSyncingFonts, setIsSyncingFonts] = useState<boolean>(false);
+
+  const handleSyncLocalFonts = async () => {
+    setIsSyncingFonts(true);
+    try {
+      const fonts = await getLocalSystemFonts();
+      if (fonts.length > 0) {
+        setLocalFonts(fonts);
+      } else {
+        // Si el navegador no permite acceso directo a la lista, abrir diálogo de archivo TTF/OTF
+        fontFileInputRef.current?.click();
+      }
+    } catch (err) {
+      console.warn('Error al sincronizar fuentes:', err);
+      fontFileInputRef.current?.click();
+    } finally {
+      setIsSyncingFonts(false);
+    }
+  };
+
+  const handleFontFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const fontName = await loadCustomFontFromFile(file);
+      setLocalFonts((prev) => Array.from(new Set([fontName, ...prev])));
+      setActiveFontFamily(fontName);
+      setIsCustomFont(false);
+      applyStyleUpdates({ fontFamily: fontName });
+    } catch (err) {
+      console.error('Error al cargar archivo de fuente:', err);
+    }
+  };
 
   // Colores CMYK de Relleno (Fill)
   const [fillHex, setFillHex] = useState<string>('#FFFFFF');
@@ -442,10 +477,31 @@ export const DesignsView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                   {/* Tipografía */}
                   <div className="space-y-1.5">
-                    <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                      <Type className="w-3.5 h-3.5 text-emerald-400" />
-                      Tipografía (Google Fonts):
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-slate-300 font-semibold flex items-center gap-1.5">
+                        <Type className="w-3.5 h-3.5 text-emerald-400" />
+                        Tipografía de Dorsal:
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="file"
+                          ref={fontFileInputRef}
+                          onChange={handleFontFileUpload}
+                          accept=".ttf,.otf,.woff,.woff2"
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSyncLocalFonts}
+                          disabled={isSyncingFonts}
+                          className="text-[10px] text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                          title="Detectar fuentes instaladas en Windows o cargar archivo .TTF/.OTF"
+                        >
+                          <span>{isSyncingFonts ? 'Detectando...' : '🔄 Sincronizar PC / TTF'}</span>
+                        </button>
+                      </div>
+                    </div>
+
                     <select
                       value={isCustomFont ? 'CUSTOM' : activeFontFamily}
                       onChange={(e) => {
@@ -457,14 +513,24 @@ export const DesignsView: React.FC = () => {
                       }}
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
                     >
-                      <optgroup label="Fuentes Deportivas">
+                      {localFonts.length > 0 && (
+                        <optgroup label="✨ Fuentes de tu PC (Instaladas)">
+                          {localFonts.map((f) => (
+                            <option key={`local_${f}`} value={f}>
+                              {f} (Local)
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+
+                      <optgroup label="🏆 Fuentes Deportivas (Mundiales y Ligas)">
                         {POPULAR_SPORTS_FONTS.map((f) => (
                           <option key={f.family} value={f.family}>
                             {f.family} ({f.category})
                           </option>
                         ))}
                       </optgroup>
-                      <option value="CUSTOM">➕ Escribir otra fuente...</option>
+                      <option value="CUSTOM">➕ Escribir nombre exacto de fuente instalada...</option>
                     </select>
 
                     {isCustomFont && (
@@ -473,13 +539,13 @@ export const DesignsView: React.FC = () => {
                           type="text"
                           value={customFontInput}
                           onChange={(e) => setCustomFontInput(e.target.value)}
-                          placeholder="Nombre en Google Fonts..."
+                          placeholder="Ej: AdiCup Q 2022, Jersey M54..."
                           className="flex-1 bg-slate-900 border border-emerald-500 rounded px-2 py-1 text-white text-xs focus:outline-none"
                         />
                         <button
                           type="button"
                           onClick={handleApplyCustomFont}
-                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs"
+                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs cursor-pointer"
                         >
                           OK
                         </button>
