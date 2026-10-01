@@ -18,12 +18,18 @@ import {
   ChevronUp,
   ChevronDown,
   Plus,
-  Minus
+  Minus,
+  Sun,
+  Moon,
+  Grid,
+  Ruler,
+  Sparkles
 } from 'lucide-react';
 import { GeneratedPiece } from '@/modules/generator/types';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
+import { useThemeStore } from '@/modules/settings/themeStore';
 
 interface GarmentInspectionTabProps {
   generatedPieces: GeneratedPiece[];
@@ -46,8 +52,11 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 }) => {
   const { setCurrentView } = useNavigationStore();
   const { activeProfile } = useProfileStore();
+  const { theme, toggleTheme } = useThemeStore();
   const { generationConfig, updateConfig } = useGeneratorStore();
   const [showCalibrationPanel, setShowCalibrationPanel] = useState<boolean>(false);
+  const [canvasBgMode, setCanvasBgMode] = useState<'dark' | 'light' | 'blueprint' | 'grid'>('dark');
+  const [showGuides, setShowGuides] = useState<boolean>(true);
 
   // Agrupar piezas por cada jugador en la nómina
   const playerGroups = useMemo<PlayerGarmentGroup[]>(() => {
@@ -282,8 +291,67 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
           </div>
         )}
 
-        {/* Derecha: Botón de Calibración Rápida y Botón Principal Único */}
-        <div className="flex items-center gap-3">
+        {/* Derecha: Selector de Fondo de Contraste, Guías, Tema y Botón Principal */}
+        <div className="flex items-center gap-2.5">
+          {/* Selector de Fondo de Visor (Contraste) */}
+          <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 text-xs" title="Modo de Fondo del Visor (Para contrastar telas amarillas, blancas u oscuras)">
+            <button
+              type="button"
+              onClick={() => setCanvasBgMode('dark')}
+              className={`px-2 py-1 rounded text-xs transition-all cursor-pointer ${
+                canvasBgMode === 'dark' ? 'bg-slate-800 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-white'
+              }`}
+              title="Fondo Oscuro (Taller)"
+            >
+              🌑 Oscuro
+            </button>
+            <button
+              type="button"
+              onClick={() => setCanvasBgMode('light')}
+              className={`px-2 py-1 rounded text-xs transition-all cursor-pointer ${
+                canvasBgMode === 'light' ? 'bg-slate-200 text-slate-950 font-bold shadow-sm' : 'text-slate-400 hover:text-white'
+              }`}
+              title="Fondo Claro (Alto contraste para camisetas amarillas/oscuras)"
+            >
+              ☀️ Claro
+            </button>
+            <button
+              type="button"
+              onClick={() => setCanvasBgMode('blueprint')}
+              className={`px-2 py-1 rounded text-xs transition-all cursor-pointer ${
+                canvasBgMode === 'blueprint' ? 'bg-blue-900 text-cyan-300 font-bold shadow-sm' : 'text-slate-400 hover:text-white'
+              }`}
+              title="Fondo Técnico (Blueprint)"
+            >
+              📐 Técnico
+            </button>
+          </div>
+
+          {/* Toggle de Guías Visuales */}
+          <button
+            type="button"
+            onClick={() => setShowGuides(!showGuides)}
+            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              showGuides
+                ? 'bg-sky-950 text-sky-300 border-sky-600 shadow-sm'
+                : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'
+            }`}
+            title="Mostrar u ocultar guías de contorno de molde y línea de dobladillo"
+          >
+            <Ruler className="w-3.5 h-3.5 text-sky-400" />
+            <span>{showGuides ? 'Guías: ON' : 'Guías: OFF'}</span>
+          </button>
+
+          {/* Toggle de Tema Global Sistema */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
+            title={theme === 'dark' ? 'Cambiar sistema completo a modo Claro' : 'Cambiar sistema completo a modo Oscuro'}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-sky-400" />}
+          </button>
+
           <button
             onClick={() => setShowCalibrationPanel(!showCalibrationPanel)}
             className={`p-2 rounded-lg border transition-all relative flex items-center justify-center cursor-pointer ${
@@ -532,18 +600,18 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
             {/* 3. MANGA: FRANJA / PUÑO (Posición Y y presets) */}
             <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1">
-              <div className="flex items-center gap-1" title="Posición vertical franja manga (evita costura de dobladillo)">
+              <div className="flex items-center gap-1" title="Posición vertical franja manga (Sube el diseño para no taparlo con la costura del dobladillo)">
                 <Layers className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-[10px] text-slate-500 font-mono font-bold select-none">Y</span>
+                <span className="text-[10px] text-slate-400 font-mono font-bold select-none">Manga Y</span>
                 <button
                   type="button"
                   onClick={() => updateConfig({ sleeveArtOffsetYMm: Math.max(-45, (generationConfig.sleeveArtOffsetYMm || 0) - 2) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
-                  title="Subir franja (Y)"
+                  title="Subir diseño de manga (Y)"
                 >
                   <Minus className="w-2.5 h-2.5" />
                 </button>
-                <span className="text-[11px] font-mono font-bold min-w-[38px] text-center text-amber-300">
+                <span className="text-[11px] font-mono font-bold min-w-[42px] text-center text-amber-300">
                   {((generationConfig.sleeveArtOffsetYMm || 0) > 0 ? '+' : '') + (generationConfig.sleeveArtOffsetYMm || 0)}
                   <span className="text-[9px] text-slate-500 font-normal ml-0.5">mm</span>
                 </span>
@@ -551,13 +619,25 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   type="button"
                   onClick={() => updateConfig({ sleeveArtOffsetYMm: Math.min(20, (generationConfig.sleeveArtOffsetYMm || 0) + 2) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
-                  title="Bajar franja (Y)"
+                  title="Bajar diseño de manga (Y)"
                 >
                   <Plus className="w-2.5 h-2.5" />
                 </button>
               </div>
 
               <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => updateConfig({ sleeveArtOffsetYMm: 0 })}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-colors cursor-pointer ${
+                    (generationConfig.sleeveArtOffsetYMm || 0) === 0
+                      ? 'bg-amber-500 text-slate-950'
+                      : 'bg-slate-900 text-slate-400 hover:text-amber-300 border border-slate-800'
+                  }`}
+                  title="0 mm: Centro del molde original"
+                >
+                  0 mm
+                </button>
                 <button
                   type="button"
                   onClick={() => updateConfig({ sleeveArtOffsetYMm: -15 })}
@@ -575,12 +655,12 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   onClick={() => updateConfig({ sleeveArtOffsetYMm: -20 })}
                   className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-colors cursor-pointer ${
                     generationConfig.sleeveArtOffsetYMm === -20
-                      ? 'bg-amber-500 text-slate-950'
+                      ? 'bg-amber-500 text-slate-950 ring-1 ring-amber-400'
                       : 'bg-slate-900 text-amber-400 hover:text-amber-300 border border-amber-500/40'
                   }`}
-                  title="Subir 20 mm (Recomendado confección: franja visible al borde de la basta)"
+                  title="Subir 20 mm (⭐ Recomendado: franja visible al borde de la basta)"
                 >
-                  -20
+                  ⭐ -20
                 </button>
                 <button
                   type="button"
@@ -703,6 +783,29 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 const isDelantero = piece.pieceType.startsWith('DELANTERO');
                 const isManga = piece.pieceType.startsWith('MANGA');
 
+                // Extraer el path de corte del molde si existe para dibujar el contorno visible
+                const pathMatch = piece.svgContent?.match(/<path\b[^>]*\bd=(["'])(.*?)\1/i);
+                const pathD = pathMatch ? pathMatch[2] : '';
+
+                // Estilos según el modo de fondo seleccionado
+                const isLight = canvasBgMode === 'light';
+                const isBlueprint = canvasBgMode === 'blueprint';
+
+                const slotBg = isLight 
+                  ? 'bg-slate-100 border-slate-200' 
+                  : isBlueprint 
+                  ? 'bg-[#071322] border-blue-900/50' 
+                  : 'bg-[#080b11] border-slate-800';
+
+                const gridOverlay = isLight
+                  ? 'bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:12px_12px] opacity-40'
+                  : isBlueprint
+                  ? 'bg-[linear-gradient(to_right,#0c2d48_1px,transparent_1px),linear-gradient(to_bottom,#0c2d48_1px,transparent_1px)] [background-size:14px_14px] opacity-70'
+                  : 'bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px] opacity-35';
+
+                const moldStrokeColor = isLight ? '#0284c7' : '#38bdf8';
+                const hemLineY = Math.max(10, piece.bbox.height - 20);
+
                 return (
                   <div
                     key={piece.id}
@@ -723,16 +826,112 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                       </span>
                     </div>
 
-                    {/* Visor SVG de la pieza: Grande, centrado y limpio */}
-                    <div className="p-4 bg-[#080b11] flex items-center justify-center relative min-h-[380px] h-[430px] overflow-hidden select-none">
-                      <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px] opacity-30 pointer-events-none" />
+                    {/* Visor SVG de la pieza: Con soporte para fondo claro/oscuro y guías de corte */}
+                    <div className={`p-4 ${slotBg} flex items-center justify-center relative min-h-[380px] h-[430px] overflow-hidden select-none transition-colors duration-200`}>
+                      <div className={`absolute inset-0 ${gridOverlay} pointer-events-none`} />
 
                       <svg
                         viewBox={`0 -4 ${piece.bbox.width} ${piece.bbox.height + 16}`}
                         className="w-full h-full max-h-[410px] object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.7)] transition-transform duration-200 group-hover:scale-[1.02]"
                         preserveAspectRatio="xMidYMid meet"
-                        dangerouslySetInnerHTML={{ __html: piece.svgContent || '' }}
-                      />
+                      >
+                        {/* 1. Arte recortado con el molde */}
+                        <g dangerouslySetInnerHTML={{ __html: piece.svgContent || '' }} />
+
+                        {/* 2. Guías visuales de corte y límites de confección */}
+                        {showGuides && (
+                          <g className="pointer-events-none">
+                            {/* Contorno nítido del molde de corte */}
+                            {pathD && (
+                              <path
+                                d={pathD}
+                                fill="none"
+                                stroke={moldStrokeColor}
+                                strokeWidth="1.2"
+                                strokeLinejoin="round"
+                                strokeDasharray="4 2"
+                                opacity="0.95"
+                              />
+                            )}
+
+                            {/* Guías especiales para MANGA: Línea de dobladillo y límite superior */}
+                            {isManga && (
+                              <>
+                                {/* Línea de Dobladillo / Basta a 20 mm del borde inferior */}
+                                <line
+                                  x1="4"
+                                  y1={hemLineY}
+                                  x2={piece.bbox.width - 4}
+                                  y2={hemLineY}
+                                  stroke="#f59e0b"
+                                  strokeWidth="1.2"
+                                  strokeDasharray="4 2"
+                                />
+                                <rect
+                                  x={piece.bbox.width / 2 - 58}
+                                  y={hemLineY - 14}
+                                  width="116"
+                                  height="12"
+                                  rx="3"
+                                  fill="#451a03"
+                                  fillOpacity="0.9"
+                                  stroke="#f59e0b"
+                                  strokeWidth="0.6"
+                                />
+                                <text
+                                  x={piece.bbox.width / 2}
+                                  y={hemLineY - 5.5}
+                                  fill="#fde68a"
+                                  fontSize="6.5"
+                                  fontWeight="bold"
+                                  fontFamily="monospace"
+                                  textAnchor="middle"
+                                >
+                                  DOBLADILLO BASTA (-20mm)
+                                </text>
+
+                                {/* Límite superior de sisa / hombro */}
+                                <line
+                                  x1="10"
+                                  y1="6"
+                                  x2={piece.bbox.width - 10}
+                                  y2="6"
+                                  stroke="#10b981"
+                                  strokeWidth="0.8"
+                                  strokeDasharray="3 2"
+                                  opacity="0.8"
+                                />
+                                <text
+                                  x={piece.bbox.width / 2}
+                                  y="4.5"
+                                  fill="#34d399"
+                                  fontSize="5.5"
+                                  fontWeight="bold"
+                                  fontFamily="monospace"
+                                  textAnchor="middle"
+                                  opacity="0.9"
+                                >
+                                  LÍMITE SUPERIOR (HOMBRO)
+                                </text>
+                              </>
+                            )}
+
+                            {/* Guía de centro para ESPALDA */}
+                            {isEspalda && (
+                              <line
+                                x1={piece.bbox.width / 2}
+                                y1="10"
+                                x2={piece.bbox.width / 2}
+                                y2={piece.bbox.height - 10}
+                                stroke="#10b981"
+                                strokeWidth="0.6"
+                                strokeDasharray="3 3"
+                                opacity="0.4"
+                              />
+                            )}
+                          </g>
+                        )}
+                      </svg>
                     </div>
 
                     {/* Footer limpio y minimalista */}
