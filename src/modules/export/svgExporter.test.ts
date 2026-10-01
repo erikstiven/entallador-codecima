@@ -170,6 +170,33 @@ describe('SVG production exporter', () => {
       .toBe('translate(10 120) rotate(270)');
   });
 
+  it('realiza inlining de atributos CSS en tags autocontenidos sin romper la sintaxis XML', () => {
+    const artworkWithSelfClosing = `
+      <svg viewBox="0 0 100 100">
+        <defs>
+          <style>.cls-1 { fill: #009c3b; stroke: #002776; stroke-width: 2; }</style>
+        </defs>
+        <g id="escudo">
+          <path class="cls-1" d="M10 10h80v80h-80z" />
+          <circle class="cls-1" cx="50" cy="50" r="30" />
+        </g>
+      </svg>
+    `;
+
+    const { fragment } = namespaceSvgFragment(artworkWithSelfClosing, 'test_piece');
+    expect(fragment).toContain('fill="#009c3b"');
+    expect(fragment).toContain('stroke="#002776"');
+    expect(fragment).toMatch(/<path[^>]+fill="#009c3b"[^>]*\/>/);
+    expect(fragment).toMatch(/<circle[^>]+fill="#009c3b"[^>]*\/>/);
+    // Ensure no broken syntax like "/ fill=" exists
+    expect(fragment).not.toContain('/ fill=');
+    expect(fragment).not.toContain('/ stroke=');
+
+    const rollSvg = generateFullRollSvg([makePiece('self_closing', 0, 0, artworkWithSelfClosing)], 1120, 100);
+    expect(rollSvg).not.toContain('/ fill=');
+    expect(rollSvg).toContain('fill="#009c3b"');
+  });
+
   it('rechaza dimensiones físicas inválidas en vez de producir un SVG corrupto', () => {
     expect(() => generateFullRollSvg([], Number.NaN, 100)).toThrow(/ancho del rollo/i);
     expect(() => generateFullRollSvg([], 1120, 0)).toThrow(/largo del rollo/i);

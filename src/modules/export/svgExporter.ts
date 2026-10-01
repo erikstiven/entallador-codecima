@@ -225,15 +225,19 @@ export function namespaceSvgFragment(svgFragment: string, namespace: string): { 
     if (rule.selector.startsWith('.')) {
       const origClass = rule.selector.substring(1).trim();
       const mappedClass = classMap.get(origClass) || origClass;
-      const classRegex = new RegExp(`(<(?:path|rect|circle|ellipse|polygon|polyline|text|g)\\b[^>]*?\\bclass\\s*=\\s*["'][^"']*?\\b${escapeRegExp(mappedClass)}\\b[^"']*?["'][^>]*?)>`, 'gi');
-      result = result.replace(classRegex, (tag) => {
-        let updatedTag = tag;
+      const classRegex = new RegExp(`(<(?:path|rect|circle|ellipse|polygon|polyline|text|tspan|line|use|g)\\b[^>]*?\\bclass\\s*=\\s*["'][^"']*?\\b${escapeRegExp(mappedClass)}\\b[^"']*?[^>]*?)>`, 'gi');
+      result = result.replace(classRegex, (_fullMatch, tagWithoutClosing: string) => {
+        const isSelfClosing = tagWithoutClosing.trimEnd().endsWith('/');
+        let tagCore = isSelfClosing 
+          ? tagWithoutClosing.trimEnd().slice(0, -1).trimEnd() 
+          : tagWithoutClosing;
+        
         for (const [prop, val] of Object.entries(rule.properties)) {
-          if (!new RegExp(`\\b${escapeRegExp(prop)}\\s*=`, 'i').test(updatedTag)) {
-            updatedTag = updatedTag.replace(/>$/, ` ${prop}="${escapeXmlAttribute(val)}">`);
+          if (!new RegExp(`\\b${escapeRegExp(prop)}\\s*=`, 'i').test(tagCore)) {
+            tagCore += ` ${prop}="${escapeXmlAttribute(val)}"`;
           }
         }
-        return updatedTag;
+        return isSelfClosing ? `${tagCore} />` : `${tagCore}>`;
       });
     }
   }

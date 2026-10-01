@@ -57,7 +57,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
   const { theme, toggleTheme } = useThemeStore();
   const { generationConfig, updateConfig } = useGeneratorStore();
   const [showCalibrationPanel, setShowCalibrationPanel] = useState<boolean>(false);
-  const [canvasBgMode, setCanvasBgMode] = useState<'dark' | 'light' | 'blueprint' | 'grid'>('dark');
+  const [canvasBgMode, setCanvasBgMode] = useState<'dark' | 'light' | 'blueprint' | 'grid'>('light');
   const [showGuides, setShowGuides] = useState<boolean>(true);
 
   // Agrupar piezas por cada jugador en la nómina
@@ -445,7 +445,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 <span className="text-[10px] text-slate-500 font-mono font-bold select-none">Y</span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ nameVerticalOffsetPercent: Math.max(-15, (generationConfig.nameVerticalOffsetPercent || 0) - 1) })}
+                  onClick={() => updateConfig({ nameVerticalOffsetPercent: Math.max(-35, (generationConfig.nameVerticalOffsetPercent || 0) - 1) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Subir nombre (Y)"
                 >
@@ -456,7 +456,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 </span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ nameVerticalOffsetPercent: Math.min(15, (generationConfig.nameVerticalOffsetPercent || 0) + 1) })}
+                  onClick={() => updateConfig({ nameVerticalOffsetPercent: Math.min(35, (generationConfig.nameVerticalOffsetPercent || 0) + 1) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Bajar nombre (Y)"
                 >
@@ -467,11 +467,11 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               <div className="w-px h-3.5 bg-slate-800" />
 
               {/* Ancho W */}
-              <div className="flex items-center gap-1" title="Ancho del nombre (W: Reducir / Expandir horizontalmente)">
+              <div className="flex items-center gap-1" title="Ancho del nombre (W: Reducir / Expandir horizontalmente hasta 300%)">
                 <span className="text-[10px] text-slate-500 font-mono font-bold select-none">W</span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ nameScaleX: Math.max(0.60, Number(((generationConfig.nameScaleX ?? 1.0) - 0.05).toFixed(2))) })}
+                  onClick={() => updateConfig({ nameScaleX: Math.max(0.30, Number(((generationConfig.nameScaleX ?? 1.0) - 0.05).toFixed(2))) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Reducir ancho del nombre"
                 >
@@ -482,7 +482,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 </span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ nameScaleX: Math.min(1.60, Number(((generationConfig.nameScaleX ?? 1.0) + 0.05).toFixed(2))) })}
+                  onClick={() => updateConfig({ nameScaleX: Math.min(3.00, Number(((generationConfig.nameScaleX ?? 1.0) + 0.05).toFixed(2))) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Aumentar ancho del nombre"
                 >
@@ -493,11 +493,11 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               <div className="w-px h-3.5 bg-slate-800" />
 
               {/* Alto H */}
-              <div className="flex items-center gap-1" title="Alto del nombre (H: Achicar / Estirar verticalmente)">
+              <div className="flex items-center gap-1" title="Alto del nombre (H: Achicar / Estirar verticalmente hasta 300%)">
                 <span className="text-[10px] text-slate-500 font-mono font-bold select-none">H</span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ nameScaleY: Math.max(0.60, Number(((generationConfig.nameScaleY ?? 1.0) - 0.05).toFixed(2))) })}
+                  onClick={() => updateConfig({ nameScaleY: Math.max(0.30, Number(((generationConfig.nameScaleY ?? 1.0) - 0.05).toFixed(2))) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Reducir alto del nombre"
                 >
@@ -508,7 +508,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 </span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ nameScaleY: Math.min(1.60, Number(((generationConfig.nameScaleY ?? 1.0) + 0.05).toFixed(2))) })}
+                  onClick={() => updateConfig({ nameScaleY: Math.min(3.00, Number(((generationConfig.nameScaleY ?? 1.0) + 0.05).toFixed(2))) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Aumentar alto del nombre"
                 >
@@ -528,7 +528,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 <span className="text-[10px] text-slate-500 font-mono font-bold select-none">Y</span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ numberVerticalOffsetPercent: Math.max(-15, (generationConfig.numberVerticalOffsetPercent || 0) - 1) })}
+                  onClick={() => updateConfig({ numberVerticalOffsetPercent: Math.max(-35, (generationConfig.numberVerticalOffsetPercent || 0) - 1) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Subir número (Y)"
                 >
@@ -539,7 +539,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 </span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ numberVerticalOffsetPercent: Math.min(15, (generationConfig.numberVerticalOffsetPercent || 0) + 1) })}
+                  onClick={() => updateConfig({ numberVerticalOffsetPercent: Math.min(35, (generationConfig.numberVerticalOffsetPercent || 0) + 1) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Bajar número (Y)"
                 >
@@ -550,11 +550,11 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               <div className="w-px h-3.5 bg-slate-800" />
 
               {/* Ancho W */}
-              <div className="flex items-center gap-1" title="Ancho del número (W: Reducir / Expandir horizontalmente)">
+              <div className="flex items-center gap-1" title="Ancho del número (W: Reducir / Expandir horizontalmente hasta 300%)">
                 <span className="text-[10px] text-slate-500 font-mono font-bold select-none">W</span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ numberScaleX: Math.max(0.60, Number(((generationConfig.numberScaleX ?? (generationConfig.numberScaleFactor ?? 1.0)) - 0.05).toFixed(2))) })}
+                  onClick={() => updateConfig({ numberScaleX: Math.max(0.30, Number(((generationConfig.numberScaleX ?? (generationConfig.numberScaleFactor ?? 1.0)) - 0.05).toFixed(2))) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Reducir ancho del número"
                 >
@@ -565,7 +565,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 </span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ numberScaleX: Math.min(1.60, Number(((generationConfig.numberScaleX ?? (generationConfig.numberScaleFactor ?? 1.0)) + 0.05).toFixed(2))) })}
+                  onClick={() => updateConfig({ numberScaleX: Math.min(3.00, Number(((generationConfig.numberScaleX ?? (generationConfig.numberScaleFactor ?? 1.0)) + 0.05).toFixed(2))) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Aumentar ancho del número"
                 >
@@ -576,13 +576,13 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               <div className="w-px h-3.5 bg-slate-800" />
 
               {/* Alto H */}
-              <div className="flex items-center gap-1" title="Alto del número (H: Achicar / Estirar verticalmente)">
+              <div className="flex items-center gap-1" title="Alto del número (H: Achicar / Estirar verticalmente hasta 300%)">
                 <span className="text-[10px] text-slate-500 font-mono font-bold select-none">H</span>
                 <button
                   type="button"
                   onClick={() => updateConfig({ 
-                    numberScaleY: Math.max(0.60, Number(((generationConfig.numberScaleY ?? (generationConfig.numberScaleFactor ?? 1.0)) - 0.05).toFixed(2))),
-                    numberScaleFactor: Math.max(0.60, Number(((generationConfig.numberScaleY ?? (generationConfig.numberScaleFactor ?? 1.0)) - 0.05).toFixed(2)))
+                    numberScaleY: Math.max(0.30, Number(((generationConfig.numberScaleY ?? (generationConfig.numberScaleFactor ?? 1.0)) - 0.05).toFixed(2))),
+                    numberScaleFactor: Math.max(0.30, Number(((generationConfig.numberScaleY ?? (generationConfig.numberScaleFactor ?? 1.0)) - 0.05).toFixed(2)))
                   })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Reducir alto del número"
@@ -595,8 +595,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 <button
                   type="button"
                   onClick={() => updateConfig({ 
-                    numberScaleY: Math.min(1.60, Number(((generationConfig.numberScaleY ?? (generationConfig.numberScaleFactor ?? 1.0)) + 0.05).toFixed(2))),
-                    numberScaleFactor: Math.min(1.60, Number(((generationConfig.numberScaleY ?? (generationConfig.numberScaleFactor ?? 1.0)) + 0.05).toFixed(2)))
+                    numberScaleY: Math.min(3.00, Number(((generationConfig.numberScaleY ?? (generationConfig.numberScaleFactor ?? 1.0)) + 0.05).toFixed(2))),
+                    numberScaleFactor: Math.min(3.00, Number(((generationConfig.numberScaleY ?? (generationConfig.numberScaleFactor ?? 1.0)) + 0.05).toFixed(2)))
                   })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Aumentar alto del número"
@@ -613,7 +613,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 <span className="text-[10px] text-slate-400 font-mono font-bold select-none">Manga Y</span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ sleeveArtOffsetYMm: Math.max(-45, (generationConfig.sleeveArtOffsetYMm || 0) - 2) })}
+                  onClick={() => updateConfig({ sleeveArtOffsetYMm: Math.max(-80, (generationConfig.sleeveArtOffsetYMm || 0) - 2) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Subir diseño de manga (Y)"
                 >
@@ -625,7 +625,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 </span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ sleeveArtOffsetYMm: Math.min(20, (generationConfig.sleeveArtOffsetYMm || 0) + 2) })}
+                  onClick={() => updateConfig({ sleeveArtOffsetYMm: Math.min(60, (generationConfig.sleeveArtOffsetYMm || 0) + 2) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Bajar diseño de manga (Y)"
                 >
@@ -692,7 +692,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 <span className="text-[10px] text-slate-500 font-mono font-bold select-none">Y</span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ frontArtOffsetYMm: Math.max(-30, (generationConfig.frontArtOffsetYMm || 0) - 2) })}
+                  onClick={() => updateConfig({ frontArtOffsetYMm: Math.max(-60, (generationConfig.frontArtOffsetYMm || 0) - 2) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Subir logos frente (Y)"
                 >
@@ -704,7 +704,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 </span>
                 <button
                   type="button"
-                  onClick={() => updateConfig({ frontArtOffsetYMm: Math.min(30, (generationConfig.frontArtOffsetYMm || 0) + 2) })}
+                  onClick={() => updateConfig({ frontArtOffsetYMm: Math.min(60, (generationConfig.frontArtOffsetYMm || 0) + 2) })}
                   className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs select-none cursor-pointer transition-colors active:scale-95"
                   title="Bajar logos frente (Y)"
                 >
