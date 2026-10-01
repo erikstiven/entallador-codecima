@@ -40,11 +40,11 @@ export const Sidebar: React.FC = () => {
       <div>
         <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 p-1 flex items-center justify-center overflow-hidden shadow-lg shadow-purple-950/40">
+            <div className="w-10 h-10 rounded-xl bg-slate-800/60 border border-slate-700/60 p-1.5 flex items-center justify-center overflow-hidden shadow-md shadow-purple-950/30">
               <img 
-                src="/cimapattern-logo.png" 
+                src="/cimapattern-icon.png" 
                 alt="CimaPattern" 
-                className="w-full h-full object-contain rounded-lg"
+                className="w-full h-full object-contain"
               />
             </div>
             <div>
