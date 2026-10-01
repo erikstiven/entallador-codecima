@@ -349,21 +349,21 @@ export function generateGarmentPieces(
           const numScaleX = config.numberScaleX ?? (config.numberScaleFactor ?? 1.0);
           const numScaleY = config.numberScaleY ?? (config.numberScaleFactor ?? 1.0);
 
-          // Nombre: en la espalda alta (justo debajo del escote/hombros, a ~16-17% de altura + offset)
-          const baseNameRatio = isYouth ? 0.17 : 0.16;
-          const nameY = localBbox.height * Math.max(0.06, Math.min(0.35, baseNameRatio + nameOffsetRatio));
+          // Nombre: en la espalda alta (posicionado a ~21-22% de altura, debajo del escote)
+          const baseNameRatio = isYouth ? 0.22 : 0.21;
+          const nameY = localBbox.height * Math.max(0.12, Math.min(0.35, baseNameRatio + nameOffsetRatio));
 
-          // Número: en la parte media de la espalda (a ~43-45% de altura + offset, dejando libre la zona baja)
-          const baseNumRatio = isYouth ? 0.44 : 0.45;
-          const numberY = localBbox.height * Math.max(0.25, Math.min(0.65, baseNumRatio + numOffsetRatio));
+          // Número: centrado en la parte media de la espalda (a ~50% de altura)
+          const baseNumRatio = isYouth ? 0.50 : 0.50;
+          const numberY = localBbox.height * Math.max(0.30, Math.min(0.68, baseNumRatio + numOffsetRatio));
 
           const nameFontSize = isYouth 
-            ? Math.min(38, Math.max(26, localBbox.width * 0.095))
-            : Math.min(50, Math.max(34, localBbox.width * 0.10));
+            ? Math.min(32, Math.max(24, localBbox.width * 0.08))
+            : Math.min(38, Math.max(28, localBbox.width * 0.085));
 
           const numberFontSize = isYouth
-            ? Math.min(170, Math.max(120, localBbox.height * 0.30))
-            : Math.min(235, Math.max(170, localBbox.height * 0.32));
+            ? Math.min(150, Math.max(110, localBbox.height * 0.26))
+            : Math.min(190, Math.max(140, localBbox.height * 0.27));
 
           const nameRule: DynamicPlaceholderRule = {
             id: 'NOMBRE',
@@ -371,10 +371,10 @@ export function generateGarmentPieces(
             targetPiece: 'ESPALDA',
             anchorX: centerX,
             anchorY: nameY,
-            maxWidthMm: localBbox.width * 0.70,
-            maxHeightMm: isYouth ? 45 : 60,
+            maxWidthMm: localBbox.width * 0.65,
+            maxHeightMm: isYouth ? 38 : 45,
             defaultFontSizeMm: nameFontSize,
-            minFontSizeMm: 22,
+            minFontSizeMm: 20,
             minScaleFactor: 0.50,
             fontFamily: configuredFont,
             fillColor: configuredFill,
@@ -391,10 +391,10 @@ export function generateGarmentPieces(
             targetPiece: 'ESPALDA',
             anchorX: centerX,
             anchorY: numberY,
-            maxWidthMm: localBbox.width * 0.60,
-            maxHeightMm: isYouth ? 175 : 240,
+            maxWidthMm: localBbox.width * 0.55,
+            maxHeightMm: isYouth ? 155 : 200,
             defaultFontSizeMm: numberFontSize,
-            minFontSizeMm: 110,
+            minFontSizeMm: 100,
             minScaleFactor: 0.60,
             fontFamily: configuredFont,
             fillColor: configuredFill,
