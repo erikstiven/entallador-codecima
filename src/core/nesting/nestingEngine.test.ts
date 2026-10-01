@@ -91,7 +91,7 @@ describe('Motor de Nesting 2D (Strip Packing) - Fase A', () => {
     }
   });
 
-  it('Invarianza de piezas bloqueadas (🔒 Locked): respeta posición fija y empaqueta el resto alrededor', () => {
+  it('Invarianza de piezas bloqueadas (isLocked): respeta posición fija y empaqueta el resto alrededor', () => {
     // Pieza 1 bloqueada manualmente por el usuario en posición (150 mm, 200 mm)
     const lockedPiece: NestingPieceInput = {
       ...createTestPiece('locked_1', 'j1', 'BLOQUEADO', '30', 'DELANTERO', 480, 680),

@@ -9,7 +9,12 @@ import {
   X,
   Plus,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Shirt,
+  Scissors,
+  Layers,
+  RefreshCw,
+  Copy
 } from 'lucide-react';
 import { useDesignStore } from '@/modules/designs/designStore';
 import { PieceType } from '@/core/geometry/types';
@@ -497,7 +502,8 @@ export const DesignsView: React.FC = () => {
                           className="text-[10px] text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-1 cursor-pointer font-medium"
                           title="Detectar fuentes instaladas en Windows o cargar archivo .TTF/.OTF"
                         >
-                          <span>{isSyncingFonts ? 'Detectando...' : '🔄 Sincronizar PC / TTF'}</span>
+                          <RefreshCw className={`w-3 h-3 ${isSyncingFonts ? 'animate-spin' : ''}`} />
+                          <span>{isSyncingFonts ? 'Detectando...' : 'Sincronizar PC / TTF'}</span>
                         </button>
                       </div>
                     </div>
@@ -514,7 +520,7 @@ export const DesignsView: React.FC = () => {
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
                     >
                       {localFonts.length > 0 && (
-                        <optgroup label="✨ Fuentes de tu PC (Instaladas)">
+                        <optgroup label="Fuentes de tu PC (Instaladas)">
                           {localFonts.map((f) => (
                             <option key={`local_${f}`} value={f}>
                               {f} (Local)
@@ -523,14 +529,14 @@ export const DesignsView: React.FC = () => {
                         </optgroup>
                       )}
 
-                      <optgroup label="🏆 Fuentes Deportivas (Mundiales y Ligas)">
+                      <optgroup label="Fuentes Deportivas (Mundiales y Ligas)">
                         {POPULAR_SPORTS_FONTS.map((f) => (
                           <option key={f.family} value={f.family}>
                             {f.family} ({f.category})
                           </option>
                         ))}
                       </optgroup>
-                      <option value="CUSTOM">➕ Escribir nombre exacto de fuente instalada...</option>
+                      <option value="CUSTOM">+ Escribir nombre exacto de fuente instalada...</option>
                     </select>
 
                     {isCustomFont && (
@@ -781,7 +787,10 @@ export const DesignsView: React.FC = () => {
                 {/* RANURA 1: FRENTE */}
                 <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-white">🎽 Bloque Frente</span>
+                    <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                      <Shirt className="w-3.5 h-3.5 text-sky-400" />
+                      Bloque Frente
+                    </span>
                     {frenteArt ? (
                       <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
                         <CheckCircle2 className="w-3 h-3" /> Cargado
@@ -837,7 +846,10 @@ export const DesignsView: React.FC = () => {
                 {/* RANURA 2: ESPALDA */}
                 <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-white">👕 Bloque Espalda</span>
+                    <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                      <Shirt className="w-3.5 h-3.5 text-emerald-400" />
+                      Bloque Espalda
+                    </span>
                     {espaldaArt ? (
                       <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
                         <CheckCircle2 className="w-3 h-3" /> Cargado
@@ -893,7 +905,10 @@ export const DesignsView: React.FC = () => {
                 {/* RANURA 3: MANGA IZQUIERDA */}
                 <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-white">🦾 Manga Izquierda</span>
+                    <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                      <Scissors className="w-3.5 h-3.5 text-amber-400" />
+                      Manga Izquierda
+                    </span>
                     {mangaIzqArt ? (
                       <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
                         <CheckCircle2 className="w-3 h-3" /> Cargada
@@ -949,7 +964,10 @@ export const DesignsView: React.FC = () => {
                 {/* RANURA 4: MANGA DERECHA */}
                 <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-white">🦾 Manga Derecha</span>
+                    <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                      <Scissors className="w-3.5 h-3.5 text-amber-400" />
+                      Manga Derecha
+                    </span>
                     {mangaDerArt ? (
                       <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
                         <CheckCircle2 className="w-3 h-3" /> Cargada
@@ -985,9 +1003,10 @@ export const DesignsView: React.FC = () => {
                               e.stopPropagation();
                               handleCopyMangaIzqToDer();
                             }}
-                            className="mt-1 px-2.5 py-1 bg-emerald-700/80 hover:bg-emerald-600 text-white rounded text-[11px] font-medium shadow-sm transition-colors"
+                            className="mt-1 px-2.5 py-1 bg-emerald-700/80 hover:bg-emerald-600 text-white rounded text-[11px] font-medium shadow-sm transition-colors flex items-center gap-1 mx-auto"
                           >
-                            🔄 Copiar de Manga Izq
+                            <Copy className="w-3 h-3" />
+                            Copiar de Manga Izq
                           </button>
                         )}
                       </div>

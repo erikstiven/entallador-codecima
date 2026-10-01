@@ -76,7 +76,7 @@ export interface PlacedPieceItem {
   xMm: number;         // Posición en X en el rollo (mm)
   yMm: number;         // Posición en Y en el rollo (mm)
   rotationDeg: number; // Rotación aplicada (0, 90, 180, 270)
-  isLocked: boolean;   // Si está bloqueada manualmente con 🔒
+  isLocked: boolean;   // Si está bloqueada manualmente con Lock
   polygonTransformed: Polygon2D; // Polígono rotado y posicionado
   bboxTransformed: BoundingBox;
 }

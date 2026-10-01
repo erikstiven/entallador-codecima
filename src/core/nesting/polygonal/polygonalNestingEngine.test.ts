@@ -123,7 +123,7 @@ describe('Motor de Nesting 2D Avanzado Poligonal (Fase B con Clipper2)', () => {
     }
   });
 
-  it('QA 13.2.3: Invarianza de piezas fijadas (Locked 🔒): pieza en (100, 100) permanece inmutable', async () => {
+  it('QA 13.2.3: Invarianza de piezas fijadas (Locked): pieza en (100, 100) permanece inmutable', async () => {
     const lockedPiece: NestingPieceInput = {
       ...createJerseyPiece('locked_1', 'CAPITAN', '32', 500, 700),
       isLocked: true,

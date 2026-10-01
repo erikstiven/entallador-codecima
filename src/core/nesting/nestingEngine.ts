@@ -11,7 +11,7 @@ import { executeBottomLeftFill } from './heuristics/bottomLeftFill';
  * - Contención estricta dentro del ancho útil (printableWidthMm)
  * - Separación de seguridad mínima (spacingMm, ej. 7.0 mm)
  * - No-solapamiento absoluto entre piezas
- * - Preservación de piezas fijadas (🔒 isLocked)
+ * - Preservación de piezas fijadas (isLocked)
  * - Agrupamiento según requerimientos de producción (MAX_SAVINGS, BY_SIZE, BY_PLAYER, BY_PIECE_TYPE)
  */
 export function runNestingEngine(

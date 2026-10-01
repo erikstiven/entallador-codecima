@@ -14,7 +14,9 @@ import {
   ShieldCheck,
   Zap,
   Layers,
-  FileCheck
+  FileCheck,
+  Shirt,
+  Scissors
 } from 'lucide-react';
 import { useOrderStore } from '@/modules/orders/orderStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
@@ -251,38 +253,41 @@ export const NewOrderView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setAllGarmentTypes('CAMISETA')}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                       items.length > 0 && items.every((i) => i.garmentType === 'CAMISETA')
                         ? 'bg-emerald-600 text-white shadow-sm'
                         : 'text-slate-400 hover:text-white'
                     }`}
                     title="Cambiar todo el pedido a solo camisetas (Frente, Espalda y Mangas)"
                   >
-                    👕 Solo Camisetas
+                    <Shirt className="w-3.5 h-3.5" />
+                    Solo Camisetas
                   </button>
                   <button
                     type="button"
                     onClick={() => setAllGarmentTypes('SHORT')}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                       items.length > 0 && items.every((i) => i.garmentType === 'SHORT')
                         ? 'bg-emerald-600 text-white shadow-sm'
                         : 'text-slate-400 hover:text-white'
                     }`}
                     title="Cambiar todo el pedido a solo shorts"
                   >
-                    🩳 Solo Shorts
+                    <Scissors className="w-3.5 h-3.5" />
+                    Solo Shorts
                   </button>
                   <button
                     type="button"
                     onClick={() => setAllGarmentTypes('COMPLETO')}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                       items.length > 0 && items.every((i) => i.garmentType === 'COMPLETO')
                         ? 'bg-emerald-600 text-white shadow-sm'
                         : 'text-slate-400 hover:text-white'
                     }`}
                     title="Conjunto completo (Camiseta + Short)"
                   >
-                    🎽 Completo (6 pzs)
+                    <Layers className="w-3.5 h-3.5" />
+                    Completo (6 pzs)
                   </button>
                 </div>
               </div>
@@ -443,7 +448,10 @@ export const NewOrderView: React.FC = () => {
                   {currentPatternSet ? (
                     <span className="text-emerald-400 font-bold">{currentPatternSet.name}</span>
                   ) : (
-                    <span className="text-amber-400 font-semibold">⚠️ Sin Molde (ve a 'Moldes')</span>
+                    <span className="text-amber-400 font-semibold inline-flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 text-amber-400" />
+                      Sin Molde (ve a 'Moldes')
+                    </span>
                   )}
                 </span>
                 <span>•</span>
@@ -452,7 +460,10 @@ export const NewOrderView: React.FC = () => {
                   {currentDesign ? (
                     <span className="text-emerald-400 font-bold">{currentDesign.name}</span>
                   ) : (
-                    <span className="text-amber-400 font-semibold">⚠️ Sin Diseño (ve a 'Diseños')</span>
+                    <span className="text-amber-400 font-semibold inline-flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 text-amber-400" />
+                      Sin Diseño (ve a 'Diseños')
+                    </span>
                   )}
                 </span>
               </div>
@@ -462,12 +473,12 @@ export const NewOrderView: React.FC = () => {
               disabled={summary.hasErrors || items.length === 0}
               onClick={() => {
                 if (!currentPatternSet) {
-                  alert("⚠️ No hay ningún molde cargado. Ve a la pestaña 'Moldes' y sube tu archivo SVG graduado.");
+                  alert("No hay ningún molde cargado. Ve a la pestaña 'Moldes' y sube tu archivo SVG graduado.");
                   setCurrentView('PATTERNS');
                   return;
                 }
                 if (!currentDesign) {
-                  alert("⚠️ No hay ningún diseño cargado. Ve a la pestaña 'Diseños' y sube tu archivo SVG de diseño.");
+                  alert("No hay ningún diseño cargado. Ve a la pestaña 'Diseños' y sube tu archivo SVG de diseño.");
                   setCurrentView('DESIGNS');
                   return;
                 }
@@ -483,7 +494,7 @@ export const NewOrderView: React.FC = () => {
                 const { generatePieces } = useGeneratorStore.getState();
                 const res = generatePieces();
                 if (!res) {
-                  alert("⚠️ No se pudieron generar las piezas. Verifica que las tallas del archivo de moldes coincidan con las del Excel.");
+                  alert("No se pudieron generar las piezas. Verifica que las tallas del archivo de moldes coincidan con las del Excel.");
                   return;
                 }
                 setCurrentView('NESTING');
