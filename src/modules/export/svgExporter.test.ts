@@ -142,8 +142,8 @@ describe('SVG production exporter', () => {
 
   it('preserva imágenes raster incrustadas sin confundirlas con recursos de otra pieza', () => {
     const image = '<svg><image id="image" width="10" height="10" href="data:image/png;base64,AAAA" /></svg>';
-    const first = namespaceSvgFragment(image, 'piece_1');
-    const second = namespaceSvgFragment(image, 'piece_2');
+    const first = namespaceSvgFragment(image, 'piece_1').fragment;
+    const second = namespaceSvgFragment(image, 'piece_2').fragment;
 
     expect(first).toContain('id="piece_1_id_1_image"');
     expect(second).toContain('id="piece_2_id_1_image"');

@@ -40,16 +40,21 @@ export const Sidebar: React.FC = () => {
       <div>
         <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-700 via-violet-600 to-indigo-500 flex items-center justify-center text-white font-black text-base tracking-tighter shadow-lg shadow-purple-950/60 ring-1 ring-white/20">
-              CDC
+            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 p-1 flex items-center justify-center overflow-hidden shadow-lg shadow-purple-950/40">
+              <img 
+                src="/cimapattern-logo.png" 
+                alt="CimaPattern" 
+                className="w-full h-full object-contain rounded-lg"
+              />
             </div>
             <div>
               <h1 className="text-sm font-extrabold tracking-wide text-white flex items-center gap-1.5">
-                CODECIMA
+                CimaPattern
                 <span className="text-[9px] uppercase px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-400 font-mono font-bold border border-purple-500/30">
                   PRO
                 </span>
               </h1>
+              <span className="text-[10px] text-slate-400 font-medium">by Codecima</span>
             </div>
           </div>
         </div>

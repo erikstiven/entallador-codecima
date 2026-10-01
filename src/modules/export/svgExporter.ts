@@ -117,10 +117,12 @@ function sanitizeXmlName(value: string): string {
  * SVG those names collide and references may resolve to another player's art.
  * Prefix all local resources and class selectors for each placed piece.
  */
-export function namespaceSvgFragment(svgFragment: string, namespace: string): string {
+export function namespaceSvgFragment(svgFragment: string, namespace: string): { fragment: string; styles: string; defs: string } {
   const safeNamespace = sanitizeXmlName(namespace);
   const idMap = new Map<string, string>();
   const classMap = new Map<string, string>();
+  let hoistedStyles = '';
+  let hoistedDefs = '';
 
   let result = stripNestedDocumentPreamble(
     stripInternalPieceMask(
@@ -128,6 +130,7 @@ export function namespaceSvgFragment(svgFragment: string, namespace: string): st
     )
   );
 
+  // 1. Map all IDs across whole fragment (including defs)
   result.replace(/\bid\s*=\s*(["'])([^"']+)\1/gi, (_match, _quote, id: string) => {
     if (!idMap.has(id)) {
       idMap.set(id, `${safeNamespace}_id_${idMap.size + 1}_${sanitizeXmlName(id)}`);
@@ -135,6 +138,7 @@ export function namespaceSvgFragment(svgFragment: string, namespace: string): st
     return _match;
   });
 
+  // 2. Map all Class names
   result.replace(/\bclass\s*=\s*(["'])([^"']+)\1/gi, (_match, _quote, classes: string) => {
     for (const className of classes.split(/\s+/).filter(Boolean)) {
       if (!classMap.has(className)) {
@@ -147,6 +151,7 @@ export function namespaceSvgFragment(svgFragment: string, namespace: string): st
     return _match;
   });
 
+  // 3. Replace IDs and Classes in XML
   result = result.replace(
     /\bid\s*=\s*(["'])([^"']+)\1/gi,
     (match, quote: string, id: string) => {
@@ -167,77 +172,94 @@ export function namespaceSvgFragment(svgFragment: string, namespace: string): st
     }
   );
 
+  // 4. Parse CSS rules from <style> blocks
+  const cssRules: { selector: string; properties: Record<string, string> }[] = [];
+  result = result.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi, (_, _styleAttrs, cssContent) => {
+    let namespacedCss = cssContent;
+    for (const [origId, mappedId] of idMap) {
+      namespacedCss = namespacedCss.replace(
+        new RegExp(`url\\(\\s*(['"]?)#${escapeRegExp(origId)}\\1\\s*\\)`, 'g'),
+        `url(#${mappedId})`
+      );
+      namespacedCss = namespacedCss.replace(
+        new RegExp(`#${escapeRegExp(origId)}(?=\\s*[,>+~:{.\\[])`, 'g'),
+        `#${mappedId}`
+      );
+    }
+    for (const [origClass, mappedClass] of classMap) {
+      namespacedCss = namespacedCss.replace(
+        new RegExp(`\\.${escapeRegExp(origClass)}(?=\\s*[,>+~:{.\\[])`, 'g'),
+        `.${mappedClass}`
+      );
+    }
+    hoistedStyles += namespacedCss + '\n';
+
+    // Parse rules for inlining
+    const ruleRegex = /([^{]+)\{([^}]+)\}/g;
+    let match;
+    while ((match = ruleRegex.exec(cssContent)) !== null) {
+      const selectors = match[1].split(',').map((s) => s.trim());
+      const decls = match[2].split(';').map((d) => d.trim()).filter(Boolean);
+      const props: Record<string, string> = {};
+      for (const decl of decls) {
+        const colonIdx = decl.indexOf(':');
+        if (colonIdx > 0) {
+          const prop = decl.substring(0, colonIdx).trim().toLowerCase();
+          const val = decl.substring(colonIdx + 1).trim();
+          if (prop && val) {
+            props[prop] = val;
+          }
+        }
+      }
+      for (const sel of selectors) {
+        if (sel) {
+          cssRules.push({ selector: sel, properties: props });
+        }
+      }
+    }
+    return ''; // Remove from body so Illustrator doesn't choke on child styles
+  });
+
+  // 5. Inline CSS rules directly as presentation attributes (fill, stroke, opacity...)
+  for (const rule of cssRules) {
+    if (rule.selector.startsWith('.')) {
+      const origClass = rule.selector.substring(1).trim();
+      const mappedClass = classMap.get(origClass) || origClass;
+      const classRegex = new RegExp(`(<(?:path|rect|circle|ellipse|polygon|polyline|text|g)\\b[^>]*?\\bclass\\s*=\\s*["'][^"']*?\\b${escapeRegExp(mappedClass)}\\b[^"']*?["'][^>]*?)>`, 'gi');
+      result = result.replace(classRegex, (tag) => {
+        let updatedTag = tag;
+        for (const [prop, val] of Object.entries(rule.properties)) {
+          if (!new RegExp(`\\b${escapeRegExp(prop)}\\s*=`, 'i').test(updatedTag)) {
+            updatedTag = updatedTag.replace(/>$/, ` ${prop}="${escapeXmlAttribute(val)}">`);
+          }
+        }
+        return updatedTag;
+      });
+    }
+  }
+
+  // 6. Update URI references
   for (const [originalId, mappedId] of idMap) {
     const escapedId = escapeRegExp(originalId);
 
-    // Paint servers, masks, filters, clip paths and CSS url() references.
     result = result.replace(
       new RegExp(`url\\(\\s*(["']?)#${escapedId}\\1\\s*\\)`, 'g'),
       `url(#${mappedId})`
     );
 
-    // <use>, <image>, textPath and other direct IRI references.
     result = result.replace(
       new RegExp(`\\b(href|xlink:href)\\s*=\\s*(["'])\\s*#${escapedId}\\s*\\2`, 'gi'),
       (_match, attributeName: string, quote: string) => `${attributeName}=${quote}#${mappedId}${quote}`
     );
-
-    // Accessibility IDREF lists.
-    result = result.replace(
-      /\b(aria-labelledby|aria-describedby)\s*=\s*(["'])([^"']*)\2/gi,
-      (match, attributeName: string, quote: string, value: string) => {
-        const tokens = value.split(/\s+/).map((token) => token === originalId ? mappedId : token);
-        return tokens.join(' ') === value
-          ? match
-          : `${attributeName}=${quote}${tokens.join(' ')}${quote}`;
-      }
-    );
-
-    // SMIL event references (begin="layer.click", end="layer.end").
-    result = result.replace(
-      new RegExp(`\\b(begin|end)\\s*=\\s*(["'])([^"']*)\\2`, 'gi'),
-      (match, attributeName: string, quote: string, value: string) => {
-        const updated = value.replace(
-          new RegExp(`(^|[;\\s])${escapedId}(?=\\.)`, 'g'),
-          `$1${mappedId}`
-        );
-        return updated === value ? match : `${attributeName}=${quote}${updated}${quote}`;
-      }
-    );
-
-    // ID selectors inside Illustrator/Corel style blocks. The lookahead keeps
-    // hexadecimal colors such as #fff or #22c55e untouched.
-    result = result.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi, (
-      styleMatch,
-      styleAttrs: string,
-      css: string
-    ) => {
-      const updatedCss = css.replace(
-        new RegExp(`#${escapedId}(?=\\s*[,>+~:{.\\[])`, 'g'),
-        `#${mappedId}`
-      );
-      return updatedCss === css ? styleMatch : `<style${styleAttrs}>${updatedCss}</style>`;
-    });
   }
 
-  if (classMap.size > 0) {
-    result = result.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi, (
-      styleMatch,
-      styleAttrs: string,
-      css: string
-    ) => {
-      let updatedCss = css;
-      for (const [originalClass, mappedClass] of classMap) {
-        updatedCss = updatedCss.replace(
-          new RegExp(`\\.${escapeRegExp(originalClass)}(?=\\s*[,>+~:{.\\[])`, 'g'),
-          `.${mappedClass}`
-        );
-      }
-      return updatedCss === css ? styleMatch : `<style${styleAttrs}>${updatedCss}</style>`;
-    });
-  }
+  // 7. Extract and hoist internal <defs> after renaming
+  result = result.replace(/<defs\b[^>]*>([\s\S]*?)<\/defs>/gi, (_, defsInner) => {
+    hoistedDefs += defsInner + '\n';
+    return '';
+  });
 
-  return result.trim();
+  return { fragment: result.trim(), styles: hoistedStyles, defs: hoistedDefs };
 }
 
 /**
@@ -259,7 +281,6 @@ function hoistEmbeddedImages(
         return imageTag;
       }
 
-      // These attributes can depend on the image's original document context.
       if (/\b(?:class|style|transform|clip-path|mask|filter|opacity|on[a-z]+)\s*=/i.test(imageTag)) {
         return imageTag;
       }
@@ -345,10 +366,8 @@ export function generateFullRollSvg(
   options: Partial<ExportOptions> = {}
 ): string {
   const safeWidthMm = assertValidRollDimension(widthMm, 'El ancho del rollo');
-  const safeHeightMm = Math.max(10, assertValidRollDimension(heightMm, 'El largo del rollo'));
+  const safeHeightMm = assertValidRollDimension(heightMm, 'El largo del rollo');
 
-  // Production SVGs are print-only by default. A contour or workshop label is
-  // emitted solely when the caller explicitly requests it.
   const includeContour = options.includeCutContour === true;
   const includeLabels = options.includeSeamLabels === true;
   const contourColor = escapeXmlAttribute(options.cutContourColor || '#ff0000');
@@ -359,6 +378,8 @@ export function generateFullRollSvg(
   const wStr = safeWidthMm.toFixed(2);
   const hStr = safeHeightMm.toFixed(2);
   let defsContent = '';
+  let allHoistedStyles = '';
+  let allHoistedDefs = '';
   let piecesContent = '';
   const embeddedImageAssets = new Map<string, EmbeddedImageAsset>();
 
@@ -367,8 +388,6 @@ export function generateFullRollSvg(
     const clipId = `${namespace}_clip`;
     const pathD = polygonToSvgPath(piece.cutPolygon);
 
-    // Invalid polygons cannot be clipped or positioned safely; omitting them
-    // is preferable to spilling a full embedded image over the production roll.
     if (!pathD) return;
 
     defsContent += `    <clipPath id="${clipId}" clipPathUnits="userSpaceOnUse">\n`;
@@ -384,16 +403,15 @@ export function generateFullRollSvg(
     piecesContent += `  <g id="${namespace}" data-player="${escapeXmlAttribute(piece.playerName || '')}" data-number="${escapeXmlAttribute(piece.playerNumber || '')}" data-size="${escapeXmlAttribute(piece.sizeName || '')}" data-piece-type="${escapeXmlAttribute(piece.pieceType || '')}" transform="${transform}">\n`;
 
     if (piece.svgContent?.trim()) {
-      const cleanFragment = hoistEmbeddedImages(
-        namespaceSvgFragment(piece.svgContent, namespace),
-        embeddedImageAssets
-      );
+      const { fragment, styles, defs } = namespaceSvgFragment(piece.svgContent, namespace);
+      if (styles) allHoistedStyles += styles + '\n';
+      if (defs) allHoistedDefs += defs + '\n';
+
+      const cleanFragment = hoistEmbeddedImages(fragment, embeddedImageAssets);
       piecesContent += `    <g clip-path="url(#${clipId})">\n`;
       piecesContent += `      ${cleanFragment}\n`;
       piecesContent += '    </g>\n';
     } else {
-      // Missing art remains visible for QA, but no cyan/green technical stroke
-      // is injected into the printable output.
       piecesContent += `    <path d="${pathD}" fill="#1e293b" fill-opacity="0.9" />\n`;
     }
 
@@ -413,6 +431,10 @@ export function generateFullRollSvg(
     .map((asset) => `    ${asset.definition}\n`)
     .join('');
 
+  const styleTag = allHoistedStyles.trim()
+    ? `    <style type="text/css">\n<![CDATA[\n${allHoistedStyles}\n]]>\n    </style>\n`
+    : '';
+
   return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- HMB Entallador: escala física 1:1; una unidad de viewBox equivale a un milímetro. -->
 <svg xmlns="http://www.w3.org/2000/svg"
@@ -423,6 +445,6 @@ export function generateFullRollSvg(
      version="1.1"
      color-interpolation="sRGB">
   <defs>
-${embeddedImageDefs}${defsContent}  </defs>
+${styleTag}${allHoistedDefs}${embeddedImageDefs}${defsContent}  </defs>
 ${piecesContent}</svg>`;
 }
