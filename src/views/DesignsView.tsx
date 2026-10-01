@@ -344,7 +344,7 @@ export const DesignsView: React.FC = () => {
             </h3>
             <button
               onClick={() => createNewDesign()}
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1"
+              className="text-xs text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1"
               title="Crear nuevo modelo"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -366,7 +366,7 @@ export const DesignsView: React.FC = () => {
                   onClick={() => setActiveDesign(d)}
                   className={`bg-slate-900/90 border rounded-2xl p-3.5 cursor-pointer transition-all duration-200 hover:border-slate-600 ${
                     isSelected
-                      ? 'border-emerald-500 shadow-lg shadow-emerald-950/50 bg-slate-850 ring-1 ring-emerald-500/40'
+                      ? 'border-violet-500 shadow-lg shadow-purple-950/50 bg-slate-850 ring-1 ring-violet-500/40'
                       : 'border-slate-800'
                   }`}
                 >
@@ -374,7 +374,7 @@ export const DesignsView: React.FC = () => {
                     <span className="font-bold text-sm text-white">{d.name}</span>
                     <span className={`text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-lg ${
                       blocksReady >= 3 
-                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' 
+                        ? 'bg-purple-950 text-purple-400 border border-violet-500/30' 
                         : 'bg-slate-800 text-slate-400'
                     }`}>
                       {blocksReady === 4 ? 'Listo (4/4)' : `${blocksReady}/4 bloques`}
@@ -403,7 +403,7 @@ export const DesignsView: React.FC = () => {
               {/* Título editable del modelo */}
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
                   {isEditingName ? (
                     <div className="flex items-center gap-1.5">
                       <input
@@ -418,7 +418,7 @@ export const DesignsView: React.FC = () => {
                             setIsEditingName(false);
                           }
                         }}
-                        className="bg-slate-950 border border-emerald-500 rounded px-2.5 py-1 text-sm font-bold text-white focus:outline-none"
+                        className="bg-slate-950 border border-violet-500 rounded px-2.5 py-1 text-sm font-bold text-white focus:outline-none"
                         autoFocus
                       />
                       <button
@@ -426,7 +426,7 @@ export const DesignsView: React.FC = () => {
                           updateDesignName(activeDesign.id, editedName);
                           setIsEditingName(false);
                         }}
-                        className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+                        className="p-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded transition-colors"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
@@ -445,13 +445,13 @@ export const DesignsView: React.FC = () => {
                           setEditedName(activeDesign.name);
                           setIsEditingName(true);
                         }}
-                        className="p-1 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded transition-colors"
+                        className="p-1 hover:bg-slate-800 text-slate-400 hover:text-purple-400 rounded transition-colors"
                         title="Renombrar este modelo"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/70 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold ml-2">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                      <span className="text-[10px] font-mono text-purple-400 bg-purple-950/70 border border-violet-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold ml-2">
+                        <CheckCircle2 className="w-3 h-3 text-purple-400" />
                         Guardado automático
                       </span>
                     </div>
@@ -462,7 +462,7 @@ export const DesignsView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => multiInputRef.current?.click()}
-                    className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="text-xs bg-violet-600 hover:bg-violet-500 text-white px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <UploadCloud className="w-3.5 h-3.5" />
                     Subir bloques del modelo (SVG)
@@ -484,7 +484,7 @@ export const DesignsView: React.FC = () => {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                        <Type className="w-3.5 h-3.5 text-emerald-400" />
+                        <Type className="w-3.5 h-3.5 text-purple-400" />
                         Tipografía de Dorsal:
                       </label>
                       <div className="flex items-center gap-1">
@@ -499,7 +499,7 @@ export const DesignsView: React.FC = () => {
                           type="button"
                           onClick={handleSyncLocalFonts}
                           disabled={isSyncingFonts}
-                          className="text-[10px] text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                          className="text-[10px] text-purple-400 hover:text-purple-300 hover:underline flex items-center gap-1 cursor-pointer font-medium"
                           title="Detectar fuentes instaladas en Windows o cargar archivo .TTF/.OTF"
                         >
                           <RefreshCw className={`w-3 h-3 ${isSyncingFonts ? 'animate-spin' : ''}`} />
@@ -517,7 +517,7 @@ export const DesignsView: React.FC = () => {
                           handleSelectFont(e.target.value);
                         }
                       }}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-medium focus:outline-none focus:border-violet-500 cursor-pointer"
                     >
                       {localFonts.length > 0 && (
                         <optgroup label="Fuentes de tu PC (Instaladas)">
@@ -546,12 +546,12 @@ export const DesignsView: React.FC = () => {
                           value={customFontInput}
                           onChange={(e) => setCustomFontInput(e.target.value)}
                           placeholder="Ej: AdiCup Q 2022, Jersey M54..."
-                          className="flex-1 bg-slate-900 border border-emerald-500 rounded px-2 py-1 text-white text-xs focus:outline-none"
+                          className="flex-1 bg-slate-900 border border-violet-500 rounded px-2 py-1 text-white text-xs focus:outline-none"
                         />
                         <button
                           type="button"
                           onClick={handleApplyCustomFont}
-                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs cursor-pointer"
+                          className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 text-white rounded font-bold text-xs cursor-pointer"
                         >
                           OK
                         </button>
@@ -633,7 +633,7 @@ export const DesignsView: React.FC = () => {
                           type="checkbox"
                           checked={hasStroke}
                           onChange={(e) => handleToggleStroke(e.target.checked)}
-                          className="rounded border-slate-700 text-emerald-600 w-3 h-3"
+                          className="rounded border-slate-700 text-violet-600 w-3 h-3"
                         />
                         <span className="text-slate-200 font-semibold flex items-center gap-1">
                           {hasStroke && (
@@ -714,7 +714,7 @@ export const DesignsView: React.FC = () => {
                               step="0.5"
                               value={strokeWidth}
                               onChange={(e) => handleStrokeWidthChange(Number(e.target.value))}
-                              className="w-16 accent-emerald-500 cursor-pointer"
+                              className="w-16 accent-violet-500 cursor-pointer"
                             />
                             <span className="font-mono font-bold text-white">{strokeWidth.toFixed(1)} mm</span>
                           </div>
@@ -743,7 +743,7 @@ export const DesignsView: React.FC = () => {
                       type="text"
                       value={sampleNumber}
                       onChange={(e) => setSampleNumber(e.target.value)}
-                      className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-emerald-400 font-mono text-xs w-14 text-center focus:border-emerald-500 focus:outline-none font-bold"
+                      className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-purple-400 font-mono text-xs w-14 text-center focus:border-violet-500 focus:outline-none font-bold"
                       placeholder="N°"
                     />
                   </div>
@@ -792,7 +792,7 @@ export const DesignsView: React.FC = () => {
                       Bloque Frente
                     </span>
                     {frenteArt ? (
-                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
+                      <span className="text-[10px] text-purple-400 flex items-center gap-1 font-semibold">
                         <CheckCircle2 className="w-3 h-3" /> Cargado
                       </span>
                     ) : (
@@ -806,7 +806,7 @@ export const DesignsView: React.FC = () => {
                     onClick={() => frenteInputRef.current?.click()}
                     className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
                       frenteArt
-                        ? 'border-slate-700 bg-slate-900/80 hover:border-emerald-500'
+                        ? 'border-slate-700 bg-slate-900/80 hover:border-violet-500'
                         : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
                     }`}
                   >
@@ -847,11 +847,11 @@ export const DesignsView: React.FC = () => {
                 <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                      <Shirt className="w-3.5 h-3.5 text-emerald-400" />
+                      <Shirt className="w-3.5 h-3.5 text-purple-400" />
                       Bloque Espalda
                     </span>
                     {espaldaArt ? (
-                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
+                      <span className="text-[10px] text-purple-400 flex items-center gap-1 font-semibold">
                         <CheckCircle2 className="w-3 h-3" /> Cargado
                       </span>
                     ) : (
@@ -865,7 +865,7 @@ export const DesignsView: React.FC = () => {
                     onClick={() => espaldaInputRef.current?.click()}
                     className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
                       espaldaArt
-                        ? 'border-slate-700 bg-slate-900/80 hover:border-emerald-500'
+                        ? 'border-slate-700 bg-slate-900/80 hover:border-violet-500'
                         : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
                     }`}
                   >
@@ -910,7 +910,7 @@ export const DesignsView: React.FC = () => {
                       Manga Izquierda
                     </span>
                     {mangaIzqArt ? (
-                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
+                      <span className="text-[10px] text-purple-400 flex items-center gap-1 font-semibold">
                         <CheckCircle2 className="w-3 h-3" /> Cargada
                       </span>
                     ) : (
@@ -924,7 +924,7 @@ export const DesignsView: React.FC = () => {
                     onClick={() => mangaIzqInputRef.current?.click()}
                     className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
                       mangaIzqArt
-                        ? 'border-slate-700 bg-slate-900/80 hover:border-emerald-500'
+                        ? 'border-slate-700 bg-slate-900/80 hover:border-violet-500'
                         : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
                     }`}
                   >
@@ -969,7 +969,7 @@ export const DesignsView: React.FC = () => {
                       Manga Derecha
                     </span>
                     {mangaDerArt ? (
-                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
+                      <span className="text-[10px] text-purple-400 flex items-center gap-1 font-semibold">
                         <CheckCircle2 className="w-3 h-3" /> Cargada
                       </span>
                     ) : (
@@ -983,7 +983,7 @@ export const DesignsView: React.FC = () => {
                     onClick={() => mangaDerInputRef.current?.click()}
                     className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
                       mangaDerArt
-                        ? 'border-slate-700 bg-slate-900/80 hover:border-emerald-500'
+                        ? 'border-slate-700 bg-slate-900/80 hover:border-violet-500'
                         : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
                     }`}
                   >
@@ -1003,7 +1003,7 @@ export const DesignsView: React.FC = () => {
                               e.stopPropagation();
                               handleCopyMangaIzqToDer();
                             }}
-                            className="mt-1 px-2.5 py-1 bg-emerald-700/80 hover:bg-emerald-600 text-white rounded text-[11px] font-medium shadow-sm transition-colors flex items-center gap-1 mx-auto"
+                            className="mt-1 px-2.5 py-1 bg-violet-700/80 hover:bg-violet-600 text-white rounded text-[11px] font-medium shadow-sm transition-colors flex items-center gap-1 mx-auto"
                           >
                             <Copy className="w-3 h-3" />
                             Copiar de Manga Izq
@@ -1041,7 +1041,7 @@ export const DesignsView: React.FC = () => {
             <h3 className="text-base font-bold text-white">Selecciona o crea un modelo de diseño</h3>
             <button
               onClick={() => createNewDesign()}
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold"
+              className="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold"
             >
               Crear Nuevo Modelo
             </button>

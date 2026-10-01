@@ -86,19 +86,19 @@ export const SettingsView: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono text-xs font-bold uppercase">
+            <span className="px-2 py-0.5 rounded bg-violet-500/20 text-purple-400 font-mono text-xs font-bold uppercase">
               Configuración General
             </span>
             <span
               className={`text-xs font-semibold flex items-center gap-1 transition-opacity duration-300 ${
-                savedFlash ? 'text-emerald-400 opacity-100' : 'opacity-0'
+                savedFlash ? 'text-purple-400 opacity-100' : 'opacity-0'
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" /> Cambios guardados automáticamente
             </span>
           </div>
           <h2 className="text-2xl font-black text-white mt-1 tracking-tight flex items-center gap-2">
-            CODECIMA <span className="text-emerald-400 font-medium">SubliFit Pro</span>
+            CODECIMA <span className="text-purple-400 font-medium">SubliFit Pro</span>
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
             Personaliza la empresa, temas, unidades de medida, parámetros de bobina y tolerancias de corte 1:1
@@ -124,7 +124,7 @@ export const SettingsView: React.FC = () => {
       {/* 1. SECCIÓN: PERFIL DE EMPRESA Y TALLER */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
         <div className="flex items-center gap-2 text-white font-bold text-sm">
-          <Building2 className="w-4 h-4 text-emerald-400" />
+          <Building2 className="w-4 h-4 text-purple-400" />
           <h3>Perfil de Empresa y Taller Textil</h3>
         </div>
         <p className="text-xs text-slate-400 -mt-2">
@@ -138,7 +138,7 @@ export const SettingsView: React.FC = () => {
               type="text"
               value={settings.companyName}
               onChange={(e) => handleUpdateSettings({ companyName: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-xs focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-xs focus:outline-none focus:border-violet-500"
               placeholder="Ej: Codecima"
             />
           </div>
@@ -148,7 +148,7 @@ export const SettingsView: React.FC = () => {
               type="text"
               value={settings.workshopName}
               onChange={(e) => handleUpdateSettings({ workshopName: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-xs focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-xs focus:outline-none focus:border-violet-500"
               placeholder="Ej: Taller Central Codecima"
             />
           </div>
@@ -158,7 +158,7 @@ export const SettingsView: React.FC = () => {
               type="text"
               value={settings.operatorName}
               onChange={(e) => handleUpdateSettings({ operatorName: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-xs focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-xs focus:outline-none focus:border-violet-500"
               placeholder="Ej: Diseñador Codecima"
             />
           </div>
@@ -168,7 +168,7 @@ export const SettingsView: React.FC = () => {
       {/* 2. SECCIÓN: TEMA Y APARIENCIA */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
         <div className="flex items-center gap-2 text-white font-bold text-sm">
-          <Sparkles className="w-4 h-4 text-emerald-400" />
+          <Sparkles className="w-4 h-4 text-purple-400" />
           <h3>Apariencia y Tema del Sistema</h3>
         </div>
         <p className="text-xs text-slate-400 -mt-2">
@@ -186,16 +186,16 @@ export const SettingsView: React.FC = () => {
                 onClick={() => selectTheme(option.id)}
                 className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-emerald-950/60 border-emerald-500 text-white shadow-md shadow-emerald-950/40 ring-1 ring-emerald-500/50'
+                    ? 'bg-purple-950/60 border-violet-500 text-white shadow-md shadow-purple-950/40 ring-1 ring-violet-500/50'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="flex items-center gap-2 font-bold text-xs text-white">
-                    <Icon className="w-4 h-4 text-emerald-400" />
+                    <Icon className="w-4 h-4 text-purple-400" />
                     {option.label}
                   </span>
-                  {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                  {isSelected && <CheckCircle2 className="w-4 h-4 text-purple-400" />}
                 </div>
                 <div className="text-[11px] text-slate-400 leading-relaxed">{option.description}</div>
               </button>
@@ -207,7 +207,7 @@ export const SettingsView: React.FC = () => {
       {/* 3. SECCIÓN: UNIDADES DE MEDIDA Y FORMATO */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
         <div className="flex items-center gap-2 text-white font-bold text-sm">
-          <Ruler className="w-4 h-4 text-emerald-400" />
+          <Ruler className="w-4 h-4 text-purple-400" />
           <h3>Unidades de Medida y Formato Visual</h3>
         </div>
         <p className="text-xs text-slate-400 -mt-2">
@@ -228,7 +228,7 @@ export const SettingsView: React.FC = () => {
                     onClick={() => handleUpdateSettings({ displayUnit: u })}
                     className={`py-2 px-3 rounded-lg border font-mono font-bold text-center transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950'
+                        ? 'bg-violet-600 text-white border-violet-500 shadow-md shadow-purple-950'
                         : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
                     }`}
                   >
@@ -255,7 +255,7 @@ export const SettingsView: React.FC = () => {
                     onClick={() => handleUpdateSettings({ decimalPrecision: dec })}
                     className={`py-2 px-3 rounded-lg border font-mono font-bold text-center transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950'
+                        ? 'bg-violet-600 text-white border-violet-500 shadow-md shadow-purple-950'
                         : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
                     }`}
                   >
@@ -275,10 +275,10 @@ export const SettingsView: React.FC = () => {
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5 shadow-xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-white font-bold text-sm">
-            <Printer className="w-4 h-4 text-emerald-400" />
+            <Printer className="w-4 h-4 text-purple-400" />
             <h3>Perfiles de Bobina y Plotter de Impresión</h3>
           </div>
-          <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-800">
+          <span className="text-xs font-mono text-purple-400 bg-purple-950/60 px-2.5 py-0.5 rounded-full border border-purple-800">
             Área Útil: {activeProfile.printableWidthMm} mm ({(activeProfile.printableWidthMm / 10).toFixed(1)} cm)
           </span>
         </div>
@@ -300,15 +300,15 @@ export const SettingsView: React.FC = () => {
                 }}
                 className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-emerald-950/60 border-emerald-500 text-white shadow-md shadow-emerald-950 ring-1 ring-emerald-500/50'
+                    ? 'bg-purple-950/60 border-violet-500 text-white shadow-md shadow-purple-950 ring-1 ring-violet-500/50'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-white">{p.name}</span>
-                  {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                  {isSelected && <CheckCircle2 className="w-4 h-4 text-purple-400" />}
                 </div>
-                <div className="text-[11px] font-mono text-emerald-400 mt-1">
+                <div className="text-[11px] font-mono text-purple-400 mt-1">
                   Área Imprimible: {p.printableWidthMm} mm
                 </div>
               </button>
@@ -327,7 +327,7 @@ export const SettingsView: React.FC = () => {
                 updateActiveProfile({ totalRollWidthMm: parseFloat(e.target.value) || 0 });
                 triggerSaveNotification();
               }}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-violet-500"
             />
             <span className="text-[10px] text-slate-500 mt-0.5 block">
               {(activeProfile.totalRollWidthMm / 10).toFixed(1)} cm
@@ -343,7 +343,7 @@ export const SettingsView: React.FC = () => {
                 updateActiveProfile({ leftMarginMm: parseFloat(e.target.value) || 0 });
                 triggerSaveNotification();
               }}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-violet-500"
             />
             <span className="text-[10px] text-slate-500 mt-0.5 block">
               {(activeProfile.leftMarginMm / 10).toFixed(1)} cm
@@ -359,7 +359,7 @@ export const SettingsView: React.FC = () => {
                 updateActiveProfile({ rightMarginMm: parseFloat(e.target.value) || 0 });
                 triggerSaveNotification();
               }}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-violet-500"
             />
             <span className="text-[10px] text-slate-500 mt-0.5 block">
               {(activeProfile.rightMarginMm / 10).toFixed(1)} cm
@@ -371,7 +371,7 @@ export const SettingsView: React.FC = () => {
       {/* 5. SECCIÓN: CONFECCIÓN, DOBLADILLOS Y NESTING */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
         <div className="flex items-center gap-2 text-white font-bold text-sm">
-          <Scissors className="w-4 h-4 text-emerald-400" />
+          <Scissors className="w-4 h-4 text-purple-400" />
           <h3>Tolerancias de Confección, Dobladillos y Nesting</h3>
         </div>
         <p className="text-xs text-slate-400 -mt-2">
@@ -394,7 +394,7 @@ export const SettingsView: React.FC = () => {
                 updateActiveProfile({ pieceSpacingMm: val });
                 handleUpdateSettings({ defaultPieceSpacingMm: val });
               }}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-violet-500"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
               Espacio entre moldes en el rollo de impresión (Recomendado taller: <strong>7.0 mm</strong>).
@@ -412,7 +412,7 @@ export const SettingsView: React.FC = () => {
               max="35"
               value={settings.defaultHemMarginMm}
               onChange={(e) => handleUpdateSettings({ defaultHemMarginMm: parseFloat(e.target.value) || 20.0 })}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-violet-500"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
               Compensación vertical para que las franjas y texturas de manga queden en el borde exterior sin taparse.
@@ -424,7 +424,7 @@ export const SettingsView: React.FC = () => {
       {/* 6. SECCIÓN: ETIQUETAS DE IDENTIFICACIÓN Y EXPORTACIÓN */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
         <div className="flex items-center gap-2 text-white font-bold text-sm">
-          <Tag className="w-4 h-4 text-emerald-400" />
+          <Tag className="w-4 h-4 text-purple-400" />
           <h3>Etiquetas de Identificación Textil y Exportación 1:1</h3>
         </div>
         <p className="text-xs text-slate-400 -mt-2">
@@ -438,7 +438,7 @@ export const SettingsView: React.FC = () => {
                 type="checkbox"
                 checked={settings.autoIncludeLabels}
                 onChange={(e) => handleUpdateSettings({ autoIncludeLabels: e.target.checked })}
-                className="w-4 h-4 rounded border-slate-700 text-emerald-600 focus:ring-emerald-500"
+                className="w-4 h-4 rounded border-slate-700 text-violet-600 focus:ring-violet-500"
               />
               <span className="font-semibold text-slate-200">
                 Imprimir etiquetas automáticas fuera de la costura
@@ -461,7 +461,7 @@ export const SettingsView: React.FC = () => {
                     onClick={() => handleUpdateSettings({ defaultExportFormat: fmt })}
                     className={`py-2 px-3 rounded-lg border font-mono font-bold text-center transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950'
+                        ? 'bg-violet-600 text-white border-violet-500 shadow-md shadow-purple-950'
                         : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
                     }`}
                   >

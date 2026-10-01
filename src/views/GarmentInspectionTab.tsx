@@ -193,7 +193,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
         </p>
         <button
           onClick={() => setCurrentView('NEW_ORDER')}
-          className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-all"
+          className="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-all"
         >
           Ir a Nuevo Pedido
         </button>
@@ -213,7 +213,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               onClick={() => setGarmentTypeFilter('CAMISETA')}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 garmentTypeFilter === 'CAMISETA'
-                  ? 'bg-emerald-600 text-white shadow-sm'
+                  ? 'bg-violet-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
               title="Mostrar camisetas (Frente, Espalda y Mangas)"
@@ -226,7 +226,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               onClick={() => setGarmentTypeFilter('SHORT')}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 garmentTypeFilter === 'SHORT'
-                  ? 'bg-emerald-600 text-white shadow-sm'
+                  ? 'bg-violet-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
               title="Mostrar shorts / pantalonetas"
@@ -239,7 +239,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               onClick={() => setGarmentTypeFilter('ALL')}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 garmentTypeFilter === 'ALL'
-                  ? 'bg-emerald-600 text-white shadow-sm'
+                  ? 'bg-violet-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
               title="Mostrar todo el uniforme"
@@ -258,7 +258,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 setSelectedSizeFilter(e.target.value);
                 setSelectedPlayerIndex(0);
               }}
-              className="bg-transparent text-emerald-400 font-bold font-mono focus:outline-none cursor-pointer"
+              className="bg-transparent text-purple-400 font-bold font-mono focus:outline-none cursor-pointer"
             >
               <option value="TODAS" className="bg-slate-900 text-white">Todas ({playerGroups.length})</option>
               {availableSizes.map((sz) => (
@@ -282,7 +282,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               <ChevronLeft className="w-4 h-4" />
             </button>
             <span className="text-white font-bold px-2">
-              {currentPlayer.playerName} <span className="text-emerald-400">#{currentPlayer.playerNumber}</span>
+              {currentPlayer.playerName} <span className="text-purple-400">#{currentPlayer.playerNumber}</span>
               <span className="text-slate-400 font-normal ml-2">({selectedPlayerIndex + 1} de {filteredPlayers.length})</span>
             </span>
             <button
@@ -377,7 +377,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
           <button
             onClick={handleProceedToRoll}
-            className="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-emerald-950 transition-all cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-purple-950 transition-all cursor-pointer active:scale-95"
           >
             <Printer className="w-4 h-4" />
             <span>Pasar al Rollo de Impresión</span>
@@ -402,11 +402,11 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               onClick={() => handleSelectPlayer(idx)}
               className={`flex items-center gap-2 px-3 py-1 rounded-lg border text-xs font-mono transition-all flex-shrink-0 cursor-pointer ${
                 isSelected
-                  ? 'bg-emerald-950/90 border-emerald-500 text-white shadow-md shadow-emerald-950/50 scale-[1.02] font-bold'
+                  ? 'bg-purple-950/90 border-violet-500 text-white shadow-md shadow-purple-950/50 scale-[1.02] font-bold'
                   : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
               }`}
             >
-              <User className={`w-3 h-3 ${isSelected ? 'text-emerald-400' : 'text-slate-500'}`} />
+              <User className={`w-3 h-3 ${isSelected ? 'text-purple-400' : 'text-slate-500'}`} />
               <span>{player.playerName}</span>
               <span className="text-amber-400">#{player.playerNumber}</span>
               <span className="px-1 py-0.2 rounded bg-black/40 text-[10px] text-slate-400">
@@ -418,12 +418,12 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 </span>
               )}
               {isCamisetaOnly && (
-                <span className="px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 text-[10px] font-sans border border-emerald-800/60 flex items-center gap-1">
+                <span className="px-1.5 py-0.2 rounded bg-purple-950 text-purple-400 text-[10px] font-sans border border-purple-800/60 flex items-center gap-1">
                   <Shirt className="w-2.5 h-2.5" /> Camiseta
                 </span>
               )}
               {isChecked && !isSelected && (
-                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                <CheckCircle2 className="w-3 h-3 text-violet-500" />
               )}
             </button>
           );
@@ -437,7 +437,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
             {/* 1. ESPALDA: NOMBRE (Posición Y, Ancho W, Alto H) */}
             <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1">
               <span title="Nombre del Jugador (Espalda)">
-                <Type className="w-3.5 h-3.5 text-emerald-400" />
+                <Type className="w-3.5 h-3.5 text-purple-400" />
               </span>
 
               {/* Posición Y */}
@@ -451,7 +451,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 >
                   <Minus className="w-2.5 h-2.5" />
                 </button>
-                <span className="text-[11px] font-mono font-bold min-w-[26px] text-center text-emerald-300">
+                <span className="text-[11px] font-mono font-bold min-w-[26px] text-center text-purple-300">
                   {((generationConfig.nameVerticalOffsetPercent || 0) > 0 ? '+' : '') + (generationConfig.nameVerticalOffsetPercent || 0)}%
                 </span>
                 <button
@@ -477,7 +477,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 >
                   <Minus className="w-2.5 h-2.5" />
                 </button>
-                <span className="text-[11px] font-mono font-bold min-w-[32px] text-center text-emerald-300">
+                <span className="text-[11px] font-mono font-bold min-w-[32px] text-center text-purple-300">
                   {Math.round((generationConfig.nameScaleX ?? 1.0) * 100)}%
                 </span>
                 <button
@@ -503,7 +503,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 >
                   <Minus className="w-2.5 h-2.5" />
                 </button>
-                <span className="text-[11px] font-mono font-bold min-w-[32px] text-center text-emerald-300">
+                <span className="text-[11px] font-mono font-bold min-w-[32px] text-center text-purple-300">
                   {Math.round((generationConfig.nameScaleY ?? 1.0) * 100)}%
                 </span>
                 <button
@@ -520,7 +520,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
             {/* 2. ESPALDA: NÚMERO (Posición Y, Ancho W, Alto H) */}
             <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1">
               <span title="Número del Dorsal (Espalda)">
-                <Hash className="w-3.5 h-3.5 text-emerald-400" />
+                <Hash className="w-3.5 h-3.5 text-purple-400" />
               </span>
 
               {/* Posición Y */}
@@ -534,7 +534,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 >
                   <Minus className="w-2.5 h-2.5" />
                 </button>
-                <span className="text-[11px] font-mono font-bold min-w-[26px] text-center text-emerald-300">
+                <span className="text-[11px] font-mono font-bold min-w-[26px] text-center text-purple-300">
                   {((generationConfig.numberVerticalOffsetPercent || 0) > 0 ? '+' : '') + (generationConfig.numberVerticalOffsetPercent || 0)}%
                 </span>
                 <button
@@ -560,7 +560,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 >
                   <Minus className="w-2.5 h-2.5" />
                 </button>
-                <span className="text-[11px] font-mono font-bold min-w-[32px] text-center text-emerald-300">
+                <span className="text-[11px] font-mono font-bold min-w-[32px] text-center text-purple-300">
                   {Math.round((generationConfig.numberScaleX ?? (generationConfig.numberScaleFactor ?? 1.0)) * 100)}%
                 </span>
                 <button
@@ -589,7 +589,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 >
                   <Minus className="w-2.5 h-2.5" />
                 </button>
-                <span className="text-[11px] font-mono font-bold min-w-[32px] text-center text-emerald-300">
+                <span className="text-[11px] font-mono font-bold min-w-[32px] text-center text-purple-300">
                   {Math.round((generationConfig.numberScaleY ?? (generationConfig.numberScaleFactor ?? 1.0)) * 100)}%
                 </span>
                 <button
@@ -758,7 +758,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 {currentPlayer.pieces.some(p => p.pieceType.startsWith('SHORT') || p.pieceType.startsWith('PANTALONETA')) ? (
                   <Scissors className="w-8 h-8 text-sky-400" />
                 ) : (
-                  <Shirt className="w-8 h-8 text-emerald-400" />
+                  <Shirt className="w-8 h-8 text-purple-400" />
                 )}
               </div>
               <h3 className="text-base font-bold text-white mb-2 font-mono">
@@ -775,7 +775,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setGarmentTypeFilter(garmentTypeFilter === 'CAMISETA' ? 'SHORT' : 'CAMISETA')}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-emerald-950 flex items-center gap-2 cursor-pointer active:scale-95"
+                  className="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-purple-950 flex items-center gap-2 cursor-pointer active:scale-95"
                 >
                   {garmentTypeFilter === 'CAMISETA' ? (
                     <>
@@ -838,7 +838,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                     <div className="px-3.5 py-2 bg-slate-950 border-b border-slate-800/80 flex items-center justify-between text-xs font-mono">
                       <div className="flex items-center gap-1.5">
                         <span className={`w-2 h-2 rounded-full ${
-                          isEspalda ? 'bg-emerald-400' : isDelantero ? 'bg-sky-400' : 'bg-amber-400'
+                          isEspalda ? 'bg-purple-400' : isDelantero ? 'bg-sky-400' : 'bg-amber-400'
                         }`} />
                         <span className="font-bold text-white">
                           {piece.pieceType.replace('_', ' ')}
@@ -961,7 +961,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                     <div className="px-3.5 py-2 bg-slate-950 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 flex items-center justify-between">
                       {isEspalda ? (
                         <span className="text-white font-bold">
-                          {piece.playerName} <span className="text-emerald-400">#{piece.playerNumber}</span>
+                          {piece.playerName} <span className="text-purple-400">#{piece.playerNumber}</span>
                         </span>
                       ) : isDelantero ? (
                         <span className="text-slate-300 font-medium">Delantero Sublimación</span>
@@ -970,7 +970,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                       ) : (
                         <span className="text-slate-300 font-medium">Pantaloneta</span>
                       )}
-                      <span className="text-emerald-400/90 text-[10px] font-semibold">Corte 1:1</span>
+                      <span className="text-purple-400/90 text-[10px] font-semibold">Corte 1:1</span>
                     </div>
                   </div>
                 );

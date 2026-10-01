@@ -84,13 +84,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         {/* Header */}
         <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-emerald-950 border border-emerald-500/40 text-emerald-400">
+            <div className="p-2 rounded-lg bg-purple-950 border border-violet-500/40 text-purple-400">
               <Printer className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 Exportar para Illustrator / RasterLink
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40 font-mono">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-violet-500/40 font-mono">
                   SVG 1:1
                 </span>
               </h2>
@@ -118,7 +118,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               type="text"
               value={fileName}
               onChange={(e) => setFileName(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-violet-500 focus:outline-none"
               placeholder="PRODUCCION_UNIFORMES"
             />
           </div>
@@ -126,7 +126,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {/* Summary Strip */}
           <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2 text-slate-400">
-              <Ruler className="w-4 h-4 text-emerald-400" />
+              <Ruler className="w-4 h-4 text-purple-400" />
               <span><strong className="text-white font-mono">{printableWidthMm} mm × {totalLengthM} m</strong></span>
             </div>
             <div className="flex items-center gap-2 text-slate-400">
@@ -134,7 +134,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <span><strong className="text-white font-mono">{placedPieces.length} piezas</strong></span>
             </div>
             <div className="text-slate-400 font-mono">
-              <span className="text-emerald-400 font-bold">{efficiency}%</span> uso
+              <span className="text-purple-400 font-bold">{efficiency}%</span> uso
             </div>
           </div>
         </div>
@@ -153,10 +153,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             disabled={isExporting}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all ${
               exportSuccess
-                ? 'bg-emerald-600 text-white shadow-emerald-950'
+                ? 'bg-violet-600 text-white shadow-purple-950'
                 : isExporting
                 ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950 cursor-pointer active:scale-95'
+                : 'bg-violet-600 hover:bg-violet-500 text-white shadow-purple-950 cursor-pointer active:scale-95'
             }`}
           >
             {exportSuccess ? (

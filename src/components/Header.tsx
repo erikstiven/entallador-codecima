@@ -56,7 +56,7 @@ export const Header: React.FC = () => {
     <header className="h-16 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-6 flex items-center justify-between select-none z-10 transition-colors">
       {/* Título y Subtítulo de Vista Activa */}
       <div className="flex items-center gap-3">
-        <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 font-mono text-[10px] font-bold border border-emerald-500/30">
+        <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-400 font-mono text-[10px] font-bold border border-purple-500/30">
           {info.tag}
         </span>
         <div>
@@ -76,11 +76,11 @@ export const Header: React.FC = () => {
           className="flex items-center gap-2.5 bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 rounded-full px-3 py-1 text-xs transition-all cursor-pointer group"
           title="Ver perfil de empresa y ajustes de usuario"
         >
-          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white text-[10px] font-black shadow-sm">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-violet-700 via-purple-600 to-indigo-500 flex items-center justify-center text-white text-[10px] font-black shadow-sm">
             {settings.companyName.substring(0, 2).toUpperCase() || 'CD'}
           </div>
           <div className="text-left hidden md:block">
-            <div className="text-white font-bold text-[11px] leading-tight group-hover:text-emerald-300 transition-colors">
+            <div className="text-white font-bold text-[11px] leading-tight group-hover:text-purple-300 transition-colors">
               {settings.companyName || 'Codecima'}
             </div>
             <div className="text-[9px] text-slate-400 font-mono leading-none">
@@ -98,7 +98,7 @@ export const Header: React.FC = () => {
           {theme === 'dark' ? (
             <Sun className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" />
           ) : (
-            <Moon className="w-4 h-4 text-sky-400 transition-transform hover:-rotate-12" />
+            <Moon className="w-4 h-4 text-purple-400 transition-transform hover:-rotate-12" />
           )}
         </button>
       </div>

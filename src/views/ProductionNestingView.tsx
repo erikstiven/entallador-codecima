@@ -118,7 +118,7 @@ export const ProductionNestingView: React.FC = () => {
               onClick={() => setActiveTab('INSPECTION')}
               className={`px-3.5 py-1.5 rounded-md font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeTab === 'INSPECTION'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950'
+                  ? 'bg-violet-600 text-white shadow-md shadow-purple-950'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -135,7 +135,7 @@ export const ProductionNestingView: React.FC = () => {
               }}
               className={`px-3.5 py-1.5 rounded-md font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeTab === 'ROLL'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950'
+                  ? 'bg-violet-600 text-white shadow-md shadow-purple-950'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -170,7 +170,7 @@ export const ProductionNestingView: React.FC = () => {
                   const w = typeof window !== 'undefined' ? window.innerWidth : 1100;
                   fitToWidth(w - 80);
                 }}
-                className="px-2 py-0.5 hover:text-white hover:bg-slate-800 rounded font-mono text-[10px] text-emerald-400 font-semibold cursor-pointer"
+                className="px-2 py-0.5 hover:text-white hover:bg-slate-800 rounded font-mono text-[10px] text-purple-400 font-semibold cursor-pointer"
                 title="Ajustar ancho del rollo a la pantalla para ver prendas grandes"
               >
                 Ajustar Ancho
@@ -253,7 +253,7 @@ export const ProductionNestingView: React.FC = () => {
                   }}
                   className={`px-3 py-1 rounded-md font-medium transition-all ${
                     nestingMode === 'MAX_SAVINGS'
-                      ? 'bg-emerald-600 text-white shadow-sm'
+                      ? 'bg-violet-600 text-white shadow-sm'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -268,7 +268,7 @@ export const ProductionNestingView: React.FC = () => {
                   }}
                   className={`px-3 py-1 rounded-md font-medium transition-all ${
                     nestingMode === 'BY_SIZE'
-                      ? 'bg-emerald-600 text-white shadow-sm'
+                      ? 'bg-violet-600 text-white shadow-sm'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -283,7 +283,7 @@ export const ProductionNestingView: React.FC = () => {
                   }}
                   className={`px-3 py-1 rounded-md font-medium transition-all ${
                     nestingMode === 'BY_PLAYER'
-                      ? 'bg-emerald-600 text-white shadow-sm'
+                      ? 'bg-violet-600 text-white shadow-sm'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -298,7 +298,7 @@ export const ProductionNestingView: React.FC = () => {
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-md transition-all ${
                   totalPieces === 0 || isNesting
                     ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950 cursor-pointer active:scale-95'
+                    : 'bg-violet-600 hover:bg-violet-500 text-white shadow-purple-950 cursor-pointer active:scale-95'
                 }`}
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
@@ -331,7 +331,7 @@ export const ProductionNestingView: React.FC = () => {
             {/* Métricas directas de taller */}
             <div className="flex items-center gap-5 font-mono text-xs">
               <div className="text-slate-400">
-                Piezas: <strong className="text-emerald-400">{placedCount} / {totalPieces}</strong>
+                Piezas: <strong className="text-purple-400">{placedCount} / {totalPieces}</strong>
               </div>
               <div className="text-slate-400">
                 Ancho: <strong className="text-white">{activeProfile.printableWidthMm} mm</strong>
@@ -340,7 +340,7 @@ export const ProductionNestingView: React.FC = () => {
                 Largo Rollo: <strong className="text-sky-400 text-sm font-bold">{actualLengthM} m</strong>
               </div>
               <div className="text-slate-400">
-                Aprovechamiento: <strong className="text-emerald-400">{efficiency}%</strong>
+                Aprovechamiento: <strong className="text-purple-400">{efficiency}%</strong>
               </div>
 
             </div>
@@ -357,7 +357,7 @@ export const ProductionNestingView: React.FC = () => {
             >
               {/* Rollo de papel 1120 mm */}
               <div 
-                className="bg-slate-900 border-2 border-emerald-500/50 shadow-2xl relative transition-transform duration-75"
+                className="bg-slate-900 border-2 border-violet-500/50 shadow-2xl relative transition-transform duration-75"
                 style={{
                   width: `${canvasWidthPx}px`,
                   minHeight: `${canvasHeightPx}px`,
@@ -368,9 +368,9 @@ export const ProductionNestingView: React.FC = () => {
                 {/* Regla Milimétrica Superior */}
                 <div className="h-7 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between px-3 text-[10px] font-mono text-slate-400 select-none sticky top-0 z-20 backdrop-blur-sm">
                   <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 0 mm
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span> 0 mm
                   </span>
-                  <span className="text-emerald-400 font-semibold tracking-wide uppercase">
+                  <span className="text-purple-400 font-semibold tracking-wide uppercase">
                     {activeProfile.name} • {activeProfile.printableWidthMm} mm
                   </span>
                   <span>{activeProfile.printableWidthMm} mm</span>
@@ -424,7 +424,7 @@ export const ProductionNestingView: React.FC = () => {
                 {placedCount === 0 && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
                     <div className="text-center">
-                      <Sparkles className="w-20 h-20 mx-auto text-emerald-400 mb-3" />
+                      <Sparkles className="w-20 h-20 mx-auto text-purple-400 mb-3" />
                       <div className="text-xl font-bold font-mono tracking-widest text-white">
                         ÁREA ÚTIL {activeProfile.printableWidthMm} MM
                       </div>
