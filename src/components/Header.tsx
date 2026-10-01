@@ -20,7 +20,7 @@ export const Header: React.FC = () => {
       case 'HISTORY':
         return { title: 'Historial de Producción', subtitle: 'Pedidos archivados y re-impresión de piezas individuales' };
       case 'SETTINGS':
-        return { title: 'Configuración de Producción', subtitle: 'Anchos de bobina, márgenes y tolerancias de corte' };
+        return { title: 'Configuración General y Perfil Codecima', subtitle: 'Empresa, temas, unidades de medida, bobinas y tolerancias de corte' };
     }
   };
 

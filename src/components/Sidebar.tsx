@@ -34,17 +34,17 @@ export const Sidebar: React.FC = () => {
       {/* Brand Header */}
       <div>
         <div className="p-4 border-b border-slate-800 flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-900/40">
-            HMB
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white font-black text-sm tracking-tighter shadow-md shadow-emerald-950/60 ring-1 ring-emerald-400/30">
+            CDC
           </div>
           <div>
             <h1 className="text-sm font-bold tracking-wide text-white flex items-center gap-1.5">
-              ENTALLADOR
+              CODECIMA
               <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold">
                 PRO
               </span>
             </h1>
-            <p className="text-[11px] text-slate-400">Sublimación Deportiva 1:1</p>
+            <p className="text-[11px] text-slate-400">SubliFit & Nesting 1:1</p>
           </div>
         </div>
 
