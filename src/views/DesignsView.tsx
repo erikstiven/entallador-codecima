@@ -834,10 +834,10 @@ export const DesignsView: React.FC = () => {
                   )}
                 </div>
 
-                {/* RANURA 2: ESPALDA CON DORSAL EN VIVO */}
+                {/* RANURA 2: ESPALDA */}
                 <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-white">👕 Bloque Espalda (Con Dorsal)</span>
+                    <span className="font-bold text-xs text-white">👕 Bloque Espalda</span>
                     {espaldaArt ? (
                       <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
                         <CheckCircle2 className="w-3 h-3" /> Cargado
@@ -851,48 +851,17 @@ export const DesignsView: React.FC = () => {
 
                   <div 
                     onClick={() => espaldaInputRef.current?.click()}
-                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all relative overflow-hidden group ${
+                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
                       espaldaArt
                         ? 'border-slate-700 bg-slate-900/80 hover:border-emerald-500'
                         : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
                     }`}
                   >
                     {espaldaArt?.svgArtContent ? (
-                      <div className="w-full h-full relative flex items-center justify-center">
-                        <div 
-                          className="w-full h-full flex items-center justify-center"
-                          dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(espaldaArt.svgArtContent) }}
-                        />
-                        {/* Overlay Real del Dorsal con la tipografía seleccionada */}
-                        <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-10 pt-4">
-                          <span 
-                            className="font-bold tracking-wider text-center drop-shadow transition-all uppercase leading-none"
-                            style={{
-                              fontFamily: `'${activeFontFamily}', Impact, 'Arial Narrow', sans-serif`,
-                              fontSize: '15px',
-                              color: fillHex,
-                              WebkitTextStroke: hasStroke ? `${Math.max(0.5, strokeWidth * 0.35)}px ${strokeHex}` : 'none',
-                              paintOrder: 'stroke fill',
-                              textShadow: '0 2px 4px rgba(0,0,0,0.6)',
-                            }}
-                          >
-                            {sampleName || 'CHRISTOPHER'}
-                          </span>
-                          <span 
-                            className="font-bold tracking-tight text-center drop-shadow transition-all leading-none mt-1"
-                            style={{
-                              fontFamily: `'${activeFontFamily}', Impact, 'Arial Narrow', sans-serif`,
-                              fontSize: '56px',
-                              color: fillHex,
-                              WebkitTextStroke: hasStroke ? `${Math.max(1, strokeWidth * 0.6)}px ${strokeHex}` : 'none',
-                              paintOrder: 'stroke fill',
-                              textShadow: '0 3px 6px rgba(0,0,0,0.7)',
-                            }}
-                          >
-                            {sampleNumber || '9'}
-                          </span>
-                        </div>
-                      </div>
+                      <div 
+                        className="w-full h-full flex items-center justify-center"
+                        dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(espaldaArt.svgArtContent) }}
+                      />
                     ) : (
                       <div className="text-center space-y-1.5">
                         <UploadCloud className="w-7 h-7 text-slate-600 mx-auto" />
