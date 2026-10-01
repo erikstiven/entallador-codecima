@@ -9,7 +9,12 @@ import {
   Plus, 
   Download, 
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Sparkles,
+  ShieldCheck,
+  Zap,
+  Layers,
+  FileCheck
 } from 'lucide-react';
 import { useOrderStore } from '@/modules/orders/orderStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
@@ -82,7 +87,6 @@ export const NewOrderView: React.FC = () => {
     reader.readAsArrayBuffer(file);
   };
 
-
   const handleDownloadTemplate = () => {
     const uint8 = generateOrderTemplateWorkbook();
     const blob = new Blob([uint8.buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -95,7 +99,7 @@ export const NewOrderView: React.FC = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-8 max-w-7xl mx-auto space-y-6 text-slate-200">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -105,24 +109,34 @@ export const NewOrderView: React.FC = () => {
         onChange={handleFileUpload}
       />
 
-      {/* Top Banner: Solo cuando aún no hay archivo cargado */}
+      {/* Hero Welcome Banner (Solo cuando aún no hay archivo cargado) */}
       {items.length === 0 && (
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-white mt-1">Cargar Pedido de Uniformes</h2>
-            <p className="text-xs text-slate-400 mt-1 max-w-xl">
-              Sube el archivo Excel (.xlsx o .csv) de tu equipo. El sistema valida nombres, dorsales, tallas y tipos de prenda.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleDownloadTemplate}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-950 transition-colors flex items-center gap-1.5"
-              title="Descargar archivo Excel con las columnas listas para llenar"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Descargar Plantilla Excel (.xlsx)
-            </button>
+        <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800 rounded-3xl p-8 shadow-2xl">
+          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Importación Industrial Inteligente</span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+                Cargar Nómina del Pedido
+              </h2>
+              <p className="text-xs md:text-sm text-slate-400 max-w-2xl leading-relaxed">
+                Importa el archivo Excel de tu cliente con nombres, números y tallas. El motor validará caracteres especiales (tildes/ñ) y calculará las piezas de corte al milímetro.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={handleDownloadTemplate}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold border border-slate-700 shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                title="Descargar archivo Excel con formato listo para llenar"
+              >
+                <Download className="w-4 h-4 text-emerald-400" />
+                <span>Descargar Plantilla (.xlsx)</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -133,82 +147,111 @@ export const NewOrderView: React.FC = () => {
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-slate-700 hover:border-emerald-500 bg-slate-900/40 hover:bg-slate-900 transition-all rounded-2xl p-16 text-center flex flex-col items-center justify-center cursor-pointer group"
+          className="relative overflow-hidden border-2 border-dashed border-slate-700/80 hover:border-emerald-500/80 bg-slate-900/40 hover:bg-slate-900/70 transition-all duration-300 rounded-3xl p-16 text-center flex flex-col items-center justify-center cursor-pointer group shadow-xl"
         >
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <UploadCloud className="w-8 h-8" />
+          <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all duration-300 shadow-lg shadow-emerald-950/40">
+            <UploadCloud className="w-10 h-10" />
           </div>
-          <h4 className="text-base font-semibold text-white">Arrastra aquí tu archivo Excel o haz clic para explorar</h4>
-          <p className="text-xs text-slate-400 mt-1.5 max-w-md">
-            Formatos soportados: <span className="text-slate-200 font-mono font-medium">.xlsx</span> y <span className="text-slate-200 font-mono font-medium">.csv</span>
+          <h4 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
+            Arrastra tu archivo Excel aquí o haz clic para seleccionar
+          </h4>
+          <p className="text-xs text-slate-400 mt-2 max-w-md leading-relaxed">
+            Formatos compatibles: <span className="text-emerald-400 font-mono font-semibold">.xlsx</span>, <span className="text-emerald-400 font-mono font-semibold">.xls</span> y <span className="text-emerald-400 font-mono font-semibold">.csv</span>
           </p>
-          <button 
-            type="button"
-            className="mt-6 px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-950 transition-colors flex items-center gap-2"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            Seleccionar Archivo Excel
-          </button>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+            <button 
+              type="button"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-extrabold shadow-xl shadow-emerald-950/60 transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Explorar Archivo en mi PC
+            </button>
+          </div>
+
+          {/* Feature Badges */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-10 pt-8 border-t border-slate-800/80 w-full max-w-2xl text-[11px] text-slate-400">
+            <div className="flex items-center justify-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>Soporte Tildes y Eñes (UTF-8)</span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <Zap className="w-4 h-4 text-sky-400" />
+              <span>Validación Automática Instantánea</span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <Layers className="w-4 h-4 text-amber-400" />
+              <span>Multi-Talla Niño y Adulto</span>
+            </div>
+          </div>
         </div>
       ) : (
         /* Order Items Table & Real-time Validation */
         <div className="space-y-4">
           {/* Summary Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-              <div className="text-[11px] text-slate-400">Total Jugadores</div>
-              <div className="text-xl font-bold font-mono text-white mt-1">{summary.totalItems}</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg backdrop-blur-md">
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Jugadores</div>
+              <div className="text-2xl font-black font-mono text-white mt-1">{summary.totalItems}</div>
+              <div className="text-[10px] text-slate-400 mt-0.5">En la nómina activa</div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-              <div className="text-[11px] text-slate-400">Total Piezas a Cortar</div>
-              <div className="text-xl font-bold font-mono text-sky-400 mt-1">
-                {summary.totalPiecesCount} <span className="text-xs font-normal text-slate-400">piezas</span>
+
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg backdrop-blur-md">
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Piezas a Producir</div>
+              <div className="text-2xl font-black font-mono text-sky-400 mt-1">
+                {summary.totalPiecesCount} <span className="text-xs font-semibold text-slate-400">piezas</span>
               </div>
+              <div className="text-[10px] text-slate-400 mt-0.5">Frente, espalda, mangas y shorts</div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-              <div className="text-[11px] text-slate-400">Estado de Nómina</div>
+
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg backdrop-blur-md">
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Validación de Nómina</div>
               {summary.invalidCount > 0 ? (
-                <div className="text-xl font-bold font-mono text-red-400 mt-1 flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4" />
-                  {summary.invalidCount} con Error
+                <div className="text-2xl font-black font-mono text-red-400 mt-1 flex items-center gap-1.5">
+                  <AlertCircle className="w-5 h-5" />
+                  {summary.invalidCount} Error(es)
                 </div>
               ) : (
-                <div className="text-xl font-bold font-mono text-emerald-400 mt-1 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" />
-                  100% Válido ({summary.validCount})
+                <div className="text-2xl font-black font-mono text-emerald-400 mt-1 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-5 h-5" />
+                  100% Correcto
                 </div>
               )}
+              <div className="text-[10px] text-slate-400 mt-0.5">{summary.validCount} de {summary.totalItems} listos</div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
-              <div className="text-[11px] text-slate-400">Archivo Excel Cargado</div>
-              <div className="text-xs text-white font-mono truncate" title={fileName || ''}>
-                {fileName || 'pedido.xlsx'}
+
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg backdrop-blur-md flex flex-col justify-between">
+              <div>
+                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Archivo Excel</div>
+                <div className="text-xs text-white font-mono font-bold truncate mt-1" title={fileName || ''}>
+                  {fileName || 'pedido.xlsx'}
+                </div>
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium text-left mt-0.5"
+                className="text-[11px] text-emerald-400 hover:text-emerald-300 font-bold text-left mt-2 flex items-center gap-1 cursor-pointer"
               >
-                + Cambiar Archivo
+                <RefreshCw className="w-3 h-3" /> Reemplazar Excel
               </button>
             </div>
           </div>
 
           {/* Table Container */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-            <div className="p-3.5 bg-slate-950/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-slate-200">Nómina del Pedido</span>
-                  <span className="text-[11px] text-slate-400">({items.length} jugadores cargados)</span>
+                  <span className="text-xs font-bold text-white">Nómina del Pedido</span>
+                  <span className="text-xs text-slate-400 font-mono">({items.length} jugadores)</span>
                 </div>
 
-                {/* Selector Rápido de Producción: Solo Camisetas / Solo Shorts / Completo */}
-                <div className="flex items-center bg-slate-900 border border-slate-700/80 rounded-lg p-0.5 text-xs">
+                {/* Selector Rápido de Producción */}
+                <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-0.5 text-xs">
                   <span className="text-[10px] uppercase font-mono text-slate-400 px-2 font-bold">Producción:</span>
                   <button
                     type="button"
                     onClick={() => setAllGarmentTypes('CAMISETA')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       items.length > 0 && items.every((i) => i.garmentType === 'CAMISETA')
                         ? 'bg-emerald-600 text-white shadow-sm'
                         : 'text-slate-400 hover:text-white'
@@ -220,7 +263,7 @@ export const NewOrderView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setAllGarmentTypes('SHORT')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       items.length > 0 && items.every((i) => i.garmentType === 'SHORT')
                         ? 'bg-emerald-600 text-white shadow-sm'
                         : 'text-slate-400 hover:text-white'
@@ -232,14 +275,14 @@ export const NewOrderView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setAllGarmentTypes('COMPLETO')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       items.length > 0 && items.every((i) => i.garmentType === 'COMPLETO')
                         ? 'bg-emerald-600 text-white shadow-sm'
                         : 'text-slate-400 hover:text-white'
                     }`}
                     title="Conjunto completo (Camiseta + Short)"
                   >
-                    🎽 Completo
+                    🎽 Completo (6 pzs)
                   </button>
                 </div>
               </div>
@@ -247,7 +290,7 @@ export const NewOrderView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: '28', garmentType: 'CAMISETA' })}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-950 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Agregar Jugador
@@ -257,18 +300,18 @@ export const NewOrderView: React.FC = () => {
 
             <div className="overflow-x-auto max-h-96">
               <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-slate-950 text-slate-400 sticky top-0 border-b border-slate-800 z-10 text-[11px]">
+                <thead className="bg-slate-950 text-slate-400 sticky top-0 border-b border-slate-800 z-10 text-[11px] uppercase tracking-wider">
                   <tr>
-                    <th className="py-2.5 px-3 w-12 text-center">#</th>
-                    <th className="py-2.5 px-3 w-28">Talla</th>
-                    <th className="py-2.5 px-3">Nombre Dorsal</th>
-                    <th className="py-2.5 px-3 w-24">Número</th>
-                    <th className="py-2.5 px-3 w-32">Tipo Prenda</th>
-                    <th className="py-2.5 px-3">Validación / Estado</th>
-                    <th className="py-2.5 px-3 w-12 text-center"></th>
+                    <th className="py-3 px-3 w-12 text-center">#</th>
+                    <th className="py-3 px-3 w-28">Talla</th>
+                    <th className="py-3 px-3">Nombre Dorsal</th>
+                    <th className="py-3 px-3 w-24">Número</th>
+                    <th className="py-3 px-3 w-36">Tipo Prenda</th>
+                    <th className="py-3 px-3">Validación / Estado</th>
+                    <th className="py-3 px-3 w-12 text-center"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800 text-slate-300">
+                <tbody className="divide-y divide-slate-800/80 text-slate-300">
                   {items.map((item, idx) => (
                     <tr 
                       key={item.id} 
@@ -276,7 +319,7 @@ export const NewOrderView: React.FC = () => {
                         !item.isValid ? 'bg-red-950/20' : ''
                       }`}
                     >
-                      <td className="py-2 px-3 text-center text-slate-500" title={`Fila Excel: ${item.rowNumber}`}>{idx + 1}</td>
+                      <td className="py-2.5 px-3 text-center text-slate-400 font-bold" title={`Fila Excel: ${item.rowNumber}`}>{idx + 1}</td>
                       
                       {/* Editable Size */}
                       <td className="py-2 px-3">
@@ -284,7 +327,7 @@ export const NewOrderView: React.FC = () => {
                           type="text"
                           value={item.sizeName}
                           onChange={(e) => updateItem(item.id, { sizeName: e.target.value })}
-                          className={`w-16 bg-slate-950 border rounded px-2 py-1 text-center font-bold font-mono focus:outline-none focus:border-emerald-500 ${
+                          className={`w-16 bg-slate-950 border rounded-lg px-2 py-1 text-center font-bold font-mono focus:outline-none focus:border-emerald-500 ${
                             item.errors.some((e) => e.field === 'sizeName')
                               ? 'border-red-500 text-red-400'
                               : 'border-slate-700 text-white'
@@ -298,7 +341,7 @@ export const NewOrderView: React.FC = () => {
                           type="text"
                           value={item.playerName}
                           onChange={(e) => updateItem(item.id, { playerName: e.target.value })}
-                          className={`w-full bg-slate-950 border rounded px-2.5 py-1 uppercase focus:outline-none focus:border-emerald-500 ${
+                          className={`w-full bg-slate-950 border rounded-lg px-2.5 py-1 uppercase font-bold focus:outline-none focus:border-emerald-500 ${
                             item.errors.some((e) => e.field === 'playerName')
                               ? 'border-red-500 text-red-400'
                               : 'border-slate-700 text-white'
@@ -312,7 +355,7 @@ export const NewOrderView: React.FC = () => {
                           type="text"
                           value={item.playerNumber}
                           onChange={(e) => updateItem(item.id, { playerNumber: e.target.value })}
-                          className={`w-16 bg-slate-950 border rounded px-2 py-1 text-center font-bold focus:outline-none focus:border-emerald-500 ${
+                          className={`w-16 bg-slate-950 border rounded-lg px-2 py-1 text-center font-black focus:outline-none focus:border-emerald-500 ${
                             item.errors.some((e) => e.field === 'playerNumber')
                               ? 'border-red-500 text-red-400'
                               : 'border-slate-700 text-emerald-400'
@@ -325,7 +368,7 @@ export const NewOrderView: React.FC = () => {
                         <select
                           value={item.garmentType}
                           onChange={(e) => updateItem(item.id, { garmentType: e.target.value as GarmentType })}
-                          className="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-300 focus:outline-none focus:border-emerald-500 text-[11px]"
+                          className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-emerald-500 text-[11px] font-sans"
                         >
                           <option value="COMPLETO">COMPLETO (6 pzs)</option>
                           <option value="CAMISETA">CAMISETA (4 pzs)</option>
@@ -338,7 +381,7 @@ export const NewOrderView: React.FC = () => {
                         {item.errors.length > 0 ? (
                           <div className="flex flex-col gap-0.5 text-red-400 font-sans">
                             {item.errors.map((err, i) => (
-                              <span key={i} className="flex items-center gap-1">
+                              <span key={i} className="flex items-center gap-1 font-semibold">
                                 <AlertCircle className="w-3 h-3 flex-shrink-0" />
                                 {err.message}
                               </span>
@@ -347,16 +390,16 @@ export const NewOrderView: React.FC = () => {
                         ) : item.warnings.length > 0 ? (
                           <div className="flex flex-col gap-0.5 text-amber-400 font-sans">
                             {item.warnings.map((warn, i) => (
-                              <span key={i} className="flex items-center gap-1">
+                              <span key={i} className="flex items-center gap-1 font-semibold">
                                 <AlertTriangle className="w-3 h-3 flex-shrink-0" />
                                 {warn.message}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-emerald-400 flex items-center gap-1 font-sans">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Correcto
+                          <span className="text-emerald-400 flex items-center gap-1 font-sans font-semibold">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Correcto 1:1
                           </span>
                         )}
                       </td>
@@ -365,10 +408,10 @@ export const NewOrderView: React.FC = () => {
                       <td className="py-2 px-3 text-center">
                         <button
                           onClick={() => removeItem(item.id)}
-                          className="text-slate-500 hover:text-red-400 p-1 rounded transition-colors"
-                          title="Eliminar fila"
+                          className="text-slate-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                          title="Eliminar jugador"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -379,16 +422,16 @@ export const NewOrderView: React.FC = () => {
           </div>
 
           {/* Bottom Generation CTA Bar */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
             <div className="space-y-1">
               <div className="text-xs text-slate-400">
                 {summary.hasErrors ? (
-                  <span className="text-red-400 font-medium flex items-center gap-1.5">
+                  <span className="text-red-400 font-semibold flex items-center gap-1.5">
                     <AlertCircle className="w-4 h-4" />
                     Corrige los {summary.invalidCount} errores en la tabla antes de proceder a la generación.
                   </span>
                 ) : (
-                  <span className="text-emerald-400 font-medium flex items-center gap-1.5">
+                  <span className="text-emerald-400 font-bold flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4" />
                     Todos los {summary.validCount} registros son válidos y listos para producción.
                   </span>
@@ -398,7 +441,7 @@ export const NewOrderView: React.FC = () => {
                 <span>
                   Molde:{' '}
                   {currentPatternSet ? (
-                    <span className="text-emerald-400 font-semibold">{currentPatternSet.name}</span>
+                    <span className="text-emerald-400 font-bold">{currentPatternSet.name}</span>
                   ) : (
                     <span className="text-amber-400 font-semibold">⚠️ Sin Molde (ve a 'Moldes')</span>
                   )}
@@ -407,7 +450,7 @@ export const NewOrderView: React.FC = () => {
                 <span>
                   Diseño:{' '}
                   {currentDesign ? (
-                    <span className="text-emerald-400 font-semibold">{currentDesign.name}</span>
+                    <span className="text-emerald-400 font-bold">{currentDesign.name}</span>
                   ) : (
                     <span className="text-amber-400 font-semibold">⚠️ Sin Diseño (ve a 'Diseños')</span>
                   )}
@@ -419,12 +462,12 @@ export const NewOrderView: React.FC = () => {
               disabled={summary.hasErrors || items.length === 0}
               onClick={() => {
                 if (!currentPatternSet) {
-                  alert("⚠️ No hay ningún molde cargado. Ve a la pestaña 'Moldes' y sube tu archivo SVG graduado (ej: moldes 2025.svg).");
+                  alert("⚠️ No hay ningún molde cargado. Ve a la pestaña 'Moldes' y sube tu archivo SVG graduado.");
                   setCurrentView('PATTERNS');
                   return;
                 }
                 if (!currentDesign) {
-                  alert("⚠️ No hay ningún diseño cargado. Ve a la pestaña 'Diseños' y sube tu archivo SVG de diseño (ej: ESPAÑA PATRON 2026.svg).");
+                  alert("⚠️ No hay ningún diseño cargado. Ve a la pestaña 'Diseños' y sube tu archivo SVG de diseño.");
                   setCurrentView('DESIGNS');
                   return;
                 }
@@ -440,18 +483,18 @@ export const NewOrderView: React.FC = () => {
                 const { generatePieces } = useGeneratorStore.getState();
                 const res = generatePieces();
                 if (!res) {
-                  alert("⚠️ No se pudieron generar las piezas. Verifica que las tallas del archivo de moldes coincidan con las solicitadas en el Excel.");
+                  alert("⚠️ No se pudieron generar las piezas. Verifica que las tallas del archivo de moldes coincidan con las del Excel.");
                   return;
                 }
                 setCurrentView('NESTING');
               }}
-              className={`px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all ${
+              className={`px-7 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2.5 shadow-xl transition-all active:scale-95 ${
                 summary.hasErrors || items.length === 0
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950 cursor-pointer'
+                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-950/70 cursor-pointer ring-1 ring-emerald-400/40'
               }`}
             >
-              Generar Prendas y Avanzar al Entallado
+              <span>Generar Prendas y Avanzar al Entallado</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

@@ -359,17 +359,17 @@ export const DesignsView: React.FC = () => {
                 <div
                   key={d.id}
                   onClick={() => setActiveDesign(d)}
-                  className={`bg-slate-900 border rounded-xl p-3 cursor-pointer transition-all hover:border-slate-600 ${
+                  className={`bg-slate-900/90 border rounded-2xl p-3.5 cursor-pointer transition-all duration-200 hover:border-slate-600 ${
                     isSelected
-                      ? 'border-emerald-500 shadow-md shadow-emerald-950/40 bg-slate-850'
+                      ? 'border-emerald-500 shadow-lg shadow-emerald-950/50 bg-slate-850 ring-1 ring-emerald-500/40'
                       : 'border-slate-800'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-sm text-white">{d.name}</span>
-                    <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded ${
+                    <span className={`text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-lg ${
                       blocksReady >= 3 
-                        ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/30' 
+                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' 
                         : 'bg-slate-800 text-slate-400'
                     }`}>
                       {blocksReady === 4 ? 'Listo (4/4)' : `${blocksReady}/4 bloques`}
