@@ -43,7 +43,7 @@ export const Header: React.FC = () => {
         };
       case 'SETTINGS':
         return { 
-          title: 'Configuración del Sistema Codecima', 
+          title: 'Configuración del Sistema CimaPattern', 
           subtitle: 'Personalización de empresa, plotter Epson, unidades y tolerancias de corte',
           tag: 'AJUSTES'
         };

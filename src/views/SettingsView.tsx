@@ -98,7 +98,7 @@ export const SettingsView: React.FC = () => {
             </span>
           </div>
           <h2 className="text-2xl font-black text-white mt-1 tracking-tight flex items-center gap-2">
-            CODECIMA <span className="text-purple-400 font-medium">SubliFit Pro</span>
+            CimaPattern <span className="text-purple-400 font-medium">PRO</span>
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
             Personaliza la empresa, temas, unidades de medida, parámetros de bobina y tolerancias de corte 1:1
