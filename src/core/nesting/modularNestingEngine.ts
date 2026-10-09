@@ -316,7 +316,10 @@ export function performModularNesting(
       const canFitDoubleColumn = m1 && m2 && availableRightWidth >= (sW1 + spacingMm + sW2);
       const canFitSingleColumn = availableRightWidth >= Math.max(sW1, sW2);
 
-      const maxAllowedY = maxSheetLengthMm - topMarginMm;
+      const maxAllowedY = Math.min(
+        maxSheetLengthMm - topMarginMm,
+        canFitDoubleColumn ? maxSheetLengthMm - topMarginMm : totalJerseysHeight + 50
+      );
 
       if (canFitDoubleColumn && m1 && m2) {
         // ESTRATEGIA A: Doble Columna Continua (Manga 1 en Col A, Manga 2 en Col B, pegadas hacia abajo)
