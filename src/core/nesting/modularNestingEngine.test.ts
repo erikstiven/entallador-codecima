@@ -106,7 +106,7 @@ describe('modularNestingEngine', () => {
     }
   });
 
-  it('debe rotar las mangas 90° en la columna derecha para aprovechar el espacio vertical si el ancho es reducido', () => {
+  it('debe rotar las mangas con encastre intercalado (90° y 270°) en columna derecha para bobina 1120 mm', () => {
     // Delantero 400x700, Espalda 400x700 -> Ancho ocupado = 3 + 400 + 3 + 400 = 806 mm.
     // Espacio restante en 1120 mm = 1120 - 806 - 3 - 3 = 308 mm.
     // Mangas 340x180: rotadas 90° caben (180 <= 308).
@@ -126,11 +126,33 @@ describe('modularNestingEngine', () => {
     const m2 = result.placedPieces.find((p) => p.pieceType === 'MANGA_DER')!;
 
     expect(m1.rotationDeg).toBe(90);
-    expect(m2.rotationDeg).toBe(90);
+    expect(m2.rotationDeg).toBe(270);
     expect(m1.effectiveWidthMm).toBe(180);
     expect(m1.effectiveHeightMm).toBe(340);
     expect(m1.xMm).toBeGreaterThanOrEqual(800);
     // Altura total del pliego es ultra-compacta (~700mm)
     expect(result.sheets![0].heightMm).toBeLessThan(750);
+  });
+
+  it('debe acomodar mangas en doble columna paralela si el ancho de bobina lo permite (ej. 1600 mm)', () => {
+    const pieces: NestingPieceInput[] = [
+      createMockPiece('p1_del', 'player_1', 'MARCELO', 'DELANTERO', 400, 700),
+      createMockPiece('p1_esp', 'player_1', 'MARCELO', 'ESPALDA', 400, 700),
+      createMockPiece('p1_m1', 'player_1', 'MARCELO', 'MANGA_IZQ', 340, 180),
+      createMockPiece('p1_m2', 'player_1', 'MARCELO', 'MANGA_DER', 340, 180),
+    ];
+
+    const result = performModularNesting(pieces, {
+      printableWidthMm: 1600,
+      maxSheetLengthMm: 5000,
+    });
+
+    const m1 = result.placedPieces.find((p) => p.pieceType === 'MANGA_IZQ')!;
+    const m2 = result.placedPieces.find((p) => p.pieceType === 'MANGA_DER')!;
+
+    // En bobina ancha, m1 y m2 van lado a lado en 2 columnas
+    expect(m1.rotationDeg).toBe(90);
+    expect(m2.rotationDeg).toBe(90);
+    expect(m2.xMm).toBeGreaterThan(m1.xMm + m1.effectiveWidthMm);
   });
 });
