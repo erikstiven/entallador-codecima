@@ -89,6 +89,8 @@ export const ProductionNestingView: React.FC = () => {
     nestingProgress,
     nestingMode, 
     setNestingMode,
+    spacingMm,
+    setSpacingMm,
     printableWidthMm,
     setPrintableWidthMm,
     maxSheetLengthMm,
@@ -146,7 +148,7 @@ export const ProductionNestingView: React.FC = () => {
     await runNesting(inputsToNest, {
       printableWidthMm,
       maxSheetLengthMm,
-      spacingMm: 6.0,
+      spacingMm,
       groupingMode: nestingMode,
     });
     showAlert.toast('success', '¡Pliegos organizados y optimizados!');
@@ -376,7 +378,7 @@ export const ProductionNestingView: React.FC = () => {
                   onChange={(e) => {
                     const newH = Number(e.target.value);
                     setMaxSheetLengthMm(newH);
-                    runNesting(nestingPieceInputs, { printableWidthMm, maxSheetLengthMm: newH });
+                    runNesting(nestingPieceInputs, { printableWidthMm, maxSheetLengthMm: newH, spacingMm });
                   }}
                   className="bg-transparent text-sky-400 font-bold font-mono focus:outline-none cursor-pointer"
                 >
@@ -384,6 +386,25 @@ export const ProductionNestingView: React.FC = () => {
                   <option value={3000} className="bg-slate-900 text-white">300 cm (3.0 m)</option>
                   <option value={5000} className="bg-slate-900 text-white">500 cm (5.0 m)</option>
                   <option value={10000} className="bg-slate-900 text-white">1000 cm (10.0 m)</option>
+                </select>
+              </div>
+
+              {/* 3. Selector de Separación / Pegada entre Piezas */}
+              <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs">
+                <span className="text-[10px] text-slate-400 uppercase font-mono">Separación:</span>
+                <select
+                  value={spacingMm}
+                  onChange={(e) => {
+                    const newS = Number(e.target.value);
+                    setSpacingMm(newS);
+                    runNesting(nestingPieceInputs, { printableWidthMm, maxSheetLengthMm, spacingMm: newS });
+                  }}
+                  className="bg-transparent text-emerald-400 font-bold font-mono focus:outline-none cursor-pointer"
+                >
+                  <option value={2} className="bg-slate-900 text-white">2 mm (Ultra pegada)</option>
+                  <option value={3} className="bg-slate-900 text-white">3 mm (Pegada recomendada)</option>
+                  <option value={5} className="bg-slate-900 text-white">5 mm</option>
+                  <option value={6} className="bg-slate-900 text-white">6 mm (Holgada)</option>
                 </select>
               </div>
 

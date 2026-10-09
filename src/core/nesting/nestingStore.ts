@@ -52,7 +52,7 @@ export const useNestingStore = create<NestingState>((set, get) => ({
   nestingProgress: 0,
   nestingMode: 'MODULAR_PLAYER',
   nestingAlgorithm: 'MODULAR_INDUSTRIAL',
-  spacingMm: 6.0,
+  spacingMm: 3.0,
   printableWidthMm: 1120.0,
   maxSheetLengthMm: 5000.0, // 5.0 metros estándar industrial
   selectedPieceId: null,

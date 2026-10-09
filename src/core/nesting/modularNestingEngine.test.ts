@@ -49,13 +49,13 @@ describe('modularNestingEngine', () => {
     expect(result.sheets!.length).toBe(1);
     expect(result.sheets![0].garmentType).toBe('CAMISETA');
 
-    // Delantero en X=5 (sideMargin), Espalda al lado, Mangas a la derecha
+    // Delantero en X=3 (sideMargin), Espalda al lado, Mangas a la derecha
     const del = result.placedPieces.find((p) => p.pieceType === 'DELANTERO')!;
     const esp = result.placedPieces.find((p) => p.pieceType === 'ESPALDA')!;
     const m1 = result.placedPieces.find((p) => p.pieceType === 'MANGA_IZQ')!;
     const m2 = result.placedPieces.find((p) => p.pieceType === 'MANGA_DER')!;
 
-    expect(del.xMm).toBe(5);
+    expect(del.xMm).toBe(3);
     expect(esp.xMm).toBeGreaterThan(del.xMm + del.effectiveWidthMm);
     expect(m1.xMm).toBeGreaterThan(esp.xMm + esp.effectiveWidthMm);
     expect(m2.xMm).toBeGreaterThan(esp.xMm + esp.effectiveWidthMm);
@@ -79,8 +79,8 @@ describe('modularNestingEngine', () => {
     const s1 = result.placedPieces.find((p) => p.pieceType === 'PANTALONETA_IZQ')!;
     const s2 = result.placedPieces.find((p) => p.pieceType === 'PANTALONETA_DER')!;
 
-    expect(s1.xMm).toBe(5);
-    expect(s2.xMm).toBeGreaterThanOrEqual(505);
+    expect(s1.xMm).toBe(3);
+    expect(s2.xMm).toBeGreaterThanOrEqual(503);
   });
 
   it('debe particionar en múltiples pliegos si la altura acumulada supera maxSheetLengthMm (500 cm)', () => {
@@ -107,9 +107,9 @@ describe('modularNestingEngine', () => {
   });
 
   it('debe rotar las mangas 90° en la columna derecha para aprovechar el espacio vertical si el ancho es reducido', () => {
-    // Delantero 400x700, Espalda 400x700 -> Ancho ocupado = 5 + 400 + 6 + 400 = 811 mm.
-    // Espacio restante en 1120 mm = 1120 - 811 - 6 - 5 = 298 mm.
-    // Mangas 340x180: no caben horizontales (340 > 298), pero rotadas 90° caben (180 <= 298).
+    // Delantero 400x700, Espalda 400x700 -> Ancho ocupado = 3 + 400 + 3 + 400 = 806 mm.
+    // Espacio restante en 1120 mm = 1120 - 806 - 3 - 3 = 308 mm.
+    // Mangas 340x180: rotadas 90° caben (180 <= 308).
     const pieces: NestingPieceInput[] = [
       createMockPiece('p1_del', 'player_1', 'MARCELO', 'DELANTERO', 400, 700),
       createMockPiece('p1_esp', 'player_1', 'MARCELO', 'ESPALDA', 400, 700),
@@ -129,7 +129,7 @@ describe('modularNestingEngine', () => {
     expect(m2.rotationDeg).toBe(90);
     expect(m1.effectiveWidthMm).toBe(180);
     expect(m1.effectiveHeightMm).toBe(340);
-    expect(m1.xMm).toBeGreaterThanOrEqual(810);
+    expect(m1.xMm).toBeGreaterThanOrEqual(800);
     // Altura total del pliego es ultra-compacta (~700mm)
     expect(result.sheets![0].heightMm).toBeLessThan(750);
   });

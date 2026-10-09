@@ -8,9 +8,9 @@ import {
 
 const DEFAULT_PRINTABLE_WIDTH_MM = 1120.0;
 const DEFAULT_MAX_SHEET_LENGTH_MM = 5000.0; // 5.0 metros
-const DEFAULT_SPACING_MM = 6.0;
-const DEFAULT_SIDE_MARGIN_MM = 5.0;
-const DEFAULT_TOP_MARGIN_MM = 8.0;
+const DEFAULT_SPACING_MM = 3.0; // Separación compacta de 3 mm
+const DEFAULT_SIDE_MARGIN_MM = 3.0; // Margen lateral de 3 mm
+const DEFAULT_TOP_MARGIN_MM = 4.0; // Margen superior/inferior de 4 mm
 
 interface PlayerGarmentSet {
   orderItemId: string;
