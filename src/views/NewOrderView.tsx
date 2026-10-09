@@ -52,12 +52,17 @@ export const NewOrderView: React.FC = () => {
   const currentPatternSet = activePatternSet || patternSets[0] || null;
   const currentDesign = activeDesign || designs[0] || null;
 
-  const handleClearOrder = () => {
-    if (!window.confirm('¿Limpiar la nómina actual, las prendas generadas y el acomodo del rollo? Esta acción no elimina diseños ni moldes.')) return;
+  const handleClearOrder = async () => {
+    const confirmed = await showAlert.confirm(
+      '¿Limpiar la nómina actual?',
+      'Se limpiará la nómina, las prendas generadas y el acomodo del rollo. Esta acción no elimina diseños ni moldes.'
+    );
+    if (!confirmed) return;
     clearOrder();
     useGeneratorStore.getState().clearGenerated();
     useNestingStore.getState().clearNesting();
     if (fileInputRef.current) fileInputRef.current.value = '';
+    showAlert.toast('info', 'Pedido limpiado');
   };
 
   const {
@@ -81,7 +86,7 @@ export const NewOrderView: React.FC = () => {
     applyMassEdit,
   } = useOrderStore();
 
-  const handleExecuteMassEdit = () => {
+  const handleExecuteMassEdit = async () => {
     if (items.length === 0) return;
 
     let willOverwriteDifferent = false;
@@ -91,10 +96,11 @@ export const NewOrderView: React.FC = () => {
     if (bulkQuantity > 0 && items.some((i) => (i.quantity || 1) !== bulkQuantity)) willOverwriteDifferent = true;
 
     if (willOverwriteDifferent) {
-      const confirm = window.confirm(
-        '¿Confirmas que deseas aplicar estos valores a TODOS los registros del pedido? Se sobreescribirán las tallas, prendas o cuellos existentes.'
+      const confirmed = await showAlert.confirm(
+        '¿Aplicar a TODOS los registros?',
+        'Se sobreescribirán las tallas, prendas o cuellos existentes en la nómina.'
       );
-      if (!confirm) return;
+      if (!confirmed) return;
     }
 
     applyMassEdit({
@@ -104,8 +110,7 @@ export const NewOrderView: React.FC = () => {
       quantity: bulkQuantity > 0 ? bulkQuantity : undefined,
     });
 
-    setBulkSuccessMsg('¡Edición masiva aplicada a todo el pedido!');
-    setTimeout(() => setBulkSuccessMsg(null), 3000);
+    showAlert.toast('success', '¡Edición masiva aplicada a todo el pedido!');
   };
 
   const missingProductionSetup = [

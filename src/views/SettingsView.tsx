@@ -17,6 +17,7 @@ import {
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useThemeStore, applyThemeToDocument, ThemeMode } from '@/modules/settings/themeStore';
 import { useSystemSettingsStore, DisplayUnit, ExportFormatPref, GroupingModePref } from '@/modules/settings/systemSettingsStore';
+import { showAlert } from '@/core/ui/alerts';
 
 type ThemeSelection = ThemeMode | 'system';
 
@@ -114,10 +115,15 @@ export const SettingsView: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => {
-            if (confirm('¿Deseas restaurar todas las configuraciones a los valores predeterminados de fábrica?')) {
+          onClick={async () => {
+            const confirmed = await showAlert.confirm(
+              '¿Restaurar valores de fábrica?',
+              '¿Deseas restaurar todas las configuraciones a los valores predeterminados de fábrica?'
+            );
+            if (confirmed) {
               resetSettings();
               triggerSaveNotification();
+              showAlert.toast('info', 'Ajustes restablecidos');
             }
           }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-amber-400 text-xs transition-colors cursor-pointer"
