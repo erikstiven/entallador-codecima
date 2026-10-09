@@ -3,7 +3,8 @@ import {
   OrderItem, 
   OrderSummary, 
   OrderValidationConfig,
-  GarmentType 
+  GarmentType,
+  NecklineType
 } from './types';
 import { 
   parseExcelBuffer 
@@ -30,6 +31,13 @@ interface OrderState {
   setAvailableSizes: (sizes: string[]) => void;
   setStrictNumberUniqueness: (strict: boolean) => void;
   setAllGarmentTypes: (garmentType: GarmentType) => void;
+  setAllNecklineTypes: (necklineType: NecklineType) => void;
+  applyMassEdit: (options: {
+    garmentType?: GarmentType;
+    necklineType?: NecklineType;
+    sizeName?: string;
+    quantity?: number;
+  }) => void;
   
   loadFromBuffer: (buffer: ArrayBuffer | Uint8Array, fileName: string) => void;
   updateItem: (id: string, updates: Partial<OrderItem>) => void;
@@ -75,6 +83,37 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ items: validated, summary: calculateOrderSummary(validated) });
   },
 
+  setAllNecklineTypes: (necklineType) => {
+    const { items, availableSizes, strictNumberUniqueness } = get();
+    const updated = items.map((item) => (
+      item.garmentType === 'SHORT' ? item : { ...item, necklineType }
+    ));
+    const validated = validateOrderList(updated, { availableSizes, strictNumberUniqueness });
+    set({ items: validated, summary: calculateOrderSummary(validated) });
+  },
+
+  applyMassEdit: ({ garmentType, necklineType, sizeName, quantity }) => {
+    const { items, availableSizes, strictNumberUniqueness } = get();
+    const updated = items.map((item) => {
+      const next = { ...item };
+      if (garmentType !== undefined) {
+        next.garmentType = garmentType;
+      }
+      if (necklineType !== undefined && next.garmentType !== 'SHORT') {
+        next.necklineType = necklineType;
+      }
+      if (sizeName !== undefined && sizeName.trim() !== '') {
+        next.sizeName = sizeName.trim().toUpperCase();
+      }
+      if (quantity !== undefined && quantity > 0) {
+        next.quantity = quantity;
+      }
+      return next;
+    });
+    const validated = validateOrderList(updated, { availableSizes, strictNumberUniqueness });
+    set({ items: validated, summary: calculateOrderSummary(validated) });
+  },
+
   loadFromBuffer: (buffer, fileName) => {
     const { availableSizes, strictNumberUniqueness } = get();
     const result = parseExcelBuffer(buffer, {
@@ -113,6 +152,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       playerNumber: item.playerNumber || '',
       sizeName: item.sizeName || '28',
       garmentType: item.garmentType || 'COMPLETO',
+      necklineType: item.necklineType || 'REDONDO',
       gender: item.gender,
       team: item.team,
       notes: item.notes,

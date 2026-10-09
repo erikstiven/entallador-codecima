@@ -79,7 +79,7 @@ export function createDefaultPlaceholderRules(pieceType: PieceType): DynamicPlac
         defaultFontSizeMm: 55, // 5.5 cm de alto
         minFontSizeMm: 35,
         minScaleFactor: 0.60,
-        fontFamily: 'SportsJerseyBold',
+        fontFamily: 'Bebas Neue',
         fillColor: '#ffffff',
         strokeColor: '#000000',
         strokeWidthMm: 2.5,
@@ -96,7 +96,7 @@ export function createDefaultPlaceholderRules(pieceType: PieceType): DynamicPlac
         defaultFontSizeMm: 220, // 22 cm de alto reglamentario
         minFontSizeMm: 160,
         minScaleFactor: 0.70,
-        fontFamily: 'SportsJerseyBold',
+        fontFamily: 'Bebas Neue',
         fillColor: '#ffffff',
         strokeColor: '#000000',
         strokeWidthMm: 4.0,
@@ -105,12 +105,12 @@ export function createDefaultPlaceholderRules(pieceType: PieceType): DynamicPlac
     ];
   }
 
-  if (pieceType === 'DELANTERO') {
+  if (pieceType === 'DELANTERO' || pieceType === 'DELANTERO_REDONDO' || pieceType === 'DELANTERO_V') {
     return [
       {
         id: 'NUMERO_FRENTE',
         tag: '{{NUMERO_FRENTE}}',
-        targetPiece: 'DELANTERO',
+        targetPiece: pieceType,
         anchorX: 350,
         anchorY: 260,
         maxWidthMm: 80,
@@ -118,7 +118,29 @@ export function createDefaultPlaceholderRules(pieceType: PieceType): DynamicPlac
         defaultFontSizeMm: 70, // 7 cm número frontal
         minFontSizeMm: 50,
         minScaleFactor: 0.80,
-        fontFamily: 'SportsJerseyBold',
+        fontFamily: 'Bebas Neue',
+        fillColor: '#ffffff',
+        strokeColor: '#000000',
+        strokeWidthMm: 1.5,
+        textAlign: 'center',
+      },
+    ];
+  }
+
+  if (pieceType === 'PANTALONETA_IZQ' || pieceType === 'SHORT_FRENTE') {
+    return [
+      {
+        id: 'NUMERO_SHORT',
+        tag: '{{NUMERO_SHORT}}',
+        targetPiece: pieceType,
+        anchorX: 120,
+        anchorY: 350,
+        maxWidthMm: 70,
+        maxHeightMm: 70,
+        defaultFontSizeMm: 60,
+        minFontSizeMm: 40,
+        minScaleFactor: 0.80,
+        fontFamily: 'Bebas Neue',
         fillColor: '#ffffff',
         strokeColor: '#000000',
         strokeWidthMm: 1.5,
@@ -137,15 +159,40 @@ export const DEFAULT_SAMPLE_DESIGNS: MasterDesign[] = [
     sport: 'FUTBOL',
     colors: ['#ea580c', '#0284c7', '#ffffff'],
     pieceArtworks: {
-      DELANTERO: {
-        pieceType: 'DELANTERO',
+      DELANTERO_REDONDO: {
+        pieceType: 'DELANTERO_REDONDO',
         svgArtContent: '<rect width="500" height="700" fill="#ea580c" />',
-        placeholders: createDefaultPlaceholderRules('DELANTERO'),
+        placeholders: createDefaultPlaceholderRules('DELANTERO_REDONDO'),
+      },
+      DELANTERO_V: {
+        pieceType: 'DELANTERO_V',
+        svgArtContent: '<rect width="500" height="700" fill="#ea580c" />',
+        placeholders: createDefaultPlaceholderRules('DELANTERO_V'),
       },
       ESPALDA: {
         pieceType: 'ESPALDA',
         svgArtContent: '<rect width="500" height="700" fill="#ea580c" />',
         placeholders: createDefaultPlaceholderRules('ESPALDA'),
+      },
+      MANGA_IZQ: {
+        pieceType: 'MANGA_IZQ',
+        svgArtContent: '<rect width="350" height="300" fill="#ea580c" />',
+        placeholders: [],
+      },
+      MANGA_DER: {
+        pieceType: 'MANGA_DER',
+        svgArtContent: '<rect width="350" height="300" fill="#ea580c" />',
+        placeholders: [],
+      },
+      PANTALONETA_IZQ: {
+        pieceType: 'PANTALONETA_IZQ',
+        svgArtContent: '<rect width="400" height="500" fill="#ea580c" />',
+        placeholders: createDefaultPlaceholderRules('PANTALONETA_IZQ'),
+      },
+      PANTALONETA_DER: {
+        pieceType: 'PANTALONETA_DER',
+        svgArtContent: '<rect width="400" height="500" fill="#ea580c" />',
+        placeholders: [],
       },
     },
     createdAt: new Date().toISOString(),
@@ -157,15 +204,40 @@ export const DEFAULT_SAMPLE_DESIGNS: MasterDesign[] = [
     sport: 'FUTBOL',
     colors: ['#eab308', '#16a34a', '#1e40af'],
     pieceArtworks: {
-      DELANTERO: {
-        pieceType: 'DELANTERO',
+      DELANTERO_REDONDO: {
+        pieceType: 'DELANTERO_REDONDO',
         svgArtContent: '<rect width="500" height="700" fill="#eab308" />',
-        placeholders: createDefaultPlaceholderRules('DELANTERO'),
+        placeholders: createDefaultPlaceholderRules('DELANTERO_REDONDO'),
+      },
+      DELANTERO_V: {
+        pieceType: 'DELANTERO_V',
+        svgArtContent: '<rect width="500" height="700" fill="#eab308" />',
+        placeholders: createDefaultPlaceholderRules('DELANTERO_V'),
       },
       ESPALDA: {
         pieceType: 'ESPALDA',
         svgArtContent: '<rect width="500" height="700" fill="#eab308" />',
         placeholders: createDefaultPlaceholderRules('ESPALDA'),
+      },
+      MANGA_IZQ: {
+        pieceType: 'MANGA_IZQ',
+        svgArtContent: '<rect width="350" height="300" fill="#eab308" />',
+        placeholders: [],
+      },
+      MANGA_DER: {
+        pieceType: 'MANGA_DER',
+        svgArtContent: '<rect width="350" height="300" fill="#eab308" />',
+        placeholders: [],
+      },
+      PANTALONETA_IZQ: {
+        pieceType: 'PANTALONETA_IZQ',
+        svgArtContent: '<rect width="400" height="500" fill="#1e40af" />',
+        placeholders: createDefaultPlaceholderRules('PANTALONETA_IZQ'),
+      },
+      PANTALONETA_DER: {
+        pieceType: 'PANTALONETA_DER',
+        svgArtContent: '<rect width="400" height="500" fill="#1e40af" />',
+        placeholders: [],
       },
     },
     createdAt: new Date().toISOString(),
@@ -177,15 +249,40 @@ export const DEFAULT_SAMPLE_DESIGNS: MasterDesign[] = [
     sport: 'FUTBOL',
     colors: ['#38bdf8', '#ffffff', '#000000'],
     pieceArtworks: {
-      DELANTERO: {
-        pieceType: 'DELANTERO',
+      DELANTERO_REDONDO: {
+        pieceType: 'DELANTERO_REDONDO',
         svgArtContent: '<rect width="500" height="700" fill="#38bdf8" />',
-        placeholders: createDefaultPlaceholderRules('DELANTERO'),
+        placeholders: createDefaultPlaceholderRules('DELANTERO_REDONDO'),
+      },
+      DELANTERO_V: {
+        pieceType: 'DELANTERO_V',
+        svgArtContent: '<rect width="500" height="700" fill="#38bdf8" />',
+        placeholders: createDefaultPlaceholderRules('DELANTERO_V'),
       },
       ESPALDA: {
         pieceType: 'ESPALDA',
         svgArtContent: '<rect width="500" height="700" fill="#38bdf8" />',
         placeholders: createDefaultPlaceholderRules('ESPALDA'),
+      },
+      MANGA_IZQ: {
+        pieceType: 'MANGA_IZQ',
+        svgArtContent: '<rect width="350" height="300" fill="#38bdf8" />',
+        placeholders: [],
+      },
+      MANGA_DER: {
+        pieceType: 'MANGA_DER',
+        svgArtContent: '<rect width="350" height="300" fill="#38bdf8" />',
+        placeholders: [],
+      },
+      PANTALONETA_IZQ: {
+        pieceType: 'PANTALONETA_IZQ',
+        svgArtContent: '<rect width="400" height="500" fill="#000000" />',
+        placeholders: createDefaultPlaceholderRules('PANTALONETA_IZQ'),
+      },
+      PANTALONETA_DER: {
+        pieceType: 'PANTALONETA_DER',
+        svgArtContent: '<rect width="400" height="500" fill="#000000" />',
+        placeholders: [],
       },
     },
     createdAt: new Date().toISOString(),

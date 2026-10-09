@@ -123,6 +123,26 @@ describe('Garment Generator Engine (Fusión de Molde + Diseño + Jugador)', () =
         svgArtContent: '<rect fill="#ea580c" />',
         placeholders: [],
       },
+      MANGA_IZQ: {
+        pieceType: 'MANGA_IZQ',
+        svgArtContent: '<rect fill="#ea580c" />',
+        placeholders: [],
+      },
+      MANGA_DER: {
+        pieceType: 'MANGA_DER',
+        svgArtContent: '<rect fill="#ea580c" />',
+        placeholders: [],
+      },
+      SHORT_FRENTE: {
+        pieceType: 'SHORT_FRENTE',
+        svgArtContent: '<rect fill="#ea580c" />',
+        placeholders: [],
+      },
+      SHORT_ESPALDA: {
+        pieceType: 'SHORT_ESPALDA',
+        svgArtContent: '<rect fill="#ea580c" />',
+        placeholders: [],
+      },
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -181,9 +201,9 @@ describe('Garment Generator Engine (Fusión de Molde + Diseño + Jugador)', () =
     );
     expect(mateoEspalda).toBeDefined();
     expect(mateoEspalda?.bbox.width).toBe(450);
-    expect(mateoEspalda?.bbox.height).toBe(620);
-    expect(mateoEspalda?.svgContent).toContain('MATEO');
-    expect(mateoEspalda?.svgContent).toContain('10');
+    expect(mateoEspalda?.svgContent).toContain('dorsal_nombre_');
+    expect(mateoEspalda?.svgContent).toContain('dorsal_numero_');
+    expect(mateoEspalda?.svgContent).toContain('<path');
     expect(mateoEspalda?.label.text).toBe('MATEO | #10 | T28 | ESPALDA');
     expect(mateoEspalda?.allowedRotationsDeg).toEqual([0]);
 
@@ -204,6 +224,10 @@ describe('Garment Generator Engine (Fusión de Molde + Diseño + Jugador)', () =
     const danielaPieces = result.pieces.filter((p) => p.playerName === 'DANIELA');
     expect(danielaPieces.length).toBe(2);
     expect(danielaPieces.map((p) => p.pieceType).sort()).toEqual(['SHORT_ESPALDA', 'SHORT_FRENTE']);
+    const danielaShortDerecho = danielaPieces.find((p) => p.pieceType === 'SHORT_ESPALDA');
+    expect(danielaShortDerecho?.svgContent).toContain('short_numero_');
+    expect(danielaShortDerecho?.svgContent).toContain('15');
+    expect(danielaPieces.find((p) => p.pieceType === 'SHORT_FRENTE')?.svgContent).not.toContain('short_numero_');
   });
 
   it('debe filtrar correctamente piezas individuales para la función de Reimpresión', () => {

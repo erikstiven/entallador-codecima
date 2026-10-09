@@ -152,6 +152,45 @@ export function isPointInsidePolygon(point: Point2D, polygon: Polygon2D): boolea
 }
 
 /**
+ * Determina si dos segmentos de línea se intersectan
+ */
+export function doLineSegmentsIntersect(p1: Point2D, p2: Point2D, p3: Point2D, p4: Point2D): boolean {
+  const ccw = (a: Point2D, b: Point2D, c: Point2D) => (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
+  return ccw(p1, p3, p4) !== ccw(p2, p3, p4) && ccw(p1, p2, p3) !== ccw(p1, p2, p4);
+}
+
+/**
+ * Determina si dos polígonos 2D se solapan sincrónicamente
+ */
+export function doPolygonsOverlap(polyA: Polygon2D, polyB: Polygon2D): boolean {
+  if (!polyA || !polyB || polyA.length < 3 || polyB.length < 3) return false;
+
+  const boxA = computeBoundingBox(polyA);
+  const boxB = computeBoundingBox(polyB);
+  if (!doBoundingBoxesOverlap(boxA, boxB, 0)) return false;
+
+  // 1. Verificar si algún vértice de polyA está dentro de polyB
+  for (let i = 0; i < polyA.length; i++) {
+    if (isPointInsidePolygon(polyA[i], polyB)) return true;
+  }
+  // 2. Verificar si algún vértice de polyB está dentro de polyA
+  for (let i = 0; i < polyB.length; i++) {
+    if (isPointInsidePolygon(polyB[i], polyA)) return true;
+  }
+  // 3. Verificar si algún segmento de polyA cruza un segmento de polyB
+  for (let i = 0; i < polyA.length; i++) {
+    const a1 = polyA[i];
+    const a2 = polyA[(i + 1) % polyA.length];
+    for (let j = 0; j < polyB.length; j++) {
+      const b1 = polyB[j];
+      const b2 = polyB[(j + 1) % polyB.length];
+      if (doLineSegmentsIntersect(a1, a2, b1, b2)) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Convierte un polígono 2D en mm a una cadena SVG path data (d="M ... L ... Z")
  */
 export function polygonToSvgPath(polygon: Polygon2D): string {

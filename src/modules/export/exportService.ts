@@ -15,6 +15,28 @@ export async function exportProductionRoll(
   const { placedPieces, nestingResult } = payload;
   const { format, fileName, paperRollWidthMm, totalRollLengthMm } = options;
 
+  // Verificación no bloqueante de fuentes tipográficas
+  if (format === 'SVG' || format === 'PDF' || format === 'EPS') {
+    const unresolvedFonts = new Set<string>();
+    for (const piece of placedPieces) {
+      const source = piece.svgContent || '';
+      const regex = /data-hmb-unresolved-font=["']([^"']+)["']/gi;
+      let match: RegExpExecArray | null;
+      while ((match = regex.exec(source)) !== null) {
+        unresolvedFonts.add(match[1]);
+      }
+      if (/<text\b/i.test(source)) {
+        const family = source.match(/font-family=["'](?:&apos;|')?([^,'"&]+)/i)?.[1]?.trim();
+        if (family) unresolvedFonts.add(family);
+      }
+    }
+    if (unresolvedFonts.size > 0) {
+      console.warn(
+        `[Export] Fuentes detectadas en piezas: ${Array.from(unresolvedFonts).join(', ')}. Exportando con renderizado vectorial.`
+      );
+    }
+  }
+
   let blob: Blob;
   let mimeType: string;
   let ext: string;

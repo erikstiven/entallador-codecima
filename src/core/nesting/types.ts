@@ -1,6 +1,6 @@
 import { Polygon2D, BoundingBox } from '../geometry/types';
 
-export type NestingGroupingMode = 'MAX_SAVINGS' | 'BY_SIZE' | 'BY_PLAYER' | 'BY_PIECE_TYPE';
+export type NestingGroupingMode = 'MODULAR_PLAYER' | 'PAIRED_SHORTS' | 'MAX_SAVINGS' | 'BY_SIZE' | 'BY_PLAYER' | 'BY_PIECE_TYPE';
 
 export interface NestingPieceInput {
   id: string; // Unique piece ID, e.g. "player_1_DELANTERO"
@@ -28,26 +28,52 @@ export interface NestingPieceInput {
 
 export interface PlacedNestingPiece extends NestingPieceInput {
   xMm: number; // Position X relative to roll printable area left edge (0 to printableWidthMm - width)
-  yMm: number; // Position Y along roll length (0 to totalRollLengthMm)
+  yMm: number; // Position Y along roll length (0 to totalRollLengthMm or sheet length)
   rotationDeg: number;
   effectiveWidthMm: number; // bbox width after rotation
   effectiveHeightMm: number; // bbox height after rotation
   isLocked: boolean;
+  sheetIndex?: number; // Índice de pliego asignado (0, 1, 2...)
 }
 
 export interface NestingOptions {
-  printableWidthMm: number; // e.g. 1120 mm
-  spacingMm: number; // minimum distance between any two pieces, e.g. 7.0 mm
+  printableWidthMm: number; // e.g. 1120 mm (configurable)
+  maxSheetLengthMm?: number; // e.g. 5000 mm (5.0 m máximo por archivo)
+  spacingMm: number; // minimum distance between any two pieces, e.g. 6.0 mm
   groupingMode: NestingGroupingMode;
   allowRotation?: boolean; // whether to allow piece rotations if allowed by piece
-  sideMarginMm?: number; // margen de seguridad lateral izquierdo y derecho (ej. 5.0 mm = 0.5 cm)
-  topMarginMm?: number; // margen de seguridad superior e inferior
+  sideMarginMm?: number; // margen de seguridad lateral izquierdo y derecho (ej. 5.0 mm)
+  topMarginMm?: number; // margen de seguridad superior e inferior (ej. 5.0 mm)
+  splitByGarmentType?: boolean; // separar camisetas y shorts en pliegos/archivos independientes
+}
+
+/**
+ * Pliego individual particionado para exportación (ej. PARTE 1, PARTE 2 de máx 500 cm)
+ */
+export interface NestingSheet {
+  id: string;
+  sheetNumber: number; // 1, 2, 3...
+  garmentType: 'CAMISETA' | 'SHORT' | 'ALL';
+  title: string; // ej. "PARTE 1 — Camisetas"
+  fileName: string; // ej. "PARTE_1_CAMISETAS_1120x4400mm"
+  widthMm: number; // ej. 1120 mm
+  heightMm: number; // altura real ocupada (ej. 4400 mm <= maxSheetLengthMm)
+  maxHeightMm: number; // límite configurado (ej. 5000 mm)
+  placedPieces: PlacedNestingPiece[];
+  totalPiecesAreaMm2: number;
+  usedAreaMm2: number;
+  utilizationPercent: number; // 0 to 100 %
+  wastePercent: number;
+  playerNames: string[];
 }
 
 export interface NestingResult {
   placedPieces: PlacedNestingPiece[];
-  totalRollLengthMm: number;
+  sheets?: NestingSheet[]; // Colección de pliegos particionados de máx 500 cm
+  activeSheetIndex?: number;
+  totalRollLengthMm: number; // Longitud total acumulada
   printableWidthMm: number;
+  maxSheetLengthMm?: number;
   totalPiecesAreaMm2: number;
   usedRollAreaMm2: number;
   utilizationPercent: number; // 0 to 100 %

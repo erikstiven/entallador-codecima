@@ -22,6 +22,7 @@ interface DesignStoreState {
   removePieceArtwork: (pieceType: PieceType) => void;
   importMultiBlockFiles: (files: { name: string; content: string }[], designName?: string) => void;
   setActiveDesign: (design: MasterDesign | null) => void;
+  saveActiveDesign: () => Promise<boolean>;
   updatePlaceholderRule: (
     designId: string,
     pieceType: PieceType,
@@ -271,14 +272,19 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
         targetPiece = 'MANGA_IZQ';
       } else if (lower.includes('manga') || lower.includes('sleeve') || lower.includes('brazo')) {
         targetPiece = newArtworks['MANGA_IZQ'] ? 'MANGA_DER' : 'MANGA_IZQ';
-      } else if (lower.includes('short_espalda') || lower.includes('short_d') || lower.includes('panta_d') || lower.includes('pantaloneta_d')) {
-        targetPiece = 'SHORT_ESPALDA';
-      } else if (lower.includes('short') || lower.includes('panta') || lower.includes('pantaloneta')) {
-        targetPiece = 'SHORT_FRENTE';
+      } else if (lower.includes('delantero_v') || lower.includes('frente_v') || lower.includes('cuello_v') || lower.includes('neck_v') || (lower.includes('cuello') && lower.includes('v'))) {
+        targetPiece = 'DELANTERO_V';
+      } else if (lower.includes('delantero_redondo') || lower.includes('frente_redondo') || lower.includes('cuello_redondo') || lower.includes('round_neck') || lower.includes('redondo')) {
+        targetPiece = 'DELANTERO_REDONDO';
+      } else if (lower.includes('pantaloneta_der') || lower.includes('panta_der') || lower.includes('short_der') || lower.includes('short_espalda') || lower.includes('short_d')) {
+        targetPiece = 'PANTALONETA_DER';
+      } else if (lower.includes('pantaloneta_izq') || lower.includes('panta_izq') || lower.includes('short_izq') || lower.includes('short_frente') || lower.includes('short_i') || lower.includes('short') || lower.includes('panta') || lower.includes('pantaloneta')) {
+        targetPiece = 'PANTALONETA_IZQ';
       } else if (lower.includes('frente') || lower.includes('delantero') || lower.includes('front') || lower.includes('pecho')) {
-        targetPiece = 'DELANTERO';
+        targetPiece = 'DELANTERO_REDONDO';
       } else {
-        if (!newArtworks['DELANTERO']) targetPiece = 'DELANTERO';
+        if (!newArtworks['DELANTERO_REDONDO']) targetPiece = 'DELANTERO_REDONDO';
+        else if (!newArtworks['DELANTERO_V']) targetPiece = 'DELANTERO_V';
         else if (!newArtworks['ESPALDA']) targetPiece = 'ESPALDA';
         else if (!newArtworks['MANGA_IZQ']) targetPiece = 'MANGA_IZQ';
         else if (!newArtworks['MANGA_DER']) targetPiece = 'MANGA_DER';
@@ -322,6 +328,21 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
   setActiveDesign: (design) => {
     set({ activeDesign: design });
     saveDesignsToLocalStorage(get().designs, design);
+  },
+
+  saveActiveDesign: async () => {
+    const { activeDesign, designs } = get();
+    if (!activeDesign) return false;
+
+    try {
+      saveDesignToDb(dbService, activeDesign);
+      saveDesignsToLocalStorage(designs, activeDesign);
+      await dbService.persistBrowserDb();
+      return true;
+    } catch (error) {
+      console.error('Error guardando el diseño activo:', error);
+      return false;
+    }
   },
 
   updatePlaceholderRule: (designId, pieceType, ruleId, updates) => {

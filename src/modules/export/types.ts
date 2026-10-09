@@ -12,6 +12,7 @@ export interface ExportOptions {
   cutContourColor: string; // Color de la guía cuando se solicita explícitamente
   cutContourWidthMm: number; // Grosor físico de la guía
   includeSeamLabels: boolean; // Etiquetas exteriores de identificación de jugador/talla
+  includeCalibrationSquare?: boolean; // Cuadro de calibración física 100 x 100 mm para verificación en taller
   paperRollWidthMm: number;
   totalRollLengthMm: number;
 }

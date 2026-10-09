@@ -1,4 +1,5 @@
 import { DynamicPlaceholderRule, TextFittingResult } from '@/modules/designs/types';
+import { convertTextToVectorPath } from './fontManager';
 
 /**
  * Anchos relativos de glifos en tipografía deportiva condensada estándar (unidades de 1/1000 em)
@@ -115,6 +116,20 @@ function buildSvgText(
   visualWidthMm: number,
   customScaleY: number
 ): string {
+  // 1. Intentar renderizar a curvas vectoriales nativas (<path d="..." />) con opentype.js
+  const vectorPath = convertTextToVectorPath(
+    text,
+    rule,
+    fontSizeMm,
+    visualWidthMm,
+    customScaleY
+  );
+
+  if (vectorPath) {
+    return vectorPath;
+  }
+
+  // 2. Fallback estándar a <text> si la fuente aún no está parseada en memoria
   const safeText = escapeSvgText(text);
   const fontFamily = escapeSvgAttribute(normalizeFontFamily(rule.fontFamily));
   const fillColor = escapeSvgAttribute(normalizeColor(rule.fillColor, '#ffffff'));
@@ -126,6 +141,7 @@ function buildSvgText(
     <g transform="translate(${formatSvgNumber(anchorX)} ${formatSvgNumber(anchorY)})">
       <g transform="scale(1 ${formatSvgNumber(customScaleY)})">
         <text
+          data-hmb-unresolved-font="${fontFamily}"
           x="0"
           y="0"
           font-family="'${fontFamily}', Impact, 'Arial Narrow', Arial, sans-serif"

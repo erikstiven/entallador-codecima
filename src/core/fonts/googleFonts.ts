@@ -10,15 +10,7 @@ export interface SportsFontOption {
 }
 
 export const POPULAR_SPORTS_FONTS: SportsFontOption[] = [
-  // Fuentes Deportivas Instaladas Habituales (Mundiales y Ligas)
-  { family: 'AdiCup Q 2022', category: 'Adidas Qatar 2022', sampleText: '10 MESSI', isLocal: true },
-  { family: 'Jersey M54', category: 'Dorsal Clásico Bloque', sampleText: '9 RONALDO', isLocal: true },
-  { family: 'Ecuador Qatar 2022', category: 'Ecuador Oficial', sampleText: '13 ENNER', isLocal: true },
-  { family: 'Argentina 2024 Tipografstore', category: 'Argentina Copa América', sampleText: '10 MESSI', isLocal: true },
-  { family: 'Premier League 23-24 Tipografst', category: 'Premier League', sampleText: '9 HAALAND', isLocal: true },
-  { family: 'Adidas World Cup22 by Zaugrafic', category: 'Mundial 2022', sampleText: '7 MBAPPÉ', isLocal: true },
-  
-  // Fuentes Web / Google Fonts
+  // Fuentes incluidas en public/fonts: disponibles en todas las computadoras.
   { family: 'Bebas Neue', category: 'Condensada Deportiva', sampleText: '10 CHRISTOPHER' },
   { family: 'Teko', category: 'Ultra Alta y Estrecha', sampleText: '9 MESSI' },
   { family: 'Anton', category: 'Bloque Grueso / Impacto', sampleText: '7 RONALDO' },
@@ -55,31 +47,52 @@ export async function getLocalSystemFonts(): Promise<string[]> {
   return [];
 }
 
+import * as opentype from 'opentype.js';
+import { registerOpentypeFont, loadOpentypeFont } from './fontManager';
+
 /**
- * Carga un archivo de fuente local (.ttf, .otf, .woff) directamente en el navegador con FontFace
+ * Carga un archivo de fuente local (.ttf, .otf, .woff) directamente en el navegador con FontFace y opentype
  */
 export async function loadCustomFontFromFile(file: File): Promise<string> {
   const fontName = file.name.replace(/\.[^/.]+$/, '').trim();
   const buffer = await file.arrayBuffer();
-  const fontFace = new FontFace(fontName, buffer);
-  await fontFace.load();
-  document.fonts.add(fontFace);
+  
+  try {
+    const fontFace = new FontFace(fontName, buffer);
+    await fontFace.load();
+    document.fonts.add(fontFace);
+  } catch (err) {
+    console.warn('Error al registrar FontFace:', err);
+  }
+
+  try {
+    const parsedFont = opentype.parse(buffer);
+    registerOpentypeFont(fontName, parsedFont);
+  } catch (err) {
+    console.warn('Error al parsear con opentype.js:', err);
+  }
+
   loadedFonts.add(`local-${fontName.toLowerCase()}`);
   return fontName;
 }
 
 /**
- * Carga una tipografía de Google Fonts en el DOM dinámicamente si no ha sido cargada antes
+ * Carga una tipografía de Google Fonts en el DOM y en el motor vectorial opentype
  */
-export function loadGoogleFont(fontFamily: string): void {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+export async function loadGoogleFont(fontFamily: string): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
   const cleanName = fontFamily.trim();
-  if (!cleanName) return;
+  if (!cleanName) return false;
+
+  // Cargar en el motor de curvas opentype
+  const vectorFont = await loadOpentypeFont(cleanName);
+
+  if (typeof document === 'undefined') return Boolean(vectorFont);
 
   // Si ya está en las fuentes del documento o es fuente de sistema típica, no solicitar a Google
   const fontId = `gfont-${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
   if (loadedFonts.has(fontId) || document.getElementById(fontId)) {
-    return;
+    return Boolean(vectorFont);
   }
 
   try {
@@ -92,4 +105,5 @@ export function loadGoogleFont(fontFamily: string): void {
   } catch (err) {
     console.warn(`No se pudo cargar la fuente "${cleanName}":`, err);
   }
+  return Boolean(vectorFont);
 }

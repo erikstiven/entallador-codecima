@@ -431,6 +431,22 @@ export function generateFullRollSvg(
     piecesContent += '  </g>\n';
   });
 
+  // Cuadro de calibración física 100 × 100 mm opcional
+  let calibrationBox = '';
+  if (options.includeCalibrationSquare === true) {
+    calibrationBox = `
+  <!-- Cuadro de Calibración 1:1 Certificado (100 x 100 mm) -->
+  <g id="hmb_calibration_box_100mm" transform="translate(10, 10)">
+    <rect width="100" height="100" fill="none" stroke="#000000" stroke-width="0.5" stroke-dasharray="4,2" />
+    <line x1="0" y1="0" x2="100" y2="100" stroke="#000000" stroke-width="0.25" opacity="0.4" />
+    <line x1="0" y1="100" x2="100" y2="0" stroke="#000000" stroke-width="0.25" opacity="0.4" />
+    <text x="50" y="45" font-family="Arial, Helvetica, sans-serif" font-size="5" font-weight="bold" fill="#000000" text-anchor="middle">CALIBRACIÓN 1:1</text>
+    <text x="50" y="55" font-family="Arial, Helvetica, sans-serif" font-size="4" fill="#000000" text-anchor="middle">100 mm × 100 mm</text>
+    <text x="50" y="65" font-family="Arial, Helvetica, sans-serif" font-size="3" fill="#666666" text-anchor="middle">Verificar con regla física</text>
+  </g>
+`;
+  }
+
   const embeddedImageDefs = Array.from(embeddedImageAssets.values())
     .map((asset) => `    ${asset.definition}\n`)
     .join('');
@@ -450,5 +466,5 @@ export function generateFullRollSvg(
      color-interpolation="sRGB">
   <defs>
 ${styleTag}${allHoistedDefs}${embeddedImageDefs}${defsContent}  </defs>
-${piecesContent}</svg>`;
+${piecesContent}${calibrationBox}</svg>`;
 }

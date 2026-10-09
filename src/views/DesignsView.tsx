@@ -13,51 +13,178 @@ import {
   Shirt,
   Scissors,
   Layers,
-  RefreshCw,
-  Copy
+  Copy,
+  Save
 } from 'lucide-react';
 import { useDesignStore } from '@/modules/designs/designStore';
 import { PieceType } from '@/core/geometry/types';
-import { POPULAR_SPORTS_FONTS, loadGoogleFont, getLocalSystemFonts, loadCustomFontFromFile } from '@/core/fonts/googleFonts';
+import { POPULAR_SPORTS_FONTS, loadGoogleFont, loadCustomFontFromFile } from '@/core/fonts/googleFonts';
 import { cmykToHex, hexToCmyk, CMYK } from '@/core/color/cmykColor';
+import { useGeneratorStore } from '@/modules/generator/generatorStore';
+import { useNestingStore } from '@/core/nesting/nestingStore';
+import { SvgTextilePreview, TextilePieceCarousel } from '@/components/textile';
 
-function cleanSvgForDisplay(svgContent?: string): string {
-  if (!svgContent) return '';
-  let content = svgContent.trim();
-  if (!content.includes('<svg')) return content;
+// Siluetas Vectoriales Guía de Alta Definición para las Ranuras de Arte
+const SilhouetteJerseyRound: React.FC<{ className?: string }> = ({ className = 'w-16 h-16' }) => (
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M35 16 C42 25 58 25 65 16 L84 25 L75 40 L68 35 L68 86 L32 86 L32 35 L25 40 L16 25 Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M35 16 C42 25 58 25 65 16" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+    <circle cx="50" cy="42" r="3" fill="currentColor" opacity="0.4" />
+  </svg>
+);
 
-  // 1. Extraer o asegurar viewBox si no tiene
-  const hasViewBox = /viewBox\s*=\s*["'][^"']+["']/i.test(content);
-  let viewBoxAttr = '';
-  if (!hasViewBox) {
-    const widthMatch = content.match(/\bwidth\s*=\s*["']?([\d.]+)/i);
-    const heightMatch = content.match(/\bheight\s*=\s*["']?([\d.]+)/i);
-    if (widthMatch && heightMatch) {
-      viewBoxAttr = `viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`;
-    } else {
-      viewBoxAttr = 'viewBox="0 0 500 700"';
-    }
-  }
+const SilhouetteJerseyV: React.FC<{ className?: string }> = ({ className = 'w-16 h-16' }) => (
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M34 16 L50 32 L66 16 L84 25 L75 40 L68 35 L68 86 L32 86 L32 35 L25 40 L16 25 Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M34 16 L50 32 L66 16" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+    <circle cx="50" cy="46" r="3" fill="currentColor" opacity="0.4" />
+  </svg>
+);
 
-  // 2. Normalizar la etiqueta <svg> para llenar el 100% de la ranura visual
-  content = content.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
-    const cleanAttrs = attrs
-      .replace(/\bwidth\s*=\s*["'][^"']+["']/gi, '')
-      .replace(/\bheight\s*=\s*["'][^"']+["']/gi, '')
-      .replace(/\bstyle\s*=\s*["'][^"']+["']/gi, '')
-      .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']+["']/gi, '');
+const SilhouetteJerseyBack: React.FC<{ className?: string }> = ({ className = 'w-16 h-16' }) => (
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M36 16 C44 20 56 20 64 16 L84 25 L75 40 L68 35 L68 86 L32 86 L32 35 L25 40 L16 25 Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M42 38 L58 38 M50 48 L50 74" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+  </svg>
+);
 
-    return `<svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: 100%; display: block;" ${viewBoxAttr} ${cleanAttrs}>`;
-  });
+const SilhouetteSleeveLeft: React.FC<{ className?: string }> = ({ className = 'w-16 h-16' }) => (
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M22 28 C36 18 64 18 78 28 L68 80 L32 80 Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M32 72 L68 72" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+  </svg>
+);
 
-  return content;
+const SilhouetteSleeveRight: React.FC<{ className?: string }> = ({ className = 'w-16 h-16' }) => (
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M78 28 C64 18 36 18 22 28 L32 80 L68 80 Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M32 72 L68 72" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+  </svg>
+);
+
+const SilhouetteShort: React.FC<{ className?: string }> = ({ className = 'w-16 h-16' }) => (
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M24 22 L76 22 L72 82 L48 82 L50 46 L52 82 L28 82 Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M24 30 L76 30" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+  </svg>
+);
+
+interface PieceSlotCardProps {
+  title: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  silhouette: React.ReactNode;
+  fileName: string;
+  artwork?: { svgArtContent?: string };
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  onRemove: () => void;
+  previewNamespace: string;
+  accentColor?: 'sky' | 'indigo' | 'purple' | 'amber' | 'emerald';
+  extraAction?: React.ReactNode;
 }
 
+const PieceSlotCard: React.FC<PieceSlotCardProps> = ({
+  title,
+  subtitle,
+  icon,
+  silhouette,
+  fileName,
+  artwork,
+  inputRef,
+  onRemove,
+  previewNamespace,
+  extraAction,
+}) => {
+  const isLoaded = Boolean(artwork?.svgArtContent);
+
+  return (
+    <div className="bg-slate-950/90 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-3.5 flex flex-col justify-between space-y-2.5 transition-all duration-200 shadow-sm hover:shadow-md group">
+      {/* Encabezado con Icono, Título y Badge Shadcn */}
+      <div className="flex items-center justify-between gap-1.5 min-h-[24px]">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <span className="flex-shrink-0">{icon}</span>
+          <span className="font-bold text-[12px] text-white truncate" title={subtitle || title}>
+            {title}
+          </span>
+        </div>
+
+        {isLoaded ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-xs flex-shrink-0">
+            <CheckCircle2 className="w-2.5 h-2.5" /> Cargado
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-xs flex-shrink-0">
+            <AlertCircle className="w-2.5 h-2.5" /> Pendiente
+          </span>
+        )}
+      </div>
+
+      {/* Zona de Drop / Visualización con Proporción Textil 3:4 */}
+      <div
+        onClick={() => inputRef.current?.click()}
+        className={`relative w-full h-56 sm:h-64 rounded-xl border flex items-center justify-center p-2 cursor-pointer overflow-hidden transition-all duration-200 ${
+          isLoaded
+            ? 'border-slate-700 bg-slate-900/90 hover:border-violet-500/80 shadow-inner'
+            : 'border-dashed border-slate-800 hover:border-violet-500/50 bg-slate-900/40 hover:bg-slate-900/70'
+        }`}
+      >
+        {isLoaded ? (
+          <SvgTextilePreview
+            svgContent={artwork?.svgArtContent}
+            namespace={previewNamespace}
+            className="p-2"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center text-center space-y-3 select-none relative z-10 p-2">
+            {/* Silueta vectorial tenue de fondo */}
+            <div className="text-slate-700 group-hover:text-slate-600 transition-colors">
+              {silhouette}
+            </div>
+            <div className="bg-slate-900/90 border border-slate-800 group-hover:border-violet-500/40 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 shadow-sm group-hover:scale-105 transition-all">
+              <UploadCloud className="w-3.5 h-3.5 text-violet-400" />
+              <span>{fileName}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Barra de Acciones Inferior */}
+      {isLoaded ? (
+        <div className="flex items-center justify-between pt-0.5 text-xs">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="text-slate-400 hover:text-white transition-colors cursor-pointer text-[11px] font-medium"
+          >
+            Reemplazar
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-red-400 hover:text-red-300 transition-colors cursor-pointer text-[11px] font-medium"
+          >
+            Quitar
+          </button>
+        </div>
+      ) : (
+        extraAction && (
+          <div className="pt-0.5">
+            {extraAction}
+          </div>
+        )
+      )}
+    </div>
+  );
+};
+
 export const DesignsView: React.FC = () => {
-  const frenteInputRef = useRef<HTMLInputElement>(null);
+  const frenteRedondoInputRef = useRef<HTMLInputElement>(null);
+  const frenteVInputRef = useRef<HTMLInputElement>(null);
   const espaldaInputRef = useRef<HTMLInputElement>(null);
   const mangaIzqInputRef = useRef<HTMLInputElement>(null);
   const mangaDerInputRef = useRef<HTMLInputElement>(null);
+  const pantalonetaIzqInputRef = useRef<HTMLInputElement>(null);
+  const pantalonetaDerInputRef = useRef<HTMLInputElement>(null);
   const multiInputRef = useRef<HTMLInputElement>(null);
   const fontFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,6 +197,7 @@ export const DesignsView: React.FC = () => {
     removePieceArtwork,
     importMultiBlockFiles,
     setActiveDesign,
+    saveActiveDesign,
     deleteDesign,
     clearAllDesigns,
     updatePlaceholderRule,
@@ -78,31 +206,18 @@ export const DesignsView: React.FC = () => {
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  const handleSaveDesign = async () => {
+    setSaveStatus('saving');
+    const saved = await saveActiveDesign();
+    setSaveStatus(saved ? 'saved' : 'error');
+    window.setTimeout(() => setSaveStatus('idle'), 2500);
+  };
 
   // Tipografía seleccionada
   const [activeFontFamily, setActiveFontFamily] = useState<string>('Bebas Neue');
-  const [isCustomFont, setIsCustomFont] = useState(false);
-  const [customFontInput, setCustomFontInput] = useState('');
   const [localFonts, setLocalFonts] = useState<string[]>([]);
-  const [isSyncingFonts, setIsSyncingFonts] = useState<boolean>(false);
-
-  const handleSyncLocalFonts = async () => {
-    setIsSyncingFonts(true);
-    try {
-      const fonts = await getLocalSystemFonts();
-      if (fonts.length > 0) {
-        setLocalFonts(fonts);
-      } else {
-        // Si el navegador no permite acceso directo a la lista, abrir diálogo de archivo TTF/OTF
-        fontFileInputRef.current?.click();
-      }
-    } catch (err) {
-      console.warn('Error al sincronizar fuentes:', err);
-      fontFileInputRef.current?.click();
-    } finally {
-      setIsSyncingFonts(false);
-    }
-  };
 
   const handleFontFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -111,7 +226,6 @@ export const DesignsView: React.FC = () => {
       const fontName = await loadCustomFontFromFile(file);
       setLocalFonts((prev) => Array.from(new Set([fontName, ...prev])));
       setActiveFontFamily(fontName);
-      setIsCustomFont(false);
       applyStyleUpdates({ fontFamily: fontName });
     } catch (err) {
       console.error('Error al cargar archivo de fuente:', err);
@@ -133,7 +247,7 @@ export const DesignsView: React.FC = () => {
   const [sampleNumber, setSampleNumber] = useState<string>('9');
 
   useEffect(() => {
-    loadDesignsFromDatabase();
+    if (designs.length === 0) loadDesignsFromDatabase();
   }, []);
 
   // Sincronizar reglas del diseño activo
@@ -147,7 +261,7 @@ export const DesignsView: React.FC = () => {
       if (activeRule) {
         if (activeRule.fontFamily) {
           setActiveFontFamily(activeRule.fontFamily);
-          loadGoogleFont(activeRule.fontFamily);
+          void loadGoogleFont(activeRule.fontFamily);
         }
         if (activeRule.fillColor) {
           setFillHex(activeRule.fillColor);
@@ -175,23 +289,28 @@ export const DesignsView: React.FC = () => {
     updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NOMBRE', updates);
     updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NUMERO_ESPALDA', updates);
     if (activeDesign.pieceArtworks['DELANTERO']) {
+      updatePlaceholderRule(activeDesign.id, 'DELANTERO', 'NUMERO_FRENTE', updates);
+      // Compatibilidad con diseños importados que usan el identificador anterior.
       updatePlaceholderRule(activeDesign.id, 'DELANTERO', 'NUMERO_DELANTERO', updates);
+    }
+
+    // Las piezas generadas contienen una instantánea SVG del diseño. Al cambiar
+    // tipografía o color hay que reconstruirlas y descartar el rollo anterior;
+    // de lo contrario la inspección sigue mostrando el estilo viejo.
+    if (useGeneratorStore.getState().generatedPieces.length > 0) {
+      useGeneratorStore.getState().generatePieces();
+      useNestingStore.getState().clearNesting();
     }
   };
 
-  const handleSelectFont = (fontFamily: string) => {
+  const handleSelectFont = async (fontFamily: string) => {
     setActiveFontFamily(fontFamily);
-    setIsCustomFont(false);
-    loadGoogleFont(fontFamily);
+    const curvesReady = await loadGoogleFont(fontFamily);
     applyStyleUpdates({ fontFamily });
-  };
-
-  const handleApplyCustomFont = () => {
-    const clean = customFontInput.trim();
-    if (!clean) return;
-    setActiveFontFamily(clean);
-    loadGoogleFont(clean);
-    applyStyleUpdates({ fontFamily: clean });
+    const localOption = POPULAR_SPORTS_FONTS.find((font) => font.family === fontFamily)?.isLocal;
+    if (localOption && !curvesReady) {
+      fontFileInputRef.current?.click();
+    }
   };
 
   const handleFillCmykChange = (channel: keyof CMYK, val: number) => {
@@ -284,10 +403,14 @@ export const DesignsView: React.FC = () => {
     });
   };
 
-  const frenteArt = activeDesign?.pieceArtworks['DELANTERO'];
+  const frenteRedondoArt = activeDesign?.pieceArtworks['DELANTERO_REDONDO'] || activeDesign?.pieceArtworks['DELANTERO'];
+  const frenteVArt = activeDesign?.pieceArtworks['DELANTERO_V'];
+  const isLegacyGenericDelantero = Boolean(activeDesign?.pieceArtworks['DELANTERO'] && !activeDesign?.pieceArtworks['DELANTERO_REDONDO'] && !activeDesign?.pieceArtworks['DELANTERO_V']);
   const espaldaArt = activeDesign?.pieceArtworks['ESPALDA'];
   const mangaIzqArt = activeDesign?.pieceArtworks['MANGA_IZQ'];
   const mangaDerArt = activeDesign?.pieceArtworks['MANGA_DER'];
+  const pantalonetaIzqArt = activeDesign?.pieceArtworks['PANTALONETA_IZQ'] || activeDesign?.pieceArtworks['SHORT_FRENTE'];
+  const pantalonetaDerArt = activeDesign?.pieceArtworks['PANTALONETA_DER'] || activeDesign?.pieceArtworks['SHORT_ESPALDA'];
 
   const handleCopyMangaIzqToDer = () => {
     if (!activeDesign || !mangaIzqArt) return;
@@ -298,11 +421,18 @@ export const DesignsView: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto space-y-5">
       {/* Inputs ocultos de carga */}
       <input
-        ref={frenteInputRef}
+        ref={frenteRedondoInputRef}
         type="file"
         accept=".svg"
         className="hidden"
-        onChange={(e) => handleUploadSingleBlock('DELANTERO', e.target.files?.[0])}
+        onChange={(e) => handleUploadSingleBlock('DELANTERO_REDONDO', e.target.files?.[0])}
+      />
+      <input
+        ref={frenteVInputRef}
+        type="file"
+        accept=".svg"
+        className="hidden"
+        onChange={(e) => handleUploadSingleBlock('DELANTERO_V', e.target.files?.[0])}
       />
       <input
         ref={espaldaInputRef}
@@ -333,6 +463,20 @@ export const DesignsView: React.FC = () => {
         className="hidden"
         onChange={(e) => e.target.files && handleUploadMultipleFiles(e.target.files)}
       />
+      <input
+        ref={pantalonetaIzqInputRef}
+        type="file"
+        accept=".svg"
+        className="hidden"
+        onChange={(e) => handleUploadSingleBlock('PANTALONETA_IZQ', e.target.files?.[0])}
+      />
+      <input
+        ref={pantalonetaDerInputRef}
+        type="file"
+        accept=".svg"
+        className="hidden"
+        onChange={(e) => handleUploadSingleBlock('PANTALONETA_DER', e.target.files?.[0])}
+      />
 
       {/* Grilla Principal */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
@@ -359,7 +503,10 @@ export const DesignsView: React.FC = () => {
               const hasEspalda = Boolean(d.pieceArtworks['ESPALDA']);
               const hasMangaIzq = Boolean(d.pieceArtworks['MANGA_IZQ']);
               const hasMangaDer = Boolean(d.pieceArtworks['MANGA_DER']);
+              const hasShortFrente = Boolean(d.pieceArtworks['SHORT_FRENTE']);
+              const hasShortEspalda = Boolean(d.pieceArtworks['SHORT_ESPALDA']);
               const blocksReady = [hasFrente, hasEspalda, hasMangaIzq, hasMangaDer].filter(Boolean).length;
+              const shortBlocksReady = [hasShortFrente, hasShortEspalda].filter(Boolean).length;
               return (
                 <div
                   key={d.id}
@@ -377,7 +524,7 @@ export const DesignsView: React.FC = () => {
                         ? 'bg-purple-950 text-purple-400 border border-violet-500/30' 
                         : 'bg-slate-800 text-slate-400'
                     }`}>
-                      {blocksReady === 4 ? 'Listo (4/4)' : `${blocksReady}/4 bloques`}
+                      Camiseta {blocksReady}/4 · Short {shortBlocksReady}/2
                     </span>
                   </div>
                 </div>
@@ -450,15 +597,33 @@ export const DesignsView: React.FC = () => {
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <span className="text-[10px] font-mono text-purple-400 bg-purple-950/70 border border-violet-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold ml-2">
-                        <CheckCircle2 className="w-3 h-3 text-purple-400" />
-                        Guardado automático
-                      </span>
                     </div>
                   )}
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveDesign}
+                    disabled={saveStatus === 'saving'}
+                    className={`text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:cursor-wait ${
+                      saveStatus === 'saved'
+                        ? 'bg-emerald-600 text-white'
+                        : saveStatus === 'error'
+                          ? 'bg-red-600 text-white'
+                          : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
+                    }`}
+                    title="Guardar explícitamente el diseño actual"
+                  >
+                    {saveStatus === 'saved' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                    {saveStatus === 'saving'
+                      ? 'Guardando...'
+                      : saveStatus === 'saved'
+                        ? 'Diseño guardado'
+                        : saveStatus === 'error'
+                          ? 'Error al guardar'
+                          : 'Guardar diseño'}
+                  </button>
                   <button
                     type="button"
                     onClick={() => multiInputRef.current?.click()}
@@ -482,81 +647,53 @@ export const DesignsView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                   {/* Tipografía */}
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                        <Type className="w-3.5 h-3.5 text-purple-400" />
-                        Tipografía de Dorsal:
-                      </label>
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="file"
-                          ref={fontFileInputRef}
-                          onChange={handleFontFileUpload}
-                          accept=".ttf,.otf,.woff,.woff2"
-                          className="hidden"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleSyncLocalFonts}
-                          disabled={isSyncingFonts}
-                          className="text-[10px] text-purple-400 hover:text-purple-300 hover:underline flex items-center gap-1 cursor-pointer font-medium"
-                          title="Detectar fuentes instaladas en Windows o cargar archivo .TTF/.OTF"
-                        >
-                          <RefreshCw className={`w-3 h-3 ${isSyncingFonts ? 'animate-spin' : ''}`} />
-                          <span>{isSyncingFonts ? 'Detectando...' : 'Sincronizar PC / TTF'}</span>
-                        </button>
-                      </div>
-                    </div>
+                    <label className="text-slate-300 font-semibold flex items-center gap-1.5">
+                      <Type className="w-3.5 h-3.5 text-purple-400" />
+                      Tipografía de Dorsal:
+                    </label>
 
-                    <select
-                      value={isCustomFont ? 'CUSTOM' : activeFontFamily}
-                      onChange={(e) => {
-                        if (e.target.value === 'CUSTOM') {
-                          setIsCustomFont(true);
-                        } else {
-                          handleSelectFont(e.target.value);
-                        }
-                      }}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-medium focus:outline-none focus:border-violet-500 cursor-pointer"
-                    >
-                      {localFonts.length > 0 && (
-                        <optgroup label="Fuentes de tu PC (Instaladas)">
-                          {localFonts.map((f) => (
-                            <option key={`local_${f}`} value={f}>
-                              {f} (Local)
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={activeFontFamily}
+                        onChange={(e) => handleSelectFont(e.target.value)}
+                        className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-medium focus:outline-none focus:border-violet-500 cursor-pointer text-xs"
+                      >
+                        {localFonts.length > 0 && (
+                          <optgroup label="Fuentes cargadas en esta sesión">
+                            {localFonts.map((f) => (
+                              <option key={`local_${f}`} value={f}>
+                                {f} (Local)
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+
+                        <optgroup label="Fuentes incluidas en CimaPattern">
+                          {POPULAR_SPORTS_FONTS.map((f) => (
+                            <option key={f.family} value={f.family}>
+                              {f.family} ({f.category})
                             </option>
                           ))}
                         </optgroup>
-                      )}
+                      </select>
 
-                      <optgroup label="Fuentes Deportivas (Mundiales y Ligas)">
-                        {POPULAR_SPORTS_FONTS.map((f) => (
-                          <option key={f.family} value={f.family}>
-                            {f.family} ({f.category})
-                          </option>
-                        ))}
-                      </optgroup>
-                      <option value="CUSTOM">+ Escribir nombre exacto de fuente instalada...</option>
-                    </select>
-
-                    {isCustomFont && (
-                      <div className="flex items-center gap-1.5 mt-1.5">
-                        <input
-                          type="text"
-                          value={customFontInput}
-                          onChange={(e) => setCustomFontInput(e.target.value)}
-                          placeholder="Ej: AdiCup Q 2022, Jersey M54..."
-                          className="flex-1 bg-slate-900 border border-violet-500 rounded px-2 py-1 text-white text-xs focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleApplyCustomFont}
-                          className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 text-white rounded font-bold text-xs cursor-pointer"
-                        >
-                          OK
-                        </button>
-                      </div>
-                    )}
+                      <input
+                        type="file"
+                        ref={fontFileInputRef}
+                        onChange={handleFontFileUpload}
+                        accept=".ttf,.otf,.woff,.woff2"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fontFileInputRef.current?.click()}
+                        className="px-2.5 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap flex-shrink-0"
+                        title="Seleccionar un archivo de fuente TTF, OTF, WOFF o WOFF2 desde tu equipo"
+                      >
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>Subir Fuente</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Relleno CMYK */}
@@ -782,255 +919,131 @@ export const DesignsView: React.FC = () => {
                 </div>
               </div>
 
-              {/* LAS 4 RANURAS DE BLOQUES DE ARTE: FRENTE, ESPALDA, MANGA IZQ, MANGA DER */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* RANURA 1: FRENTE */}
-                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                      <Shirt className="w-3.5 h-3.5 text-sky-400" />
-                      Bloque Frente
-                    </span>
-                    {frenteArt ? (
-                      <span className="text-[10px] text-purple-400 flex items-center gap-1 font-semibold">
-                        <CheckCircle2 className="w-3 h-3" /> Cargado
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-amber-400 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> Pendiente
-                      </span>
-                    )}
+              {/* Banner de Compatibilidad y Alerta si tiene Delantero Genérico Antiguo */}
+              {isLegacyGenericDelantero && (
+                <div className="p-3.5 bg-amber-950/50 border border-amber-500/50 rounded-xl flex items-start gap-3 text-amber-200 text-xs">
+                  <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <div className="font-bold text-amber-300">Diseño Requiere Revisión — Formato Antiguo Detectado</div>
+                    <p className="text-amber-200/90 leading-relaxed text-[11px]">
+                      Este modelo contiene un arte <span className="font-mono font-bold">DELANTERO</span> genérico. En el nuevo sistema de producción industrial, debes cargar independientemente <span className="font-bold text-white">Delantero Redondo</span> y/o <span className="font-bold text-white">Delantero Cuello V</span> para que el entallador no sustituya piezas silenciosamente.
+                    </p>
                   </div>
-
-                  <div 
-                    onClick={() => frenteInputRef.current?.click()}
-                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
-                      frenteArt
-                        ? 'border-slate-700 bg-slate-900/80 hover:border-violet-500'
-                        : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
-                    }`}
-                  >
-                    {frenteArt?.svgArtContent ? (
-                      <div 
-                        className="w-full h-full flex items-center justify-center"
-                        dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(frenteArt.svgArtContent) }}
-                      />
-                    ) : (
-                      <div className="text-center space-y-1.5">
-                        <UploadCloud className="w-7 h-7 text-slate-600 mx-auto" />
-                        <span className="text-xs font-semibold text-slate-300 block">Cargar Frente.svg</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {frenteArt && (
-                    <div className="flex items-center justify-between pt-1 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => frenteInputRef.current?.click()}
-                        className="text-slate-400 hover:text-white cursor-pointer"
-                      >
-                        Reemplazar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removePieceArtwork('DELANTERO')}
-                        className="text-red-400 hover:text-red-300 cursor-pointer"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  )}
                 </div>
+              )}
 
-                {/* RANURA 2: ESPALDA */}
-                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                      <Shirt className="w-3.5 h-3.5 text-purple-400" />
-                      Bloque Espalda
-                    </span>
-                    {espaldaArt ? (
-                      <span className="text-[10px] text-purple-400 flex items-center gap-1 font-semibold">
-                        <CheckCircle2 className="w-3 h-3" /> Cargado
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-amber-400 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> Pendiente
-                      </span>
-                    )}
-                  </div>
+              {/* LAS RANURAS DE BLOQUES DE ARTE CON VISTA CUADRÍCULA Y CARRUSEL */}
+              <div className="space-y-6">
+                <TextilePieceCarousel
+                  title="Piezas de Camiseta (Frente Redondo, Frente V, Espalda, Mangas)"
+                  subtitle="Carga independiente de variantes de cuello y mangas para evitar sustituciones silenciosas"
+                  pieces={[
+                    {
+                      id: 'frente_redondo',
+                      title: 'Frente Redondo',
+                      subtitle: 'Arte para cuello redondo',
+                      icon: <Shirt className="w-3.5 h-3.5 text-sky-400" />,
+                      silhouette: <SilhouetteJerseyRound />,
+                      fileName: 'Frente Redondo.svg',
+                      svgContent: frenteRedondoArt?.svgArtContent,
+                      namespace: 'preview_frente_redondo',
+                      onUploadFile: (file: File) => handleUploadSingleBlock('DELANTERO_REDONDO', file),
+                      onRemove: () => {
+                        removePieceArtwork('DELANTERO_REDONDO');
+                        removePieceArtwork('DELANTERO');
+                      },
+                    },
+                    {
+                      id: 'frente_v',
+                      title: 'Frente Cuello V',
+                      subtitle: 'Arte para cuello en V',
+                      icon: <Shirt className="w-3.5 h-3.5 text-indigo-400" />,
+                      silhouette: <SilhouetteJerseyV />,
+                      fileName: 'Frente Cuello V.svg',
+                      svgContent: frenteVArt?.svgArtContent,
+                      namespace: 'preview_frente_v',
+                      onUploadFile: (file: File) => handleUploadSingleBlock('DELANTERO_V', file),
+                      onRemove: () => removePieceArtwork('DELANTERO_V'),
+                    },
+                    {
+                      id: 'espalda',
+                      title: 'Espalda',
+                      subtitle: 'Arte de espalda con dorsal',
+                      icon: <Shirt className="w-3.5 h-3.5 text-purple-400" />,
+                      silhouette: <SilhouetteJerseyBack />,
+                      fileName: 'Espalda.svg',
+                      svgContent: espaldaArt?.svgArtContent,
+                      namespace: 'preview_espalda',
+                      onUploadFile: (file: File) => handleUploadSingleBlock('ESPALDA', file),
+                      onRemove: () => removePieceArtwork('ESPALDA'),
+                    },
+                    {
+                      id: 'manga_izq',
+                      title: 'Manga Izquierda',
+                      subtitle: 'Arte de manga izquierda',
+                      icon: <Scissors className="w-3.5 h-3.5 text-amber-400" />,
+                      silhouette: <SilhouetteSleeveLeft />,
+                      fileName: 'Manga Izq.svg',
+                      svgContent: mangaIzqArt?.svgArtContent,
+                      namespace: 'preview_manga_izq',
+                      onUploadFile: (file: File) => handleUploadSingleBlock('MANGA_IZQ', file),
+                      onRemove: () => removePieceArtwork('MANGA_IZQ'),
+                    },
+                    {
+                      id: 'manga_der',
+                      title: 'Manga Derecha',
+                      subtitle: 'Arte de manga derecha',
+                      icon: <Scissors className="w-3.5 h-3.5 text-amber-400" />,
+                      silhouette: <SilhouetteSleeveRight />,
+                      fileName: 'Manga Der.svg',
+                      svgContent: mangaDerArt?.svgArtContent,
+                      namespace: 'preview_manga_der',
+                      onUploadFile: (file: File) => handleUploadSingleBlock('MANGA_DER', file),
+                      onRemove: () => removePieceArtwork('MANGA_DER'),
+                    },
+                  ]}
+                />
 
-                  <div 
-                    onClick={() => espaldaInputRef.current?.click()}
-                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
-                      espaldaArt
-                        ? 'border-slate-700 bg-slate-900/80 hover:border-violet-500'
-                        : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
-                    }`}
-                  >
-                    {espaldaArt?.svgArtContent ? (
-                      <div 
-                        className="w-full h-full flex items-center justify-center"
-                        dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(espaldaArt.svgArtContent) }}
-                      />
-                    ) : (
-                      <div className="text-center space-y-1.5">
-                        <UploadCloud className="w-7 h-7 text-slate-600 mx-auto" />
-                        <span className="text-xs font-semibold text-slate-300 block">Cargar Espalda.svg</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {espaldaArt && (
-                    <div className="flex items-center justify-between pt-1 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => espaldaInputRef.current?.click()}
-                        className="text-slate-400 hover:text-white cursor-pointer"
-                      >
-                        Reemplazar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removePieceArtwork('ESPALDA')}
-                        className="text-red-400 hover:text-red-300 cursor-pointer"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* RANURA 3: MANGA IZQUIERDA */}
-                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                      <Scissors className="w-3.5 h-3.5 text-amber-400" />
-                      Manga Izquierda
-                    </span>
-                    {mangaIzqArt ? (
-                      <span className="text-[10px] text-purple-400 flex items-center gap-1 font-semibold">
-                        <CheckCircle2 className="w-3 h-3" /> Cargada
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-amber-400 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> Pendiente
-                      </span>
-                    )}
-                  </div>
-
-                  <div 
-                    onClick={() => mangaIzqInputRef.current?.click()}
-                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
-                      mangaIzqArt
-                        ? 'border-slate-700 bg-slate-900/80 hover:border-violet-500'
-                        : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
-                    }`}
-                  >
-                    {mangaIzqArt?.svgArtContent ? (
-                      <div 
-                        className="w-full h-full flex items-center justify-center"
-                        dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(mangaIzqArt.svgArtContent) }}
-                      />
-                    ) : (
-                      <div className="text-center space-y-1.5">
-                        <UploadCloud className="w-7 h-7 text-slate-600 mx-auto" />
-                        <span className="text-xs font-semibold text-slate-300 block">Cargar Manga Izq.svg</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {mangaIzqArt && (
-                    <div className="flex items-center justify-between pt-1 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => mangaIzqInputRef.current?.click()}
-                        className="text-slate-400 hover:text-white"
-                      >
-                        Reemplazar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removePieceArtwork('MANGA_IZQ')}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* RANURA 4: MANGA DERECHA */}
-                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                      <Scissors className="w-3.5 h-3.5 text-amber-400" />
-                      Manga Derecha
-                    </span>
-                    {mangaDerArt ? (
-                      <span className="text-[10px] text-purple-400 flex items-center gap-1 font-semibold">
-                        <CheckCircle2 className="w-3 h-3" /> Cargada
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-amber-400 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> Pendiente
-                      </span>
-                    )}
-                  </div>
-
-                  <div 
-                    onClick={() => mangaDerInputRef.current?.click()}
-                    className={`w-full h-52 rounded-xl border flex items-center justify-center p-2 cursor-pointer transition-all ${
-                      mangaDerArt
-                        ? 'border-slate-700 bg-slate-900/80 hover:border-violet-500'
-                        : 'border-dashed border-slate-800 hover:border-slate-600 bg-slate-900/30'
-                    }`}
-                  >
-                    {mangaDerArt?.svgArtContent ? (
-                      <div 
-                        className="w-full h-full flex items-center justify-center"
-                        dangerouslySetInnerHTML={{ __html: cleanSvgForDisplay(mangaDerArt.svgArtContent) }}
-                      />
-                    ) : (
-                      <div className="text-center space-y-1.5 p-1">
-                        <UploadCloud className="w-7 h-7 text-slate-600 mx-auto" />
-                        <span className="text-xs font-semibold text-slate-300 block">Cargar Manga Der.svg</span>
-                        {mangaIzqArt && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCopyMangaIzqToDer();
-                            }}
-                            className="mt-1 px-2.5 py-1 bg-violet-700/80 hover:bg-violet-600 text-white rounded text-[11px] font-medium shadow-sm transition-colors flex items-center gap-1 mx-auto"
-                          >
-                            <Copy className="w-3 h-3" />
-                            Copiar de Manga Izq
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {mangaDerArt && (
-                    <div className="flex items-center justify-between pt-1 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => mangaDerInputRef.current?.click()}
-                        className="text-slate-400 hover:text-white"
-                      >
-                        Reemplazar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removePieceArtwork('MANGA_DER')}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  )}
+                {/* BLOQUES OPCIONALES DE PANTALONETA */}
+                <div className="border-t border-slate-800 pt-5">
+                  <TextilePieceCarousel
+                    title="Pantaloneta / Short (Pierna Izquierda y Derecha)"
+                    subtitle="Opcional. Se combina con los moldes de short de cada talla durante el entallado."
+                    pieces={[
+                      {
+                        id: 'short_izq',
+                        title: 'Pantaloneta — Pierna Izquierda',
+                        subtitle: 'Arte pierna izquierda',
+                        icon: <Scissors className="w-3.5 h-3.5 text-emerald-400" />,
+                        silhouette: <SilhouetteShort />,
+                        fileName: 'PANTALONETA_IZQ.svg',
+                        svgContent: pantalonetaIzqArt?.svgArtContent,
+                        namespace: 'preview_short_izq',
+                        aspectRatio: 'square' as const,
+                        onUploadFile: (file: File) => handleUploadSingleBlock('PANTALONETA_IZQ', file),
+                        onRemove: () => {
+                          removePieceArtwork('PANTALONETA_IZQ');
+                          removePieceArtwork('SHORT_FRENTE');
+                        },
+                      },
+                      {
+                        id: 'short_der',
+                        title: 'Pantaloneta — Pierna Derecha',
+                        subtitle: 'Arte pierna derecha',
+                        icon: <Scissors className="w-3.5 h-3.5 text-emerald-400" />,
+                        silhouette: <SilhouetteShort />,
+                        fileName: 'PANTALONETA_DER.svg',
+                        svgContent: pantalonetaDerArt?.svgArtContent,
+                        namespace: 'preview_short_der',
+                        aspectRatio: 'square' as const,
+                        onUploadFile: (file: File) => handleUploadSingleBlock('PANTALONETA_DER', file),
+                        onRemove: () => {
+                          removePieceArtwork('PANTALONETA_DER');
+                          removePieceArtwork('SHORT_ESPALDA');
+                        },
+                      },
+                    ]}
+                  />
                 </div>
               </div>
             </div>

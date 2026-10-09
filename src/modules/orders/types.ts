@@ -3,6 +3,7 @@
  */
 
 export type GarmentType = 'COMPLETO' | 'CAMISETA' | 'SHORT';
+export type NecklineType = 'REDONDO' | 'V';
 
 export interface ValidationError {
   field: 'playerName' | 'playerNumber' | 'sizeName' | 'garmentType' | 'general';
@@ -35,6 +36,7 @@ export interface OrderItem {
   playerNumber: string;
   sizeName: string;
   garmentType: GarmentType;
+  necklineType?: NecklineType;
   gender?: string;
   team?: string;
   notes?: string;

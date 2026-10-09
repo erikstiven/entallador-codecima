@@ -21,8 +21,22 @@ const rule: DynamicPlaceholderRule = {
 };
 
 describe('SVG text compatibility', () => {
-  it('fija el ancho físico con textLength para que Illustrator no lo recalcule', () => {
+  it('convierte texto a curvas vectoriales <path> nativas cuando la fuente está cargada', () => {
     const fitted = computeTextFitting('CARLOS', rule);
+
+    expect(fitted.svgContent).toContain('<path');
+    expect(fitted.svgContent).toContain('d="M');
+    expect(fitted.svgContent).toContain('translate(');
+    expect(fitted.svgContent).toContain('stroke-width="2.5"');
+    expect(fitted.fittedWidthMm).toBeGreaterThan(0);
+  });
+
+  it('fija el ancho físico con textLength en modo fallback si la fuente no está cargada', () => {
+    const fallbackRule: DynamicPlaceholderRule = {
+      ...rule,
+      fontFamily: 'NonExistentFontForTestOnly',
+    };
+    const fitted = computeTextFitting('CARLOS', fallbackRule);
     const textLength = fitted.svgContent.match(/textLength="([^"]+)"/)?.[1];
 
     expect(Number(textLength)).toBeCloseTo(fitted.fittedWidthMm, 3);
@@ -41,15 +55,15 @@ describe('SVG text compatibility', () => {
 
     expect(calibrated.fittedWidthMm).toBeCloseTo(normal.fittedWidthMm * 1.25, 5);
     expect(calibrated.fittedHeightMm).toBeCloseTo(normal.fittedHeightMm * 0.8, 5);
-    expect(calibrated.svgContent).toContain('scale(1 0.8)');
-    expect(calibrated.svgContent).not.toContain('scale(1.25');
+    expect(calibrated.svgContent).toContain('0.8)');
   });
 
   it('genera XML válido con nombres especiales y atributos configurables', () => {
-    const fitted = computeTextFitting('iñigo & peña <10>', {
+    const fallbackRule: DynamicPlaceholderRule = {
       ...rule,
-      fontFamily: `Bebas Neue' onload='alert(1)`,
-    });
+      fontFamily: `NonExistent' onload='alert(1)`,
+    };
+    const fitted = computeTextFitting('iñigo & peña <10>', fallbackRule);
 
     expect(fitted.text).toBe('IÑIGO & PEÑA <10>');
     expect(fitted.svgContent).toContain('IÑIGO &amp; PEÑA &lt;10&gt;');

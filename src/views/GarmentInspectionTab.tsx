@@ -32,6 +32,8 @@ import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
 import { useThemeStore } from '@/modules/settings/themeStore';
+import { useSystemSettingsStore } from '@/modules/settings/systemSettingsStore';
+import { fromMm, toMm } from '@/core/units/units';
 
 interface GarmentInspectionTabProps {
   generatedPieces: GeneratedPiece[];
@@ -55,10 +57,17 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
   const { setCurrentView } = useNavigationStore();
   const { activeProfile } = useProfileStore();
   const { theme, toggleTheme } = useThemeStore();
+  const { settings } = useSystemSettingsStore();
   const { generationConfig, updateConfig } = useGeneratorStore();
   const [showCalibrationPanel, setShowCalibrationPanel] = useState<boolean>(false);
   const [canvasBgMode, setCanvasBgMode] = useState<'dark' | 'light' | 'blueprint' | 'grid'>('light');
   const [showGuides, setShowGuides] = useState<boolean>(true);
+  const displayUnit = settings.displayUnit;
+  const unitStepMm = displayUnit === 'mm' ? 1 : toMm(0.1, displayUnit);
+  const formatDisplayMm = (valueMm: number) => {
+    const decimals = displayUnit === 'mm' ? 0 : Math.max(1, settings.decimalPrecision);
+    return `${fromMm(valueMm, displayUnit).toFixed(decimals)} ${displayUnit}`;
+  };
 
   // Agrupar piezas por cada jugador en la nómina
   const playerGroups = useMemo<PlayerGarmentGroup[]>(() => {
@@ -160,7 +169,17 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
     (generationConfig.numberScaleX || 1.0) !== 1.0 ||
     (generationConfig.numberScaleY || 1.0) !== 1.0 ||
     (generationConfig.sleeveArtOffsetYMm || 0) !== 0 ||
-    (generationConfig.frontArtOffsetYMm || 0) !== 0
+    (generationConfig.frontArtOffsetYMm || 0) !== 0 ||
+    generationConfig.includeFrontNumber === true ||
+    (generationConfig.frontNumberXPercent ?? 50) !== 50 ||
+    (generationConfig.frontNumberYPercent ?? 38) !== 38 ||
+    (generationConfig.frontNumberScale ?? 1) !== 1 ||
+    generationConfig.includeShortNumber === false ||
+    (generationConfig.shortNumberPiece || 'DER') !== 'DER' ||
+    (generationConfig.shortNumberXPercent ?? 50) !== 50 ||
+    (generationConfig.shortNumberYPercent ?? 45) !== 45 ||
+    (generationConfig.shortNumberScale ?? 1) !== 1 ||
+    generationConfig.includeSizeMark === true
   );
 
   // Navegación con flechas del teclado (← y →)
@@ -712,6 +731,218 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* 5. NÚMERO DINÁMICO EN DELANTERO (Pecho / Frente de Camiseta) */}
+            <div className={`flex items-center gap-2 border rounded-lg px-2.5 py-1 ${
+              generationConfig.includeFrontNumber
+                ? 'bg-amber-950/60 border-amber-500/50'
+                : 'bg-slate-950 border-slate-800'
+            }`}>
+              <button
+                type="button"
+                onClick={() => updateConfig({ includeFrontNumber: !generationConfig.includeFrontNumber })}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                  generationConfig.includeFrontNumber
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'bg-slate-900 text-slate-400 hover:text-white'
+                }`}
+                title="Generar el número del jugador en el delantero / pecho de la camiseta (estilo selecciones FIFA)"
+              >
+                # FRENTE {generationConfig.includeFrontNumber ? 'ON' : 'OFF'}
+              </button>
+
+              <select
+                value={generationConfig.frontNumberPosition || 'CENTRO'}
+                onChange={(e) => {
+                  const pos = e.target.value as 'CENTRO' | 'DERECHA' | 'IZQUIERDA' | 'CUSTOM';
+                  let x = generationConfig.frontNumberXPercent ?? 50;
+                  if (pos === 'CENTRO') x = 50;
+                  else if (pos === 'DERECHA') x = 68;
+                  else if (pos === 'IZQUIERDA') x = 32;
+                  updateConfig({ frontNumberPosition: pos, frontNumberXPercent: x });
+                }}
+                className="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-200"
+                title="Posición del número en el pecho"
+              >
+                <option value="CENTRO">Centro (50%)</option>
+                <option value="DERECHA">Pecho der (68%)</option>
+                <option value="IZQUIERDA">Pecho izq (32%)</option>
+                <option value="CUSTOM">Personalizado</option>
+              </select>
+
+              <label className="flex items-center gap-1 text-[10px] text-slate-400" title="Posición horizontal en porcentaje">
+                X
+                <input
+                  type="number"
+                  min="10"
+                  max="90"
+                  value={generationConfig.frontNumberXPercent ?? 50}
+                  onChange={(e) => updateConfig({ 
+                    frontNumberPosition: 'CUSTOM',
+                    frontNumberXPercent: Math.max(10, Math.min(90, Number(e.target.value) || 50)) 
+                  })}
+                  className="w-11 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-amber-300 font-mono"
+                />%
+              </label>
+
+              <label className="flex items-center gap-1 text-[10px] text-slate-400" title="Posición vertical en porcentaje">
+                Y
+                <input
+                  type="number"
+                  min="15"
+                  max="85"
+                  value={generationConfig.frontNumberYPercent ?? 38}
+                  onChange={(e) => updateConfig({ frontNumberYPercent: Math.max(15, Math.min(85, Number(e.target.value) || 38)) })}
+                  className="w-11 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-amber-300 font-mono"
+                />%
+              </label>
+
+              <label className="flex items-center gap-1 text-[10px] text-slate-400" title="Tamaño del número frontal">
+                Tamaño
+                <input
+                  type="number"
+                  min="30"
+                  max="250"
+                  step="5"
+                  value={Math.round((generationConfig.frontNumberScale ?? 1) * 100)}
+                  onChange={(e) => updateConfig({ frontNumberScale: Math.max(0.3, Math.min(2.5, (Number(e.target.value) || 100) / 100)) })}
+                  className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-amber-300 font-mono"
+                />%
+              </label>
+            </div>
+
+            {/* 6. NÚMERO DINÁMICO DE PANTALONETA */}
+            <div className={`flex items-center gap-2 border rounded-lg px-2.5 py-1 ${
+              generationConfig.includeShortNumber !== false
+                ? 'bg-sky-950/60 border-sky-500/50'
+                : 'bg-slate-950 border-slate-800'
+            }`}>
+              <button
+                type="button"
+                onClick={() => updateConfig({ includeShortNumber: generationConfig.includeShortNumber === false })}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                  generationConfig.includeShortNumber !== false
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-slate-900 text-slate-400 hover:text-white'
+                }`}
+                title="Generar el número del jugador en la pantaloneta"
+              >
+                # SHORT {generationConfig.includeShortNumber !== false ? 'ON' : 'OFF'}
+              </button>
+
+              <select
+                value={generationConfig.shortNumberPiece || 'DER'}
+                onChange={(e) => updateConfig({ shortNumberPiece: e.target.value as 'IZQ' | 'DER' })}
+                className="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-200"
+                title="Pierna donde se imprime el número"
+              >
+                <option value="IZQ">Pierna izquierda</option>
+                <option value="DER">Pierna derecha</option>
+              </select>
+
+              <label className="flex items-center gap-1 text-[10px] text-slate-400" title="Posición horizontal en porcentaje">
+                X
+                <input
+                  type="number"
+                  min="10"
+                  max="90"
+                  value={generationConfig.shortNumberXPercent ?? 50}
+                  onChange={(e) => updateConfig({ shortNumberXPercent: Math.max(10, Math.min(90, Number(e.target.value) || 50)) })}
+                  className="w-11 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-sky-300 font-mono"
+                />%
+              </label>
+
+              <label className="flex items-center gap-1 text-[10px] text-slate-400" title="Posición vertical en porcentaje">
+                Y
+                <input
+                  type="number"
+                  min="15"
+                  max="85"
+                  value={generationConfig.shortNumberYPercent ?? 45}
+                  onChange={(e) => updateConfig({ shortNumberYPercent: Math.max(15, Math.min(85, Number(e.target.value) || 45)) })}
+                  className="w-11 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-sky-300 font-mono"
+                />%
+              </label>
+
+              <label className="flex items-center gap-1 text-[10px] text-slate-400" title="Tamaño del número de pantaloneta">
+                Tamaño
+                <input
+                  type="number"
+                  min="40"
+                  max="250"
+                  step="5"
+                  value={Math.round((generationConfig.shortNumberScale ?? 1) * 100)}
+                  onChange={(e) => updateConfig({ shortNumberScale: Math.max(0.4, Math.min(2.5, (Number(e.target.value) || 100) / 100)) })}
+                  className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-sky-300 font-mono"
+                />%
+              </label>
+
+              <span className="text-[9px] text-slate-500" title="Se configura desde Diseños Maestros">Color/borde: dorsal</span>
+            </div>
+
+            {/* 7. MARCA INTERIOR DE TALLA EN TODAS LAS PIEZAS */}
+            <div className={`flex items-center gap-2 border rounded-lg px-2.5 py-1 ${
+              generationConfig.includeSizeMark
+                ? 'bg-emerald-950/60 border-emerald-500/50'
+                : 'bg-slate-950 border-slate-800'
+            }`}>
+              <button
+                type="button"
+                onClick={() => updateConfig({ includeSizeMark: !generationConfig.includeSizeMark })}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                  generationConfig.includeSizeMark
+                    ? 'bg-emerald-500 text-slate-950'
+                    : 'bg-slate-900 text-slate-400 hover:text-white'
+                }`}
+                title="Imprimir la talla dentro de cada pieza"
+              >
+                TALLA {generationConfig.includeSizeMark ? 'ON' : 'OFF'}
+              </button>
+
+              <input
+                type="color"
+                value={generationConfig.sizeMarkColor || '#000000'}
+                onChange={(e) => updateConfig({ sizeMarkColor: e.target.value })}
+                className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                title="Color de la talla"
+              />
+
+              <div className="flex items-center gap-1" title="Altura de la talla">
+                <span className="text-[10px] text-slate-500 font-mono">H</span>
+                <button
+                  type="button"
+                  onClick={() => updateConfig({ sizeMarkFontSizeMm: Math.max(3, Number(((generationConfig.sizeMarkFontSizeMm ?? 8) - unitStepMm).toFixed(3))) })}
+                  className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center justify-center cursor-pointer"
+                ><Minus className="w-2.5 h-2.5" /></button>
+                <span className="min-w-[34px] text-center text-[10px] font-mono text-emerald-300">
+                  {formatDisplayMm(generationConfig.sizeMarkFontSizeMm ?? 8)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => updateConfig({ sizeMarkFontSizeMm: Math.min(20, Number(((generationConfig.sizeMarkFontSizeMm ?? 8) + unitStepMm).toFixed(3))) })}
+                  className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center justify-center cursor-pointer"
+                ><Plus className="w-2.5 h-2.5" /></button>
+              </div>
+
+              <div className="w-px h-3.5 bg-slate-800" />
+
+              <div className="flex items-center gap-1" title="Distancia desde el borde inferior">
+                <span className="text-[10px] text-slate-500 font-mono">Borde</span>
+                <button
+                  type="button"
+                  onClick={() => updateConfig({ sizeMarkBottomOffsetMm: Math.max(-20, Number(((generationConfig.sizeMarkBottomOffsetMm ?? 8) - unitStepMm).toFixed(3))) })}
+                  className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center justify-center cursor-pointer"
+                ><Minus className="w-2.5 h-2.5" /></button>
+                <span className="min-w-[34px] text-center text-[10px] font-mono text-emerald-300">
+                  {formatDisplayMm(generationConfig.sizeMarkBottomOffsetMm ?? 8)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => updateConfig({ sizeMarkBottomOffsetMm: Math.min(50, Number(((generationConfig.sizeMarkBottomOffsetMm ?? 8) + unitStepMm).toFixed(3))) })}
+                  className="w-4 h-4 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center justify-center cursor-pointer"
+                ><Plus className="w-2.5 h-2.5" /></button>
+              </div>
+            </div>
           </div>
 
           {/* Acciones: Restablecer y Cerrar */}
@@ -729,6 +960,20 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   numberScaleY: 1.0,
                   sleeveArtOffsetYMm: 0,
                   frontArtOffsetYMm: 0,
+                  includeFrontNumber: false,
+                  frontNumberPosition: 'CENTRO',
+                  frontNumberXPercent: 50,
+                  frontNumberYPercent: 38,
+                  frontNumberScale: 1,
+                  includeShortNumber: true,
+                  shortNumberPiece: 'DER',
+                  shortNumberXPercent: 50,
+                  shortNumberYPercent: 45,
+                  shortNumberScale: 1,
+                  includeSizeMark: false,
+                  sizeMarkColor: '#000000',
+                  sizeMarkFontSizeMm: 8,
+                  sizeMarkBottomOffsetMm: 8,
                 });
               }}
               className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"

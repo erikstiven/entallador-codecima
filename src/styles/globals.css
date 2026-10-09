@@ -172,6 +172,8 @@ html.light .text-sky-400 { color: var(--tw-sky-400) !important; }
 html.light .bg-sky-950 { background-color: var(--tw-sky-950) !important; }
 html.light .border-sky-800 { border-color: var(--tw-sky-800) !important; }
 
+html.light .text-amber-100,
+html.light .text-amber-200,
 html.light .text-amber-300 { color: var(--tw-amber-300) !important; }
 html.light .text-amber-400 { color: var(--tw-amber-400) !important; }
 html.light .bg-amber-950 { background-color: var(--tw-amber-950) !important; }
@@ -181,6 +183,18 @@ html.light .text-red-300 { color: var(--tw-red-300) !important; }
 html.light .text-red-400 { color: var(--tw-red-400) !important; }
 html.light .bg-red-950 { background-color: var(--tw-red-950) !important; }
 html.light .border-red-800 { border-color: var(--tw-red-800) !important; }
+
+/* Acentos informativos: tonos oscuros con contraste suficiente sobre blanco. */
+html.light .text-cyan-300,
+html.light .text-cyan-400 { color: #0e7490 !important; }
+html.light .text-pink-300,
+html.light .text-pink-400 { color: #be185d !important; }
+html.light .text-yellow-300,
+html.light .text-yellow-400 { color: #a16207 !important; }
+html.light .text-orange-300,
+html.light .text-orange-400 { color: #c2410c !important; }
+html.light .text-blue-300,
+html.light .text-blue-400 { color: #1d4ed8 !important; }
 
 /* Utilidades con opacidad */
 html.light [class*="bg-slate-900/"],

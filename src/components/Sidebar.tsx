@@ -5,13 +5,9 @@ import {
   Scissors, 
   LayoutGrid, 
   Clock, 
-  Settings, 
-  Sparkles,
-  ChevronRight,
-  Cpu
+  Settings,
 } from 'lucide-react';
 import { useNavigationStore, AppView } from '@/modules/navigation/navigationStore';
-import { useSystemSettingsStore } from '@/modules/settings/systemSettingsStore';
 
 interface NavItem {
   id: AppView;
@@ -32,7 +28,6 @@ const NAV_ITEMS: NavItem[] = [
 
 export const Sidebar: React.FC = () => {
   const { currentView, setCurrentView } = useNavigationStore();
-  const { settings } = useSystemSettingsStore();
 
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between h-screen flex-shrink-0 select-none z-20">
@@ -48,13 +43,9 @@ export const Sidebar: React.FC = () => {
               />
             </div>
             <div>
-              <h1 className="text-sm font-extrabold tracking-wide text-white flex items-center gap-1.5">
+              <h1 className="text-sm font-extrabold tracking-wide text-white">
                 CimaPattern
-                <span className="text-[9px] uppercase px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-400 font-mono font-bold border border-purple-500/30">
-                  PRO
-                </span>
               </h1>
-              <span className="text-[10px] text-slate-400 font-medium">by Codecima</span>
             </div>
           </div>
         </div>

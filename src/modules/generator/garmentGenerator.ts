@@ -10,12 +10,28 @@ import {
 import { computeBoundingBox, calculatePolygonArea, polygonToSvgPath } from '@/core/geometry/transform';
 import { computeTextFitting, applyPlaceholdersToArtwork } from '@/core/fonts/textVectorEngine';
 import { normalizeSizeName } from '@/modules/orders/orderValidator';
+import { namespaceSvgIds } from '@/core/svg/namespaceSvgIds';
+import { normalizeSvgArtboard } from '@/core/svg/svgArtboardNormalizer';
 
 const DEFAULT_CONFIG: GenerationConfig = {
   includeLabels: true,
   labelDistanceMm: 6.0,
   labelFontSizeMm: 5.0,
   labelColor: '#94a3b8',
+  includeSizeMark: false,
+  sizeMarkColor: '#000000',
+  sizeMarkFontSizeMm: 8,
+  sizeMarkBottomOffsetMm: 8,
+  includeShortNumber: true,
+  shortNumberPiece: 'DER',
+  shortNumberXPercent: 50,
+  shortNumberYPercent: 45,
+  shortNumberScale: 1,
+  includeFrontNumber: false,
+  frontNumberPosition: 'CENTRO',
+  frontNumberXPercent: 50,
+  frontNumberYPercent: 38,
+  frontNumberScale: 1,
 };
 
 /**
@@ -59,6 +75,14 @@ function getRequiredPieceTypes(garmentType: string): PieceType[] {
 }
 
 /**
+ * Normaliza el arte vectorial para que su viewBox encuadre exactamente las formas
+ * de la prenda, eliminando los márgenes de mesa de trabajo transparente de Illustrator/Corel.
+ */
+export function normalizeArtworkSvgForMold(svgContent: string): string {
+  return normalizeSvgArtboard(svgContent, { paddingRatio: 0 });
+}
+
+/**
  * Genera el ensamble vectorial completo de cada prenda uniendo Molde + Diseño + Jugador
  */
 export function generateGarmentPieces(
@@ -89,18 +113,14 @@ export function generateGarmentPieces(
       (s) => normalizeSizeName(s.sizeName).toUpperCase() === targetSize
     );
 
-    // Si la talla solicitada no existe de forma explícita, usar la talla más cercana disponible
+    // Nunca sustituir silenciosamente una talla: en producción una etiqueta T28 debe
+    // corresponder a geometría T28 real. Generar con otra talla produciría una prenda
+    // físicamente incorrecta aunque la etiqueta y el pedido parezcan válidos.
     if (!sizeObj || sizeObj.pieces.length === 0) {
-      if (patternSet.sizes.length > 0) {
-        sizeObj = patternSet.sizes.find((s) => s.pieces.length > 0) || patternSet.sizes[0];
-      } else {
-        warnings.push(`Jugador ${orderItem.playerName}: Talla "${orderItem.sizeName}" no tiene piezas disponibles en el molde.`);
-        continue;
-      }
+      warnings.push(`Jugador ${orderItem.playerName}: la talla "${orderItem.sizeName}" no existe o no tiene piezas en el molde. No se generó para evitar sustituirla por otra talla.`);
+      continue;
     }
 
-    totalGarmentsCount += orderItem.quantity;
-    
     // Determinar tipo de prenda efectivo considerando el alcance de producción configurado
     const effectiveGarmentType = (config.productionScope === 'CAMISETA_ONLY')
       ? 'CAMISETA'
@@ -114,33 +134,19 @@ export function generateGarmentPieces(
     );
     let chosenDelantero: PatternPiece | undefined;
     if (delanteros.length > 0) {
-      const wantsV = (orderItem.notes || '').toUpperCase().includes('V');
+      const wantsV = orderItem.necklineType === 'V'
+        || (!orderItem.necklineType && (orderItem.notes || '').toUpperCase().includes('V'));
       if (wantsV) {
-        chosenDelantero = delanteros.find((p) => p.pieceType === 'DELANTERO_V') || delanteros[0];
+        chosenDelantero = delanteros.find((p) => p.pieceType === 'DELANTERO_V')
+          || delanteros.find((p) => p.pieceType === 'DELANTERO');
       } else {
-        chosenDelantero = delanteros.find((p) => p.pieceType === 'DELANTERO_REDONDO') || delanteros[0];
-      }
-    } else {
-      for (const otherSize of patternSet.sizes) {
-        const found = otherSize.pieces.find((p) => p.pieceType === 'DELANTERO' || p.pieceType === 'DELANTERO_V' || p.pieceType === 'DELANTERO_REDONDO');
-        if (found) {
-          chosenDelantero = { ...found, id: `${found.id}_borrowed_${targetSize}`, sizeName: targetSize };
-          break;
-        }
+        chosenDelantero = delanteros.find((p) => p.pieceType === 'DELANTERO_REDONDO')
+          || delanteros.find((p) => p.pieceType === 'DELANTERO');
       }
     }
 
     // 2. Espalda: exactamente 1 pieza
     let espaldaPiece = sizeObj.pieces.find((p) => p.pieceType === 'ESPALDA');
-    if (!espaldaPiece) {
-      for (const otherSize of patternSet.sizes) {
-        const found = otherSize.pieces.find((p) => p.pieceType === 'ESPALDA');
-        if (found) {
-          espaldaPiece = { ...found, id: `${found.id}_borrowed_${targetSize}`, sizeName: targetSize };
-          break;
-        }
-      }
-    }
 
     // 3. Mangas de ESTA talla: exactamente 2 piezas (izquierda y derecha en modo espejo)
     let mangaIzq = sizeObj.pieces.find((p) => p.pieceType === 'MANGA_IZQ');
@@ -162,27 +168,6 @@ export function generateGarmentPieces(
           cutPolygon: mirroredPoly,
           svgPathData: polygonToSvgPath(mirroredPoly),
         };
-      } else {
-        for (const otherSize of patternSet.sizes) {
-          const found = otherSize.pieces.find((p) => p.pieceType.startsWith('MANGA'));
-          if (found) {
-            const w = found.bbox.width;
-            const mirroredPoly = found.cutPolygon.map((pt) => ({
-              x: Number((w - pt.x).toFixed(2)),
-              y: pt.y,
-            }));
-            mangaIzq = { ...found, id: `${found.id}_borrowed_${targetSize}_izq`, pieceType: 'MANGA_IZQ', sizeName: targetSize };
-            mangaDer = {
-              ...found,
-              id: `${found.id}_borrowed_${targetSize}_der`,
-              pieceType: 'MANGA_DER',
-              sizeName: targetSize,
-              cutPolygon: mirroredPoly,
-              svgPathData: polygonToSvgPath(mirroredPoly),
-            };
-            break;
-          }
-        }
       }
     } else if (mangaIzq && !mangaDer) {
       const w = mangaIzq.bbox.width;
@@ -225,15 +210,6 @@ export function generateGarmentPieces(
         if (genericShort) {
           pantaIzq = { ...genericShort, id: `${genericShort.id}_izq`, pieceType: 'PANTALONETA_IZQ' };
           pantaDer = { ...genericShort, id: `${genericShort.id}_der`, pieceType: 'PANTALONETA_DER' };
-        } else {
-          for (const otherSize of patternSet.sizes) {
-            const found = otherSize.pieces.find((p) => p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT'));
-            if (found) {
-              pantaIzq = { ...found, id: `${found.id}_borrowed_${targetSize}_izq`, pieceType: 'PANTALONETA_IZQ', sizeName: targetSize };
-              pantaDer = { ...found, id: `${found.id}_borrowed_${targetSize}_der`, pieceType: 'PANTALONETA_DER', sizeName: targetSize };
-              break;
-            }
-          }
         }
       } else if (pantaIzq && !pantaDer) {
         const w = pantaIzq.bbox.width;
@@ -279,6 +255,53 @@ export function generateGarmentPieces(
       if (pantaDer) piecesToGenerate.push(pantaDer);
     }
 
+    const missingPieceGroups: string[] = [];
+    if (effectiveGarmentType === 'CAMISETA' || effectiveGarmentType === 'COMPLETO') {
+      if (!chosenDelantero) missingPieceGroups.push(`delantero con cuello ${orderItem.necklineType === 'V' ? 'V' : 'redondo'}`);
+      if (!espaldaPiece) missingPieceGroups.push('espalda');
+      if (!mangaIzq || !mangaDer) missingPieceGroups.push('par de mangas');
+    }
+    if (effectiveGarmentType === 'SHORT' || effectiveGarmentType === 'COMPLETO') {
+      if (!pantaIzq || !pantaDer) missingPieceGroups.push('par de pantalonetas');
+    }
+    if (missingPieceGroups.length > 0) {
+      warnings.push(`Jugador ${orderItem.playerName}, talla ${orderItem.sizeName}: faltan ${missingPieceGroups.join(', ')} en esa talla. No se generó el uniforme incompleto ni se usaron piezas de otra talla.`);
+      continue;
+    }
+
+    // Un arte ausente nunca debe sustituirse por un relleno inventado en producción.
+    const missingArtworkGroups: string[] = [];
+    const wantsNecklineV = orderItem.necklineType === 'V'
+      || (!orderItem.necklineType && (orderItem.notes || '').toUpperCase().includes('V'));
+
+    if (effectiveGarmentType === 'CAMISETA' || effectiveGarmentType === 'COMPLETO') {
+      const hasFrontArtwork = wantsNecklineV
+        ? Boolean(masterDesign.pieceArtworks['DELANTERO_V'] || masterDesign.pieceArtworks['DELANTERO'])
+        : Boolean(masterDesign.pieceArtworks['DELANTERO_REDONDO'] || masterDesign.pieceArtworks['DELANTERO']);
+
+      if (!hasFrontArtwork) {
+        missingArtworkGroups.push(`diseño del frente (cuello ${wantsNecklineV ? 'V' : 'redondo'})`);
+      }
+      if (!masterDesign.pieceArtworks['ESPALDA']) missingArtworkGroups.push('diseño de la espalda');
+      if (!masterDesign.pieceArtworks['MANGA_IZQ'] && !masterDesign.pieceArtworks['MANGA_DER']) {
+        missingArtworkGroups.push('diseño de manga');
+      }
+    }
+    if (effectiveGarmentType === 'SHORT' || effectiveGarmentType === 'COMPLETO') {
+      if (!masterDesign.pieceArtworks['SHORT_FRENTE'] && !masterDesign.pieceArtworks['PANTALONETA_IZQ']) {
+        missingArtworkGroups.push('diseño de la pierna izquierda');
+      }
+      if (!masterDesign.pieceArtworks['SHORT_ESPALDA'] && !masterDesign.pieceArtworks['PANTALONETA_DER']) {
+        missingArtworkGroups.push('diseño de la pierna derecha');
+      }
+    }
+    if (missingArtworkGroups.length > 0) {
+      warnings.push(`Jugador ${orderItem.playerName}: faltan ${missingArtworkGroups.join(', ')}. No se generó para evitar imprimir piezas con un fondo genérico.`);
+      continue;
+    }
+
+    totalGarmentsCount += orderItem.quantity;
+
     if (piecesToGenerate.length === 0) {
       warnings.push(`Jugador ${orderItem.playerName}: No hay piezas de tipo "${effectiveGarmentType}" en la talla ${orderItem.sizeName}.`);
       continue;
@@ -305,12 +328,24 @@ export function generateGarmentPieces(
           : '';
 
         // 2. Extraer o generar arte base del diseño maestro para esta pieza
-        const artwork = masterDesign.pieceArtworks[pieceType]
-          || (pieceType === 'MANGA_DER' ? (masterDesign.pieceArtworks['MANGA_IZQ'] || masterDesign.pieceArtworks['MANGA' as PieceType]) : undefined)
-          || (pieceType === 'MANGA_IZQ' ? (masterDesign.pieceArtworks['MANGA' as PieceType] || masterDesign.pieceArtworks['MANGA_DER']) : undefined)
-          || (pieceType.startsWith('DELANTERO') ? masterDesign.pieceArtworks['DELANTERO'] : undefined)
-          || (pieceType === 'PANTALONETA_DER' ? (masterDesign.pieceArtworks['SHORT_ESPALDA' as PieceType] || masterDesign.pieceArtworks['PANTALONETA_IZQ' as PieceType]) : undefined)
-          || (pieceType === 'PANTALONETA_IZQ' ? (masterDesign.pieceArtworks['SHORT_FRENTE' as PieceType] || masterDesign.pieceArtworks['PANTALONETA_DER' as PieceType]) : undefined);
+        let artwork = masterDesign.pieceArtworks[pieceType];
+        if (!artwork) {
+          if (pieceType === 'DELANTERO_V' || (pieceType === 'DELANTERO' && wantsNecklineV)) {
+            artwork = masterDesign.pieceArtworks['DELANTERO_V'] || masterDesign.pieceArtworks['DELANTERO'];
+          } else if (pieceType === 'DELANTERO_REDONDO' || (pieceType === 'DELANTERO' && !wantsNecklineV)) {
+            artwork = masterDesign.pieceArtworks['DELANTERO_REDONDO'] || masterDesign.pieceArtworks['DELANTERO'];
+          } else if (pieceType.startsWith('DELANTERO')) {
+            artwork = masterDesign.pieceArtworks['DELANTERO_REDONDO'] || masterDesign.pieceArtworks['DELANTERO_V'] || masterDesign.pieceArtworks['DELANTERO'];
+          } else if (pieceType === 'MANGA_DER') {
+            artwork = masterDesign.pieceArtworks['MANGA_DER'] || masterDesign.pieceArtworks['MANGA_IZQ'] || masterDesign.pieceArtworks['MANGA' as PieceType];
+          } else if (pieceType === 'MANGA_IZQ') {
+            artwork = masterDesign.pieceArtworks['MANGA_IZQ'] || masterDesign.pieceArtworks['MANGA_DER'] || masterDesign.pieceArtworks['MANGA' as PieceType];
+          } else if (pieceType === 'PANTALONETA_IZQ' || pieceType === 'SHORT_FRENTE') {
+            artwork = masterDesign.pieceArtworks['PANTALONETA_IZQ'] || masterDesign.pieceArtworks['SHORT_FRENTE'] || masterDesign.pieceArtworks['PANTALONETA_DER'];
+          } else if (pieceType === 'PANTALONETA_DER' || pieceType === 'SHORT_ESPALDA') {
+            artwork = masterDesign.pieceArtworks['PANTALONETA_DER'] || masterDesign.pieceArtworks['SHORT_ESPALDA'] || masterDesign.pieceArtworks['PANTALONETA_IZQ'];
+          }
+        }
         const primaryColor = masterDesign.colors[0] || '#ea580c';
         const secondaryColor = masterDesign.colors[1] || '#0284c7';
         const accentColor = masterDesign.colors[2] || '#ffffff';
@@ -319,6 +354,7 @@ export function generateGarmentPieces(
           <rect width="${localBbox.width}" height="${localBbox.height}" fill="${primaryColor}" />
           <path d="M 0,${localBbox.height * 0.3} L ${localBbox.width},${localBbox.height * 0.45} L ${localBbox.width},${localBbox.height * 0.52} L 0,${localBbox.height * 0.37} Z" fill="${secondaryColor}" opacity="0.4" />
         `;
+        baseArtSvg = namespaceSvgIds(baseArtSvg, uniquePieceId);
 
         // Extraer configuraciones de tipografía y color de espalda
         const espaldaArt = masterDesign.pieceArtworks['ESPALDA'];
@@ -419,6 +455,114 @@ export function generateGarmentPieces(
           `;
         }
 
+        // Número dinámico de pantaloneta. El SVG base debe traer únicamente el
+        // fondo, franjas y logotipos fijos; el dorsal proviene de la nómina.
+        const isShortLeft = pieceType === 'PANTALONETA_IZQ' || pieceType === 'SHORT_FRENTE';
+        const isShortRight = pieceType === 'PANTALONETA_DER' || pieceType === 'SHORT_ESPALDA';
+        const isSelectedShortPiece = config.shortNumberPiece === 'IZQ' ? isShortLeft : isShortRight;
+        if (config.includeShortNumber !== false && isSelectedShortPiece) {
+          const xPercent = Math.max(10, Math.min(90, config.shortNumberXPercent ?? 50));
+          const yPercent = Math.max(15, Math.min(85, config.shortNumberYPercent ?? 45));
+          const shortScale = Math.max(0.4, Math.min(2.5, config.shortNumberScale ?? 1));
+          const shortNumberSize = Math.min(95, Math.max(45, localBbox.height * 0.28)) * shortScale;
+          const shortNumberRule: DynamicPlaceholderRule = {
+            id: 'NUMERO_SHORT',
+            tag: '{{NUMERO_SHORT}}',
+            targetPiece: pieceType,
+            anchorX: localBbox.width * (xPercent / 100),
+            anchorY: localBbox.height * (yPercent / 100),
+            maxWidthMm: localBbox.width * 0.42,
+            maxHeightMm: localBbox.height * 0.42,
+            defaultFontSizeMm: shortNumberSize,
+            minFontSizeMm: Math.max(28, shortNumberSize * 0.6),
+            minScaleFactor: 0.55,
+            fontFamily: configuredFont,
+            fillColor: configuredFill,
+            strokeColor: configuredStroke,
+            strokeWidthMm: configuredStrokeWidth,
+            textAlign: 'center',
+          };
+          const shortNumberFitting = computeTextFitting(orderItem.playerNumber, shortNumberRule);
+          dorsalSvg = `
+            <g id="short_numero_${uniquePieceId}" data-hmb-role="short-number">
+              ${shortNumberFitting.svgContent}
+            </g>
+          `;
+        }
+
+        // Número dinámico en Delantero (pecho / frente de camiseta, ej: selecciones nacionales o dorsales frontales)
+        const isDelantero = pieceType === 'DELANTERO' || pieceType === 'DELANTERO_REDONDO' || pieceType === 'DELANTERO_V';
+        if (config.includeFrontNumber && isDelantero) {
+          let xPercent = config.frontNumberXPercent ?? 50;
+          if (config.frontNumberPosition === 'CENTRO') xPercent = 50;
+          else if (config.frontNumberPosition === 'DERECHA') xPercent = 68;
+          else if (config.frontNumberPosition === 'IZQUIERDA') xPercent = 32;
+
+          const yPercent = Math.max(15, Math.min(85, config.frontNumberYPercent ?? 38));
+          const frontScale = Math.max(0.3, Math.min(2.5, config.frontNumberScale ?? 1.0));
+          const isYouth = localBbox.height < 580;
+          const baseFrontSize = isYouth
+            ? Math.min(65, Math.max(45, localBbox.height * 0.12))
+            : Math.min(90, Math.max(60, localBbox.height * 0.13));
+          const frontNumberSize = baseFrontSize * frontScale;
+
+          const frontNumberRule: DynamicPlaceholderRule = {
+            id: 'NUMERO_FRENTE',
+            tag: '{{NUMERO_FRENTE}}',
+            targetPiece: pieceType,
+            anchorX: localBbox.width * (xPercent / 100),
+            anchorY: localBbox.height * (yPercent / 100),
+            maxWidthMm: localBbox.width * 0.35,
+            maxHeightMm: localBbox.height * 0.25,
+            defaultFontSizeMm: frontNumberSize,
+            minFontSizeMm: Math.max(20, frontNumberSize * 0.6),
+            minScaleFactor: 0.55,
+            fontFamily: configuredFont,
+            fillColor: configuredFill,
+            strokeColor: configuredStroke,
+            strokeWidthMm: configuredStrokeWidth > 0 ? Math.max(configuredStrokeWidth * 0.75, 1.5) : 0,
+            textAlign: 'center',
+          };
+
+          const frontNumberFitting = computeTextFitting(orderItem.playerNumber, frontNumberRule);
+          dorsalSvg = `
+            <!-- Número Delantero / Pecho Oficial vectorizado a curvas -->
+            <g id="delantero_numero_${uniquePieceId}" data-hmb-role="front-number">
+              ${frontNumberFitting.svgContent}
+            </g>
+          `;
+        }
+
+        // Marca interior de talla para confección. Usa la misma fuente vectorial
+        // ya validada para el dorsal, por lo que Illustrator recibe curvas.
+        let sizeMarkSvg = '';
+        if (config.includeSizeMark) {
+          const sizeFontSize = Math.max(3, Math.min(20, config.sizeMarkFontSizeMm ?? 8));
+          const bottomOffset = Math.max(-20, Math.min(localBbox.height * 0.25, config.sizeMarkBottomOffsetMm ?? 8));
+          const sizeRule: DynamicPlaceholderRule = {
+            id: 'TALLA_PIEZA',
+            tag: '{{TALLA}}',
+            targetPiece: pieceType,
+            anchorX: localBbox.width / 2,
+            anchorY: localBbox.height - bottomOffset - (sizeFontSize / 2),
+            maxWidthMm: Math.max(20, localBbox.width * 0.35),
+            maxHeightMm: sizeFontSize * 1.25,
+            defaultFontSizeMm: sizeFontSize,
+            minFontSizeMm: Math.max(3, sizeFontSize * 0.7),
+            minScaleFactor: 0.65,
+            fontFamily: configuredFont,
+            fillColor: config.sizeMarkColor || '#000000',
+            strokeWidthMm: 0,
+            textAlign: 'center',
+          };
+          const sizeFitting = computeTextFitting(orderItem.sizeName, sizeRule);
+          sizeMarkSvg = `
+            <g id="size_mark_${uniquePieceId}" data-hmb-role="size-mark">
+              ${sizeFitting.svgContent}
+            </g>
+          `;
+        }
+
         // 4. Etiqueta de identificación para corte y confección fuera del margen de costura
         const labelText = `${orderItem.playerName} | #${orderItem.playerNumber} | T${orderItem.sizeName} | ${pieceType}`;
         const labelInfo: PieceLabelInfo = {
@@ -429,8 +573,8 @@ export function generateGarmentPieces(
           isVisible: config.includeLabels,
         };
 
-        // Limpiar cualquier texto estático previo del fondo y asegurar que escale
-        let cleanArtSvg = baseArtSvg.replace(/<text\b([^>]*)>([\s\S]*?)<\/text>/gi, '');
+        // Normalizar el arte vectorial para eliminar mesas de trabajo gigantes y ajustar al molde
+        let cleanArtSvg = normalizeArtworkSvgForMold(baseArtSvg.replace(/<text\b([^>]*)>([\s\S]*?)<\/text>/gi, ''));
         let scaledArtSvg = cleanArtSvg;
         if (scaledArtSvg.includes('<svg')) {
           let artOffsetY = 0;
@@ -462,6 +606,7 @@ export function generateGarmentPieces(
             <g clip-path="url(#${maskId})">
               ${scaledArtSvg}
               ${dorsalSvg}
+              ${sizeMarkSvg}
             </g>
           </g>
         `.trim();

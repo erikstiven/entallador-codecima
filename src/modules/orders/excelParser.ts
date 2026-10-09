@@ -51,6 +51,8 @@ function mapColumnIndices(headers: string[]): Record<string, number> {
       map.notes = idx;
     } else if (['cantidad', 'cant', 'qty', 'quantity'].includes(clean)) {
       map.quantity = idx;
+    } else if (['cuello', 'tipocuello', 'escote', 'neck', 'neckline'].includes(clean)) {
+      map.necklineType = idx;
     }
   });
 
@@ -127,6 +129,10 @@ export function parseExcelBuffer(
     const rawTeam = columnMap.team !== undefined ? String(row[columnMap.team] || '') : undefined;
     const rawNotes = columnMap.notes !== undefined ? String(row[columnMap.notes] || '') : undefined;
     const rawQty = columnMap.quantity !== undefined ? parseInt(String(row[columnMap.quantity]), 10) || 1 : 1;
+    const rawNeckline = columnMap.necklineType !== undefined
+      ? String(row[columnMap.necklineType] || '')
+      : '';
+    const necklineType = /(^|\s)V($|\s)|PICO/i.test(rawNeckline) ? 'V' : 'REDONDO';
 
     // Normalizaciones automáticas
     const playerName = normalizePlayerName(rawName);
@@ -141,6 +147,7 @@ export function parseExcelBuffer(
       playerNumber,
       sizeName,
       garmentType,
+      necklineType,
       gender: rawGender,
       team: rawTeam,
       notes: rawNotes,
@@ -212,7 +219,8 @@ export function generateProductionSummaryWorkbook(
     'Talla': it.sizeName,
     'Nombre': it.playerName,
     'Dorsal': it.playerNumber,
-    'Tipo Prenda': it.garmentType,
+      'Tipo Prenda': it.garmentType,
+      'Cuello': it.necklineType || 'REDONDO',
     'Cantidad': it.quantity,
     'Estado': it.isValid ? 'CORRECTO' : 'CON ERRORES',
     'Observaciones': it.notes || (it.errors.length > 0 ? it.errors.map(e => e.message).join(' | ') : ''),
@@ -247,6 +255,7 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Nombre': 'MATEO',
       'Dorsal': '10',
       'Tipo Prenda': 'COMPLETO',
+      'Cuello': 'REDONDO',
       'Cantidad': 1,
     },
     {
@@ -254,6 +263,7 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Nombre': 'CAMILA',
       'Dorsal': '7',
       'Tipo Prenda': 'COMPLETO',
+      'Cuello': 'V',
       'Cantidad': 1,
     },
     {
@@ -261,6 +271,7 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Nombre': 'CARLOS',
       'Dorsal': '21',
       'Tipo Prenda': 'CAMISETA',
+      'Cuello': 'REDONDO',
       'Cantidad': 1,
     },
     {
@@ -268,6 +279,7 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Nombre': 'CHRISTOPHER',
       'Dorsal': '9',
       'Tipo Prenda': 'COMPLETO',
+      'Cuello': 'V',
       'Cantidad': 1,
     },
     {
@@ -275,6 +287,7 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Nombre': 'DANIELA',
       'Dorsal': '15',
       'Tipo Prenda': 'COMPLETO',
+      'Cuello': 'REDONDO',
       'Cantidad': 1,
     },
     {
@@ -282,6 +295,7 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Nombre': 'ÁLVARO',
       'Dorsal': '4',
       'Tipo Prenda': 'COMPLETO',
+      'Cuello': 'V',
       'Cantidad': 1,
     },
     {
@@ -289,6 +303,7 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Nombre': 'ÍÑIGO',
       'Dorsal': '8',
       'Tipo Prenda': 'COMPLETO',
+      'Cuello': 'REDONDO',
       'Cantidad': 1,
     },
     {
@@ -296,6 +311,7 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
       'Nombre': 'VALENTINA',
       'Dorsal': '12',
       'Tipo Prenda': 'SHORT',
+      'Cuello': 'REDONDO',
       'Cantidad': 1,
     },
   ];
@@ -306,6 +322,7 @@ export function generateOrderTemplateWorkbook(): Uint8Array {
     { wch: 22 },
     { wch: 10 },
     { wch: 16 },
+    { wch: 12 },
     { wch: 10 },
   ];
 

@@ -4,13 +4,14 @@ import electron from 'vite-plugin-electron'
 import renderer from 'vite-plugin-electron-renderer'
 import path from 'path'
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
   const isTest = process.env.VITEST !== undefined;
+  const isWeb = mode === 'web';
 
   return {
     plugins: [
       react(),
-      ...(!isTest
+      ...(!isTest && !isWeb
         ? [
             electron([
               { entry: 'electron/main.ts' },

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { 
   UploadCloud, 
   FileSpreadsheet, 
@@ -16,16 +16,19 @@ import {
   Layers,
   FileCheck,
   Shirt,
-  Scissors
+  Scissors,
+  Settings2,
+  Check
 } from 'lucide-react';
 import { useOrderStore } from '@/modules/orders/orderStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
-import { GarmentType } from '@/modules/orders/types';
+import { GarmentType, NecklineType } from '@/modules/orders/types';
 import { generateOrderTemplateWorkbook } from '@/modules/orders/excelParser';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { useDesignStore } from '@/modules/designs/designStore';
+import { useNestingStore } from '@/core/nesting/nestingStore';
 
 export const NewOrderView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,13 +37,27 @@ export const NewOrderView: React.FC = () => {
   const { activePatternSet, patternSets, loadFromDatabase, setActivePatternSet } = usePatternStore();
   const { activeDesign, designs, loadDesignsFromDatabase, setActiveDesign } = useDesignStore();
 
+  const [bulkGarmentType, setBulkGarmentType] = useState<GarmentType>('COMPLETO');
+  const [bulkNecklineType, setBulkNecklineType] = useState<NecklineType>('REDONDO');
+  const [bulkSizeName, setBulkSizeName] = useState<string>('');
+  const [bulkQuantity, setBulkQuantity] = useState<number>(1);
+  const [bulkSuccessMsg, setBulkSuccessMsg] = useState<string | null>(null);
+
   useEffect(() => {
-    loadFromDatabase();
-    loadDesignsFromDatabase();
+    if (patternSets.length === 0) loadFromDatabase();
+    if (designs.length === 0) loadDesignsFromDatabase();
   }, []);
 
   const currentPatternSet = activePatternSet || patternSets[0] || null;
   const currentDesign = activeDesign || designs[0] || null;
+
+  const handleClearOrder = () => {
+    if (!window.confirm('¿Limpiar la nómina actual, las prendas generadas y el acomodo del rollo? Esta acción no elimina diseños ni moldes.')) return;
+    clearOrder();
+    useGeneratorStore.getState().clearGenerated();
+    useNestingStore.getState().clearNesting();
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const {
     items,
@@ -49,6 +66,7 @@ export const NewOrderView: React.FC = () => {
     clientName,
     teamName,
     sport,
+    availableSizes,
     setClientName,
     setTeamName,
     setSport,
@@ -58,7 +76,44 @@ export const NewOrderView: React.FC = () => {
     addItem,
     clearOrder,
     setAllGarmentTypes,
+    setAllNecklineTypes,
+    applyMassEdit,
   } = useOrderStore();
+
+  const handleExecuteMassEdit = () => {
+    if (items.length === 0) return;
+
+    let willOverwriteDifferent = false;
+    if (items.some((i) => i.garmentType !== bulkGarmentType)) willOverwriteDifferent = true;
+    if (bulkGarmentType !== 'SHORT' && items.some((i) => i.garmentType !== 'SHORT' && (i.necklineType || 'REDONDO') !== bulkNecklineType)) willOverwriteDifferent = true;
+    if (bulkSizeName.trim() && items.some((i) => i.sizeName !== bulkSizeName.trim().toUpperCase())) willOverwriteDifferent = true;
+    if (bulkQuantity > 0 && items.some((i) => (i.quantity || 1) !== bulkQuantity)) willOverwriteDifferent = true;
+
+    if (willOverwriteDifferent) {
+      const confirm = window.confirm(
+        '¿Confirmas que deseas aplicar estos valores a TODOS los registros del pedido? Se sobreescribirán las tallas, prendas o cuellos existentes.'
+      );
+      if (!confirm) return;
+    }
+
+    applyMassEdit({
+      garmentType: bulkGarmentType,
+      necklineType: bulkGarmentType === 'SHORT' ? undefined : bulkNecklineType,
+      sizeName: bulkSizeName.trim() ? bulkSizeName.trim().toUpperCase() : undefined,
+      quantity: bulkQuantity > 0 ? bulkQuantity : undefined,
+    });
+
+    setBulkSuccessMsg('¡Edición masiva aplicada a todo el pedido!');
+    setTimeout(() => setBulkSuccessMsg(null), 3000);
+  };
+
+  const missingProductionSetup = [
+    !currentPatternSet ? 'molde' : null,
+    !currentDesign ? 'diseño' : null,
+  ].filter((value): value is string => Boolean(value));
+  const isProductionReady = !summary.hasErrors
+    && items.length > 0
+    && missingProductionSetup.length === 0;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -239,67 +294,129 @@ export const NewOrderView: React.FC = () => {
           </div>
 
           {/* Table Container */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-            <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-3">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl space-y-0">
+            {/* Sección Visible "Aplicar a Todos" */}
+            <div className="p-4 bg-slate-950/90 border-b border-slate-800 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white">Nómina del Pedido</span>
-                  <span className="text-xs text-slate-400 font-mono">({items.length} jugadores)</span>
+                  <Settings2 className="w-4 h-4 text-purple-400" />
+                  <span className="text-xs font-black uppercase tracking-wider text-white">Edición Masiva — Aplicar a Todos</span>
+                  {bulkSuccessMsg && (
+                    <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-700/60 px-2.5 py-0.5 rounded-lg flex items-center gap-1 animate-pulse">
+                      <Check className="w-3.5 h-3.5" />
+                      {bulkSuccessMsg}
+                    </span>
+                  )}
                 </div>
 
-                {/* Selector Rápido de Producción */}
-                <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-0.5 text-xs">
-                  <span className="text-[10px] uppercase font-mono text-slate-400 px-2 font-bold">Producción:</span>
+                <div className="flex items-center gap-2">
+                  {items.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearOrder}
+                      className="px-3 py-1 bg-slate-900 hover:bg-red-950 text-slate-400 hover:text-red-300 rounded-lg text-xs font-semibold border border-slate-700 hover:border-red-800 transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Limpiar únicamente el pedido actual"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Limpiar pedido
+                    </button>
+                  )}
                   <button
-                    type="button"
-                    onClick={() => setAllGarmentTypes('CAMISETA')}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                      items.length > 0 && items.every((i) => i.garmentType === 'CAMISETA')
-                        ? 'bg-violet-600 text-white shadow-sm'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                    title="Cambiar todo el pedido a solo camisetas (Frente, Espalda y Mangas)"
+                    onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: '28', garmentType: 'CAMISETA' })}
+                    className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold shadow-md shadow-purple-950 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                   >
-                    <Shirt className="w-3.5 h-3.5" />
-                    Solo Camisetas
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAllGarmentTypes('SHORT')}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                      items.length > 0 && items.every((i) => i.garmentType === 'SHORT')
-                        ? 'bg-violet-600 text-white shadow-sm'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                    title="Cambiar todo el pedido a solo shorts"
-                  >
-                    <Scissors className="w-3.5 h-3.5" />
-                    Solo Shorts
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAllGarmentTypes('COMPLETO')}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                      items.length > 0 && items.every((i) => i.garmentType === 'COMPLETO')
-                        ? 'bg-violet-600 text-white shadow-sm'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                    title="Conjunto completo (Camiseta + Short)"
-                  >
-                    <Layers className="w-3.5 h-3.5" />
-                    Completo (6 pzs)
+                    <Plus className="w-3.5 h-3.5" />
+                    Agregar Jugador
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: '28', garmentType: 'CAMISETA' })}
-                  className="px-3.5 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-950 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Agregar Jugador
-                </button>
+              {/* Mass Edit Controls Toolbar */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                {/* Prenda */}
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono text-slate-400 font-bold">Tipo Prenda:</label>
+                  <select
+                    value={bulkGarmentType}
+                    onChange={(e) => setBulkGarmentType(e.target.value as GarmentType)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-500 font-medium"
+                  >
+                    <option value="COMPLETO">COMPLETO (6 pzs)</option>
+                    <option value="CAMISETA">CAMISETA (4 pzs)</option>
+                    <option value="SHORT">SHORT (2 pzs)</option>
+                  </select>
+                </div>
+
+                {/* Cuello (Deshabilitado para shorts) */}
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono text-slate-400 font-bold">
+                    Cuello {bulkGarmentType === 'SHORT' ? '(N/A)' : ''}:
+                  </label>
+                  <select
+                    value={bulkNecklineType}
+                    disabled={bulkGarmentType === 'SHORT'}
+                    onChange={(e) => setBulkNecklineType(e.target.value as NecklineType)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-500 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <option value="REDONDO">REDONDO</option>
+                    <option value="V">CUELLO V</option>
+                  </select>
+                </div>
+
+                {/* Talla */}
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono text-slate-400 font-bold">Talla (Opcional):</label>
+                  <input
+                    type="text"
+                    placeholder="Mantener individual"
+                    value={bulkSizeName}
+                    onChange={(e) => setBulkSizeName(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white uppercase placeholder:text-slate-600 focus:outline-none focus:border-purple-500 font-mono"
+                  />
+                </div>
+
+                {/* Cantidad */}
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono text-slate-400 font-bold">Cantidad:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={bulkQuantity}
+                    onChange={(e) => setBulkQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white text-center focus:outline-none focus:border-purple-500 font-mono"
+                  />
+                </div>
+
+                {/* Modelo Asignado */}
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono text-slate-400 font-bold">Modelo Asignado:</label>
+                  <select
+                    value={activeDesign?.id || ''}
+                    onChange={(e) => {
+                      const selected = designs.find((d) => d.id === e.target.value);
+                      if (selected) setActiveDesign(selected);
+                    }}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-purple-300 font-semibold focus:outline-none focus:border-purple-500 truncate"
+                  >
+                    {designs.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Botón Aplicar */}
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={handleExecuteMassEdit}
+                    className="w-full py-1.5 px-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-lg text-xs font-black shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    Aplicar a Todos
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -312,6 +429,7 @@ export const NewOrderView: React.FC = () => {
                     <th className="py-3 px-3">Nombre Dorsal</th>
                     <th className="py-3 px-3 w-24">Número</th>
                     <th className="py-3 px-3 w-36">Tipo Prenda</th>
+                    <th className="py-3 px-3 w-28">Cuello</th>
                     <th className="py-3 px-3">Validación / Estado</th>
                     <th className="py-3 px-3 w-12 text-center"></th>
                   </tr>
@@ -381,6 +499,19 @@ export const NewOrderView: React.FC = () => {
                         </select>
                       </td>
 
+                      {/* Tipo de cuello explícito para seleccionar el molde correcto */}
+                      <td className="py-2 px-3">
+                        <select
+                          value={item.necklineType || 'REDONDO'}
+                          disabled={item.garmentType === 'SHORT'}
+                          onChange={(e) => updateItem(item.id, { necklineType: e.target.value as NecklineType })}
+                          className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-purple-500 text-[11px] font-sans disabled:opacity-40"
+                        >
+                          <option value="REDONDO">REDONDO</option>
+                          <option value="V">CUELLO V</option>
+                        </select>
+                      </td>
+
                       {/* Errors / Warnings Badges */}
                       <td className="py-2 px-3 text-[11px]">
                         {item.errors.length > 0 ? (
@@ -435,6 +566,11 @@ export const NewOrderView: React.FC = () => {
                     <AlertCircle className="w-4 h-4" />
                     Corrige los {summary.invalidCount} errores en la tabla antes de proceder a la generación.
                   </span>
+                ) : missingProductionSetup.length > 0 ? (
+                  <span className="text-amber-400 font-semibold flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4" />
+                    La nómina es válida, pero falta {missingProductionSetup.join(' y ')} para poder generar las prendas.
+                  </span>
                 ) : (
                   <span className="text-purple-400 font-bold flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4" />
@@ -472,14 +608,10 @@ export const NewOrderView: React.FC = () => {
             <button
               disabled={summary.hasErrors || items.length === 0}
               onClick={() => {
-                if (!currentPatternSet) {
-                  alert("No hay ningún molde cargado. Ve a la pestaña 'Moldes' y sube tu archivo SVG graduado.");
-                  setCurrentView('PATTERNS');
-                  return;
-                }
-                if (!currentDesign) {
-                  alert("No hay ningún diseño cargado. Ve a la pestaña 'Diseños' y sube tu archivo SVG de diseño.");
-                  setCurrentView('DESIGNS');
+                if (missingProductionSetup.length > 0) {
+                  const missingLabel = missingProductionSetup.join(' y ');
+                  alert(`No se puede generar el pedido: falta ${missingLabel}. Completa la configuración requerida antes de avanzar al entallado.`);
+                  setCurrentView(!currentPatternSet ? 'PATTERNS' : 'DESIGNS');
                   return;
                 }
 
@@ -502,10 +634,12 @@ export const NewOrderView: React.FC = () => {
               className={`px-7 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2.5 shadow-xl transition-all active:scale-95 ${
                 summary.hasErrors || items.length === 0
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                  : !isProductionReady
+                    ? 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/40 cursor-pointer'
                   : 'bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-purple-950/70 cursor-pointer ring-1 ring-purple-400/40'
               }`}
             >
-              <span>Generar Prendas y Avanzar al Entallado</span>
+              <span>{isProductionReady ? 'Generar Prendas y Avanzar al Entallado' : 'Completar configuración requerida'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

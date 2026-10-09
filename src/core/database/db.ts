@@ -79,11 +79,25 @@ export class DatabaseService {
   private db: Database | null = null;
   private dbPath: string | null = null;
   private saveDebounceTimer: any = null;
+  private initializationPromise: Promise<Database> | null = null;
+  private persistencePromise: Promise<void> | null = null;
+  private mutationRevision = 0;
+  private persistedRevision = -1;
 
   /**
    * Inicializa la base de datos SQLite y ejecuta las migraciones iniciales
    */
-  async initialize(dbFilePath?: string): Promise<Database> {
+  initialize(dbFilePath?: string): Promise<Database> {
+    if (this.db) return Promise.resolve(this.db);
+    if (this.initializationPromise) return this.initializationPromise;
+    this.initializationPromise = this.initializeInternal(dbFilePath).catch((error) => {
+      this.initializationPromise = null;
+      throw error;
+    });
+    return this.initializationPromise;
+  }
+
+  private async initializeInternal(dbFilePath?: string): Promise<Database> {
     const isBrowser = typeof window !== 'undefined';
     let nodeFs: any = null;
     let nodePath: any = null;
@@ -174,6 +188,7 @@ export class DatabaseService {
       upper.startsWith('DELETE') ||
       upper.startsWith('REPLACE')
     ) {
+      this.mutationRevision += 1;
       this.scheduleAutoSave();
     }
   }
@@ -187,8 +202,13 @@ export class DatabaseService {
       clearTimeout(this.saveDebounceTimer);
     }
     this.saveDebounceTimer = setTimeout(() => {
-      this.persistBrowserDb();
-    }, 200);
+      const persist = () => { void this.persistBrowserDb(); };
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(persist, { timeout: 1500 });
+      } else {
+        persist();
+      }
+    }, 500);
   }
 
   /**
@@ -196,12 +216,26 @@ export class DatabaseService {
    */
   async persistBrowserDb(): Promise<void> {
     if (typeof window === 'undefined' || !this.db) return;
-    try {
-      const data = this.db.export();
-      await saveDbToIndexedDb(data);
-    } catch (e) {
-      console.error('Error persistiendo SQLite en IndexedDB:', e);
+    if (this.persistedRevision === this.mutationRevision) return;
+    if (this.persistencePromise) {
+      await this.persistencePromise;
+      if (this.persistedRevision !== this.mutationRevision) return this.persistBrowserDb();
+      return;
     }
+
+    const revisionToPersist = this.mutationRevision;
+    this.persistencePromise = (async () => {
+      try {
+        const data = this.db!.export();
+        await saveDbToIndexedDb(data);
+        this.persistedRevision = revisionToPersist;
+      } catch (e) {
+        console.error('Error persistiendo SQLite en IndexedDB:', e);
+      } finally {
+        this.persistencePromise = null;
+      }
+    })();
+    await this.persistencePromise;
   }
 
   /**

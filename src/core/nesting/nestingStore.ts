@@ -4,22 +4,26 @@ import {
   PlacedNestingPiece, 
   NestingResult, 
   NestingGroupingMode,
-  NestingOptions 
+  NestingOptions,
+  NestingSheet
 } from './types';
 import { runNestingEngine } from './nestingEngine';
-import { executePolygonalNestingWithWorker } from './worker/nestingWorkerClient';
+import { performModularNesting } from './modularNestingEngine';
 
-export type NestingAlgorithm = 'POLYGONAL_CLIPPER2' | 'BOUNDING_BOX';
+export type NestingAlgorithm = 'MODULAR_INDUSTRIAL' | 'POLYGONAL_CLIPPER2' | 'BOUNDING_BOX';
 
 interface NestingState {
   placedPieces: PlacedNestingPiece[];
   nestingResult: NestingResult | null;
+  sheets: NestingSheet[];
+  activeSheetIndex: number;
   isNesting: boolean;
   nestingProgress: number; // 0 to 100 %
   nestingMode: NestingGroupingMode;
   nestingAlgorithm: NestingAlgorithm;
   spacingMm: number;
   printableWidthMm: number;
+  maxSheetLengthMm: number;
   selectedPieceId: string | null;
 
   // Actions
@@ -27,6 +31,8 @@ interface NestingState {
   setNestingAlgorithm: (algo: NestingAlgorithm) => void;
   setSpacingMm: (spacing: number) => void;
   setPrintableWidthMm: (width: number) => void;
+  setMaxSheetLengthMm: (lengthMm: number) => void;
+  setActiveSheetIndex: (index: number) => void;
   setSelectedPieceId: (id: string | null) => void;
   
   runNesting: (pieces: NestingPieceInput[], customOptions?: Partial<NestingOptions>) => Promise<NestingResult>;
@@ -40,48 +46,50 @@ interface NestingState {
 export const useNestingStore = create<NestingState>((set, get) => ({
   placedPieces: [],
   nestingResult: null,
+  sheets: [],
+  activeSheetIndex: 0,
   isNesting: false,
   nestingProgress: 0,
-  nestingMode: 'MAX_SAVINGS',
-  nestingAlgorithm: 'POLYGONAL_CLIPPER2',
-  spacingMm: 7.0,
+  nestingMode: 'MODULAR_PLAYER',
+  nestingAlgorithm: 'MODULAR_INDUSTRIAL',
+  spacingMm: 6.0,
   printableWidthMm: 1120.0,
+  maxSheetLengthMm: 5000.0, // 5.0 metros estándar industrial
   selectedPieceId: null,
 
   setNestingMode: (mode) => set({ nestingMode: mode }),
   setNestingAlgorithm: (algo) => set({ nestingAlgorithm: algo }),
   setSpacingMm: (spacing) => set({ spacingMm: spacing }),
   setPrintableWidthMm: (width) => set({ printableWidthMm: width }),
+  setMaxSheetLengthMm: (lengthMm) => set({ maxSheetLengthMm: lengthMm }),
+  setActiveSheetIndex: (index) => set({ activeSheetIndex: index }),
   setSelectedPieceId: (id) => set({ selectedPieceId: id }),
 
   runNesting: async (pieces, customOptions = {}) => {
     set({ isNesting: true, nestingProgress: 0 });
-    const { nestingMode, spacingMm, printableWidthMm, nestingAlgorithm } = get();
+    const { nestingMode, spacingMm, printableWidthMm, maxSheetLengthMm } = get();
 
     const options: NestingOptions = {
       printableWidthMm: customOptions.printableWidthMm ?? printableWidthMm,
+      maxSheetLengthMm: customOptions.maxSheetLengthMm ?? maxSheetLengthMm,
       spacingMm: customOptions.spacingMm ?? spacingMm,
       groupingMode: customOptions.groupingMode ?? nestingMode,
-      allowRotation: customOptions.allowRotation ?? true,
+      allowRotation: customOptions.allowRotation ?? false,
     };
 
     let result: NestingResult;
 
     try {
-      if (nestingAlgorithm === 'POLYGONAL_CLIPPER2') {
-        result = await executePolygonalNestingWithWorker(pieces, options, (progress) => {
-          set({ nestingProgress: progress });
-        });
-      } else {
-        result = runNestingEngine(pieces, options);
-      }
+      result = performModularNesting(pieces, options);
     } catch (err) {
-      console.warn('Error en algoritmo de nesting, ejecutando motor de respaldo:', err);
+      console.warn('Error en algoritmo modular, ejecutando motor de respaldo:', err);
       result = runNestingEngine(pieces, options);
     }
 
     set({
       placedPieces: result.placedPieces,
+      sheets: result.sheets || [],
+      activeSheetIndex: 0,
       nestingResult: result,
       isNesting: false,
       nestingProgress: 100,
@@ -111,13 +119,13 @@ export const useNestingStore = create<NestingState>((set, get) => ({
           ...p,
           xMm: Number(clampedX.toFixed(2)),
           yMm: Number(clampedY.toFixed(2)),
-          isLocked: true, // Mover manualmente bloquea automáticamente para preservar ajuste
+          isLocked: true,
         };
       }
       return p;
     });
 
-    // Recalcular métricas de rollo
+    // Recalcular métricas
     let maxRollLength = 0;
     let totalArea = 0;
     for (const pl of updated) {
@@ -148,22 +156,17 @@ export const useNestingStore = create<NestingState>((set, get) => ({
     const { placedPieces, printableWidthMm } = get();
     const updated = placedPieces.map((p) => {
       if (p.id === pieceId) {
-        const allowed = p.allowedRotations || [0];
-        const newRot = (p.rotationDeg + degDelta) % 360;
-        if (!allowed.includes(newRot) && allowed.length > 0) {
-          return p;
-        }
-
-        const isSwapped = newRot === 90 || newRot === 270;
-        const effW = isSwapped ? p.bbox.height : p.bbox.width;
-        const effH = isSwapped ? p.bbox.width : p.bbox.height;
+        const newRot = ((p.rotationDeg + degDelta) % 360 + 360) % 360;
+        const isOrthogonal = newRot === 90 || newRot === 270;
+        const effW = isOrthogonal ? p.bbox.height : p.bbox.width;
+        const effH = isOrthogonal ? p.bbox.width : p.bbox.height;
         const clampedX = Math.max(0, Math.min(p.xMm, printableWidthMm - effW));
 
         return {
           ...p,
           rotationDeg: newRot,
-          effectiveWidthMm: Number(effW.toFixed(2)),
-          effectiveHeightMm: Number(effH.toFixed(2)),
+          effectiveWidthMm: effW,
+          effectiveHeightMm: effH,
           xMm: Number(clampedX.toFixed(2)),
           isLocked: true,
         };
@@ -175,64 +178,17 @@ export const useNestingStore = create<NestingState>((set, get) => ({
   },
 
   reoptimizeUnlocked: async (allPieces) => {
-    const { placedPieces, nestingMode, spacingMm, printableWidthMm, nestingAlgorithm } = get();
-    set({ isNesting: true, nestingProgress: 0 });
-
-    const lockedMap = new Map<string, PlacedNestingPiece>();
-    for (const pl of placedPieces) {
-      if (pl.isLocked) {
-        lockedMap.set(pl.id, pl);
-      }
-    }
-
-    const inputPieces: NestingPieceInput[] = allPieces.map((p) => {
-      const locked = lockedMap.get(p.id);
-      if (locked) {
-        return {
-          ...p,
-          isLocked: true,
-          xMm: locked.xMm,
-          yMm: locked.yMm,
-          rotationDeg: locked.rotationDeg,
-        };
-      }
-      return {
-        ...p,
-        isLocked: false,
-      };
-    });
-
-    const options: NestingOptions = {
-      printableWidthMm,
-      spacingMm,
-      groupingMode: nestingMode,
-      allowRotation: true,
-    };
-
-    let result: NestingResult;
-
-    try {
-      if (nestingAlgorithm === 'POLYGONAL_CLIPPER2') {
-        result = await executePolygonalNestingWithWorker(inputPieces, options, (progress) => {
-          set({ nestingProgress: progress });
-        });
-      } else {
-        result = runNestingEngine(inputPieces, options);
-      }
-    } catch (err) {
-      console.warn('Error en reoptimización, ejecutando motor de respaldo:', err);
-      result = runNestingEngine(inputPieces, options);
-    }
-
-    set({
-      placedPieces: result.placedPieces,
-      nestingResult: result,
-      isNesting: false,
-      nestingProgress: 100,
-    });
-
-    return result;
+    const { runNesting } = get();
+    return runNesting(allPieces);
   },
 
-  clearNesting: () => set({ placedPieces: [], nestingResult: null, selectedPieceId: null, nestingProgress: 0 }),
+  clearNesting: () => {
+    set({
+      placedPieces: [],
+      sheets: [],
+      activeSheetIndex: 0,
+      nestingResult: null,
+      selectedPieceId: null,
+    });
+  },
 }));

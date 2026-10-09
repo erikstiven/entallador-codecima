@@ -100,4 +100,19 @@ describe('Text Vector Engine & Auto-Fitting Placeholders', () => {
     expect(injected).toContain('MATEO');
     expect(injected).toContain('10');
   });
+
+  it('genera trazados vectoriales en curvas nativas (<path d="..." />) cuando la fuente opentype está disponible', async () => {
+    const { loadOpentypeFont } = await import('./fontManager');
+    await loadOpentypeFont('Bebas Neue');
+
+    const bebasRule: DynamicPlaceholderRule = {
+      ...baseRule,
+      fontFamily: 'Bebas Neue',
+    };
+
+    const result = computeTextFitting('CARLOS 21', bebasRule);
+    expect(result.svgContent).toContain('<path');
+    expect(result.svgContent).toContain('d="M');
+    expect(result.svgContent).toContain('fill="#ffffff"');
+  });
 });

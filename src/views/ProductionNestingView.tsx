@@ -3,31 +3,95 @@ import {
   Play, 
   Lock, 
   Download, 
-  Sparkles,
-  Trash2,
-  Eye,
-  Printer,
-  ZoomIn,
-  ZoomOut
+  Sparkles, 
+  Trash2, 
+  Eye, 
+  Printer, 
+  ZoomIn, 
+  ZoomOut, 
+  AlertTriangle,
+  Layers,
+  Scissors,
+  Shirt,
+  Sliders,
+  FileCheck
 } from 'lucide-react';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
 import { useNestingStore } from '@/core/nesting/nestingStore';
 import { useInteractiveCanvas } from '@/modules/canvas/useInteractiveCanvas';
-import { NestingPieceInput } from '@/core/nesting/types';
+import { NestingPieceInput, NestingSheet } from '@/core/nesting/types';
 import { ExportModal } from '@/modules/export/ExportModal';
 import { GarmentInspectionTab } from './GarmentInspectionTab';
+
+function summarizeProductionWarnings(warnings: string[]): string[] {
+  const shortArtworkPlayers = new Set<string>();
+  const missingShortSides = new Set<string>();
+  const missingSizes = new Map<string, Set<string>>();
+  const otherWarnings: string[] = [];
+
+  for (const warning of warnings) {
+    const playerMatch = warning.match(/^Jugador\s+(.+?)(?:,\s*talla\s+[^:]+)?:\s+(.+)$/i);
+    const playerName = playerMatch?.[1]?.trim();
+    const reason = playerMatch?.[2] || warning;
+
+    if (playerName && /diseño de la pierna/i.test(reason)) {
+      shortArtworkPlayers.add(playerName);
+      if (/pierna izquierda/i.test(reason)) missingShortSides.add('izquierda');
+      if (/pierna derecha/i.test(reason)) missingShortSides.add('derecha');
+      continue;
+    }
+
+    const sizeMatch = reason.match(/la talla\s+["“]([^"”]+)["”]\s+no existe/i);
+    if (playerName && sizeMatch) {
+      const size = sizeMatch[1];
+      if (!missingSizes.has(size)) missingSizes.set(size, new Set());
+      missingSizes.get(size)!.add(playerName);
+      continue;
+    }
+
+    otherWarnings.push(warning);
+  }
+
+  const summaries: string[] = [];
+  if (shortArtworkPlayers.size > 0) {
+    const sides = Array.from(missingShortSides);
+    summaries.push(
+      `${shortArtworkPlayers.size} ${shortArtworkPlayers.size === 1 ? 'jugador omitido' : 'jugadores omitidos'}: `
+      + `faltan diseños de pantaloneta${sides.length ? ` (${sides.join(' y ')})` : ''}.`
+    );
+  }
+  if (missingSizes.size > 0) {
+    const totalPlayers = Array.from(missingSizes.values()).reduce((total, names) => total + names.size, 0);
+    const sizes = Array.from(missingSizes.keys()).join(', ');
+    summaries.push(
+      `${totalPlayers} ${totalPlayers === 1 ? 'jugador omitido' : 'jugadores omitidos'}: `
+      + `${missingSizes.size === 1 ? 'la talla' : 'las tallas'} ${sizes} no ${missingSizes.size === 1 ? 'existe' : 'existen'} en el molde.`
+    );
+  }
+  if (otherWarnings.length > 0) {
+    summaries.push(`${otherWarnings.length} ${otherWarnings.length === 1 ? 'incidencia adicional' : 'incidencias adicionales'}.`);
+  }
+  return summaries;
+}
 
 export const ProductionNestingView: React.FC = () => {
   const { activeProfile } = useProfileStore();
   const { generatedPieces, generationResult, setProductionScope } = useGeneratorStore();
   const { 
     placedPieces, 
+    sheets,
+    activeSheetIndex,
+    setActiveSheetIndex,
     nestingResult, 
     isNesting, 
     nestingProgress,
     nestingMode, 
     setNestingMode,
+    printableWidthMm,
+    setPrintableWidthMm,
+    maxSheetLengthMm,
+    setMaxSheetLengthMm,
     runNesting, 
     reoptimizeUnlocked,
     clearNesting,
@@ -39,7 +103,6 @@ export const ProductionNestingView: React.FC = () => {
     zoomLevel,
     setZoomLevel,
     pan,
-    setPan,
     isPanning,
     dragState,
     mmToPx,
@@ -50,9 +113,9 @@ export const ProductionNestingView: React.FC = () => {
     fitToAll,
   } = useInteractiveCanvas();
 
-  // Pestaña activa: 'INSPECTION' (Revisión de prendas por jugador/talla) o 'ROLL' (Acomodo en rollo de 1120 mm)
   const [activeTab, setActiveTab] = useState<'INSPECTION' | 'ROLL'>('INSPECTION');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [viewAllSheets, setViewAllSheets] = useState<boolean>(false);
 
   // Mapear piezas generadas al formato de entrada del motor de nesting
   const nestingPieceInputs: NestingPieceInput[] = useMemo(() => {
@@ -80,8 +143,9 @@ export const ProductionNestingView: React.FC = () => {
     const inputsToNest = Array.isArray(overrideInputs) ? overrideInputs : nestingPieceInputs;
     if (inputsToNest.length === 0) return;
     await runNesting(inputsToNest, {
-      printableWidthMm: activeProfile.printableWidthMm,
-      spacingMm: activeProfile.pieceSpacingMm || 7.0,
+      printableWidthMm,
+      maxSheetLengthMm,
+      spacingMm: 6.0,
       groupingMode: nestingMode,
     });
   };
@@ -92,23 +156,64 @@ export const ProductionNestingView: React.FC = () => {
     await reoptimizeUnlocked(nestingPieceInputs);
   };
 
-  // Dimensiones del lienzo del rollo
-  const canvasWidthPx = activeProfile.printableWidthMm * mmToPx;
-  const canvasHeightPx = Math.max(
-    1000,
-    ((nestingResult?.totalRollLengthMm || 0) + 150) * mmToPx
-  );
+  // Pliego activo
+  const activeSheet: NestingSheet | undefined = sheets[activeSheetIndex] || sheets[0];
 
-  // Métricas de producción
+  // Piezas a renderizar (del pliego activo o de todos si está en vista general)
+  const currentDisplayedPieces = useMemo(() => {
+    if (viewAllSheets || !activeSheet) return placedPieces;
+    return activeSheet.placedPieces;
+  }, [placedPieces, activeSheet, viewAllSheets]);
+
+  // Dimensiones del lienzo según el pliego activo
+  const currentCanvasHeightMm = useMemo(() => {
+    if (viewAllSheets || !activeSheet) {
+      return nestingResult?.totalRollLengthMm || 1000;
+    }
+    return activeSheet.heightMm;
+  }, [viewAllSheets, activeSheet, nestingResult]);
+
+  const canvasWidthPx = printableWidthMm * mmToPx;
+  const canvasHeightPx = Math.max(1000, (currentCanvasHeightMm + 150) * mmToPx);
+
+  // Métricas
   const totalPieces = generatedPieces.length;
   const placedCount = placedPieces.length;
   const lockedCount = placedPieces.filter((p) => p.isLocked).length;
   const totalGarments = generationResult?.totalGarments || 0;
-  const actualLengthM = nestingResult ? (nestingResult.totalRollLengthMm / 1000.0).toFixed(2) : '0.00';
-  const efficiency = nestingResult ? nestingResult.utilizationPercent.toFixed(1) : '0.0';
+  const actualLengthM = ((currentCanvasHeightMm) / 1000.0).toFixed(2);
+  const efficiency = activeSheet ? activeSheet.utilizationPercent.toFixed(1) : (nestingResult ? nestingResult.utilizationPercent.toFixed(1) : '0.0');
+  const warningSummaries = useMemo(
+    () => summarizeProductionWarnings(generationResult?.warnings || []),
+    [generationResult?.warnings]
+  );
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-950 overflow-hidden select-none">
+      {generationResult && generationResult.warnings.length > 0 && (
+        <div className="flex-shrink-0 border-b border-amber-500/40 bg-amber-950/70 px-6 py-2 text-xs text-amber-100">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-amber-400" />
+            <div className="min-w-0 flex-1">
+              <div>
+                <strong className="text-amber-300">Producción incompleta:</strong>{' '}
+                {warningSummaries.join(' ')}
+              </div>
+              <details className="mt-1">
+                <summary className="w-fit cursor-pointer font-semibold text-amber-300 hover:underline">
+                  Ver detalle ({generationResult.warnings.length})
+                </summary>
+                <ul className="mt-1.5 max-h-28 list-disc space-y-1 overflow-y-auto pl-5 text-[11px] text-amber-100">
+                  {generationResult.warnings.map((warning, index) => (
+                    <li key={`${index}_${warning}`}>{warning}</li>
+                  ))}
+                </ul>
+              </details>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Barra de Navegación Principal del Flujo de Producción */}
       <div className="bg-slate-900 border-b border-slate-800 px-6 py-2 flex items-center justify-between flex-shrink-0 z-30">
         {/* Selector de Pestañas: 1. Revisión vs 2. Rollo */}
@@ -140,7 +245,7 @@ export const ProductionNestingView: React.FC = () => {
               }`}
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>2. Rollo de Sublimación ({activeProfile.printableWidthMm} mm)</span>
+              <span>2. Rollo de Sublimación ({printableWidthMm} mm)</span>
             </button>
           </div>
         </div>
@@ -194,7 +299,7 @@ export const ProductionNestingView: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold shadow-md shadow-sky-950 transition-colors disabled:opacity-50 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
-              Exportar producción 1:1
+              <span>Exportar {sheets.length > 1 && !viewAllSheets ? `Pliego (${activeSheet?.sheetNumber || 1}/${sheets.length})` : 'Producción 1:1'}</span>
             </button>
           </div>
         )}
@@ -237,58 +342,47 @@ export const ProductionNestingView: React.FC = () => {
           }}
         />
       ) : (
-        /* PESTAÑA 2: ROLLO DE SUBLIMACIÓN (NESTING) */
+        /* PESTAÑA 2: ROLLO DE SUBLIMACIÓN (NESTING MODULAR MULTI-ARCHIVO) */
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          {/* Cinta superior de control y métricas limpias */}
-          <div className="bg-slate-900/90 border-b border-slate-800 px-6 py-2 flex flex-wrap items-center justify-between gap-4 z-20 text-xs">
-            <div className="flex items-center gap-3">
-              {/* Selector de Modo de Agrupamiento */}
-              <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 text-xs">
-                <button
-                  onClick={() => {
-                    setNestingMode('MAX_SAVINGS');
-                    if (placedCount > 0) {
-                      runNesting(nestingPieceInputs, { groupingMode: 'MAX_SAVINGS' });
-                    }
+          {/* Cinta superior de configuración de Bobina y Pliego */}
+          <div className="bg-slate-900/95 border-b border-slate-800 px-6 py-2 flex flex-wrap items-center justify-between gap-4 z-20 text-xs">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* 1. Selector de Ancho de Bobina */}
+              <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs">
+                <span className="text-[10px] text-slate-400 uppercase font-mono">Bobina:</span>
+                <select
+                  value={printableWidthMm}
+                  onChange={(e) => {
+                    const newW = Number(e.target.value);
+                    setPrintableWidthMm(newW);
+                    runNesting(nestingPieceInputs, { printableWidthMm: newW, maxSheetLengthMm });
                   }}
-                  className={`px-3 py-1 rounded-md font-medium transition-all ${
-                    nestingMode === 'MAX_SAVINGS'
-                      ? 'bg-violet-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                  className="bg-transparent text-purple-400 font-bold font-mono focus:outline-none cursor-pointer"
                 >
-                  Máximo Ahorro
-                </button>
-                <button
-                  onClick={() => {
-                    setNestingMode('BY_SIZE');
-                    if (placedCount > 0) {
-                      runNesting(nestingPieceInputs, { groupingMode: 'BY_SIZE' });
-                    }
+                  <option value={1120} className="bg-slate-900 text-white">1120 mm (1.12 m)</option>
+                  <option value={1600} className="bg-slate-900 text-white">1600 mm (1.60 m)</option>
+                  <option value={1800} className="bg-slate-900 text-white">1800 mm (1.80 m)</option>
+                  <option value={1900} className="bg-slate-900 text-white">1900 mm (1.90 m)</option>
+                </select>
+              </div>
+
+              {/* 2. Selector de Largo Máximo de Pliego / Archivo */}
+              <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs">
+                <span className="text-[10px] text-slate-400 uppercase font-mono">Máx. Pliego:</span>
+                <select
+                  value={maxSheetLengthMm}
+                  onChange={(e) => {
+                    const newH = Number(e.target.value);
+                    setMaxSheetLengthMm(newH);
+                    runNesting(nestingPieceInputs, { printableWidthMm, maxSheetLengthMm: newH });
                   }}
-                  className={`px-3 py-1 rounded-md font-medium transition-all ${
-                    nestingMode === 'BY_SIZE'
-                      ? 'bg-violet-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                  className="bg-transparent text-sky-400 font-bold font-mono focus:outline-none cursor-pointer"
                 >
-                  Por Talla
-                </button>
-                <button
-                  onClick={() => {
-                    setNestingMode('BY_PLAYER');
-                    if (placedCount > 0) {
-                      runNesting(nestingPieceInputs, { groupingMode: 'BY_PLAYER' });
-                    }
-                  }}
-                  className={`px-3 py-1 rounded-md font-medium transition-all ${
-                    nestingMode === 'BY_PLAYER'
-                      ? 'bg-violet-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Por Jugador
-                </button>
+                  <option value={2500} className="bg-slate-900 text-white">250 cm (2.5 m)</option>
+                  <option value={3000} className="bg-slate-900 text-white">300 cm (3.0 m)</option>
+                  <option value={5000} className="bg-slate-900 text-white">500 cm (5.0 m)</option>
+                  <option value={10000} className="bg-slate-900 text-white">1000 cm (10.0 m)</option>
+                </select>
               </div>
 
               {/* Botón Reorganizar Rollo */}
@@ -302,7 +396,7 @@ export const ProductionNestingView: React.FC = () => {
                 }`}
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                {isNesting ? `Optimizando (${nestingProgress}%)...` : 'Reorganizar Rollo'}
+                {isNesting ? `Optimizando (${nestingProgress}%)...` : 'Reorganizar Pliegos'}
               </button>
 
               {lockedCount > 0 && (
@@ -320,7 +414,7 @@ export const ProductionNestingView: React.FC = () => {
               {placedCount > 0 && (
                 <button
                   onClick={clearNesting}
-                  className="p-1.5 bg-slate-800 hover:bg-red-950 hover:text-red-400 text-slate-400 rounded-lg text-xs border border-slate-700 transition-colors"
+                  className="p-1.5 bg-slate-800 hover:bg-red-950 hover:text-red-400 text-slate-400 rounded-lg text-xs border border-slate-700 transition-colors cursor-pointer"
                   title="Limpiar acomodo"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -331,20 +425,79 @@ export const ProductionNestingView: React.FC = () => {
             {/* Métricas directas de taller */}
             <div className="flex items-center gap-5 font-mono text-xs">
               <div className="text-slate-400">
-                Piezas: <strong className="text-purple-400">{placedCount} / {totalPieces}</strong>
+                Pliegos: <strong className="text-purple-400">{sheets.length || 1} partes</strong>
               </div>
               <div className="text-slate-400">
-                Ancho: <strong className="text-white">{activeProfile.printableWidthMm} mm</strong>
-              </div>
-              <div className="text-slate-400">
-                Largo Rollo: <strong className="text-sky-400 text-sm font-bold">{actualLengthM} m</strong>
+                Largo Pliego: <strong className="text-sky-400 text-sm font-bold">{actualLengthM} m</strong>
               </div>
               <div className="text-slate-400">
                 Aprovechamiento: <strong className="text-purple-400">{efficiency}%</strong>
               </div>
-
             </div>
           </div>
+
+          {/* TIRA DE PESTAÑAS DE PLIEGOS PARTICIONADOS (PARTE 1, PARTE 2...) */}
+          {sheets.length > 0 && (
+            <div className="bg-slate-950 border-b border-slate-800/80 px-6 py-2 overflow-x-auto flex items-center justify-between gap-3 flex-shrink-0 scrollbar-thin">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-500 uppercase font-mono font-bold">Archivos RIP:</span>
+                {sheets.map((sheet, idx) => {
+                  const isSelected = !viewAllSheets && idx === activeSheetIndex;
+                  const isCamiseta = sheet.garmentType === 'CAMISETA';
+                  const lengthM = (sheet.heightMm / 1000).toFixed(2);
+
+                  return (
+                    <button
+                      key={sheet.id || idx}
+                      onClick={() => {
+                        setViewAllSheets(false);
+                        setActiveSheetIndex(idx);
+                      }}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all flex-shrink-0 cursor-pointer ${
+                        isSelected
+                          ? 'bg-purple-950/90 border-violet-500 text-white shadow-md shadow-purple-950/50 scale-[1.02] font-bold'
+                          : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                      }`}
+                    >
+                      {isCamiseta ? (
+                        <Shirt className={`w-3.5 h-3.5 ${isSelected ? 'text-purple-400' : 'text-slate-500'}`} />
+                      ) : (
+                        <Scissors className={`w-3.5 h-3.5 ${isSelected ? 'text-sky-400' : 'text-slate-500'}`} />
+                      )}
+                      <span>{sheet.title}</span>
+                      <span className="px-1.5 py-0.2 rounded bg-black/50 text-[10px] text-amber-400 font-bold">
+                        {lengthM} m
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        ({sheet.placedPieces.length} pzs)
+                      </span>
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={() => setViewAllSheets(true)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all flex-shrink-0 cursor-pointer ${
+                    viewAllSheets
+                      ? 'bg-purple-950/90 border-violet-500 text-white shadow-md shadow-purple-950/50 scale-[1.02] font-bold'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Ver Rollo Completo</span>
+                </button>
+              </div>
+
+              {activeSheet && !viewAllSheets && (
+                <div className="hidden lg:flex items-center gap-2 text-[11px] font-mono text-slate-400">
+                  <span className="text-slate-500">Jugadores en esta parte:</span>
+                  <span className="text-slate-300 font-semibold truncate max-w-xs">
+                    {activeSheet.playerNames.join(', ')}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Lienzo del Rollo de Papel Interactivo con Renderizado Vectorial */}
           <div className="flex-1 relative bg-[#0b0f19] overflow-hidden flex">
@@ -355,7 +508,7 @@ export const ProductionNestingView: React.FC = () => {
                 isPanning ? 'cursor-grabbing' : 'cursor-default'
               }`}
             >
-              {/* Rollo de papel 1120 mm */}
+              {/* Pliego / Rollo de papel */}
               <div 
                 className="bg-slate-900 border-2 border-violet-500/50 shadow-2xl relative transition-transform duration-75"
                 style={{
@@ -366,27 +519,23 @@ export const ProductionNestingView: React.FC = () => {
                 }}
               >
                 {/* Regla Milimétrica Superior */}
-                <div className="h-7 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between px-3 text-[10px] font-mono text-slate-400 select-none sticky top-0 z-20 backdrop-blur-sm">
-                  <span className="flex items-center gap-1">
+                <div className="h-7 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between px-3 text-[10px] font-mono text-slate-400 select-none sticky top-0 z-20 backdrop-blur-sm whitespace-nowrap overflow-hidden">
+                  <span className="flex items-center gap-1 flex-shrink-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span> 0 mm
                   </span>
-                  <span className="text-purple-400 font-semibold tracking-wide uppercase">
-                    {activeProfile.name} • {activeProfile.printableWidthMm} mm
+                  <span className="text-purple-400 font-semibold tracking-wide uppercase truncate mx-2">
+                    {viewAllSheets ? `PEDIDO COMPLETO • ${printableWidthMm} mm` : `${activeSheet?.title || 'PLIEGO'} (${printableWidthMm} × ${currentCanvasHeightMm.toFixed(0)} mm)`}
                   </span>
-                  <span>{activeProfile.printableWidthMm} mm</span>
+                  <span className="flex-shrink-0">{printableWidthMm} mm</span>
                 </div>
 
                 {/* Regla de Largo en Metros */}
                 <div className="absolute left-0 top-7 bottom-0 w-6 border-r border-slate-800/80 bg-slate-950/60 pointer-events-none z-10 hidden sm:flex flex-col justify-between py-2 text-[9px] font-mono text-slate-600 px-1">
                   <span>0m</span>
-                  {nestingResult && (
-                    <>
-                      <span>{(nestingResult.totalRollLengthMm * 0.25 / 1000).toFixed(1)}m</span>
-                      <span>{(nestingResult.totalRollLengthMm * 0.5 / 1000).toFixed(1)}m</span>
-                      <span>{(nestingResult.totalRollLengthMm * 0.75 / 1000).toFixed(1)}m</span>
-                      <span className="text-sky-400 font-bold">{actualLengthM}m</span>
-                    </>
-                  )}
+                  <span>{(currentCanvasHeightMm * 0.25 / 1000).toFixed(1)}m</span>
+                  <span>{(currentCanvasHeightMm * 0.5 / 1000).toFixed(1)}m</span>
+                  <span>{(currentCanvasHeightMm * 0.75 / 1000).toFixed(1)}m</span>
+                  <span className="text-sky-400 font-bold">{actualLengthM}m</span>
                 </div>
 
                 {/* Líneas Magnéticas de Alineación */}
@@ -426,11 +575,11 @@ export const ProductionNestingView: React.FC = () => {
                     <div className="text-center">
                       <Sparkles className="w-20 h-20 mx-auto text-purple-400 mb-3" />
                       <div className="text-xl font-bold font-mono tracking-widest text-white">
-                        ÁREA ÚTIL {activeProfile.printableWidthMm} MM
+                        ÁREA ÚTIL {printableWidthMm} MM
                       </div>
                       <div className="text-xs text-slate-300 font-mono mt-1">
                         {totalPieces > 0 
-                          ? `${totalPieces} PIEZAS VECTORIALES LISTAS — HAZ CLIC EN "REORGANIZAR ROLLO"` 
+                          ? `${totalPieces} PIEZAS VECTORIALES LISTAS — HAZ CLIC EN "REORGANIZAR PLIEGOS"` 
                           : 'SIN PIEZAS CARGADAS'}
                       </div>
                     </div>
@@ -439,7 +588,7 @@ export const ProductionNestingView: React.FC = () => {
 
                 {/* RENDERIZADO DE LAS PIEZAS CON ARTE VECTORIAL REAL */}
                 <div className="relative w-full h-full p-0">
-                  {placedPieces.map((piece) => {
+                  {currentDisplayedPieces.map((piece) => {
                     const isCurrentlyDragged = dragState.isDragging && dragState.pieceId === piece.id;
                     const currentX = isCurrentlyDragged ? dragState.currentPieceX : piece.xMm;
                     const currentY = isCurrentlyDragged ? dragState.currentPieceY : piece.yMm;
@@ -469,29 +618,38 @@ export const ProductionNestingView: React.FC = () => {
                           width: `${widthPx}px`,
                           height: `${heightPx}px`,
                         }}
-                        title={`${piece.playerName} #${piece.playerNumber} | T${piece.sizeName} | ${piece.pieceType} (${piece.effectiveWidthMm.toFixed(0)}x${piece.effectiveHeightMm.toFixed(0)}mm)`}
                       >
-                        {/* Arte Vectorial Real de la Prenda Sublimada */}
-                        <div 
-                          className="w-full h-full relative pointer-events-none overflow-hidden"
-                          style={{
-                            transform: piece.rotationDeg ? `rotate(${piece.rotationDeg}deg)` : undefined,
-                            transformOrigin: 'center center',
-                          }}
+                        {/* SVG del arte de la pieza con su máscara de molde */}
+                        <svg
+                          viewBox={`0 0 ${piece.effectiveWidthMm} ${piece.effectiveHeightMm}`}
+                          className="w-full h-full pointer-events-none"
+                          preserveAspectRatio="xMidYMid meet"
                         >
-                          {piece.svgContent ? (
-                            <svg
-                              viewBox={`0 0 ${piece.bbox.width} ${piece.bbox.height}`}
-                              className="w-full h-full object-contain"
-                              preserveAspectRatio="xMidYMid meet"
-                              dangerouslySetInnerHTML={{ __html: piece.svgContent }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center">
-                              <span className="font-bold text-white text-xs">{piece.playerName} #{piece.playerNumber}</span>
-                              <span className="text-[10px] text-slate-400">{piece.pieceType}</span>
-                            </div>
-                          )}
+                          <g
+                            transform={
+                              piece.rotationDeg === 90
+                                ? `translate(${piece.effectiveWidthMm}, 0) rotate(90)`
+                                : piece.rotationDeg === 270
+                                ? `translate(0, ${piece.effectiveHeightMm}) rotate(270)`
+                                : piece.rotationDeg === 180
+                                ? `translate(${piece.effectiveWidthMm}, ${piece.effectiveHeightMm}) rotate(180)`
+                                : undefined
+                            }
+                          >
+                            <g dangerouslySetInnerHTML={{ __html: piece.svgContent || '' }} />
+                          </g>
+                        </svg>
+
+                        {/* Overlay informativo de pieza al pasar el cursor */}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2 text-[10px] font-mono text-white pointer-events-none">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-amber-400">{piece.playerName}</span>
+                            <span className="text-purple-300">#{piece.playerNumber} • T{piece.sizeName}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-slate-400">
+                            <span>{piece.pieceType}</span>
+                            <span>{piece.effectiveWidthMm.toFixed(0)} × {piece.effectiveHeightMm.toFixed(0)} mm</span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -503,13 +661,13 @@ export const ProductionNestingView: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Exportación 1:1 a RasterLink */}
+      {/* Modal de Exportación */}
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
-        placedPieces={placedPieces}
+        placedPieces={currentDisplayedPieces}
         nestingResult={nestingResult}
-        printableWidthMm={activeProfile.printableWidthMm}
+        printableWidthMm={printableWidthMm}
       />
     </div>
   );

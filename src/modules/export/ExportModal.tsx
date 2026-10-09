@@ -32,6 +32,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [exportSuccess, setExportSuccess] = useState<boolean>(false);
 
+  const [selectedFormat, setSelectedFormat] = useState<ExportOptions['format']>('SVG');
+  const [includeCalibration, setIncludeCalibration] = useState<boolean>(true);
+  const [includeCutContour, setIncludeCutContour] = useState<boolean>(false);
+
   if (!isOpen || !nestingResult || placedPieces.length === 0) return null;
 
   const totalLengthM = (nestingResult.totalRollLengthMm / 1000.0).toFixed(2);
@@ -42,16 +46,22 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     setExportSuccess(false);
 
     try {
+      const effectiveSheetHeightMm = Math.max(
+        100,
+        placedPieces.reduce((max, p) => Math.max(max, p.yMm + p.effectiveHeightMm), 0) + 15
+      );
+
       const options: ExportOptions = {
-        format: 'SVG',
+        format: selectedFormat,
         fileName: fileName.trim() || 'PRODUCCION_TEXTIL',
         ripProfile: 'MIMAKI_RASTERLINK',
-        includeCutContour: false,
+        includeCutContour,
         cutContourColor: '#ff0000',
         cutContourWidthMm: 0.25,
         includeSeamLabels: false,
+        includeCalibrationSquare: includeCalibration,
         paperRollWidthMm: printableWidthMm,
-        totalRollLengthMm: nestingResult.totalRollLengthMm,
+        totalRollLengthMm: effectiveSheetHeightMm,
       };
 
       const result = await exportProductionRoll(
@@ -89,13 +99,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                Exportar para Illustrator / RasterLink
+                Exportar para Illustrator / RIP
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-violet-500/40 font-mono">
-                  SVG 1:1
+                  {selectedFormat} 1:1
                 </span>
               </h2>
               <p className="text-[11px] text-slate-400">
-                Archivo vectorial a tamaño real para impresión textil y corte
+                Archivo vectorial a escala física real con curvas nativas
               </p>
             </div>
           </div>
@@ -121,6 +131,55 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-violet-500 focus:outline-none"
               placeholder="PRODUCCION_UNIFORMES"
             />
+          </div>
+
+          {/* Format Selector */}
+          <div>
+            <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+              Formato de Exportación
+            </label>
+            <div className="grid grid-cols-4 gap-2 text-xs">
+              {(['SVG', 'PDF', 'EPS', 'EXCEL_SUMMARY'] as const).map((fmt) => (
+                <button
+                  key={fmt}
+                  type="button"
+                  onClick={() => setSelectedFormat(fmt)}
+                  className={`py-2 px-1.5 rounded-lg border font-mono font-bold text-center transition-all cursor-pointer ${
+                    selectedFormat === fmt
+                      ? 'bg-violet-600 text-white border-violet-400 shadow-md'
+                      : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'
+                  }`}
+                >
+                  {fmt === 'EXCEL_SUMMARY' ? 'Excel' : fmt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Options */}
+          <div className="space-y-2 bg-slate-950/70 p-3 rounded-xl border border-slate-800 text-xs">
+            <label className="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+              <input
+                type="checkbox"
+                checked={includeCalibration}
+                onChange={(e) => setIncludeCalibration(e.target.checked)}
+                className="rounded border-slate-700 text-violet-600 w-3.5 h-3.5"
+              />
+              <span className="font-semibold flex items-center gap-1">
+                <Ruler className="w-3.5 h-3.5 text-purple-400" />
+                Incluir cuadro de calibración física (100 × 100 mm)
+              </span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+              <input
+                type="checkbox"
+                checked={includeCutContour}
+                onChange={(e) => setIncludeCutContour(e.target.checked)}
+                className="rounded border-slate-700 text-violet-600 w-3.5 h-3.5"
+              />
+              <span>Incluir línea técnica de corte (Contorno)</span>
+            </label>
           </div>
 
           {/* Summary Strip */}
@@ -162,14 +221,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             {exportSuccess ? (
               <>
                 <CheckCircle2 className="w-4 h-4 text-white" />
-                ¡Archivo SVG Descargado!
+                ¡Archivo Descargado!
               </>
             ) : isExporting ? (
               'Generando Vectorial 1:1...'
             ) : (
               <>
                 <Download className="w-4 h-4" />
-                Descargar SVG (1:1)
+                Descargar {selectedFormat} (1:1)
               </>
             )}
           </button>
