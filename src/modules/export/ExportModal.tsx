@@ -34,7 +34,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [exportSuccess, setExportSuccess] = useState<boolean>(false);
 
   const [selectedFormat, setSelectedFormat] = useState<ExportOptions['format']>('SVG');
-  const [includeCalibration, setIncludeCalibration] = useState<boolean>(true);
+  const [includeCalibration, setIncludeCalibration] = useState<boolean>(false);
   const [includeCutContour, setIncludeCutContour] = useState<boolean>(false);
 
   if (!isOpen || !nestingResult || placedPieces.length === 0) return null;

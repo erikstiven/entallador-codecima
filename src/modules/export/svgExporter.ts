@@ -431,13 +431,15 @@ export function generateFullRollSvg(
     piecesContent += '  </g>\n';
   });
 
-  // Cuadro de calibración física 100 × 100 mm opcional
+  // Cuadro de calibración física 100 × 100 mm opcional (en esquina inferior libre)
   let calibrationBox = '';
   if (options.includeCalibrationSquare === true) {
+    const calX = Math.max(5, safeWidthMm - 110);
+    const calY = Math.max(5, safeHeightMm - 110);
     calibrationBox = `
   <!-- Cuadro de Calibración 1:1 Certificado (100 x 100 mm) -->
-  <g id="hmb_calibration_box_100mm" transform="translate(10, 10)">
-    <rect width="100" height="100" fill="none" stroke="#000000" stroke-width="0.5" stroke-dasharray="4,2" />
+  <g id="hmb_calibration_box_100mm" transform="translate(${formatNumber(calX)}, ${formatNumber(calY)})">
+    <rect width="100" height="100" fill="#ffffff" fill-opacity="0.9" stroke="#000000" stroke-width="0.5" stroke-dasharray="4,2" />
     <line x1="0" y1="0" x2="100" y2="100" stroke="#000000" stroke-width="0.25" opacity="0.4" />
     <line x1="0" y1="100" x2="100" y2="0" stroke="#000000" stroke-width="0.25" opacity="0.4" />
     <text x="50" y="45" font-family="Arial, Helvetica, sans-serif" font-size="5" font-weight="bold" fill="#000000" text-anchor="middle">CALIBRACIÓN 1:1</text>
