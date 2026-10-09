@@ -21,8 +21,8 @@ import { PieceType } from '@/core/geometry/types';
 import { POPULAR_SPORTS_FONTS, loadGoogleFont, loadCustomFontFromFile } from '@/core/fonts/googleFonts';
 import { cmykToHex, hexToCmyk, CMYK } from '@/core/color/cmykColor';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
-import { useNestingStore } from '@/core/nesting/nestingStore';
 import { SvgTextilePreview, TextilePieceCarousel } from '@/components/textile';
+import { showAlert } from '@/core/ui/alerts';
 
 // Siluetas Vectoriales Guía de Alta Definición para las Ranuras de Arte
 const SilhouetteJerseyRound: React.FC<{ className?: string }> = ({ className = 'w-16 h-16' }) => (
@@ -212,6 +212,11 @@ export const DesignsView: React.FC = () => {
     setSaveStatus('saving');
     const saved = await saveActiveDesign();
     setSaveStatus(saved ? 'saved' : 'error');
+    if (saved) {
+      showAlert.toast('success', '¡Diseño guardado con éxito!');
+    } else {
+      showAlert.error('Error al Guardar', 'No fue posible guardar el diseño en la base de datos.');
+    }
     window.setTimeout(() => setSaveStatus('idle'), 2500);
   };
 
@@ -227,8 +232,10 @@ export const DesignsView: React.FC = () => {
       setLocalFonts((prev) => Array.from(new Set([fontName, ...prev])));
       setActiveFontFamily(fontName);
       applyStyleUpdates({ fontFamily: fontName });
+      showAlert.toast('success', `Fuente "${fontName}" sincronizada`);
     } catch (err) {
       console.error('Error al cargar archivo de fuente:', err);
+      showAlert.error('Error de Fuente', 'No se pudo leer el archivo TTF/OTF seleccionado.');
     }
   };
 
@@ -534,8 +541,17 @@ export const DesignsView: React.FC = () => {
 
           {designs.length > 0 && (
             <button
-              onClick={clearAllDesigns}
-              className="w-full mt-2 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-red-400 rounded-lg text-xs font-medium border border-slate-800 transition-colors flex items-center justify-center gap-1.5"
+              onClick={async () => {
+                const confirmed = await showAlert.confirm(
+                  '¿Eliminar todos los modelos?',
+                  'Esta acción borrará permanentemente todos los diseños maestros cargados.'
+                );
+                if (confirmed) {
+                  clearAllDesigns();
+                  showAlert.toast('info', 'Modelos limpiados');
+                }
+              }}
+              className="w-full mt-2 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-red-400 rounded-lg text-xs font-medium border border-slate-800 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Limpiar todos

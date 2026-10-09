@@ -23,6 +23,7 @@ import { useInteractiveCanvas } from '@/modules/canvas/useInteractiveCanvas';
 import { NestingPieceInput, NestingSheet } from '@/core/nesting/types';
 import { ExportModal } from '@/modules/export/ExportModal';
 import { GarmentInspectionTab } from './GarmentInspectionTab';
+import { showAlert } from '@/core/ui/alerts';
 
 function summarizeProductionWarnings(warnings: string[]): string[] {
   const shortArtworkPlayers = new Set<string>();
@@ -148,6 +149,7 @@ export const ProductionNestingView: React.FC = () => {
       spacingMm: 6.0,
       groupingMode: nestingMode,
     });
+    showAlert.toast('success', '¡Pliegos organizados y optimizados!');
   };
 
   // Reoptimizar piezas no bloqueadas
@@ -413,7 +415,16 @@ export const ProductionNestingView: React.FC = () => {
 
               {placedCount > 0 && (
                 <button
-                  onClick={clearNesting}
+                  onClick={async () => {
+                    const confirmed = await showAlert.confirm(
+                      '¿Limpiar acomodo actual?',
+                      'Se reseteará la posición de las piezas en la bobina.'
+                    );
+                    if (confirmed) {
+                      clearNesting();
+                      showAlert.toast('info', 'Lienzo limpiado');
+                    }
+                  }}
                   className="p-1.5 bg-slate-800 hover:bg-red-950 hover:text-red-400 text-slate-400 rounded-lg text-xs border border-slate-700 transition-colors cursor-pointer"
                   title="Limpiar acomodo"
                 >

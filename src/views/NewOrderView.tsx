@@ -29,6 +29,7 @@ import { useGeneratorStore } from '@/modules/generator/generatorStore';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { useDesignStore } from '@/modules/designs/designStore';
 import { useNestingStore } from '@/core/nesting/nestingStore';
+import { showAlert } from '@/core/ui/alerts';
 
 export const NewOrderView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -610,7 +611,10 @@ export const NewOrderView: React.FC = () => {
               onClick={() => {
                 if (missingProductionSetup.length > 0) {
                   const missingLabel = missingProductionSetup.join(' y ');
-                  alert(`No se puede generar el pedido: falta ${missingLabel}. Completa la configuración requerida antes de avanzar al entallado.`);
+                  showAlert.warning(
+                    'Configuración Incompleta',
+                    `No se puede generar el pedido: falta ${missingLabel}. Completa la configuración requerida antes de avanzar al entallado.`
+                  );
                   setCurrentView(!currentPatternSet ? 'PATTERNS' : 'DESIGNS');
                   return;
                 }
@@ -626,9 +630,13 @@ export const NewOrderView: React.FC = () => {
                 const { generatePieces } = useGeneratorStore.getState();
                 const res = generatePieces();
                 if (!res) {
-                  alert("No se pudieron generar las piezas. Verifica que las tallas del archivo de moldes coincidan con las del Excel.");
+                  showAlert.error(
+                    'Error de Generación',
+                    'No se pudieron generar las piezas. Verifica que las tallas del archivo de moldes coincidan con las del Excel.'
+                  );
                   return;
                 }
+                showAlert.toast('success', `¡${useGeneratorStore.getState().generatedPieces.length} piezas vectoriales generadas!`);
                 setCurrentView('NESTING');
               }}
               className={`px-7 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2.5 shadow-xl transition-all active:scale-95 ${

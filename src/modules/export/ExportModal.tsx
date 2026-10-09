@@ -10,6 +10,7 @@ import {
 import { ExportOptions } from './types';
 import { exportProductionRoll, triggerFileDownload } from './exportService';
 import { PlacedNestingPiece, NestingResult } from '@/core/nesting/types';
+import { showAlert } from '@/core/ui/alerts';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -75,14 +76,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
       triggerFileDownload(result);
       setExportSuccess(true);
+      showAlert.toast('success', `¡Archivo ${selectedFormat} descargado con éxito!`);
       setTimeout(() => {
         setExportSuccess(false);
         onClose();
-      }, 1500);
+      }, 1200);
     } catch (err) {
       console.error('Error al exportar bobina:', err);
       const message = err instanceof Error ? err.message : 'No fue posible generar el archivo.';
-      alert(`Error de exportación: ${message}`);
+      showAlert.error('Error al Exportar', message);
     } finally {
       setIsExporting(false);
     }

@@ -19,6 +19,7 @@ import {
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { PieceType, PatternPiece } from '@/modules/patterns/types';
 import { polygonToSvgPath } from '@/core/geometry/transform';
+import { showAlert } from '@/core/ui/alerts';
 
 export const PatternsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,6 +48,7 @@ export const PatternsView: React.FC = () => {
   const handleSavePatterns = () => {
     saveActiveSet();
     setIsSaved(true);
+    showAlert.toast('success', '¡Conjunto de moldes guardado con éxito!');
     setTimeout(() => setIsSaved(false), 2500);
   };
 
@@ -268,12 +270,17 @@ exportMoldesParaHmb();`;
               </button>
               {patternSets.length > 0 && (
                 <button
-                  onClick={() => {
-                    if (window.confirm('¿Deseas eliminar todos los conjuntos de moldes cargados?')) {
+                  onClick={async () => {
+                    const confirmed = await showAlert.confirm(
+                      '¿Limpiar todos los moldes?',
+                      'Esta acción eliminará todos los conjuntos de moldes cargados en la base de datos.'
+                    );
+                    if (confirmed) {
                       clearAllPatterns();
+                      showAlert.toast('info', 'Moldes limpiados');
                     }
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950/30 hover:bg-red-900/50 text-red-300 rounded-lg text-xs font-medium border border-red-800/40 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950/30 hover:bg-red-900/50 text-red-300 rounded-lg text-xs font-medium border border-red-800/40 transition-colors cursor-pointer"
                   title="Limpiar y borrar todos los moldes cargados"
                 >
                   <Trash2 className="w-3.5 h-3.5 text-red-400" />
@@ -281,8 +288,17 @@ exportMoldesParaHmb();`;
                 </button>
               )}
               <button
-                onClick={() => deletePatternSet(activePatternSet.id)}
-                className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-red-400 rounded-lg transition-colors border border-transparent hover:border-slate-700"
+                onClick={async () => {
+                  const confirmed = await showAlert.confirm(
+                    '¿Eliminar este molde?',
+                    `Se eliminará el conjunto "${activePatternSet.name}".`
+                  );
+                  if (confirmed) {
+                    deletePatternSet(activePatternSet.id);
+                    showAlert.toast('info', 'Conjunto de moldes eliminado');
+                  }
+                }}
+                className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-red-400 rounded-lg transition-colors border border-transparent hover:border-slate-700 cursor-pointer"
                 title="Eliminar este conjunto de moldes"
               >
                 <Trash2 className="w-4 h-4" />
@@ -610,13 +626,18 @@ exportMoldesParaHmb();`;
 
                         <button
                           type="button"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            if (window.confirm(`¿Deseas omitir/eliminar la pieza "${piece.pieceName}" de la Talla ${currentSizeObj.sizeName}?`)) {
+                            const confirmed = await showAlert.confirm(
+                              '¿Eliminar pieza del molde?',
+                              `¿Deseas omitir la pieza "${piece.pieceName}" de la Talla ${currentSizeObj.sizeName}?`
+                            );
+                            if (confirmed) {
                               deletePieceFromSize(currentSizeObj.sizeName, piece.id);
+                              showAlert.toast('info', 'Pieza eliminada');
                             }
                           }}
-                          className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-red-400 hover:bg-red-950/80 border border-slate-800 hover:border-red-800 transition-colors shrink-0"
+                          className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-red-400 hover:bg-red-950/80 border border-slate-800 hover:border-red-800 transition-colors shrink-0 cursor-pointer"
                           title="Omitir o eliminar esta pieza si está de más o duplicada"
                         >
                           <Trash2 className="w-4 h-4" />
