@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { 
   Play, 
   Lock, 
@@ -21,10 +21,111 @@ import { useGeneratorStore } from '@/modules/generator/generatorStore';
 import { resolvePieceSvg } from '@/modules/generator/garmentGenerator';
 import { useNestingStore } from '@/core/nesting/nestingStore';
 import { useInteractiveCanvas } from '@/modules/canvas/useInteractiveCanvas';
-import { NestingPieceInput, NestingSheet } from '@/core/nesting/types';
+import { NestingPieceInput, NestingSheet, PlacedNestingPiece } from '@/core/nesting/types';
 import { ExportModal } from '@/modules/export/ExportModal';
 import { GarmentInspectionTab } from './GarmentInspectionTab';
 import { showAlert } from '@/core/ui/alerts';
+
+interface CanvasPieceItemProps {
+  piece: PlacedNestingPiece;
+  mmToPx: number;
+  isSelected: boolean;
+  isCurrentlyDragged: boolean;
+  dragX?: number;
+  dragY?: number;
+  isLightweight: boolean;
+  onPieceMouseDown: (e: React.MouseEvent, pieceId: string, initialX: number, initialY: number) => void;
+  onSelectPiece: (pieceId: string) => void;
+}
+
+const CanvasPieceItem = React.memo<CanvasPieceItemProps>(({
+  piece,
+  mmToPx,
+  isSelected,
+  isCurrentlyDragged,
+  dragX,
+  dragY,
+  isLightweight,
+  onPieceMouseDown,
+  onSelectPiece,
+}) => {
+  const currentX = isCurrentlyDragged && dragX !== undefined ? dragX : piece.xMm;
+  const currentY = isCurrentlyDragged && dragY !== undefined ? dragY : piece.yMm;
+
+  const posX = currentX * mmToPx;
+  const posY = (currentY * mmToPx) + 28;
+  const widthPx = piece.effectiveWidthMm * mmToPx;
+  const heightPx = piece.effectiveHeightMm * mmToPx;
+
+  const svgInnerHtml = useMemo(
+    () => (isLightweight ? null : { __html: resolvePieceSvg(piece) }),
+    [piece, isLightweight]
+  );
+
+  return (
+    <div
+      data-piece="true"
+      onMouseDown={(e) => onPieceMouseDown(e, piece.id, piece.xMm, piece.yMm)}
+      onClick={() => onSelectPiece(piece.id)}
+      className={`absolute rounded transition-shadow group select-none overflow-hidden bg-slate-950/90 border ${
+        isCurrentlyDragged
+          ? 'cursor-grabbing ring-2 ring-cyan-400 border-cyan-400 shadow-2xl shadow-cyan-950 z-50 opacity-95 scale-[1.01]'
+          : isSelected
+          ? 'ring-2 ring-sky-400 border-sky-400 shadow-xl shadow-sky-950/60 z-30 cursor-grab'
+          : 'border-slate-700/80 hover:border-slate-400 hover:shadow-lg z-10 cursor-grab'
+      }`}
+      style={{
+        left: `${posX}px`,
+        top: `${posY}px`,
+        width: `${widthPx}px`,
+        height: `${heightPx}px`,
+      }}
+    >
+      {isLightweight || !svgInnerHtml ? (
+        <div className="w-full h-full flex flex-col items-center justify-center p-1.5 bg-slate-900/90 text-center pointer-events-none border border-dashed border-violet-500/30">
+          <span className="text-[10px] font-bold font-mono text-amber-400 truncate max-w-full">
+            {piece.playerName} #{piece.playerNumber}
+          </span>
+          <span className="text-[9px] font-mono text-purple-300 truncate max-w-full">
+            {piece.pieceType} • T{piece.sizeName}
+          </span>
+        </div>
+      ) : (
+        <svg
+          viewBox={`0 0 ${piece.effectiveWidthMm} ${piece.effectiveHeightMm}`}
+          className="w-full h-full pointer-events-none"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <g
+            transform={
+              piece.rotationDeg === 90
+                ? `translate(${piece.effectiveWidthMm}, 0) rotate(90)`
+                : piece.rotationDeg === 270
+                ? `translate(0, ${piece.effectiveHeightMm}) rotate(270)`
+                : piece.rotationDeg === 180
+                ? `translate(${piece.effectiveWidthMm}, ${piece.effectiveHeightMm}) rotate(180)`
+                : undefined
+            }
+          >
+            <g dangerouslySetInnerHTML={svgInnerHtml} />
+          </g>
+        </svg>
+      )}
+
+      {/* Overlay informativo de pieza al pasar el cursor */}
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2 text-[10px] font-mono text-white pointer-events-none">
+        <div className="flex items-center justify-between">
+          <span className="font-bold text-amber-400">{piece.playerName}</span>
+          <span className="text-purple-300">#{piece.playerNumber} • T{piece.sizeName}</span>
+        </div>
+        <div className="flex items-center justify-between text-slate-400">
+          <span>{piece.pieceType}</span>
+          <span>{piece.effectiveWidthMm.toFixed(0)} × {piece.effectiveHeightMm.toFixed(0)} mm</span>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 function summarizeProductionWarnings(warnings: string[]): string[] {
   const shortArtworkPlayers = new Set<string>();
@@ -179,6 +280,80 @@ export const ProductionNestingView: React.FC = () => {
 
   const canvasWidthPx = printableWidthMm * mmToPx;
   const canvasHeightPx = Math.max(1000, (currentCanvasHeightMm + 150) * mmToPx);
+
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>(() => ({
+    width: typeof window !== 'undefined' && window.innerWidth > 0 ? window.innerWidth : 1280,
+    height: typeof window !== 'undefined' && window.innerHeight > 0 ? window.innerHeight : 900,
+  }));
+
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+
+    const updateSize = () => {
+      if (!viewportRef.current) return;
+      const w = viewportRef.current.clientWidth;
+      const h = viewportRef.current.clientHeight;
+      if (w > 0 && h > 0) {
+        setViewportSize((prev) => (prev.width === w && prev.height === h ? prev : { width: w, height: h }));
+      }
+    };
+
+    updateSize();
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(updateSize);
+      observer.observe(el);
+      return () => observer.disconnect();
+    }
+  }, [activeTab]);
+
+  const handleSelectPiece = useCallback(
+    (pieceId: string) => {
+      setSelectedPieceId(pieceId);
+    },
+    [setSelectedPieceId]
+  );
+
+  // Viewport Culling: filtrar piezas fuera del área visible del contenedor (+ margen de overscan)
+  const visiblePieces = useMemo(() => {
+    const OVERSCAN_PX = 500;
+    const vw = viewportSize.width > 0 ? viewportSize.width : 1280;
+    const vh = viewportSize.height > 0 ? viewportSize.height : 900;
+    const rollLeftPx = (vw - canvasWidthPx) / 2 + pan.x;
+    const rollTopPx = 32 + pan.y;
+
+    return currentDisplayedPieces.filter((piece) => {
+      if (piece.id === dragState.pieceId || piece.id === selectedPieceId) {
+        return true;
+      }
+      const pieceLeft = rollLeftPx + piece.xMm * mmToPx;
+      const pieceRight = pieceLeft + piece.effectiveWidthMm * mmToPx;
+      const pieceTop = rollTopPx + piece.yMm * mmToPx + 28;
+      const pieceBottom = pieceTop + piece.effectiveHeightMm * mmToPx;
+
+      return (
+        pieceBottom >= -OVERSCAN_PX &&
+        pieceTop <= vh + OVERSCAN_PX &&
+        pieceRight >= -OVERSCAN_PX &&
+        pieceLeft <= vw + OVERSCAN_PX
+      );
+    });
+  }, [
+    currentDisplayedPieces,
+    viewportSize.width,
+    viewportSize.height,
+    canvasWidthPx,
+    pan.x,
+    pan.y,
+    mmToPx,
+    dragState.pieceId,
+    selectedPieceId,
+  ]);
+
+  // Modo ligero automático cuando el zoom es muy lejano o hay alta densidad de piezas simultáneas en pantalla
+  const isFarZoomLightweight = zoomLevel < 28 || visiblePieces.length > 48;
 
   // Métricas
   const totalPieces = generatedPieces.length;
@@ -534,6 +709,7 @@ export const ProductionNestingView: React.FC = () => {
           {/* Lienzo del Rollo de Papel Interactivo con Renderizado Vectorial */}
           <div className="flex-1 relative bg-[#0b0f19] overflow-hidden flex">
             <div 
+              ref={viewportRef}
               onMouseDown={handleCanvasMouseDown}
               onWheel={handleWheel}
               className={`flex-1 overflow-hidden relative flex justify-center items-start p-8 select-none bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] ${
@@ -542,7 +718,9 @@ export const ProductionNestingView: React.FC = () => {
             >
               {/* Pliego / Rollo de papel */}
               <div 
-                className="bg-slate-900 border-2 border-violet-500/50 shadow-2xl relative transition-transform duration-75"
+                className={`bg-slate-900 border-2 border-violet-500/50 shadow-2xl relative ${
+                  isPanning ? '' : 'transition-transform duration-75'
+                }`}
                 style={{
                   width: `${canvasWidthPx}px`,
                   minHeight: `${canvasHeightPx}px`,
@@ -618,72 +796,26 @@ export const ProductionNestingView: React.FC = () => {
                   </div>
                 )}
 
-                {/* RENDERIZADO DE LAS PIEZAS CON ARTE VECTORIAL REAL */}
+                {/* RENDERIZADO DE LAS PIEZAS CON VIEWPORT CULLING Y MEMOIZACIÓN */}
                 <div className="relative w-full h-full p-0">
-                  {currentDisplayedPieces.map((piece) => {
+                  {visiblePieces.map((piece) => {
                     const isCurrentlyDragged = dragState.isDragging && dragState.pieceId === piece.id;
-                    const currentX = isCurrentlyDragged ? dragState.currentPieceX : piece.xMm;
-                    const currentY = isCurrentlyDragged ? dragState.currentPieceY : piece.yMm;
-
-                    const posX = currentX * mmToPx;
-                    const posY = (currentY * mmToPx) + 28;
-                    const widthPx = piece.effectiveWidthMm * mmToPx;
-                    const heightPx = piece.effectiveHeightMm * mmToPx;
                     const isSelected = selectedPieceId === piece.id;
+                    const useLightweight = isFarZoomLightweight && !isCurrentlyDragged && !isSelected;
 
                     return (
-                      <div
+                      <CanvasPieceItem
                         key={piece.id}
-                        data-piece="true"
-                        onMouseDown={(e) => handlePieceMouseDown(e, piece.id, piece.xMm, piece.yMm)}
-                        onClick={() => setSelectedPieceId(piece.id)}
-                        className={`absolute rounded transition-shadow group select-none overflow-hidden bg-slate-950/90 border ${
-                          isCurrentlyDragged
-                            ? 'cursor-grabbing ring-2 ring-cyan-400 border-cyan-400 shadow-2xl shadow-cyan-950 z-50 opacity-95 scale-[1.01]'
-                            : isSelected 
-                            ? 'ring-2 ring-sky-400 border-sky-400 shadow-xl shadow-sky-950/60 z-30 cursor-grab' 
-                            : 'border-slate-700/80 hover:border-slate-400 hover:shadow-lg z-10 cursor-grab'
-                        }`}
-                        style={{
-                          left: `${posX}px`,
-                          top: `${posY}px`,
-                          width: `${widthPx}px`,
-                          height: `${heightPx}px`,
-                        }}
-                      >
-                        {/* SVG del arte de la pieza con su máscara de molde */}
-                        <svg
-                          viewBox={`0 0 ${piece.effectiveWidthMm} ${piece.effectiveHeightMm}`}
-                          className="w-full h-full pointer-events-none"
-                          preserveAspectRatio="xMidYMid meet"
-                        >
-                          <g
-                            transform={
-                              piece.rotationDeg === 90
-                                ? `translate(${piece.effectiveWidthMm}, 0) rotate(90)`
-                                : piece.rotationDeg === 270
-                                ? `translate(0, ${piece.effectiveHeightMm}) rotate(270)`
-                                : piece.rotationDeg === 180
-                                ? `translate(${piece.effectiveWidthMm}, ${piece.effectiveHeightMm}) rotate(180)`
-                                : undefined
-                            }
-                          >
-                            <g dangerouslySetInnerHTML={{ __html: resolvePieceSvg(piece) }} />
-                          </g>
-                        </svg>
-
-                        {/* Overlay informativo de pieza al pasar el cursor */}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2 text-[10px] font-mono text-white pointer-events-none">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-amber-400">{piece.playerName}</span>
-                            <span className="text-purple-300">#{piece.playerNumber} • T{piece.sizeName}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-slate-400">
-                            <span>{piece.pieceType}</span>
-                            <span>{piece.effectiveWidthMm.toFixed(0)} × {piece.effectiveHeightMm.toFixed(0)} mm</span>
-                          </div>
-                        </div>
-                      </div>
+                        piece={piece}
+                        mmToPx={mmToPx}
+                        isSelected={isSelected}
+                        isCurrentlyDragged={isCurrentlyDragged}
+                        dragX={isCurrentlyDragged ? dragState.currentPieceX : undefined}
+                        dragY={isCurrentlyDragged ? dragState.currentPieceY : undefined}
+                        isLightweight={useLightweight}
+                        onPieceMouseDown={handlePieceMouseDown}
+                        onSelectPiece={handleSelectPiece}
+                      />
                     );
                   })}
                 </div>

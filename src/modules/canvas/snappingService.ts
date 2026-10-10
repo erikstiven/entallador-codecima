@@ -67,90 +67,126 @@ export function calculateSnapping(options: SnappingOptions): SnapResult {
     activeGuideY = { type: 'horizontal', positionMm: 0, label: 'Inicio Rollo (0 mm)' };
   }
 
-  // 3. Snapping relativo contra las demás piezas en el lienzo
-  for (const other of otherPieces) {
+  // 3. Snapping relativo contra las demás piezas en el lienzo (con filtrado rápido por proximidad)
+  for (let i = 0; i < otherPieces.length; i++) {
+    const other = otherPieces[i];
     const ox = other.xMm;
     const oy = other.yMm;
     const ow = other.effectiveWidthMm;
     const oh = other.effectiveHeightMm;
 
+    // Descarte rápido por proximidad en el rollo: evita evaluar piezas lejanas en bobinas largas
+    const proximityMarginY = Math.max(heightMm, oh) + spacingMm + thresholdMm * 4;
+    if (oy > currentY + heightMm + proximityMarginY || oy + oh < currentY - proximityMarginY) {
+      continue;
+    }
+
+    const maxReachX = spacingMm + bestDistX;
+    const maxReachY = spacingMm + bestDistY;
+
+    const canSnapX =
+      ox <= currentX + widthMm + maxReachX &&
+      ox + ow >= currentX - maxReachX;
+    const canSnapY =
+      oy <= currentY + heightMm + maxReachY &&
+      oy + oh >= currentY - maxReachY;
+
+    if (!canSnapX && !canSnapY) {
+      continue;
+    }
+
     // --- EJE X ---
-    // A. A la derecha de la otra pieza con margen de seguridad (x = ox + ow + spacingMm)
-    const snapRightOfOther = ox + ow + spacingMm;
-    if (Math.abs(currentX - snapRightOfOther) < bestDistX) {
-      bestDistX = Math.abs(currentX - snapRightOfOther);
-      bestX = snapRightOfOther;
-      hasSnappedX = true;
-      activeGuideX = { 
-        type: 'vertical', 
-        positionMm: ox + ow, 
-        label: `+${spacingMm}mm separación` 
-      };
-    }
+    if (canSnapX) {
+      // A. A la derecha de la otra pieza con margen de seguridad (x = ox + ow + spacingMm)
+      const snapRightOfOther = ox + ow + spacingMm;
+      const distRight = Math.abs(currentX - snapRightOfOther);
+      if (distRight < bestDistX) {
+        bestDistX = distRight;
+        bestX = snapRightOfOther;
+        hasSnappedX = true;
+        activeGuideX = {
+          type: 'vertical',
+          positionMm: ox + ow,
+          label: `+${spacingMm}mm separación`,
+        };
+      }
 
-    // B. A la izquierda de la otra pieza con margen (x + widthMm + spacingMm = ox)
-    const snapLeftOfOther = ox - widthMm - spacingMm;
-    if (snapLeftOfOther >= 0 && Math.abs(currentX - snapLeftOfOther) < bestDistX) {
-      bestDistX = Math.abs(currentX - snapLeftOfOther);
-      bestX = snapLeftOfOther;
-      hasSnappedX = true;
-      activeGuideX = { 
-        type: 'vertical', 
-        positionMm: ox, 
-        label: `+${spacingMm}mm separación` 
-      };
-    }
+      // B. A la izquierda de la otra pieza con margen (x + widthMm + spacingMm = ox)
+      const snapLeftOfOther = ox - widthMm - spacingMm;
+      if (snapLeftOfOther >= 0) {
+        const distLeft = Math.abs(currentX - snapLeftOfOther);
+        if (distLeft < bestDistX) {
+          bestDistX = distLeft;
+          bestX = snapLeftOfOther;
+          hasSnappedX = true;
+          activeGuideX = {
+            type: 'vertical',
+            positionMm: ox,
+            label: `+${spacingMm}mm separación`,
+          };
+        }
+      }
 
-    // C. Alineación borde izquierdo (x = ox)
-    if (Math.abs(currentX - ox) < bestDistX) {
-      bestDistX = Math.abs(currentX - ox);
-      bestX = ox;
-      hasSnappedX = true;
-      activeGuideX = { type: 'vertical', positionMm: ox, label: 'Alineado Izq' };
-    }
+      // C. Alineación borde izquierdo (x = ox)
+      const distAlignLeft = Math.abs(currentX - ox);
+      if (distAlignLeft < bestDistX) {
+        bestDistX = distAlignLeft;
+        bestX = ox;
+        hasSnappedX = true;
+        activeGuideX = { type: 'vertical', positionMm: ox, label: 'Alineado Izq' };
+      }
 
-    // D. Alineación borde derecho (x + widthMm = ox + ow)
-    const alignRightX = ox + ow - widthMm;
-    if (Math.abs(currentX - alignRightX) < bestDistX) {
-      bestDistX = Math.abs(currentX - alignRightX);
-      bestX = alignRightX;
-      hasSnappedX = true;
-      activeGuideX = { type: 'vertical', positionMm: ox + ow, label: 'Alineado Der' };
+      // D. Alineación borde derecho (x + widthMm = ox + ow)
+      const alignRightX = ox + ow - widthMm;
+      const distAlignRight = Math.abs(currentX - alignRightX);
+      if (distAlignRight < bestDistX) {
+        bestDistX = distAlignRight;
+        bestX = alignRightX;
+        hasSnappedX = true;
+        activeGuideX = { type: 'vertical', positionMm: ox + ow, label: 'Alineado Der' };
+      }
     }
 
     // --- EJE Y ---
-    // E. Debajo de la otra pieza con margen (y = oy + oh + spacingMm)
-    const snapBelowOther = oy + oh + spacingMm;
-    if (Math.abs(currentY - snapBelowOther) < bestDistY) {
-      bestDistY = Math.abs(currentY - snapBelowOther);
-      bestY = snapBelowOther;
-      hasSnappedY = true;
-      activeGuideY = { 
-        type: 'horizontal', 
-        positionMm: oy + oh, 
-        label: `+${spacingMm}mm separación` 
-      };
-    }
+    if (canSnapY) {
+      // E. Debajo de la otra pieza con margen (y = oy + oh + spacingMm)
+      const snapBelowOther = oy + oh + spacingMm;
+      const distBelow = Math.abs(currentY - snapBelowOther);
+      if (distBelow < bestDistY) {
+        bestDistY = distBelow;
+        bestY = snapBelowOther;
+        hasSnappedY = true;
+        activeGuideY = {
+          type: 'horizontal',
+          positionMm: oy + oh,
+          label: `+${spacingMm}mm separación`,
+        };
+      }
 
-    // F. Arriba de la otra pieza con margen (y + heightMm + spacingMm = oy)
-    const snapAboveOther = oy - heightMm - spacingMm;
-    if (snapAboveOther >= 0 && Math.abs(currentY - snapAboveOther) < bestDistY) {
-      bestDistY = Math.abs(currentY - snapAboveOther);
-      bestY = snapAboveOther;
-      hasSnappedY = true;
-      activeGuideY = { 
-        type: 'horizontal', 
-        positionMm: oy, 
-        label: `+${spacingMm}mm separación` 
-      };
-    }
+      // F. Arriba de la otra pieza con margen (y + heightMm + spacingMm = oy)
+      const snapAboveOther = oy - heightMm - spacingMm;
+      if (snapAboveOther >= 0) {
+        const distAbove = Math.abs(currentY - snapAboveOther);
+        if (distAbove < bestDistY) {
+          bestDistY = distAbove;
+          bestY = snapAboveOther;
+          hasSnappedY = true;
+          activeGuideY = {
+            type: 'horizontal',
+            positionMm: oy,
+            label: `+${spacingMm}mm separación`,
+          };
+        }
+      }
 
-    // G. Alineación borde superior (y = oy)
-    if (Math.abs(currentY - oy) < bestDistY) {
-      bestDistY = Math.abs(currentY - oy);
-      bestY = oy;
-      hasSnappedY = true;
-      activeGuideY = { type: 'horizontal', positionMm: oy, label: 'Alineado Superior' };
+      // G. Alineación borde superior (y = oy)
+      const distAlignTop = Math.abs(currentY - oy);
+      if (distAlignTop < bestDistY) {
+        bestDistY = distAlignTop;
+        bestY = oy;
+        hasSnappedY = true;
+        activeGuideY = { type: 'horizontal', positionMm: oy, label: 'Alineado Superior' };
+      }
     }
   }
 
