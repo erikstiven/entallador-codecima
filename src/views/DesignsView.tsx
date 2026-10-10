@@ -14,9 +14,11 @@ import {
   Scissors,
   Layers,
   Copy,
-  Save
+  Save,
+  Loader2
 } from 'lucide-react';
 import { useDesignStore } from '@/modules/designs/designStore';
+import { dbService } from '@/core/database/db';
 import { PieceType } from '@/core/geometry/types';
 import { POPULAR_SPORTS_FONTS, loadGoogleFont, loadCustomFontFromFile } from '@/core/fonts/googleFonts';
 import { cmykToHex, hexToCmyk, CMYK } from '@/core/color/cmykColor';
@@ -207,18 +209,65 @@ export const DesignsView: React.FC = () => {
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<'IDLE' | 'SAVING' | 'SAVED'>('IDLE');
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const saveTimerRef = useRef<number | null>(null);
 
-  const handleSaveDesign = async () => {
-    setSaveStatus('saving');
-    const saved = await saveActiveDesign();
-    setSaveStatus(saved ? 'saved' : 'error');
-    if (saved) {
-      showAlert.toast('success', '¡Diseño guardado con éxito!');
-    } else {
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        window.clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleExplicitSaveDesign = async () => {
+    if (!activeDesign || saveStatus === 'SAVING' || isUploading) return;
+    if (saveTimerRef.current) {
+      window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+
+    setSaveStatus('SAVING');
+    try {
+      const [saved] = await Promise.all([
+        saveActiveDesign(),
+        dbService.persistBrowserDb(),
+        new Promise((resolve) => window.setTimeout(resolve, 250)),
+      ]);
+      await dbService.persistBrowserDb();
+
+      if (useGeneratorStore.getState().generatedPieces.length > 0) {
+        useGeneratorStore.getState().generatePieces();
+        useNestingStore.getState().clearNesting();
+      }
+
+      if (!saved) {
+        setSaveStatus('IDLE');
+        showAlert.error('Error al Guardar', 'No fue posible guardar el diseño en la base de datos.');
+        return;
+      }
+
+      const now = new Date();
+      const formattedTime = now.toLocaleTimeString('es-CO', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+      setLastSavedAt(`Guardado a las ${formattedTime}`);
+      setSaveStatus('SAVED');
+      showAlert.toast('success', `Diseño "${activeDesign.name}" guardado correctamente`);
+
+      saveTimerRef.current = window.setTimeout(() => {
+        setSaveStatus('IDLE');
+        saveTimerRef.current = null;
+      }, 3000);
+    } catch (err) {
+      console.error('Error guardando diseño explícitamente:', err);
+      setSaveStatus('IDLE');
       showAlert.error('Error al Guardar', 'No fue posible guardar el diseño en la base de datos.');
     }
-    window.setTimeout(() => setSaveStatus('idle'), 2500);
   };
 
   // Tipografía seleccionada
@@ -376,13 +425,19 @@ export const DesignsView: React.FC = () => {
 
   // Carga de archivo individual por ranura
   const handleUploadSingleBlock = (pieceType: PieceType, file?: File) => {
-    if (!file) return;
+    if (!file || !activeDesign) return;
+    setIsUploading(true);
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
       if (content) {
         setPieceArtwork(pieceType, content);
       }
+      setIsUploading(false);
+    };
+    reader.onerror = () => {
+      setIsUploading(false);
+      showAlert.error('Error de lectura', 'No se pudo leer el archivo SVG seleccionado.');
     };
     reader.readAsText(file);
   };
@@ -392,6 +447,7 @@ export const DesignsView: React.FC = () => {
     const files = Array.from(fileList);
     if (files.length === 0) return;
 
+    setIsUploading(true);
     const readFiles: { name: string; content: string }[] = [];
     let completed = 0;
 
@@ -404,7 +460,19 @@ export const DesignsView: React.FC = () => {
         }
         completed++;
         if (completed === files.length) {
-          importMultiBlockFiles(readFiles);
+          if (readFiles.length > 0) {
+            importMultiBlockFiles(readFiles);
+          }
+          setIsUploading(false);
+        }
+      };
+      reader.onerror = () => {
+        completed++;
+        if (completed === files.length) {
+          if (readFiles.length > 0) {
+            importMultiBlockFiles(readFiles);
+          }
+          setIsUploading(false);
         }
       };
       reader.readAsText(file);
@@ -419,6 +487,46 @@ export const DesignsView: React.FC = () => {
   const mangaDerArt = activeDesign?.pieceArtworks['MANGA_DER'];
   const pantalonetaIzqArt = activeDesign?.pieceArtworks['PANTALONETA_IZQ'] || activeDesign?.pieceArtworks['SHORT_FRENTE'];
   const pantalonetaDerArt = activeDesign?.pieceArtworks['PANTALONETA_DER'] || activeDesign?.pieceArtworks['SHORT_ESPALDA'];
+
+  const activeMainBlocksCount = [
+    Boolean(frenteRedondoArt?.svgArtContent || frenteVArt?.svgArtContent),
+    Boolean(espaldaArt?.svgArtContent),
+    Boolean(mangaIzqArt?.svgArtContent),
+    Boolean(mangaDerArt?.svgArtContent),
+  ].filter(Boolean).length;
+
+  const renderSaveDesignButton = (extraClassName = '') => (
+    <button
+      type="button"
+      onClick={handleExplicitSaveDesign}
+      disabled={!activeDesign || saveStatus === 'SAVING' || isUploading}
+      className={`text-xs px-3.5 py-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed shadow-sm ${
+        saveStatus === 'SAVED'
+          ? 'bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400/50 shadow-emerald-950/50'
+          : saveStatus === 'SAVING'
+            ? 'bg-sky-600/80 text-white border border-sky-400/40 cursor-wait'
+            : 'bg-sky-600 hover:bg-sky-500 text-white border border-sky-400/40 shadow-sky-950/40'
+      } ${extraClassName}`}
+      title="Guardar y sincronizar explícitamente el diseño actual en la base de datos"
+    >
+      {saveStatus === 'SAVING' ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Guardando diseño...</span>
+        </>
+      ) : saveStatus === 'SAVED' ? (
+        <>
+          <CheckCircle2 className="w-4 h-4" />
+          <span>¡Diseño Guardado!</span>
+        </>
+      ) : (
+        <>
+          <Save className="w-4 h-4" />
+          <span>Guardar Diseño</span>
+        </>
+      )}
+    </button>
+  );
 
   const handleCopyMangaIzqToDer = () => {
     if (!activeDesign || !mangaIzqArt) return;
@@ -496,7 +604,8 @@ export const DesignsView: React.FC = () => {
             </h3>
             <button
               onClick={() => createNewDesign()}
-              className="text-xs text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1"
+              disabled={isUploading || saveStatus === 'SAVING'}
+              className="text-xs text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Crear nuevo modelo"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -507,12 +616,20 @@ export const DesignsView: React.FC = () => {
           <div className="space-y-2">
             {designs.map((d) => {
               const isSelected = activeDesign?.id === d.id;
-              const hasFrente = Boolean(d.pieceArtworks['DELANTERO']);
+              const hasFrente = Boolean(
+                d.pieceArtworks['DELANTERO_REDONDO'] ||
+                  d.pieceArtworks['DELANTERO_V'] ||
+                  d.pieceArtworks['DELANTERO']
+              );
               const hasEspalda = Boolean(d.pieceArtworks['ESPALDA']);
               const hasMangaIzq = Boolean(d.pieceArtworks['MANGA_IZQ']);
               const hasMangaDer = Boolean(d.pieceArtworks['MANGA_DER']);
-              const hasShortFrente = Boolean(d.pieceArtworks['SHORT_FRENTE']);
-              const hasShortEspalda = Boolean(d.pieceArtworks['SHORT_ESPALDA']);
+              const hasShortFrente = Boolean(
+                d.pieceArtworks['PANTALONETA_IZQ'] || d.pieceArtworks['SHORT_FRENTE']
+              );
+              const hasShortEspalda = Boolean(
+                d.pieceArtworks['PANTALONETA_DER'] || d.pieceArtworks['SHORT_ESPALDA']
+              );
               const blocksReady = [hasFrente, hasEspalda, hasMangaIzq, hasMangaDer].filter(Boolean).length;
               const shortBlocksReady = [hasShortFrente, hasShortEspalda].filter(Boolean).length;
               return (
@@ -542,6 +659,7 @@ export const DesignsView: React.FC = () => {
 
           {designs.length > 0 && (
             <button
+              disabled={isUploading || saveStatus === 'SAVING'}
               onClick={async () => {
                 const confirmed = await showAlert.confirm(
                   '¿Eliminar todos los modelos?',
@@ -552,7 +670,7 @@ export const DesignsView: React.FC = () => {
                   showAlert.toast('info', 'Modelos limpiados');
                 }
               }}
-              className="w-full mt-2 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-red-400 rounded-lg text-xs font-medium border border-slate-800 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full mt-2 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-red-400 rounded-lg text-xs font-medium border border-slate-800 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Limpiar todos
@@ -564,10 +682,10 @@ export const DesignsView: React.FC = () => {
         {activeDesign ? (
           <div className="lg:col-span-3 space-y-5">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-5">
-              {/* Título editable del modelo */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
+              {/* Título editable del modelo + Insignias de estado + Acciones principales */}
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400 flex-shrink-0" />
                   {isEditingName ? (
                     <div className="flex items-center gap-1.5">
                       <input
@@ -602,56 +720,78 @@ export const DesignsView: React.FC = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <h3 className="text-base font-bold text-white">{activeDesign.name}</h3>
                       <button
                         onClick={() => {
                           setEditedName(activeDesign.name);
                           setIsEditingName(true);
                         }}
-                        className="p-1 hover:bg-slate-800 text-slate-400 hover:text-purple-400 rounded transition-colors"
+                        disabled={isUploading || saveStatus === 'SAVING'}
+                        className="p-1 hover:bg-slate-800 text-slate-400 hover:text-purple-400 rounded transition-colors disabled:opacity-50"
                         title="Renombrar este modelo"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   )}
+
+                  {/* Insignia de piezas cargadas */}
+                  {activeMainBlocksCount >= 4 ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      <CheckCircle2 className="w-3 h-3" />
+                      {activeMainBlocksCount}/4 piezas listas
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                      <AlertCircle className="w-3 h-3" />
+                      {activeMainBlocksCount}/4 piezas cargadas
+                    </span>
+                  )}
+
+                  {/* Insignia de estado de guardado y sincronización */}
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-950/90 text-emerald-400 border border-emerald-500/25">
+                    {saveStatus === 'SAVING' ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin text-sky-400" />
+                        <span className="text-sky-300">Guardando diseño...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>✓ Diseño guardado y sincronizado</span>
+                        {lastSavedAt && (
+                          <span className="text-slate-400 font-mono text-[10px]">· {lastSavedAt}</span>
+                        )}
+                      </>
+                    )}
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleSaveDesign}
-                    disabled={saveStatus === 'saving'}
-                    className={`text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:cursor-wait ${
-                      saveStatus === 'saved'
-                        ? 'bg-emerald-600 text-white'
-                        : saveStatus === 'error'
-                          ? 'bg-red-600 text-white'
-                          : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
-                    }`}
-                    title="Guardar explícitamente el diseño actual"
-                  >
-                    {saveStatus === 'saved' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-                    {saveStatus === 'saving'
-                      ? 'Guardando...'
-                      : saveStatus === 'saved'
-                        ? 'Diseño guardado'
-                        : saveStatus === 'error'
-                          ? 'Error al guardar'
-                          : 'Guardar diseño'}
-                  </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {renderSaveDesignButton()}
+
                   <button
                     type="button"
                     onClick={() => multiInputRef.current?.click()}
-                    className="text-xs bg-violet-600 hover:bg-violet-500 text-white px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
+                    className="text-xs bg-violet-600 hover:bg-violet-500 text-white px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <UploadCloud className="w-3.5 h-3.5" />
-                    Subir bloques del modelo (SVG)
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>⏳ Cargando archivo SVG...</span>
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>Subir bloques del modelo (SVG)</span>
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={() => deleteDesign(activeDesign.id)}
-                    className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-red-400 rounded-lg transition-colors"
+                    disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
+                    className="p-2 hover:bg-slate-800 text-slate-500 hover:text-red-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Eliminar este modelo"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -704,7 +844,8 @@ export const DesignsView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => fontFileInputRef.current?.click()}
-                        className="px-2.5 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap flex-shrink-0"
+                        disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
+                        className="px-2.5 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Seleccionar un archivo de fuente TTF, OTF, WOFF o WOFF2 desde tu equipo"
                       >
                         <UploadCloud className="w-3.5 h-3.5" />
@@ -882,8 +1023,8 @@ export const DesignsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Muestra en vivo del dorsal */}
-                <div className="bg-slate-900 border border-slate-800/80 rounded-lg p-2.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                {/* Muestra en vivo del dorsal + Botón Guardar Diseño en el panel tipográfico */}
+                <div className="bg-slate-900 border border-slate-800/80 rounded-lg p-2.5 flex flex-col lg:flex-row items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-slate-400 uppercase font-mono">Muestra:</span>
                     <input
@@ -932,6 +1073,15 @@ export const DesignsView: React.FC = () => {
                         {sampleNumber || '9'}
                       </span>
                     </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row lg:flex-col items-center lg:items-end gap-1.5 flex-shrink-0 w-full lg:w-auto justify-end">
+                    {renderSaveDesignButton('w-full sm:w-auto')}
+                    {lastSavedAt && (
+                      <span className="text-[10px] font-mono text-emerald-400/90">
+                        {lastSavedAt}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
