@@ -7,8 +7,7 @@ import {
   NestingOptions,
   NestingSheet
 } from './types';
-import { runNestingEngine } from './nestingEngine';
-import { performModularNesting } from './modularNestingEngine';
+import { executeNestingWithWorker } from './worker/nestingWorkerClient';
 import { pieceSvgRegistry } from '@/modules/generator/garmentGenerator';
 
 export type NestingAlgorithm = 'MODULAR_INDUSTRIAL' | 'POLYGONAL_CLIPPER2' | 'BOUNDING_BOX';
@@ -68,9 +67,9 @@ export const useNestingStore = create<NestingState>((set, get) => ({
 
   runNesting: async (pieces, customOptions = {}) => {
     set({ isNesting: true, nestingProgress: 0 });
-    const { nestingMode, spacingMm, printableWidthMm, maxSheetLengthMm } = get();
+    const { nestingMode, nestingAlgorithm, spacingMm, printableWidthMm, maxSheetLengthMm } = get();
 
-    // Flyweight: Asegurar que svgContent no se duplique en el store de nesting
+    // Flyweight: Asegurar que svgContent no se duplique en el store ni se serialice al Web Worker
     const lightweightPieces: NestingPieceInput[] = pieces.map((p) => {
       if (p.svgContent) {
         if (!pieceSvgRegistry.has(p.id)) {
@@ -90,17 +89,18 @@ export const useNestingStore = create<NestingState>((set, get) => ({
       allowRotation: customOptions.allowRotation ?? false,
     };
 
-    let result: NestingResult;
-
-    try {
-      result = performModularNesting(lightweightPieces, options);
-    } catch (err) {
-      console.warn('Error en algoritmo modular, ejecutando motor de respaldo:', err);
-      result = runNestingEngine(lightweightPieces, options);
-    }
+    const result = await executeNestingWithWorker(
+      lightweightPieces,
+      options,
+      nestingAlgorithm,
+      (progress) => set({ nestingProgress: progress })
+    );
 
     const placedPieces = result.placedPieces;
     const sheets = result.sheets || [];
+    if (!result.sheets) {
+      result.sheets = sheets;
+    }
 
     set({
       placedPieces,
