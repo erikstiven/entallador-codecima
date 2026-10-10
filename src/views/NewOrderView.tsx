@@ -172,80 +172,44 @@ export const NewOrderView: React.FC = () => {
         onChange={handleFileUpload}
       />
 
-      {/* Hero Welcome Banner (Solo cuando aún no hay archivo cargado) */}
-      {items.length === 0 && (
-        <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800 rounded-3xl p-8 shadow-2xl">
-          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Importación Industrial</span>
-              </div>
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+      {/* Import Card (Single unified zone when no items loaded) */}
+      {items.length === 0 ? (
+        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800/80">
+            <div>
+              <h2 className="text-xl font-bold text-white tracking-tight">
                 Cargar Nómina del Pedido
               </h2>
-              <p className="text-xs md:text-sm text-slate-400 max-w-2xl leading-relaxed">
-                Importa el archivo Excel de tu cliente con nombres, números y tallas. El motor validará caracteres especiales (tildes/ñ) y calculará las piezas de corte al milímetro.
+              <p className="text-xs text-slate-400 mt-1">
+                Sube la planilla con nombres, números y tallas para procesar el pedido
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={handleDownloadTemplate}
-                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold border border-slate-700 shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
-                title="Descargar archivo Excel con formato listo para llenar"
-              >
-                <Download className="w-4 h-4 text-purple-400" />
-                <span>Descargar Plantilla (.xlsx)</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Drag & Drop Zone (if no items loaded) */}
-      {items.length === 0 ? (
-        <div
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className="relative overflow-hidden border-2 border-dashed border-slate-700/80 hover:border-purple-500/80 bg-slate-900/40 hover:bg-slate-900/70 transition-all duration-300 rounded-3xl p-16 text-center flex flex-col items-center justify-center cursor-pointer group shadow-xl"
-        >
-          <div className="w-20 h-20 rounded-3xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-purple-500/20 transition-all duration-300 shadow-lg shadow-purple-950/40">
-            <UploadCloud className="w-10 h-10" />
-          </div>
-          <h4 className="text-lg font-bold text-white group-hover:text-purple-300 transition-colors">
-            Arrastra tu archivo Excel aquí o haz clic para seleccionar
-          </h4>
-          <p className="text-xs text-slate-400 mt-2 max-w-md leading-relaxed">
-            Formatos compatibles: <span className="text-purple-400 font-mono font-semibold">.xlsx</span>, <span className="text-purple-400 font-mono font-semibold">.xls</span> y <span className="text-purple-400 font-mono font-semibold">.csv</span>
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
-            <button 
-              type="button"
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-extrabold shadow-xl shadow-purple-950/60 transition-all flex items-center gap-2 active:scale-95 cursor-pointer ring-1 ring-purple-400/30"
+            <button
+              onClick={handleDownloadTemplate}
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold border border-slate-700/80 transition-all flex items-center gap-2 cursor-pointer active:scale-95 shrink-0"
+              title="Descargar archivo Excel con formato de ejemplo"
             >
-              <FileSpreadsheet className="w-4 h-4" />
-              Explorar Archivo en mi PC
+              <Download className="w-4 h-4 text-purple-400" />
+              <span>Descargar Plantilla (.xlsx)</span>
             </button>
           </div>
 
-          {/* Feature Badges */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-10 pt-8 border-t border-slate-800/80 w-full max-w-2xl text-[11px] text-slate-400">
-            <div className="flex items-center justify-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-purple-400" />
-              <span>Soporte Tildes y Eñes (UTF-8)</span>
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className="border-2 border-dashed border-slate-700/70 hover:border-violet-500/70 bg-slate-950/40 hover:bg-slate-950/70 transition-all duration-200 rounded-2xl p-12 text-center flex flex-col items-center justify-center cursor-pointer group"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-violet-600/10 border border-violet-500/20 text-purple-400 flex items-center justify-center mb-4 group-hover:scale-105 group-hover:bg-violet-600/20 transition-all">
+              <UploadCloud className="w-8 h-8" />
             </div>
-            <div className="flex items-center justify-center gap-2">
-              <Zap className="w-4 h-4 text-sky-400" />
-              <span>Validación Automática Instantánea</span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <Layers className="w-4 h-4 text-amber-400" />
-              <span>Multi-Talla Niño y Adulto</span>
-            </div>
+            <h4 className="text-base font-semibold text-white group-hover:text-purple-300 transition-colors">
+              Arrastra tu archivo Excel aquí o haz clic para seleccionarlo
+            </h4>
+            <p className="text-xs text-slate-400 mt-1.5 font-mono">
+              Formatos compatibles: .xlsx, .xls, .csv
+            </p>
           </div>
         </div>
       ) : (

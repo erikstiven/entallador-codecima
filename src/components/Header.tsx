@@ -13,39 +13,33 @@ export const Header: React.FC = () => {
     switch (currentView) {
       case 'NEW_ORDER':
         return { 
-          title: 'Gestión de Pedidos & Nómina', 
-          subtitle: 'Importación inteligente de planillas Excel y validación automática de tallas',
-          tag: 'FASE 1'
+          title: 'Gestión de Pedidos', 
+          subtitle: 'Nómina de jugadores, números y tallas',
         };
       case 'DESIGNS':
         return { 
-          title: 'Biblioteca de Diseños Maestros', 
-          subtitle: 'Artes vectoriales de Illustrator (Frente, Espalda y Mangas) y tipografías',
-          tag: 'FASE 2'
+          title: 'Diseños Maestros', 
+          subtitle: 'Artes vectoriales y tipografías',
         };
       case 'PATTERNS':
         return { 
-          title: 'Moldes & Patrones de Confección', 
-          subtitle: 'Curvas Bezier y contornos de corte milimétricos 1:1 por talla',
-          tag: 'FASE 3'
+          title: 'Moldes & Patrones', 
+          subtitle: 'Curvas de corte 1:1 por talla',
         };
       case 'NESTING':
         return { 
-          title: 'Entallado & Nesting 2D Industrial', 
-          subtitle: 'Optimización de consumo en bobina continua con motor geométrico Clipper2',
-          tag: 'PRODUCCIÓN'
+          title: 'Entallado & Nesting', 
+          subtitle: 'Acomodo y optimización de bobina',
         };
       case 'HISTORY':
         return { 
-          title: 'Historial de Producción & Reimpresión', 
-          subtitle: 'Registro de rollos procesados y reposición rápida de piezas individuales',
-          tag: 'REGISTRO'
+          title: 'Historial de Producción', 
+          subtitle: 'Registro de rollos y reposición de piezas',
         };
       case 'SETTINGS':
         return { 
-          title: 'Configuración del Sistema CimaPattern', 
-          subtitle: 'Personalización de empresa, plotter Epson, unidades y tolerancias de corte',
-          tag: 'AJUSTES'
+          title: 'Configuración', 
+          subtitle: 'Empresa, bobinas y tolerancias',
         };
     }
   };
@@ -55,16 +49,11 @@ export const Header: React.FC = () => {
   return (
     <header className="h-16 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-6 flex items-center justify-between select-none z-10 transition-colors">
       {/* Título y Subtítulo de Vista Activa */}
-      <div className="flex items-center gap-3">
-        <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-400 font-mono text-[10px] font-bold border border-purple-500/30">
-          {info.tag}
-        </span>
-        <div>
-          <h2 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
-            {info.title}
-          </h2>
-          <p className="text-[11px] text-slate-400 hidden sm:block -mt-0.5">{info.subtitle}</p>
-        </div>
+      <div>
+        <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
+          {info.title}
+        </h2>
+        <p className="text-[11px] text-slate-400 hidden sm:block -mt-0.5">{info.subtitle}</p>
       </div>
 
       {/* Derecha: Badge de Empresa, Operador y Selector de Tema */}
