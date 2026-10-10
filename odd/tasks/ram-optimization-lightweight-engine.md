@@ -32,7 +32,7 @@
   - **Description:** Migrar estado de arrastre en `useInteractiveCanvas` a `useRef` para evitar desmonte/remonte masivo (60-120x/seg) de listeners en `window`. Implementar Viewport Culling (recorte de piezas fuera de la vista) y representación visual ligera para que el DOM no mantenga miles de nodos SVG activos a la vez.
   - **Acceptance Criteria:** Paneo y arrastre fluidos a 60 FPS sin fugas de listeners ni caídas de frames.
   - **Route:** Delegated Direct (Writer trigger: 3 files).
-  - **Evidence:** Commit `9168d2b`. Listeners globales (`mousemove`, `mouseup`, `keydown`) estabilizados con referencias mutables (`useRef`) y sincronización coalescida con `requestAnimationFrame`. Filtrado espacial por proximidad $O(1)$ en `snappingService.ts`. Viewport Culling con `ResizeObserver` y margen de overscan de `500px`, componente `CanvasPieceItem` envuelto en `React.memo` y modo ligero (LOD) automático en zoom lejano o alta densidad. Pruebas `snappingService.test.ts` (5/5 pasadas) y compilación limpia (`tsc --noEmit`).
+  - **Evidence:** Commit `9168d2b`. Listeners globales (`mousemove`, `mouseup`, `keydown`) estabilizados con referencias mutables (`useRef`) y sincronización coalescida con `requestAnimationFrame`. Filtrado espacial por proximidad $O(1)$ en `snappingService.ts`. Viewport Culling con `ResizeObserver` y margen de overscan, componente `CanvasPieceItem` envuelto en `React.memo` y modo ligero (LOD) automático en zoom lejano o alta densidad. Pruebas `snappingService.test.ts` (5/5 pasadas) y compilación limpia (`tsc --noEmit`).
 
 - [x] **TASK-4: Conexión y Activación Real del Web Worker de Nesting**
   - **ID:** `TASK-4`
@@ -50,10 +50,10 @@
   - **Route:** Delegated Direct (Writer trigger: 3 files).
   - **Evidence:** Commit `2469ef8`. Validación de dorsales únicos optimizada a $O(N)$ con `numberFrequencyMap` precalculado en `validateOrderList`. Caché LRU de 2,000 entradas en `textVectorEngine.ts` (`getMemoizedVectorPath`) y caché LRU de 16 fuentes con deduplicación de alias (`fontAliasMap`) y liberación de `ArrayBuffer` en `fontManager.ts`. Pruebas en verde (3 archivos, 18 tests pasados).
 
-- [x] **TASK-6: Verificación Integral End-to-End y Medición de Rendimiento**
+- [x] **TASK-6: Verificación Integral End-to-End, Auditoría de Casos Borde y Correcciones**
   - **ID:** `TASK-6`
-  - **Scope:** Suite completa de pruebas (`npm test`), verificación de compilación (`npm run build`).
-  - **Description:** Ejecutar todos los 106+ tests unitarios y de integración para asegurar que ninguna optimización rompió la calibración 1:1, exportaciones a PDF/SVG/EPS o compatibilidad con Mimaki/Epson.
+  - **Scope:** Suite completa de pruebas (`npm test`), verificación de compilación (`npm run build`) y auditoría profunda de casos borde (`clipperService.ts`, `garmentGenerator.ts`, `namespaceSvgIds.ts`, `nestingStore.ts`, `useInteractiveCanvas.ts`, `ProductionNestingView.tsx`, `NewOrderView.tsx`, `db.ts`, `designStore.ts`, `patternStore.ts`, `PatternsView.tsx`).
+  - **Description:** Ejecutar todos los 111+ tests unitarios y de integración y corregir los 13 casos borde detectados en la revisión profunda de código.
   - **Acceptance Criteria:** Todos los tests pasan en verde sin regresiones.
-  - **Route:** Direct Inline.
-  - **Evidence:** Ejecución completa de `npm test` (24 archivos pasados, 111 tests pasados, 0 fallos) y `npm run build` (`tsc && vite build`, 0 errores, bundle de Web Worker y Electron generados exitosamente).
+  - **Route:** Delegated Direct.
+  - **Evidence:** Commit `58f63ec`. Corregidos los 13 hallazgos de la auditoría: (1) detección de `WorkerGlobalScope` en `clipperService.ts` y reset de `initPromise` en fallo; (2) huella FNV-1a (`computeArtworkFingerprint`) en caché de arte escalado para evitar colisión entre cuellos V/Redondo; (3) `flex-shrink-0` en el contenedor del rollo y overscan `800px` en `ProductionNestingView.tsx`; (4) IDs deterministas en `garmentGenerator.ts` y limpieza de `pieceSvgRegistry` al regenerar; (5) preservación de piezas con candado (`isLocked`) en `reoptimizeUnlocked`; (6) uso de `printableWidthMm` y `spacingMm` de `nestingStore` en `useInteractiveCanvas.ts` y corrección de `fitToAll`; (7) cancelación de workers previos con `terminateActiveNestingWorkers()` y `currentRunId`; (8) verificación de `getRowsModified() > 0` antes de disparar auto-save en `db.ts`; (9–13) filtrado de snapping por pliego (`sheetIndex`), persistencia de IDs activos livianos (~30 bytes) y preservación de `unassignedPieces`. Suite completa `npm test`: 24 archivos pasados, 111 tests en verde (0 fallos).
