@@ -83,6 +83,102 @@ export function normalizeArtworkSvgForMold(svgContent: string): string {
 }
 
 /**
+ * Almacén Flyweight fuera del estado reactivo de Zustand.
+ * Mantiene el SVG completo indexado por ID de pieza para evitar que Zustand
+ * retenga cientos de megabytes de strings en su árbol reactivo.
+ */
+export const pieceSvgRegistry = new Map<string, string>();
+
+/**
+ * Obtiene el contenido SVG de una pieza desde el registro Flyweight.
+ */
+export function getPieceSvgContent(pieceId: string): string {
+  return pieceSvgRegistry.get(pieceId) || '';
+}
+
+/**
+ * Registra o actualiza el contenido SVG de una pieza en el almacén Flyweight.
+ */
+export function setPieceSvgContent(pieceId: string, svgContent: string): void {
+  pieceSvgRegistry.set(pieceId, svgContent);
+}
+
+/**
+ * Resuelve el SVG completo de una pieza:
+ * 1. Si trae svgContent con contenido, lo usa directamente.
+ * 2. Si svgContent es explícitamente undefined (ej. prueba de sólo geometría), retorna vacío.
+ * 3. En otro caso, lo resuelve desde pieceSvgRegistry.
+ */
+export function resolvePieceSvg(piece: { id: string; svgContent?: string }): string {
+  if (typeof piece.svgContent === 'string' && piece.svgContent.length > 0) {
+    return piece.svgContent;
+  }
+  if ('svgContent' in piece && piece.svgContent === undefined) {
+    return '';
+  }
+  return pieceSvgRegistry.get(piece.id) || '';
+}
+
+/**
+ * Limpia el registro Flyweight de piezas.
+ */
+export function clearPieceSvgRegistry(): void {
+  pieceSvgRegistry.clear();
+}
+
+// Caché de normalización de mesas de trabajo por contenido SVG base
+const normalizedArtworkCache = new Map<string, string>();
+
+export function getCachedNormalizedArtwork(rawSvgContent: string): string {
+  let cached = normalizedArtworkCache.get(rawSvgContent);
+  if (cached !== undefined) return cached;
+
+  const withoutText = rawSvgContent.replace(/<text\b([^>]*)>([\s\S]*?)<\/text>/gi, '');
+  cached = normalizeArtworkSvgForMold(withoutText);
+  normalizedArtworkCache.set(rawSvgContent, cached);
+  return cached;
+}
+
+// Caché de arte escalado por molde y talla: clave (prefix + width + height + offsetY)
+const scaledArtworkCache = new Map<string, string>();
+
+export function getCachedScaledArtwork(
+  rawArtSvg: string,
+  width: number,
+  height: number,
+  artOffsetY: number,
+  cacheKeyPrefix: string
+): string {
+  const cacheKey = `${cacheKeyPrefix}_${width.toFixed(1)}_${height.toFixed(1)}_${artOffsetY}`;
+  let cached = scaledArtworkCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  const cleanArtSvg = getCachedNormalizedArtwork(rawArtSvg);
+  let scaledArtSvg = cleanArtSvg;
+  if (scaledArtSvg.includes('<svg')) {
+    scaledArtSvg = scaledArtSvg.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
+      const clean = attrs
+        .replace(/\bwidth\s*=\s*["'][^"']+["']/gi, '')
+        .replace(/\bheight\s*=\s*["'][^"']+["']/gi, '')
+        .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']+["']/gi, '');
+      return `<svg x="0" y="${artOffsetY}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice" ${clean}>`;
+    });
+  }
+
+  scaledArtworkCache.set(cacheKey, scaledArtSvg);
+  return scaledArtSvg;
+}
+
+/**
+ * Limpia todas las cachés del generador (normalización, escalado y registro de piezas).
+ */
+export function clearGeneratorCaches(): void {
+  normalizedArtworkCache.clear();
+  scaledArtworkCache.clear();
+  pieceSvgRegistry.clear();
+}
+
+/**
  * Genera el ensamble vectorial completo de cada prenda uniendo Molde + Diseño + Jugador
  */
 export function generateGarmentPieces(
@@ -350,11 +446,10 @@ export function generateGarmentPieces(
         const secondaryColor = masterDesign.colors[1] || '#0284c7';
         const accentColor = masterDesign.colors[2] || '#ffffff';
 
-        let baseArtSvg = artwork?.svgArtContent || `
+        const baseArtSvg = artwork?.svgArtContent || `
           <rect width="${localBbox.width}" height="${localBbox.height}" fill="${primaryColor}" />
           <path d="M 0,${localBbox.height * 0.3} L ${localBbox.width},${localBbox.height * 0.45} L ${localBbox.width},${localBbox.height * 0.52} L 0,${localBbox.height * 0.37} Z" fill="${secondaryColor}" opacity="0.4" />
         `;
-        baseArtSvg = namespaceSvgIds(baseArtSvg, uniquePieceId);
 
         // Extraer configuraciones de tipografía y color de espalda
         const espaldaArt = masterDesign.pieceArtworks['ESPALDA'];
@@ -573,27 +668,29 @@ export function generateGarmentPieces(
           isVisible: config.includeLabels,
         };
 
-        // Normalizar el arte vectorial para eliminar mesas de trabajo gigantes y ajustar al molde
-        let cleanArtSvg = normalizeArtworkSvgForMold(baseArtSvg.replace(/<text\b([^>]*)>([\s\S]*?)<\/text>/gi, ''));
-        let scaledArtSvg = cleanArtSvg;
-        if (scaledArtSvg.includes('<svg')) {
-          let artOffsetY = 0;
-          if (pieceType.startsWith('MANGA')) {
-            artOffsetY = config.sleeveArtOffsetYMm ?? 0;
-          } else if (pieceType.startsWith('DELANTERO')) {
-            artOffsetY = config.frontArtOffsetYMm ?? 0;
-          } else if (pieceType === 'ESPALDA') {
-            artOffsetY = config.backArtOffsetYMm ?? 0;
-          }
-
-          scaledArtSvg = scaledArtSvg.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
-            const clean = attrs
-              .replace(/\bwidth\s*=\s*["'][^"']+["']/gi, '')
-              .replace(/\bheight\s*=\s*["'][^"']+["']/gi, '')
-              .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']+["']/gi, '');
-            return `<svg x="0" y="${artOffsetY}" width="${localBbox.width}" height="${localBbox.height}" preserveAspectRatio="xMidYMid slice" ${clean}>`;
-          });
+        // Normalizar y escalar arte vectorial usando caché por molde/talla para evitar trabajo redundante
+        let artOffsetY = 0;
+        if (pieceType.startsWith('MANGA')) {
+          artOffsetY = config.sleeveArtOffsetYMm ?? 0;
+        } else if (pieceType.startsWith('DELANTERO')) {
+          artOffsetY = config.frontArtOffsetYMm ?? 0;
+        } else if (pieceType === 'ESPALDA') {
+          artOffsetY = config.backArtOffsetYMm ?? 0;
         }
+
+        const cachePrefix = `${masterDesign.id || 'des'}_${patternPiece.id || pieceType}_${targetSize}`;
+        const scaledArtSvg = getCachedScaledArtwork(
+          baseArtSvg,
+          localBbox.width,
+          localBbox.height,
+          artOffsetY,
+          cachePrefix
+        );
+
+        // Aislar IDs de gradientes/filtros únicamente si la pieza los contiene
+        const namespacedArt = scaledArtSvg.includes('id=')
+          ? namespaceSvgIds(scaledArtSvg, uniquePieceId)
+          : scaledArtSvg;
 
         const fullPieceSvg = `
           <g id="${uniquePieceId}">
@@ -604,12 +701,15 @@ export function generateGarmentPieces(
             </defs>
             <!-- Arte recortado exactamente con el molde -->
             <g clip-path="url(#${maskId})">
-              ${scaledArtSvg}
+              ${namespacedArt}
               ${dorsalSvg}
               ${sizeMarkSvg}
             </g>
           </g>
         `.trim();
+
+        // Almacenar en el registro Flyweight fuera del estado de Zustand
+        pieceSvgRegistry.set(uniquePieceId, fullPieceSvg);
 
         const genPiece: GeneratedPiece = {
           id: uniquePieceId,
@@ -625,7 +725,16 @@ export function generateGarmentPieces(
           areaMm2: patternPiece.areaMm2,
           allowedRotationsDeg: patternPiece.allowedRotationsDeg,
           svgMaskId: maskId,
-          svgContent: fullPieceSvg,
+          get svgContent(): string {
+            return pieceSvgRegistry.get(this.id) || '';
+          },
+          set svgContent(val: string | undefined) {
+            if (val !== undefined) {
+              pieceSvgRegistry.set(this.id, val);
+            } else {
+              pieceSvgRegistry.delete(this.id);
+            }
+          },
           label: labelInfo,
         };
 

@@ -3,6 +3,7 @@ import { generateFullRollSvg } from './svgExporter';
 import { generateFullRollPdf } from './pdfExporter';
 import { generateFullRollEps } from './epsExporter';
 import { generateProductionExcel, generateProductionCsv } from './productionSummaryExporter';
+import { resolvePieceSvg } from '@/modules/generator/garmentGenerator';
 
 /**
  * Servicio central de exportación para HMB Entallador.
@@ -19,7 +20,7 @@ export async function exportProductionRoll(
   if (format === 'SVG' || format === 'PDF' || format === 'EPS') {
     const unresolvedFonts = new Set<string>();
     for (const piece of placedPieces) {
-      const source = piece.svgContent || '';
+      const source = resolvePieceSvg(piece);
       const regex = /data-hmb-unresolved-font=["']([^"']+)["']/gi;
       let match: RegExpExecArray | null;
       while ((match = regex.exec(source)) !== null) {

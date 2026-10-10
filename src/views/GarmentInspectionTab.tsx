@@ -28,6 +28,7 @@ import {
   Scissors
 } from 'lucide-react';
 import { GeneratedPiece } from '@/modules/generator/types';
+import { resolvePieceSvg } from '@/modules/generator/garmentGenerator';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
@@ -1052,7 +1053,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 const isManga = piece.pieceType.startsWith('MANGA');
 
                 // Extraer el path de corte del molde si existe para dibujar el contorno visible
-                const pathMatch = piece.svgContent?.match(/<path\b[^>]*\bd=(["'])(.*?)\1/i);
+                const pieceSvg = resolvePieceSvg(piece);
+                const pathMatch = pieceSvg.match(/<path\b[^>]*\bd=(["'])(.*?)\1/i);
                 const pathD = pathMatch ? pathMatch[2] : '';
 
                 // Estilos según el modo de fondo seleccionado
@@ -1104,7 +1106,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                         preserveAspectRatio="xMidYMid meet"
                       >
                         {/* 1. Arte recortado con el molde */}
-                        <g dangerouslySetInnerHTML={{ __html: piece.svgContent || '' }} />
+                        <g dangerouslySetInnerHTML={{ __html: pieceSvg }} />
 
                         {/* 2. Guías visuales de corte y límites de confección */}
                         {showGuides && (

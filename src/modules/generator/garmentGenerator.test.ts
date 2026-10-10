@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { generateGarmentPieces, filterReprintPieces } from './garmentGenerator';
+import { 
+  generateGarmentPieces, 
+  filterReprintPieces,
+  pieceSvgRegistry,
+  getPieceSvgContent,
+  resolvePieceSvg,
+  clearPieceSvgRegistry,
+} from './garmentGenerator';
 import { OrderItem } from '@/modules/orders/types';
 import { PatternSet } from '@/modules/patterns/types';
 import { MasterDesign } from '@/modules/designs/types';
@@ -257,4 +264,83 @@ describe('Garment Generator Engine (Fusión de Molde + Diseño + Jugador)', () =
     expect(reprintEspalda.length).toBe(1);
     expect(reprintEspalda[0].pieceName).toContain('MATEO_#10_T28_ESPALDA');
   });
+
+  it('debe almacenar los SVGs en pieceSvgRegistry (Patrón Flyweight) y resolverlos bajo demanda', () => {
+    clearPieceSvgRegistry();
+    const orderItems: OrderItem[] = [
+      {
+        id: 'item_flyweight',
+        rowNumber: 1,
+        playerName: 'ANDRES',
+        playerNumber: '7',
+        sizeName: '28',
+        garmentType: 'CAMISETA',
+        quantity: 1,
+        isValid: true,
+        errors: [],
+        warnings: [],
+      },
+    ];
+
+    const result = generateGarmentPieces(orderItems, mockPatternSet, mockDesign);
+    expect(result.pieces.length).toBe(4);
+
+    const piece = result.pieces[0];
+    // Debe existir en el registro Flyweight fuera de Zustand
+    expect(pieceSvgRegistry.has(piece.id)).toBe(true);
+    expect(getPieceSvgContent(piece.id)).toBe(pieceSvgRegistry.get(piece.id));
+
+    // Debe resolverse mediante resolvePieceSvg
+    expect(resolvePieceSvg(piece)).toContain(piece.id);
+
+    // Debe ser accesible mediante getter en GeneratedPiece
+    expect(piece.svgContent).toBe(getPieceSvgContent(piece.id));
+
+    // Limpieza
+    clearPieceSvgRegistry();
+    expect(pieceSvgRegistry.size).toBe(0);
+    expect(getPieceSvgContent(piece.id)).toBe('');
+  });
+
+  it('debe reutilizar el arte escalado para jugadores de la misma talla y molde', () => {
+    const orderItems: OrderItem[] = [
+      {
+        id: 'item_a',
+        rowNumber: 1,
+        playerName: 'JUGADOR A',
+        playerNumber: '1',
+        sizeName: '28',
+        garmentType: 'CAMISETA',
+        quantity: 1,
+        isValid: true,
+        errors: [],
+        warnings: [],
+      },
+      {
+        id: 'item_b',
+        rowNumber: 2,
+        playerName: 'JUGADOR B',
+        playerNumber: '2',
+        sizeName: '28',
+        garmentType: 'CAMISETA',
+        quantity: 1,
+        isValid: true,
+        errors: [],
+        warnings: [],
+      },
+    ];
+
+    const result = generateGarmentPieces(orderItems, mockPatternSet, mockDesign);
+    expect(result.pieces.length).toBe(8);
+
+    const pieceA = result.pieces.find((p) => p.playerName === 'JUGADOR A' && p.pieceType === 'DELANTERO')!;
+    const pieceB = result.pieces.find((p) => p.playerName === 'JUGADOR B' && p.pieceType === 'DELANTERO')!;
+
+    expect(pieceA).toBeDefined();
+    expect(pieceB).toBeDefined();
+    // Ambos tienen sus piezas registradas en el registry
+    expect(pieceSvgRegistry.has(pieceA.id)).toBe(true);
+    expect(pieceSvgRegistry.has(pieceB.id)).toBe(true);
+  });
 });
+

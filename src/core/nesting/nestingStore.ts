@@ -9,6 +9,7 @@ import {
 } from './types';
 import { runNestingEngine } from './nestingEngine';
 import { performModularNesting } from './modularNestingEngine';
+import { pieceSvgRegistry } from '@/modules/generator/garmentGenerator';
 
 export type NestingAlgorithm = 'MODULAR_INDUSTRIAL' | 'POLYGONAL_CLIPPER2' | 'BOUNDING_BOX';
 
@@ -69,6 +70,18 @@ export const useNestingStore = create<NestingState>((set, get) => ({
     set({ isNesting: true, nestingProgress: 0 });
     const { nestingMode, spacingMm, printableWidthMm, maxSheetLengthMm } = get();
 
+    // Flyweight: Asegurar que svgContent no se duplique en el store de nesting
+    const lightweightPieces: NestingPieceInput[] = pieces.map((p) => {
+      if (p.svgContent) {
+        if (!pieceSvgRegistry.has(p.id)) {
+          pieceSvgRegistry.set(p.id, p.svgContent);
+        }
+        const { svgContent: _discard, ...rest } = p;
+        return rest;
+      }
+      return p;
+    });
+
     const options: NestingOptions = {
       printableWidthMm: customOptions.printableWidthMm ?? printableWidthMm,
       maxSheetLengthMm: customOptions.maxSheetLengthMm ?? maxSheetLengthMm,
@@ -80,15 +93,18 @@ export const useNestingStore = create<NestingState>((set, get) => ({
     let result: NestingResult;
 
     try {
-      result = performModularNesting(pieces, options);
+      result = performModularNesting(lightweightPieces, options);
     } catch (err) {
       console.warn('Error en algoritmo modular, ejecutando motor de respaldo:', err);
-      result = runNestingEngine(pieces, options);
+      result = runNestingEngine(lightweightPieces, options);
     }
 
+    const placedPieces = result.placedPieces;
+    const sheets = result.sheets || [];
+
     set({
-      placedPieces: result.placedPieces,
-      sheets: result.sheets || [],
+      placedPieces,
+      sheets,
       activeSheetIndex: 0,
       nestingResult: result,
       isNesting: false,
@@ -99,36 +115,77 @@ export const useNestingStore = create<NestingState>((set, get) => ({
   },
 
   toggleLockPiece: (pieceId) => {
-    const { placedPieces } = get();
-    const updated = placedPieces.map((p) => {
-      if (p.id === pieceId) {
-        return { ...p, isLocked: !p.isLocked };
-      }
-      return p;
+    const { placedPieces, sheets, nestingResult } = get();
+    const targetPiece = placedPieces.find((p) => p.id === pieceId);
+    if (!targetPiece) return;
+
+    const updatedPiece: PlacedNestingPiece = {
+      ...targetPiece,
+      isLocked: !targetPiece.isLocked,
+    };
+
+    const updatedPlacedPieces = placedPieces.map((p) => (p.id === pieceId ? updatedPiece : p));
+
+    const updatedSheets = sheets.map((sheet) => {
+      const idx = sheet.placedPieces.findIndex((p) => p.id === pieceId);
+      if (idx === -1) return sheet;
+      const newSheetPieces = [...sheet.placedPieces];
+      newSheetPieces[idx] = updatedPiece;
+      return {
+        ...sheet,
+        placedPieces: newSheetPieces,
+      };
     });
-    set({ placedPieces: updated });
+
+    set({
+      placedPieces: updatedPlacedPieces,
+      sheets: updatedSheets,
+      nestingResult: nestingResult
+        ? {
+            ...nestingResult,
+            placedPieces: updatedPlacedPieces,
+            sheets: updatedSheets,
+          }
+        : null,
+    });
   },
 
   movePiece: (pieceId, xMm, yMm) => {
-    const { placedPieces, printableWidthMm } = get();
-    const updated = placedPieces.map((p) => {
-      if (p.id === pieceId) {
-        const clampedX = Math.max(0, Math.min(xMm, printableWidthMm - p.effectiveWidthMm));
-        const clampedY = Math.max(0, yMm);
-        return {
-          ...p,
-          xMm: Number(clampedX.toFixed(2)),
-          yMm: Number(clampedY.toFixed(2)),
-          isLocked: true,
-        };
-      }
-      return p;
+    const { placedPieces, printableWidthMm, sheets, nestingResult } = get();
+    const targetPiece = placedPieces.find((p) => p.id === pieceId);
+    if (!targetPiece) return;
+
+    const clampedX = Number(Math.max(0, Math.min(xMm, printableWidthMm - targetPiece.effectiveWidthMm)).toFixed(2));
+    const clampedY = Number(Math.max(0, yMm).toFixed(2));
+
+    if (targetPiece.xMm === clampedX && targetPiece.yMm === clampedY && targetPiece.isLocked) {
+      return;
+    }
+
+    const updatedPiece: PlacedNestingPiece = {
+      ...targetPiece,
+      xMm: clampedX,
+      yMm: clampedY,
+      isLocked: true,
+    };
+
+    const updatedPlacedPieces = placedPieces.map((p) => (p.id === pieceId ? updatedPiece : p));
+
+    const updatedSheets = sheets.map((sheet) => {
+      const idx = sheet.placedPieces.findIndex((p) => p.id === pieceId);
+      if (idx === -1) return sheet;
+      const newSheetPieces = [...sheet.placedPieces];
+      newSheetPieces[idx] = updatedPiece;
+      return {
+        ...sheet,
+        placedPieces: newSheetPieces,
+      };
     });
 
-    // Recalcular métricas
+    // Recalcular métricas livianas sin recrear objetos pesados
     let maxRollLength = 0;
     let totalArea = 0;
-    for (const pl of updated) {
+    for (const pl of updatedPlacedPieces) {
       const b = pl.yMm + pl.effectiveHeightMm;
       if (b > maxRollLength) maxRollLength = b;
       totalArea += pl.areaMm2;
@@ -137,44 +194,69 @@ export const useNestingStore = create<NestingState>((set, get) => ({
     const usedArea = printableWidthMm * maxRollLength;
     const utilization = usedArea > 0 ? (totalArea / usedArea) * 100 : 0;
 
-    set((state) => ({
-      placedPieces: updated,
-      nestingResult: state.nestingResult
-        ? {
-            ...state.nestingResult,
-            placedPieces: updated,
-            totalRollLengthMm: Number(maxRollLength.toFixed(2)),
-            usedRollAreaMm2: Number(usedArea.toFixed(2)),
-            utilizationPercent: Number(utilization.toFixed(2)),
-            wastePercent: Number((100 - utilization).toFixed(2)),
-          }
-        : null,
-    }));
+    const updatedResult: NestingResult | null = nestingResult
+      ? {
+          ...nestingResult,
+          placedPieces: updatedPlacedPieces,
+          sheets: updatedSheets,
+          totalRollLengthMm: Number(maxRollLength.toFixed(2)),
+          usedRollAreaMm2: Number(usedArea.toFixed(2)),
+          utilizationPercent: Number(utilization.toFixed(2)),
+          wastePercent: Number((100 - utilization).toFixed(2)),
+        }
+      : null;
+
+    set({
+      placedPieces: updatedPlacedPieces,
+      sheets: updatedSheets,
+      nestingResult: updatedResult,
+    });
   },
 
   rotatePiece: (pieceId, degDelta = 180) => {
-    const { placedPieces, printableWidthMm } = get();
-    const updated = placedPieces.map((p) => {
-      if (p.id === pieceId) {
-        const newRot = ((p.rotationDeg + degDelta) % 360 + 360) % 360;
-        const isOrthogonal = newRot === 90 || newRot === 270;
-        const effW = isOrthogonal ? p.bbox.height : p.bbox.width;
-        const effH = isOrthogonal ? p.bbox.width : p.bbox.height;
-        const clampedX = Math.max(0, Math.min(p.xMm, printableWidthMm - effW));
+    const { placedPieces, printableWidthMm, sheets, nestingResult } = get();
+    const targetPiece = placedPieces.find((p) => p.id === pieceId);
+    if (!targetPiece) return;
 
-        return {
-          ...p,
-          rotationDeg: newRot,
-          effectiveWidthMm: effW,
-          effectiveHeightMm: effH,
-          xMm: Number(clampedX.toFixed(2)),
-          isLocked: true,
-        };
-      }
-      return p;
+    const newRot = ((targetPiece.rotationDeg + degDelta) % 360 + 360) % 360;
+    const isOrthogonal = newRot === 90 || newRot === 270;
+    const effW = isOrthogonal ? targetPiece.bbox.height : targetPiece.bbox.width;
+    const effH = isOrthogonal ? targetPiece.bbox.width : targetPiece.bbox.height;
+    const clampedX = Math.max(0, Math.min(targetPiece.xMm, printableWidthMm - effW));
+
+    const updatedPiece: PlacedNestingPiece = {
+      ...targetPiece,
+      rotationDeg: newRot,
+      effectiveWidthMm: effW,
+      effectiveHeightMm: effH,
+      xMm: Number(clampedX.toFixed(2)),
+      isLocked: true,
+    };
+
+    const updatedPlacedPieces = placedPieces.map((p) => (p.id === pieceId ? updatedPiece : p));
+
+    const updatedSheets = sheets.map((sheet) => {
+      const idx = sheet.placedPieces.findIndex((p) => p.id === pieceId);
+      if (idx === -1) return sheet;
+      const newSheetPieces = [...sheet.placedPieces];
+      newSheetPieces[idx] = updatedPiece;
+      return {
+        ...sheet,
+        placedPieces: newSheetPieces,
+      };
     });
 
-    set({ placedPieces: updated });
+    set({
+      placedPieces: updatedPlacedPieces,
+      sheets: updatedSheets,
+      nestingResult: nestingResult
+        ? {
+            ...nestingResult,
+            placedPieces: updatedPlacedPieces,
+            sheets: updatedSheets,
+          }
+        : null,
+    });
   },
 
   reoptimizeUnlocked: async (allPieces) => {

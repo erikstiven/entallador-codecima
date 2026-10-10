@@ -1,6 +1,7 @@
 import { Polygon2D } from '@/core/geometry/types';
 import { computeBoundingBox, rotatePoint } from '@/core/geometry/transform';
 import { PlacedNestingPiece } from '@/core/nesting/types';
+import { resolvePieceSvg } from '@/modules/generator/garmentGenerator';
 import { ExportOptions } from './types';
 
 const LEGACY_CONTOUR_COLOR = '#22c55e';
@@ -406,8 +407,9 @@ export function generateFullRollSvg(
 
     piecesContent += `  <g id="${namespace}" data-player="${escapeXmlAttribute(piece.playerName || '')}" data-number="${escapeXmlAttribute(piece.playerNumber || '')}" data-size="${escapeXmlAttribute(piece.sizeName || '')}" data-piece-type="${escapeXmlAttribute(piece.pieceType || '')}" transform="${transform}">\n`;
 
-    if (piece.svgContent?.trim()) {
-      const { fragment, styles, defs } = namespaceSvgFragment(piece.svgContent, namespace);
+    const pieceSvg = resolvePieceSvg(piece);
+    if (pieceSvg?.trim()) {
+      const { fragment, styles, defs } = namespaceSvgFragment(pieceSvg, namespace);
       if (styles) allHoistedStyles += styles + '\n';
       if (defs) allHoistedDefs += defs + '\n';
 

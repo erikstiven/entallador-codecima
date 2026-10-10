@@ -22,7 +22,7 @@ export interface GeneratedPiece {
   areaMm2: number; // Área física en mm²
   allowedRotationsDeg: number[]; // [0], [0, 180], etc.
   svgMaskId: string;
-  svgContent: string; // SVG completo con clipPath, arte, placeholders vectorizados y etiqueta
+  svgContent?: string; // Flyweight: SVG resuelto bajo demanda o vía getter desde pieceSvgRegistry
   label: PieceLabelInfo;
 }
 

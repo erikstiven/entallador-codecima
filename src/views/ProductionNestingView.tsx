@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
+import { resolvePieceSvg } from '@/modules/generator/garmentGenerator';
 import { useNestingStore } from '@/core/nesting/nestingStore';
 import { useInteractiveCanvas } from '@/modules/canvas/useInteractiveCanvas';
 import { NestingPieceInput, NestingSheet } from '@/core/nesting/types';
@@ -137,7 +138,6 @@ export const ProductionNestingView: React.FC = () => {
       areaMm2: gp.areaMm2,
       allowedRotations: gp.allowedRotationsDeg,
       cutPolygon: gp.cutPolygon,
-      svgContent: gp.svgContent,
     }));
   }, [generatedPieces]);
 
@@ -668,7 +668,7 @@ export const ProductionNestingView: React.FC = () => {
                                 : undefined
                             }
                           >
-                            <g dangerouslySetInnerHTML={{ __html: piece.svgContent || '' }} />
+                            <g dangerouslySetInnerHTML={{ __html: resolvePieceSvg(piece) }} />
                           </g>
                         </svg>
 

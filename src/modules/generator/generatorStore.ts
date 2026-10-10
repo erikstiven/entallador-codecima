@@ -4,7 +4,25 @@ import {
   GenerationConfig, 
   GenerationResult 
 } from './types';
-import { generateGarmentPieces, filterReprintPieces } from './garmentGenerator';
+import { 
+  generateGarmentPieces, 
+  filterReprintPieces,
+  pieceSvgRegistry,
+  getPieceSvgContent,
+  setPieceSvgContent,
+  resolvePieceSvg,
+  clearPieceSvgRegistry,
+  clearGeneratorCaches,
+} from './garmentGenerator';
+
+export {
+  pieceSvgRegistry,
+  getPieceSvgContent,
+  setPieceSvgContent,
+  resolvePieceSvg,
+  clearPieceSvgRegistry,
+  clearGeneratorCaches,
+};
 import { useOrderStore } from '@/modules/orders/orderStore';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { useDesignStore } from '@/modules/designs/designStore';
@@ -127,6 +145,7 @@ export const useGeneratorStore = create<GeneratorStoreState>((set, get) => ({
   },
 
   clearGenerated: () => {
+    clearPieceSvgRegistry();
     set({
       generatedPieces: [],
       generationResult: null,

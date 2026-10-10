@@ -7,6 +7,7 @@ import { mmToPt } from '@/core/units/units';
 import { getOrientedPolygon } from '@/core/geometry/transform';
 import { ExportOptions } from './types';
 import { generateFullRollSvg } from './svgExporter';
+import { resolvePieceSvg } from '@/modules/generator/garmentGenerator';
 
 /**
  * PDF 1.6+ permite páginas mayores a 200 pulgadas mediante /UserUnit. Mantener
@@ -116,7 +117,7 @@ export function buildPdfSourceSvg(
 }
 
 function hasRealArtwork(pieces: PlacedNestingPiece[]): boolean {
-  return pieces.some((piece) => Boolean(piece.svgContent?.trim()));
+  return pieces.some((piece) => Boolean(resolvePieceSvg(piece)?.trim()));
 }
 
 function parseProductionSvg(svgSource: string): SVGSVGElement {
@@ -197,7 +198,7 @@ async function renderArtworkPdf(
 
   pdf.setProperties({
     title: `HMB Entallador - Producción ${widthMm}mm x ${heightMm}mm`,
-    subject: `Bobina continua 1:1 con ${placedPieces.filter((piece) => piece.svgContent?.trim()).length} piezas de arte SVG`,
+    subject: `Bobina continua 1:1 con ${placedPieces.filter((piece) => resolvePieceSvg(piece)?.trim()).length} piezas de arte SVG`,
     author: 'HMB Entallador',
     creator: 'HMB Entallador - Conversor SVG vectorial',
     keywords: 'HMB, sublimación, RasterLink, SVG, escala 1:1',
