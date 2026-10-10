@@ -35,6 +35,7 @@ import { useGeneratorStore } from '@/modules/generator/generatorStore';
 import { useThemeStore } from '@/modules/settings/themeStore';
 import { useSystemSettingsStore } from '@/modules/settings/systemSettingsStore';
 import { fromMm, toMm } from '@/core/units/units';
+import { useUnits } from '@/core/units/useUnits';
 
 interface GarmentInspectionTabProps {
   generatedPieces: GeneratedPiece[];
@@ -59,17 +60,15 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
   const { activeProfile } = useProfileStore();
   const { theme, toggleTheme } = useThemeStore();
   const { settings } = useSystemSettingsStore();
+  const { unit, unitLabel, format: formatWithUnits } = useUnits();
   const { generationConfig, updateConfig: rawUpdateConfig } = useGeneratorStore();
   const [showCalibrationPanel, setShowCalibrationPanel] = useState<boolean>(false);
   const [syncPulse, setSyncPulse] = useState<boolean>(false);
-  const [canvasBgMode, setCanvasBgMode] = useState<'dark' | 'light' | 'blueprint' | 'grid'>('light');
+  const [isTechnicalGrid, setIsTechnicalGrid] = useState<boolean>(false);
   const [showGuides, setShowGuides] = useState<boolean>(true);
-  const displayUnit = settings.displayUnit;
+  const displayUnit = unit;
   const unitStepMm = displayUnit === 'mm' ? 1 : toMm(0.1, displayUnit);
-  const formatDisplayMm = (valueMm: number) => {
-    const decimals = displayUnit === 'mm' ? 0 : Math.max(1, settings.decimalPrecision);
-    return `${fromMm(valueMm, displayUnit).toFixed(decimals)} ${displayUnit}`;
-  };
+  const formatDisplayMm = (valueMm: number) => formatWithUnits(valueMm);
 
   const updateConfig = (partial: Parameters<typeof rawUpdateConfig>[0]) => {
     rawUpdateConfig(partial);
@@ -328,44 +327,22 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
           </div>
         )}
 
-        {/* Derecha: Selector de Fondo de Contraste, Guías, Tema y Botón Principal */}
+        {/* Derecha: Selector de Guías, Cuadrícula Técnica y Acciones */}
         <div className="flex items-center gap-2.5">
-          {/* Selector de Fondo de Visor (Contraste) */}
-          <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 text-xs" title="Modo de Fondo del Visor (Para contrastar telas amarillas, blancas u oscuras)">
-            <button
-              type="button"
-              onClick={() => setCanvasBgMode('dark')}
-              className={`px-2 py-1 rounded text-xs transition-all cursor-pointer flex items-center gap-1 ${
-                canvasBgMode === 'dark' ? 'bg-slate-800 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-              title="Fondo Oscuro (Taller)"
-            >
-              <Moon className="w-3 h-3" />
-              Oscuro
-            </button>
-            <button
-              type="button"
-              onClick={() => setCanvasBgMode('light')}
-              className={`px-2 py-1 rounded text-xs transition-all cursor-pointer flex items-center gap-1 ${
-                canvasBgMode === 'light' ? 'bg-slate-200 text-slate-950 font-bold shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-              title="Fondo Claro (Alto contraste para camisetas amarillas/oscuras)"
-            >
-              <Sun className="w-3 h-3" />
-              Claro
-            </button>
-            <button
-              type="button"
-              onClick={() => setCanvasBgMode('blueprint')}
-              className={`px-2 py-1 rounded text-xs transition-all cursor-pointer flex items-center gap-1 ${
-                canvasBgMode === 'blueprint' ? 'bg-blue-900 text-cyan-300 font-bold shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-              title="Fondo Técnico (Blueprint)"
-            >
-              <Ruler className="w-3 h-3" />
-              Técnico
-            </button>
-          </div>
+          {/* Botón Cuadrícula Técnica (Opcional de contraste) */}
+          <button
+            type="button"
+            onClick={() => setIsTechnicalGrid(!isTechnicalGrid)}
+            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              isTechnicalGrid
+                ? 'bg-blue-950 text-cyan-300 border-blue-500 shadow-sm'
+                : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'
+            }`}
+            title="Activar/Desactivar fondo técnico cuadriculado para contrastar moldes claros u oscuros"
+          >
+            <Grid className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{isTechnicalGrid ? 'Cuadrícula: ON' : 'Cuadrícula'}</span>
+          </button>
 
           {/* Toggle de Guías Visuales */}
           <button
@@ -380,16 +357,6 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
           >
             <Ruler className="w-3.5 h-3.5 text-sky-400" />
             <span>{showGuides ? 'Guías: ON' : 'Guías: OFF'}</span>
-          </button>
-
-          {/* Toggle de Tema Global Sistema */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
-            title={theme === 'dark' ? 'Cambiar sistema completo a modo Claro' : 'Cambiar sistema completo a modo Oscuro'}
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-sky-400" />}
           </button>
 
           <button
@@ -433,50 +400,6 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
             <span>Pasar al Rollo de Sublimación →</span>
           </button>
         </div>
-      </div>
-
-      {/* 2. TIRA HORIZONTAL DE JUGADORES (Compacta) */}
-      <div className="bg-slate-950 border-b border-slate-800/80 px-6 py-2 overflow-x-auto flex items-center gap-2 flex-shrink-0 scrollbar-thin">
-        {filteredPlayers.map((player, idx) => {
-          const isSelected = idx === selectedPlayerIndex;
-          const isChecked = inspectedPlayerIds.has(player.orderItemId);
-          const hasCamiseta = player.pieces.some((p) => p.pieceType.startsWith('DELANTERO') || p.pieceType === 'ESPALDA' || p.pieceType.startsWith('MANGA'));
-          const hasShort = player.pieces.some((p) => p.pieceType.startsWith('SHORT') || p.pieceType.startsWith('PANTALONETA'));
-          const isShortOnly = hasShort && !hasCamiseta;
-          const isCamisetaOnly = hasCamiseta && !hasShort;
-
-          return (
-            <button
-              key={player.orderItemId || idx}
-              onClick={() => handleSelectPlayer(idx)}
-              className={`flex items-center gap-2 px-3 py-1 rounded-lg border text-xs font-mono transition-all flex-shrink-0 cursor-pointer ${
-                isSelected
-                  ? 'bg-purple-950/90 border-violet-500 text-white shadow-md shadow-purple-950/50 scale-[1.02] font-bold'
-                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-              }`}
-            >
-              <User className={`w-3 h-3 ${isSelected ? 'text-purple-400' : 'text-slate-500'}`} />
-              <span>{player.playerName}</span>
-              <span className="text-amber-400">#{player.playerNumber}</span>
-              <span className="px-1 py-0.2 rounded bg-black/40 text-[10px] text-slate-400">
-                T{player.sizeName}
-              </span>
-              {isShortOnly && (
-                <span className="px-1.5 py-0.2 rounded bg-sky-950 text-sky-400 text-[10px] font-sans border border-sky-800/60 flex items-center gap-1">
-                  <Scissors className="w-2.5 h-2.5" /> Short
-                </span>
-              )}
-              {isCamisetaOnly && (
-                <span className="px-1.5 py-0.2 rounded bg-purple-950 text-purple-400 text-[10px] font-sans border border-purple-800/60 flex items-center gap-1">
-                  <Shirt className="w-2.5 h-2.5" /> Camiseta
-                </span>
-              )}
-              {isChecked && !isSelected && (
-                <CheckCircle2 className="w-3 h-3 text-violet-500" />
-              )}
-            </button>
-          );
-        })}
       </div>
 
       {/* 3. BARRA DE CALIBRACIÓN COMPACTA (100% Basada en Iconos, + / - y Ajuste de Alto/Ancho) */}
@@ -1099,42 +1022,36 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 const pathMatch = pieceSvg.match(/<path\b[^>]*\bd=(["'])(.*?)\1/i);
                 const pathD = pathMatch ? pathMatch[2] : '';
 
-                // Estilos según el modo de fondo seleccionado
-                const isLight = canvasBgMode === 'light';
-                const isBlueprint = canvasBgMode === 'blueprint';
-
-                const slotBg = isLight 
-                  ? 'bg-slate-100 border-slate-200' 
-                  : isBlueprint 
+                // Estilos según el modo de fondo
+                const slotBg = isTechnicalGrid 
                   ? 'bg-[#071322] border-blue-900/50' 
-                  : 'bg-[#080b11] border-slate-800';
+                  : 'bg-slate-100 dark:bg-[#080b11] border-slate-200 dark:border-slate-800';
 
-                const gridOverlay = isLight
-                  ? 'bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:12px_12px] opacity-40'
-                  : isBlueprint
+                const gridOverlay = isTechnicalGrid
                   ? 'bg-[linear-gradient(to_right,#0c2d48_1px,transparent_1px),linear-gradient(to_bottom,#0c2d48_1px,transparent_1px)] [background-size:14px_14px] opacity-70'
-                  : 'bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px] opacity-35';
+                  : 'bg-[radial-gradient(#94a3b8_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px] opacity-35';
 
-                const moldStrokeColor = isLight ? '#0284c7' : '#38bdf8';
-                const hemLineY = Math.max(10, piece.bbox.height - 20);
+                const moldStrokeColor = '#0284c7';
+                const hemMarginMm = settings.defaultHemMarginMm || 20;
+                const hemLineY = Math.max(10, piece.bbox.height - hemMarginMm);
 
                 return (
                   <div
                     key={piece.id}
-                    className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl overflow-hidden shadow-xl flex flex-col justify-between transition-all group"
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-violet-500/50 rounded-xl overflow-hidden shadow-xl flex flex-col justify-between transition-all group"
                   >
                     {/* Header de la tarjeta */}
-                    <div className="px-3.5 py-2 bg-slate-950 border-b border-slate-800/80 flex items-center justify-between text-xs font-mono">
+                    <div className="px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-xs font-mono">
                       <div className="flex items-center gap-1.5">
                         <span className={`w-2 h-2 rounded-full ${
                           isEspalda ? 'bg-purple-400' : isDelantero ? 'bg-sky-400' : 'bg-amber-400'
                         }`} />
-                        <span className="font-bold text-white">
+                        <span className="font-bold text-slate-800 dark:text-white">
                           {piece.pieceType.replace('_', ' ')}
                         </span>
                       </div>
-                      <span className="text-[11px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                        {piece.bbox.width.toFixed(0)} × {piece.bbox.height.toFixed(0)} mm
+                      <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-800">
+                        {formatWithUnits(piece.bbox.width)} × {formatWithUnits(piece.bbox.height)}
                       </span>
                     </div>
 
@@ -1144,7 +1061,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
                       <svg
                         viewBox={`0 -4 ${piece.bbox.width} ${piece.bbox.height + 16}`}
-                        className="w-full h-full max-h-[410px] object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.7)] transition-transform duration-200 group-hover:scale-[1.02]"
+                        className="w-full h-full max-h-[410px] object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.15)] dark:drop-shadow-[0_12px_24px_rgba(0,0,0,0.7)] transition-transform duration-200 group-hover:scale-[1.02]"
                         preserveAspectRatio="xMidYMid meet"
                       >
                         {/* 1. Arte recortado con el molde */}
@@ -1166,10 +1083,10 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                               />
                             )}
 
-                            {/* Guías especiales para MANGA: Línea de dobladillo y límite superior */}
+                            {/* Guías especiales para MANGA: Línea de dobladillo sutil y discreta */}
                             {isManga && (
                               <>
-                                {/* Línea de Dobladillo / Basta a 20 mm del borde inferior */}
+                                {/* Línea de Dobladillo / Basta a distancia configurada del borde inferior */}
                                 <line
                                   x1="4"
                                   y1={hemLineY}
@@ -1177,29 +1094,20 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                   y2={hemLineY}
                                   stroke="#f59e0b"
                                   strokeWidth="1.2"
-                                  strokeDasharray="4 2"
-                                />
-                                <rect
-                                  x={piece.bbox.width / 2 - 58}
-                                  y={hemLineY - 14}
-                                  width="116"
-                                  height="12"
-                                  rx="3"
-                                  fill="#451a03"
-                                  fillOpacity="0.9"
-                                  stroke="#f59e0b"
-                                  strokeWidth="0.6"
+                                  strokeDasharray="4 3"
+                                  opacity="0.9"
                                 />
                                 <text
-                                  x={piece.bbox.width / 2}
-                                  y={hemLineY - 5.5}
-                                  fill="#fde68a"
-                                  fontSize="6.5"
+                                  x={piece.bbox.width - 8}
+                                  y={hemLineY - 3}
+                                  fill="#d97706"
+                                  fontSize="6"
                                   fontWeight="bold"
                                   fontFamily="monospace"
-                                  textAnchor="middle"
+                                  textAnchor="end"
+                                  opacity="0.85"
                                 >
-                                  DOBLADILLO BASTA (-20mm)
+                                  Dobladillo ({formatWithUnits(hemMarginMm)})
                                 </text>
 
                                 {/* Límite superior de sisa / hombro */}

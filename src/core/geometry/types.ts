@@ -84,11 +84,12 @@ export interface PlacedPieceItem {
 export interface ProductionProfile {
   id: string;
   name: string;
-  totalRollWidthMm: number;  // Ej: 1220 mm
-  leftMarginMm: number;      // Ej: 50 mm
-  rightMarginMm: number;     // Ej: 50 mm
+  totalRollWidthMm: number;  // Ancho total del lienzo (Ej: 1120 mm)
+  maxHeightMm?: number;      // Alto total del lienzo (Ej: 2000 mm)
+  leftMarginMm: number;      // Margen / Pinza Izquierda (Ej: 0 o 20 mm)
+  rightMarginMm: number;     // Margen / Pinza Derecha (Ej: 0 o 20 mm)
   printableWidthMm: number;  // totalRollWidthMm - left - right (Ej: 1120 mm)
   pieceSpacingMm: number;    // Separación mínima entre piezas (Ej: 7 mm)
-  topMarginMm: number;       // Margen inicial de bobina (Ej: 10 mm)
-  bottomMarginMm: number;    // Margen final de bobina (Ej: 10 mm)
+  topMarginMm: number;       // Margen superior (Ej: 10 mm)
+  bottomMarginMm: number;    // Margen inferior (Ej: 10 mm)
 }
