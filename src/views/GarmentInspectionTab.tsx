@@ -59,8 +59,9 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
   const { activeProfile } = useProfileStore();
   const { theme, toggleTheme } = useThemeStore();
   const { settings } = useSystemSettingsStore();
-  const { generationConfig, updateConfig } = useGeneratorStore();
+  const { generationConfig, updateConfig: rawUpdateConfig } = useGeneratorStore();
   const [showCalibrationPanel, setShowCalibrationPanel] = useState<boolean>(false);
+  const [syncPulse, setSyncPulse] = useState<boolean>(false);
   const [canvasBgMode, setCanvasBgMode] = useState<'dark' | 'light' | 'blueprint' | 'grid'>('light');
   const [showGuides, setShowGuides] = useState<boolean>(true);
   const displayUnit = settings.displayUnit;
@@ -69,6 +70,17 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
     const decimals = displayUnit === 'mm' ? 0 : Math.max(1, settings.decimalPrecision);
     return `${fromMm(valueMm, displayUnit).toFixed(decimals)} ${displayUnit}`;
   };
+
+  const updateConfig = (partial: Parameters<typeof rawUpdateConfig>[0]) => {
+    rawUpdateConfig(partial);
+    setSyncPulse(true);
+  };
+
+  useEffect(() => {
+    if (!syncPulse) return;
+    const timer = setTimeout(() => setSyncPulse(false), 1800);
+    return () => clearTimeout(timer);
+  }, [syncPulse]);
 
   // Agrupar piezas por cada jugador en la nómina
   const playerGroups = useMemo<PlayerGarmentGroup[]>(() => {
@@ -381,27 +393,44 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={() => setShowCalibrationPanel(!showCalibrationPanel)}
-            className={`p-2 rounded-lg border transition-all relative flex items-center justify-center cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all relative flex items-center gap-1.5 cursor-pointer ${
               showCalibrationPanel
-                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md'
-                : 'bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-800'
+                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md font-bold'
+                : 'bg-slate-950 hover:bg-slate-800 text-slate-200 hover:text-white border-slate-800'
             }`}
-            title="Ajustar posiciones y dorsal (Iconos de calibración)"
+            title="Abrir o cerrar controles de calibración de dorsal, escudo y mangas"
           >
-            <Sliders className={`w-4 h-4 ${showCalibrationPanel ? 'text-slate-950' : 'text-amber-400'}`} />
+            <Sliders className={`w-3.5 h-3.5 ${showCalibrationPanel ? 'text-slate-950' : 'text-amber-400'}`} />
+            <span>{showCalibrationPanel ? 'Calibración Activa' : 'Calibrar Medidas'}</span>
             {hasActiveCalibration && (
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-slate-900 animate-pulse" />
             )}
           </button>
 
+          {(syncPulse || hasActiveCalibration) && (
+            <div
+              className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-mono font-semibold transition-all ${
+                syncPulse
+                  ? 'bg-emerald-950/90 border-emerald-400 text-emerald-300 shadow-sm shadow-emerald-950'
+                  : 'bg-emerald-950/50 border-emerald-500/30 text-emerald-400/90'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+              <span>✓ Medidas sincronizadas en tiempo real</span>
+            </div>
+          )}
+
           <button
+            type="button"
+            disabled={generatedPieces.length === 0}
             onClick={handleProceedToRoll}
-            className="flex items-center gap-2 px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-purple-950 transition-all cursor-pointer active:scale-95"
+            title="Confirmar revisión de uniformes y pasar al Rollo de Sublimación"
+            className="flex items-center gap-2 px-5 py-2 bg-violet-600 hover:bg-violet-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-purple-950 ring-1 ring-violet-400/40 transition-all cursor-pointer active:scale-95"
           >
             <Printer className="w-4 h-4" />
-            <span>Pasar al Rollo de Impresión</span>
-            <ArrowRight className="w-4 h-4 ml-0.5" />
+            <span>Pasar al Rollo de Sublimación →</span>
           </button>
         </div>
       </div>
@@ -946,8 +975,19 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
             </div>
           </div>
 
-          {/* Acciones: Restablecer y Cerrar */}
-          <div className="flex items-center gap-1.5 ml-auto">
+          {/* Acciones y Feedback en Tiempo Real: Sincronización, Restablecer y Cerrar */}
+          <div className="flex items-center gap-2 ml-auto">
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-mono font-semibold transition-all ${
+                syncPulse
+                  ? 'bg-emerald-950 border-emerald-400 text-emerald-300 shadow-sm shadow-emerald-950 scale-[1.01]'
+                  : 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+              <span>✓ Medidas sincronizadas en tiempo real</span>
+            </div>
+
             <button
               type="button"
               onClick={() => {
@@ -977,19 +1017,21 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   sizeMarkBottomOffsetMm: 8,
                 });
               }}
-              className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
-              title="Restablecer todos los ajustes a valores iniciales"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-amber-400 text-xs font-medium transition-colors cursor-pointer"
+              title="Restablecer todos los ajustes de calibración a sus valores iniciales"
             >
               <RotateCcw className="w-3.5 h-3.5" />
+              <span>Restablecer</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowCalibrationPanel(false)}
-              className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs font-medium transition-colors cursor-pointer"
               title="Cerrar barra de calibración"
             >
               <X className="w-3.5 h-3.5" />
+              <span>Cerrar</span>
             </button>
           </div>
         </div>

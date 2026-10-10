@@ -14,7 +14,9 @@ import {
   Scissors,
   Shirt,
   Sliders,
-  FileCheck
+  FileCheck,
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
@@ -246,19 +248,48 @@ export const ProductionNestingView: React.FC = () => {
   const handleRunNesting = async (overrideInputs?: NestingPieceInput[] | unknown) => {
     const inputsToNest = Array.isArray(overrideInputs) ? overrideInputs : nestingPieceInputs;
     if (inputsToNest.length === 0) return;
-    await runNesting(inputsToNest, {
+    const res = await runNesting(inputsToNest, {
       printableWidthMm,
       maxSheetLengthMm,
       spacingMm,
       groupingMode: nestingMode,
     });
-    showAlert.toast('success', '¡Pliegos organizados y optimizados!');
+    const utilization = res?.utilizationPercent ?? 0;
+    showAlert.toast(
+      'success',
+      `✅ Acomodo Inteligente completado: ${utilization.toFixed(1)}% de aprovechamiento`
+    );
+  };
+
+  // Actualizar separación entre piezas y reacomodar rollo automáticamente
+  const handleSpacingChange = async (rawSpacingMm: number) => {
+    if (!Number.isFinite(rawSpacingMm)) return;
+    const clampedSpacingMm = Math.max(0, Math.min(30, rawSpacingMm));
+    setSpacingMm(clampedSpacingMm);
+    if (nestingPieceInputs.length > 0 && !isNesting) {
+      const res = await runNesting(nestingPieceInputs, {
+        printableWidthMm,
+        maxSheetLengthMm,
+        spacingMm: clampedSpacingMm,
+        groupingMode: nestingMode,
+      });
+      const utilization = res?.utilizationPercent ?? 0;
+      showAlert.toast(
+        'success',
+        `✅ Acomodo Inteligente completado: ${utilization.toFixed(1)}% de aprovechamiento`
+      );
+    }
   };
 
   // Reoptimizar piezas no bloqueadas
   const handleReoptimize = async () => {
     if (nestingPieceInputs.length === 0) return;
-    await reoptimizeUnlocked(nestingPieceInputs);
+    const res = await reoptimizeUnlocked(nestingPieceInputs);
+    const utilization = res?.utilizationPercent ?? 0;
+    showAlert.toast(
+      'success',
+      `✅ Acomodo Inteligente completado: ${utilization.toFixed(1)}% de aprovechamiento`
+    );
   };
 
   // Pliego activo
@@ -472,12 +503,23 @@ export const ProductionNestingView: React.FC = () => {
             </div>
 
             <button 
-              disabled={placedCount === 0}
+              disabled={placedCount === 0 || isNesting}
               onClick={() => setIsExportModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold shadow-md shadow-sky-950 transition-colors disabled:opacity-50 cursor-pointer"
+              title={
+                placedCount === 0
+                  ? 'Desactivado: No hay piezas acomodadas en el rollo para exportar. Haz clic en "⚡ Acomodar Inteligente" primero.'
+                  : isNesting
+                  ? 'Desactivado: Espera a que finalice el cálculo del acomodo inteligente.'
+                  : 'Exportar pliegos en escala real 1:1 listos para plotter de sublimación (PDF / SVG)'
+              }
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold shadow-md transition-all ${
+                placedCount === 0 || isNesting
+                  ? 'bg-slate-800 text-slate-500 border border-slate-700 opacity-60 cursor-not-allowed'
+                  : 'bg-sky-600 hover:bg-sky-500 text-white shadow-sky-950 ring-1 ring-sky-400/50 cursor-pointer active:scale-95'
+              }`}
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Exportar {sheets.length > 1 && !viewAllSheets ? `Pliego (${activeSheet?.sheetNumber || 1}/${sheets.length})` : 'Producción 1:1'}</span>
+              <span>🖨️ Exportar Producción 1:1 (PDF / SVG)</span>
             </button>
           </div>
         )}
@@ -530,10 +572,13 @@ export const ProductionNestingView: React.FC = () => {
                 <select
                   value={printableWidthMm}
                   disabled={isNesting}
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const newW = Number(e.target.value);
                     setPrintableWidthMm(newW);
-                    runNesting(nestingPieceInputs, { printableWidthMm: newW, maxSheetLengthMm });
+                    if (nestingPieceInputs.length > 0) {
+                      const res = await runNesting(nestingPieceInputs, { printableWidthMm: newW, maxSheetLengthMm, spacingMm });
+                      showAlert.toast('success', `✅ Acomodo Inteligente completado: ${(res?.utilizationPercent ?? 0).toFixed(1)}% de aprovechamiento`);
+                    }
                   }}
                   className="bg-transparent text-purple-400 font-bold font-mono focus:outline-none cursor-pointer"
                 >
@@ -550,10 +595,13 @@ export const ProductionNestingView: React.FC = () => {
                 <select
                   value={maxSheetLengthMm}
                   disabled={isNesting}
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const newH = Number(e.target.value);
                     setMaxSheetLengthMm(newH);
-                    runNesting(nestingPieceInputs, { printableWidthMm, maxSheetLengthMm: newH, spacingMm });
+                    if (nestingPieceInputs.length > 0) {
+                      const res = await runNesting(nestingPieceInputs, { printableWidthMm, maxSheetLengthMm: newH, spacingMm });
+                      showAlert.toast('success', `✅ Acomodo Inteligente completado: ${(res?.utilizationPercent ?? 0).toFixed(1)}% de aprovechamiento`);
+                    }
                   }}
                   className="bg-transparent text-sky-400 font-bold font-mono focus:outline-none cursor-pointer"
                 >
@@ -564,39 +612,91 @@ export const ProductionNestingView: React.FC = () => {
                 </select>
               </div>
 
-              {/* 3. Selector de Separación / Pegada entre Piezas */}
-              <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs">
-                <span className="text-[10px] text-slate-400 uppercase font-mono">Separación:</span>
-                <select
-                  value={spacingMm}
-                  disabled={isNesting}
-                  onChange={(e) => {
-                    const newS = Number(e.target.value);
-                    setSpacingMm(newS);
-                    runNesting(nestingPieceInputs, { printableWidthMm, maxSheetLengthMm, spacingMm: newS });
-                  }}
-                  className="bg-transparent text-emerald-400 font-bold font-mono focus:outline-none cursor-pointer"
-                >
-                  <option value={2} className="bg-slate-900 text-white">2 mm (Ultra pegada)</option>
-                  <option value={3} className="bg-slate-900 text-white">3 mm (Pegada recomendada)</option>
-                  <option value={5} className="bg-slate-900 text-white">5 mm</option>
-                  <option value={6} className="bg-slate-900 text-white">6 mm (Holgada)</option>
-                </select>
+              {/* 3. Control Dinámico y Claro de Separación entre Piezas */}
+              <div
+                className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs"
+                title="Separación libre en milímetros entre piezas de corte en el rollo"
+              >
+                <span className="text-[10px] text-slate-400 uppercase font-mono">Separación entre Piezas:</span>
+                <div className="flex items-center gap-1">
+                  {[2, 3, 5, 6].map((preset) => {
+                    const isActive = spacingMm === preset;
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        disabled={isNesting}
+                        onClick={() => handleSpacingChange(preset)}
+                        className={`px-1.5 py-0.5 rounded font-mono text-[10px] font-bold transition-all cursor-pointer disabled:opacity-50 ${
+                          isActive
+                            ? 'bg-emerald-500 text-slate-950 shadow-sm ring-1 ring-emerald-400'
+                            : 'bg-slate-900 text-slate-400 hover:text-emerald-300 border border-slate-800'
+                        }`}
+                        title={`Aplicar separación rápida de ${preset} mm`}
+                      >
+                        {preset} mm
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-slate-800">
+                  <input
+                    type="number"
+                    min={0}
+                    max={30}
+                    step={0.5}
+                    value={spacingMm}
+                    disabled={isNesting}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!Number.isNaN(val)) {
+                        handleSpacingChange(val);
+                      }
+                    }}
+                    className="w-14 bg-slate-900 border border-slate-700 focus:border-emerald-500 rounded px-1.5 py-0.5 text-center text-emerald-400 font-bold font-mono text-[11px] focus:outline-none disabled:opacity-50"
+                    title="Escribe cualquier separación personalizada entre 0 mm y 30 mm"
+                  />
+                  <span className="text-[10px] font-mono text-slate-500">mm</span>
+                </div>
               </div>
 
-              {/* Botón Reorganizar Rollo */}
+              {/* Botón Principal: ⚡ Acomodar Inteligente */}
               <button 
                 onClick={() => handleRunNesting()}
                 disabled={totalPieces === 0 || isNesting}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-md transition-all ${
+                title={
+                  totalPieces === 0
+                    ? 'No hay piezas generadas para acomodar'
+                    : isNesting
+                    ? 'Calculando acomodo inteligente en curso...'
+                    : 'Calcular y ejecutar acomodo inteligente en la bobina'
+                }
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all ${
                   totalPieces === 0 || isNesting
-                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                    ? 'bg-slate-800 text-amber-300 cursor-not-allowed border border-slate-700'
                     : 'bg-violet-600 hover:bg-violet-500 text-white shadow-purple-950 cursor-pointer active:scale-95'
                 }`}
               >
-                <Play className="w-3.5 h-3.5 fill-current" />
-                {isNesting ? `Optimizando (${nestingProgress}%)...` : 'Reorganizar Pliegos'}
+                {isNesting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                    <span>{`⏳ Calculando acomodo inteligente (${nestingProgress}%)...`}</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>⚡ Acomodar Inteligente</span>
+                  </>
+                )}
               </button>
+
+              {/* Indicador Visual de Estado de Acomodo Inteligente Activo */}
+              {placedCount > 0 && !isNesting && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 text-[11px] font-mono font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  <span>✓ Acomodo Inteligente Activo</span>
+                </div>
+              )}
 
               {lockedCount > 0 && (
                 <button 
@@ -790,7 +890,7 @@ export const ProductionNestingView: React.FC = () => {
                       </div>
                       <div className="text-xs text-slate-300 font-mono mt-1">
                         {totalPieces > 0 
-                          ? `${totalPieces} PIEZAS VECTORIALES LISTAS — HAZ CLIC EN "REORGANIZAR PLIEGOS"` 
+                          ? `${totalPieces} PIEZAS VECTORIALES LISTAS — HAZ CLIC EN "⚡ ACOMODAR INTELIGENTE"` 
                           : 'SIN PIEZAS CARGADAS'}
                       </div>
                     </div>
