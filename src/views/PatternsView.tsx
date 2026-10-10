@@ -14,12 +14,14 @@ import {
   Ruler,
   Save,
   LayoutGrid,
-  Table
+  Table,
+  Loader2
 } from 'lucide-react';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { PieceType, PatternPiece } from '@/modules/patterns/types';
 import { polygonToSvgPath } from '@/core/geometry/transform';
 import { showAlert } from '@/core/ui/alerts';
+import { dbService } from '@/core/database/db';
 
 export const PatternsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,14 +44,32 @@ export const PatternsView: React.FC = () => {
   } = usePatternStore();
 
   const [activeSizeTab, setActiveSizeTab] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [isImportingSvg, setIsImportingSvg] = useState<boolean>(false);
+  const [importSummaryMsg, setImportSummaryMsg] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'CARDS' | 'TABLE'>('CARDS');
 
-  const handleSavePatterns = () => {
-    saveActiveSet();
-    setIsSaved(true);
-    showAlert.toast('success', '¡Conjunto de moldes guardado con éxito!');
-    setTimeout(() => setIsSaved(false), 2500);
+  const handleSavePatterns = async () => {
+    if (!activePatternSet || isSaving) return;
+    setIsSaving(true);
+    setIsSaved(false);
+    try {
+      saveActiveSet();
+      await dbService.persistBrowserDb();
+      const totalPieces = activePatternSet.sizes.reduce((acc, s) => acc + s.pieces.length, 0);
+      setIsSaving(false);
+      setIsSaved(true);
+      showAlert.toast(
+        'success',
+        `Molde '${activePatternSet.name}' guardado correctamente con ${totalPieces} piezas`
+      );
+      setTimeout(() => setIsSaved(false), 2500);
+    } catch (err) {
+      console.error('Error guardando molde:', err);
+      setIsSaving(false);
+      showAlert.error('Error al Guardar', 'No se pudo guardar el molde en la base de datos.');
+    }
   };
 
   // Formulario de asignación manual
@@ -72,19 +92,50 @@ export const PatternsView: React.FC = () => {
     }
   }, [activePatternSet]);
 
+  const processPatternSvgFile = (file: File) => {
+    setIsImportingSvg(true);
+    setImportSummaryMsg(null);
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target?.result as string;
+        if (content) {
+          await new Promise((resolve) => setTimeout(resolve, 60));
+          const setName = file.name.replace(/\.[^/.]+$/, '').toUpperCase();
+          const imported = importSvg(content, setName, 'FUTBOL', file.name);
+          await dbService.persistBrowserDb();
+          const assignedCount = imported.sizes.reduce((acc, s) => acc + s.pieces.length, 0);
+          const unassignedCount = imported.unassignedPieces.length;
+          const totalPieces = assignedCount + unassignedCount;
+          const summaryText = `Se detectaron ${totalPieces} piezas en el molde "${imported.name}" (${assignedCount} clasificadas en ${imported.sizes.length} tallas${unassignedCount > 0 ? ` y ${unassignedCount} trazos auxiliares` : ''}).`;
+          setImportSummaryMsg(summaryText);
+          showAlert.toast('success', summaryText);
+          if (imported.sizes.length > 0) {
+            setActiveSizeTab(imported.sizes[0].sizeName);
+          }
+        }
+      } catch (err) {
+        console.error('Error importando SVG de molde:', err);
+        showAlert.error('Error al importar SVG', 'No se pudieron analizar los vectores del archivo seleccionado.');
+      } finally {
+        setIsImportingSvg(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    };
+    reader.onerror = () => {
+      setIsImportingSvg(false);
+      showAlert.error('Error de lectura', 'No se pudo leer el archivo SVG seleccionado.');
+    };
+    reader.readAsText(file);
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (content) {
-        const setName = file.name.replace(/\.[^/.]+$/, '').toUpperCase();
-        importSvg(content, setName, 'FUTBOL', file.name);
-      }
-    };
-    reader.readAsText(file);
+    processPatternSvgFile(file);
   };
 
 
@@ -156,7 +207,9 @@ exportMoldesParaHmb();`;
       {/* Main Pattern View or Empty State */}
       {!activePatternSet ? (
         <div 
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            if (!isImportingSvg) fileInputRef.current?.click();
+          }}
           onDragOver={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -164,17 +217,10 @@ exportMoldesParaHmb();`;
           onDrop={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            if (isImportingSvg) return;
             const file = e.dataTransfer.files?.[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              const content = event.target?.result as string;
-              if (content) {
-                const setName = file.name.replace(/\.[^/.]+$/, '').toUpperCase();
-                importSvg(content, setName, 'FUTBOL', file.name);
-              }
-            };
-            reader.readAsText(file);
+            processPatternSvgFile(file);
           }}
           className="bg-slate-900 border-2 border-dashed border-slate-700 hover:border-violet-500 rounded-2xl p-16 text-center flex flex-col items-center justify-center cursor-pointer transition-all group"
         >
@@ -185,10 +231,20 @@ exportMoldesParaHmb();`;
           </p>
           <button
             type="button"
-            className="mt-5 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-purple-950 flex items-center gap-2"
+            disabled={isImportingSvg}
+            className="mt-5 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-70 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold shadow-lg shadow-purple-950 flex items-center gap-2"
           >
-            <Plus className="w-4 h-4" />
-            Subir Mi Molde SVG
+            {isImportingSvg ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>⏳ Analizando vectores del molde...</span>
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                <span>Subir Mi Molde SVG</span>
+              </>
+            )}
           </button>
         </div>
       ) : (
@@ -236,31 +292,49 @@ exportMoldesParaHmb();`;
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={handleSavePatterns}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all ${
+                disabled={isSaving}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${
                   isSaved
-                    ? 'bg-violet-600 text-white shadow-violet-500/20'
-                    : 'bg-sky-600 hover:bg-sky-500 text-white'
+                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                    : isSaving
+                      ? 'bg-sky-700 text-white'
+                      : 'bg-sky-600 hover:bg-sky-500 text-white'
                 }`}
-                title="Guardar moldes de forma permanente"
+                title="Guardar molde de forma permanente"
               >
-                {isSaved ? (
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                    Guardando molde...
+                  </>
+                ) : isSaved ? (
                   <>
                     <Check className="w-3.5 h-3.5 text-white" />
-                    ¡Moldes Guardados!
+                    ¡Molde Guardado!
                   </>
                 ) : (
                   <>
                     <Save className="w-3.5 h-3.5" />
-                    Guardar Moldes
+                    Guardar Molde
                   </>
                 )}
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 shadow-sm transition-colors"
+                disabled={isImportingSvg}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-70 disabled:cursor-not-allowed text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 shadow-sm transition-colors cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5 text-purple-400" />
-                Cargar Otro Molde SVG
+                {isImportingSvg ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 text-purple-400 animate-spin" />
+                    <span>⏳ Analizando vectores del molde...</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Cargar Otro Molde SVG</span>
+                  </>
+                )}
               </button>
               <button
                 onClick={handleDownloadScript}
@@ -307,6 +381,23 @@ exportMoldesParaHmb();`;
               </button>
             </div>
           </div>
+
+          {/* Import Detection Summary Banner */}
+          {importSummaryMsg && (
+            <div className="bg-emerald-950/30 border border-emerald-700/50 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 text-xs text-emerald-300 font-semibold">
+                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{importSummaryMsg}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setImportSummaryMsg(null)}
+                className="text-[11px] text-emerald-400/80 hover:text-emerald-200 font-mono px-2 py-0.5 rounded hover:bg-emerald-900/40 transition-colors cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          )}
 
           {/* Unassigned Pieces Banner / Manual Assigner */}
           {activePatternSet.unassignedPieces.length > 0 && (

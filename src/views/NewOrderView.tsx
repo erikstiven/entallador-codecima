@@ -18,7 +18,9 @@ import {
   Shirt,
   Scissors,
   Settings2,
-  Check
+  Check,
+  Save,
+  Loader2
 } from 'lucide-react';
 import { useOrderStore } from '@/modules/orders/orderStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
@@ -30,6 +32,7 @@ import { usePatternStore } from '@/modules/patterns/patternStore';
 import { useDesignStore } from '@/modules/designs/designStore';
 import { useNestingStore } from '@/core/nesting/nestingStore';
 import { showAlert } from '@/core/ui/alerts';
+import { dbService } from '@/core/database/db';
 
 export const NewOrderView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,6 +46,9 @@ export const NewOrderView: React.FC = () => {
   const [bulkSizeName, setBulkSizeName] = useState<string>('');
   const [bulkQuantity, setBulkQuantity] = useState<number>(1);
   const [bulkSuccessMsg, setBulkSuccessMsg] = useState<string | null>(null);
+  const [isGeneratingAction, setIsGeneratingAction] = useState<boolean>(false);
+  const [isSavingRoster, setIsSavingRoster] = useState<boolean>(false);
+  const [isRosterSaved, setIsRosterSaved] = useState<boolean>(false);
 
   useEffect(() => {
     if (patternSets.length === 0) loadFromDatabase();
@@ -86,6 +92,41 @@ export const NewOrderView: React.FC = () => {
     applyMassEdit,
   } = useOrderStore();
 
+  const handleSaveRoster = async () => {
+    if (items.length === 0 || isSavingRoster) return;
+    setIsSavingRoster(true);
+    setIsRosterSaved(false);
+    try {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(
+            'hmb_saved_order_roster_v1',
+            JSON.stringify({
+              items,
+              fileName,
+              clientName,
+              teamName,
+              sport,
+              savedAt: new Date().toISOString(),
+            })
+          );
+        }
+      } catch (_) {}
+      await dbService.persistBrowserDb();
+      setIsSavingRoster(false);
+      setIsRosterSaved(true);
+      showAlert.toast(
+        'success',
+        `¡Nómina guardada correctamente (${items.length} jugador${items.length === 1 ? '' : 'es'})!`
+      );
+      setTimeout(() => setIsRosterSaved(false), 2500);
+    } catch (err) {
+      console.error('Error guardando nómina:', err);
+      setIsSavingRoster(false);
+      showAlert.error('Error al Guardar', 'No se pudo guardar la nómina actual.');
+    }
+  };
+
   const handleExecuteMassEdit = async () => {
     if (items.length === 0) return;
 
@@ -117,9 +158,14 @@ export const NewOrderView: React.FC = () => {
     !currentPatternSet ? 'molde' : null,
     !currentDesign ? 'diseño' : null,
   ].filter((value): value is string => Boolean(value));
-  const isProductionReady = !summary.hasErrors
-    && items.length > 0
-    && missingProductionSetup.length === 0;
+  const canProceedToNesting = items.length > 0 && !summary.hasErrors && summary.validCount > 0;
+  const isProductionReady = canProceedToNesting && missingProductionSetup.length === 0;
+  const disabledReasonMessage =
+    items.length === 0 || summary.validCount === 0
+      ? 'Agrega al menos 1 jugador válido para continuar'
+      : summary.hasErrors
+        ? 'Corrige las filas marcadas en rojo antes de continuar'
+        : null;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -315,7 +361,35 @@ export const NewOrderView: React.FC = () => {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleSaveRoster}
+                    disabled={items.length === 0 || isSavingRoster}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      isRosterSaved
+                        ? 'bg-emerald-600 text-white border border-emerald-500 shadow-emerald-500/20'
+                        : 'bg-sky-600 hover:bg-sky-500 text-white border border-sky-500/40'
+                    }`}
+                    title="Guardar manualmente los cambios de la nómina actual"
+                  >
+                    {isSavingRoster ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Guardando nómina...
+                      </>
+                    ) : isRosterSaved ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-white" />
+                        ¡Nómina Guardada!
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        Guardar Nómina
+                      </>
+                    )}
+                  </button>
                   {items.length > 0 && (
                     <button
                       type="button"
@@ -563,66 +637,81 @@ export const NewOrderView: React.FC = () => {
             </div>
           </div>
 
-          {/* Bottom Generation CTA Bar */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
-            <div className="space-y-1">
-              <div className="text-xs text-slate-400">
-                {summary.hasErrors ? (
-                  <span className="text-red-400 font-semibold flex items-center gap-1.5">
-                    <AlertCircle className="w-4 h-4" />
-                    Corrige los {summary.invalidCount} errores en la tabla antes de proceder a la generación.
-                  </span>
-                ) : missingProductionSetup.length > 0 ? (
-                  <span className="text-amber-400 font-semibold flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4" />
-                    La nómina es válida, pero falta {missingProductionSetup.join(' y ')} para poder generar las prendas.
-                  </span>
-                ) : (
-                  <span className="text-purple-400 font-bold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Todos los {summary.validCount} registros son válidos y listos para producción.
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
-                <span>
-                  Molde:{' '}
-                  {currentPatternSet ? (
-                    <span className="text-purple-400 font-bold">{currentPatternSet.name}</span>
-                  ) : (
-                    <span className="text-amber-400 font-semibold inline-flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3 text-amber-400" />
-                      Sin Molde (ve a 'Moldes')
-                    </span>
-                  )}
-                </span>
-                <span>•</span>
-                <span>
-                  Diseño:{' '}
-                  {currentDesign ? (
-                    <span className="text-purple-400 font-bold">{currentDesign.name}</span>
-                  ) : (
-                    <span className="text-amber-400 font-semibold inline-flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3 text-amber-400" />
-                      Sin Diseño (ve a 'Diseños')
-                    </span>
-                  )}
-                </span>
-              </div>
-            </div>
+        </div>
+      )}
 
-            <button
-              disabled={summary.hasErrors || items.length === 0}
-              onClick={() => {
-                if (missingProductionSetup.length > 0) {
-                  const missingLabel = missingProductionSetup.join(' y ');
-                  showAlert.warning(
-                    'Configuración Incompleta',
-                    `No se puede generar el pedido: falta ${missingLabel}. Completa la configuración requerida antes de avanzar al entallado.`
-                  );
-                  setCurrentView(!currentPatternSet ? 'PATTERNS' : 'DESIGNS');
-                  return;
-                }
+      {/* Bottom Generation CTA Bar */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+        <div className="space-y-1">
+          <div className="text-xs text-slate-400">
+            {items.length === 0 ? (
+              <span className="text-slate-300 font-semibold flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-amber-400" />
+                Carga un archivo Excel o agrega jugadores para habilitar la generación de prendas.
+              </span>
+            ) : summary.hasErrors ? (
+              <span className="text-red-400 font-semibold flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" />
+                Corrige los {summary.invalidCount} errores en la tabla antes de proceder a la generación.
+              </span>
+            ) : missingProductionSetup.length > 0 ? (
+              <span className="text-amber-400 font-semibold flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4" />
+                La nómina es válida, pero falta {missingProductionSetup.join(' y ')} para poder generar las prendas.
+              </span>
+            ) : (
+              <span className="text-purple-400 font-bold flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" />
+                Todos los {summary.validCount} registros son válidos y listos para producción.
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+            <span>
+              Molde:{' '}
+              {currentPatternSet ? (
+                <span className="text-purple-400 font-bold">{currentPatternSet.name}</span>
+              ) : (
+                <span className="text-amber-400 font-semibold inline-flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 text-amber-400" />
+                  Sin Molde (ve a 'Moldes')
+                </span>
+              )}
+            </span>
+            <span>•</span>
+            <span>
+              Diseño:{' '}
+              {currentDesign ? (
+                <span className="text-purple-400 font-bold">{currentDesign.name}</span>
+              ) : (
+                <span className="text-amber-400 font-semibold inline-flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 text-amber-400" />
+                  Sin Diseño (ve a 'Diseños')
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-stretch md:items-end gap-2">
+          <button
+            disabled={!canProceedToNesting || isGeneratingAction}
+            onClick={async () => {
+              if (!canProceedToNesting || isGeneratingAction) return;
+
+              if (missingProductionSetup.length > 0) {
+                const missingLabel = missingProductionSetup.join(' y ');
+                showAlert.warning(
+                  'Configuración Incompleta',
+                  `No se puede generar el pedido: falta ${missingLabel}. Completa la configuración requerida antes de avanzar al entallado.`
+                );
+                setCurrentView(!currentPatternSet ? 'PATTERNS' : 'DESIGNS');
+                return;
+              }
+
+              setIsGeneratingAction(true);
+              try {
+                await new Promise((resolve) => setTimeout(resolve, 80));
 
                 if (!activePatternSet && currentPatternSet) {
                   setActivePatternSet(currentPatternSet);
@@ -635,6 +724,7 @@ export const NewOrderView: React.FC = () => {
                 const { generatePieces } = useGeneratorStore.getState();
                 const res = generatePieces();
                 if (!res) {
+                  setIsGeneratingAction(false);
                   showAlert.error(
                     'Error de Generación',
                     'No se pudieron generar las piezas. Verifica que las tallas del archivo de moldes coincidan con las del Excel.'
@@ -644,21 +734,39 @@ export const NewOrderView: React.FC = () => {
                 useNestingStore.getState().clearNesting();
                 showAlert.toast('success', `¡${useGeneratorStore.getState().generatedPieces.length} piezas vectoriales generadas!`);
                 setCurrentView('NESTING');
-              }}
-              className={`px-7 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2.5 shadow-xl transition-all active:scale-95 ${
-                summary.hasErrors || items.length === 0
-                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                  : !isProductionReady
-                    ? 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/40 cursor-pointer'
+              } finally {
+                setIsGeneratingAction(false);
+              }
+            }}
+            className={`px-7 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-xl transition-all active:scale-95 ${
+              !canProceedToNesting || isGeneratingAction
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                : !isProductionReady
+                  ? 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/40 cursor-pointer'
                   : 'bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-purple-950/70 cursor-pointer ring-1 ring-purple-400/40'
-              }`}
-            >
-              <span>{isProductionReady ? 'Generar Prendas y Avanzar al Entallado' : 'Completar configuración requerida'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+            }`}
+          >
+            {isGeneratingAction ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-purple-300" />
+                <span>⏳ Generando uniformes 1:1...</span>
+              </>
+            ) : (
+              <>
+                <span>Generar Prendas y Avanzar al Entallado</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+
+          {!canProceedToNesting && disabledReasonMessage && (
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 bg-amber-950/40 border border-amber-700/50 px-3 py-1 rounded-lg">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>{disabledReasonMessage}</span>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
