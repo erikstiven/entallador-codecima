@@ -65,6 +65,9 @@ export interface NestingSheet {
   utilizationPercent: number; // 0 to 100 %
   wastePercent: number;
   playerNames: string[];
+  strategyName?: string; // ej. 'BALANCEO_INTELIGENTE_FONDO_MULTICOLUMNA', 'BALANCEO_INTELIGENTE_FONDO_HORIZONTAL', 'FLUJO_MODULAR_CONTINUO'
+  bottomFilledCount?: number; // cantidad de piezas reubicadas inteligentemente en la zona inferior para evitar huecos
+  savedLengthMm?: number; // milímetros de papel ahorrados frente al apilado lineal simple
 }
 
 export interface NestingResult {
@@ -80,4 +83,7 @@ export interface NestingResult {
   wastePercent: number; // 0 to 100 %
   executionTimeMs: number;
   groupingMode: NestingGroupingMode;
+  strategyName?: string; // ej. 'BALANCEO_INTELIGENTE_FONDO_MULTICOLUMNA', 'BALANCEO_INTELIGENTE_FONDO_HORIZONTAL', 'FLUJO_MODULAR_CONTINUO'
+  bottomFilledCount?: number; // cantidad de piezas reubicadas inteligentemente en la zona inferior para evitar huecos
+  savedLengthMm?: number; // milímetros de papel ahorrados frente al apilado lineal simple
 }

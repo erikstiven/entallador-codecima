@@ -8,6 +8,7 @@ import {
   NestingSheet
 } from './types';
 import { executeNestingWithWorker, terminateActiveNestingWorkers } from './worker/nestingWorkerClient';
+import { recordOptimizationRun } from './nestingLearningService';
 import { pieceSvgRegistry } from '@/modules/generator/garmentGenerator';
 
 export type NestingAlgorithm = 'MODULAR_INDUSTRIAL' | 'POLYGONAL_CLIPPER2' | 'BOUNDING_BOX';
@@ -109,6 +110,15 @@ export const useNestingStore = create<NestingState>((set, get) => ({
     const sheets = result.sheets || [];
     if (!result.sheets) {
       result.sheets = sheets;
+    }
+
+    try {
+      recordOptimizationRun(result, {
+        printableWidthMm: options.printableWidthMm,
+        spacingMm: options.spacingMm,
+      });
+    } catch {
+      // No bloquear flujo por telemetría de aprendizaje
     }
 
     set({
