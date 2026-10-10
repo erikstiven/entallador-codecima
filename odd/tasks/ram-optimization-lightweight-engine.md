@@ -18,13 +18,13 @@
   - **Route:** Delegated Direct (Writer trigger: 3 files).
   - **Evidence:** Commit `6e196b8`. Sentencias SQLite protegidas con `try ... finally { stmt.free(); }` en `query`, manejo seguro de excepciones en `run`, mutex de concurrencia en `persistBrowserDb`. Eliminada persistencia en `localStorage` en `designStore` y `patternStore`, reemplazando llamadas síncronas bloqueantes por `scheduleAutoSave()`. Pruebas ejecutadas con éxito: `npm test src/core/database/db.test.ts src/modules/designs/designRepository.test.ts src/modules/patterns/patternRepository.test.ts` (3 archivos, 8 tests pasados) y suite completa `npm test` (23 archivos, 106 tests pasados).
 
-- [ ] **TASK-2: Arquitectura Flyweight para Generador de Prendas y Store de Nesting**
+- [x] **TASK-2: Arquitectura Flyweight para Generador de Prendas y Store de Nesting**
   - **ID:** `TASK-2`
   - **Scope:** `src/modules/generator/types.ts`, `src/modules/generator/garmentGenerator.ts`, `src/modules/generator/generatorStore.ts`, `src/core/nesting/types.ts`, `src/core/nesting/nestingStore.ts`
   - **Description:** Rediseñar `GeneratedPiece` y `PlacedNestingPiece` para separar metadatos livianos (coordenadas, rotación, dimensiones, dorsales, tallas) del contenido SVG masivo. Almacenar el arte maestro una sola vez como plantilla y resolver el ensamblado completo únicamente bajo demanda (streaming durante exportación o previsualización individual). Eliminar la triplicación en `nestingStore`.
   - **Acceptance Criteria:** La memoria para un pedido de 50+ jugadores pasa de cientos de megabytes a < 5 MB en Zustand. Pruebas de generador y exportación pasan.
   - **Route:** Delegated Direct (Writer trigger: 5 files).
-  - **Evidence:** Pending.
+  - **Evidence:** Commit `57bd788`. Implementada arquitectura Flyweight en `garmentGenerator.ts` con `pieceSvgRegistry` fuera del estado reactivo de Zustand y resolución bajo demanda mediante `resolvePieceSvg` / `getPieceSvgContent`. Implementado caché de arte escalado por molde/talla (`getCachedNormalizedArtwork` y `getCachedScaledArtwork`) eliminando normalización y escalado redundante en jugadores repetidos. Eliminada la triplicación en `nestingStore` (`placedPieces`, `sheets` y `nestingResult` comparten referencias; `svgContent` se extrae al registry durante el acomodo y no satura los metadatos geométricos durante `movePiece`, `rotatePiece` o `toggleLockPiece`). Actualizados exportadores (`svgExporter`, `pdfExporter`, `exportService`) y vistas (`ProductionNestingView`, `GarmentInspectionTab`). Pruebas requeridas y suite completa al 100%: 24 archivos, 111 tests pasados (`npm test`), y compilación exitosa (`npm run build`).
 
 - [ ] **TASK-3: Estabilización de Event Listeners y Viewport Culling en el Lienzo**
   - **ID:** `TASK-3`
