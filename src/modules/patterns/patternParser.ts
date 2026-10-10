@@ -133,9 +133,14 @@ function extractTextLabels(svgContent: string, viewport: SvgViewport): Extracted
     let y = 0;
 
     const matrixMatch = attrs.match(/transform\s*=\s*["']matrix\s*\(\s*([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)[,\s]+([^\s,]+)\s*\)["']/i);
+    const translateMatch = attrs.match(/transform\s*=\s*["'][^"']*translate\s*\(\s*([^\s,]+)[,\s]+([^\s,]+)\s*\)/i);
+
     if (matrixMatch) {
       x = parseFloat(matrixMatch[5]) || 0;
       y = parseFloat(matrixMatch[6]) || 0;
+    } else if (translateMatch) {
+      x = parseFloat(translateMatch[1]) || 0;
+      y = parseFloat(translateMatch[2]) || 0;
     } else {
       const xMatch = attrs.match(/\bx\s*=\s*["']([^"']+)["']/i);
       const yMatch = attrs.match(/\by\s*=\s*["']([^"']+)["']/i);
@@ -206,27 +211,36 @@ export function parsePatternSvg(
     let detectedSize = detectSizeName(originalId);
     let detectedType = detectPieceType(originalId);
 
-    // Si no se detectó talla por el ID, buscar si hay una etiqueta de texto dentro o cerca del bbox de la pieza
+    // Si no se detectó talla por el ID, buscar la etiqueta de texto más cercana a la pieza
     if (!detectedSize) {
+      let closestDist = Infinity;
+      let bestSize: string | null = null;
+      const centerX = (bbox.minX + bbox.maxX) / 2;
+      const centerY = (bbox.minY + bbox.maxY) / 2;
+
       for (const lbl of textLabels) {
-        if (
-          lbl.x >= bbox.minX - 25 &&
-          lbl.x <= bbox.maxX + 25 &&
-          lbl.y >= bbox.minY - 25 &&
-          lbl.y <= bbox.maxY + 25
-        ) {
-          const matchSize = detectSizeName(lbl.text) || (lbl.text.match(/^\d{2}$/) ? lbl.text : null);
-          if (matchSize) {
-            detectedSize = normalizeSizeName(matchSize);
-            break;
-          }
+        const matchSize = detectSizeName(lbl.text) || (lbl.text.match(/^\d{2}$/) ? lbl.text : null);
+        if (!matchSize) continue;
+
+        // Distancia euclidiana al centro de la pieza o a su caja delimitadora
+        const dx = Math.max(0, Math.max(bbox.minX - lbl.x, lbl.x - bbox.maxX));
+        const dy = Math.max(0, Math.max(bbox.minY - lbl.y, lbl.y - bbox.maxY));
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < closestDist && dist <= 420) {
+          closestDist = dist;
+          bestSize = normalizeSizeName(matchSize);
         }
+      }
+
+      if (bestSize) {
+        detectedSize = bestSize;
       }
     }
 
     // Heurística geométrica para clasificar el tipo de pieza si no viene en el ID:
     if (!detectedType) {
-      if (bbox.height >= 450 && bbox.height > bbox.width) {
+      if ((bbox.height >= 450 && bbox.height > bbox.width) || (areaMm2 >= 95000 && Math.min(bbox.width, bbox.height) >= 380)) {
         // Torso: delantero o espalda (se refinará en post-procesamiento por área)
         const existingForSize = sizeMap[detectedSize || ''] || [];
         const hasDelantero = existingForSize.some((p) => p.pieceType.includes('DELANTERO'));
@@ -299,7 +313,8 @@ export function parsePatternSvg(
   // Post-procesado inteligente por talla (resolución de variantes de cuello y lados de pantaloneta):
   for (const sizeName of Object.keys(sizeMap)) {
     const piecesInSize = sizeMap[sizeName];
-    const torsoPieces = piecesInSize.filter((p) => p.bbox.height >= 450 && p.bbox.height > p.bbox.width);
+    const isTorso = (p: PatternPiece) => (p.bbox.height >= 450 && p.bbox.height > p.bbox.width) || (p.areaMm2 >= 95000 && Math.min(p.bbox.width, p.bbox.height) >= 380);
+    const torsoPieces = piecesInSize.filter(isTorso);
 
     if (torsoPieces.length === 3) {
       // 3 piezas de torso en la misma talla:
@@ -325,7 +340,7 @@ export function parsePatternSvg(
       torsoPieces[0].pieceName = `T${sizeName}_ESPALDA`;
       torsoPieces[0].allowedRotationsDeg = getDefaultRotationsForPieceType('ESPALDA');
 
-        if (!torsoPieces[1].pieceType || torsoPieces[1].pieceType === 'ESPALDA') {
+      if (!torsoPieces[1].pieceType || torsoPieces[1].pieceType === 'ESPALDA') {
         torsoPieces[1].pieceType = 'DELANTERO';
         torsoPieces[1].pieceName = `T${sizeName}_DELANTERO`;
         torsoPieces[1].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO');
@@ -333,7 +348,7 @@ export function parsePatternSvg(
     }
 
     // Post-procesado para mangas y pantalonetas en esta talla:
-    const nonTorsoPieces = piecesInSize.filter((p) => !(p.bbox.height >= 450 && p.bbox.height > p.bbox.width));
+    const nonTorsoPieces = piecesInSize.filter((p) => !isTorso(p));
     const sleeveCandidates = nonTorsoPieces.filter(p => p.bbox.height <= 300 && p.bbox.width > p.bbox.height * 1.15 && p.areaMm2 < 130000);
     const pantalonetaCandidates = nonTorsoPieces.filter(p => p.bbox.height >= 320 && p.areaMm2 >= 130000);
 
