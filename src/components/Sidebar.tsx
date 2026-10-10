@@ -18,12 +18,12 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'NEW_ORDER', label: 'Nuevo Pedido', icon: FileSpreadsheet, description: 'Importar Excel y Jugadores', stepNumber: '01' },
-  { id: 'DESIGNS', label: 'Diseños Maestros', icon: Palette, description: 'Artes Illustrator y Tipografías', stepNumber: '02' },
-  { id: 'PATTERNS', label: 'Moldes Vectoriales', icon: Scissors, description: 'Patrones y Curvas 1:1 por Talla', stepNumber: '03' },
-  { id: 'NESTING', label: 'Entallado / Nesting', icon: LayoutGrid, description: 'Acomodo en Rollo 1120 mm', stepNumber: '04' },
-  { id: 'HISTORY', label: 'Historial & Reposición', icon: Clock, description: 'Pedidos y Reimpresiones', stepNumber: '05' },
-  { id: 'SETTINGS', label: 'Configuración', icon: Settings, description: 'Empresa, Bobinas y Tolerancias', stepNumber: '06' },
+  { id: 'NEW_ORDER', label: 'Nuevo Pedido', icon: FileSpreadsheet, description: 'Nómina y tallas', stepNumber: '01' },
+  { id: 'DESIGNS', label: 'Diseños Maestros', icon: Palette, description: 'Artes y fuentes', stepNumber: '02' },
+  { id: 'PATTERNS', label: 'Moldes Vectoriales', icon: Scissors, description: 'Patrones 1:1', stepNumber: '03' },
+  { id: 'NESTING', label: 'Entallado / Nesting', icon: LayoutGrid, description: 'Acomodo en bobina', stepNumber: '04' },
+  { id: 'HISTORY', label: 'Historial', icon: Clock, description: 'Pedidos y reposición', stepNumber: '05' },
+  { id: 'SETTINGS', label: 'Configuración', icon: Settings, description: 'Ajustes del sistema', stepNumber: '06' },
 ];
 
 export const Sidebar: React.FC = () => {

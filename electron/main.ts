@@ -1,6 +1,9 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { detectInkscape } from './services/inkscapeResolver'
+import { convertSvgToEps } from './services/svgToEps'
+import { EpsConversionOptions } from './services/types'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -12,6 +15,29 @@ process.env.VITE_PUBLIC = app.isPackaged
 
 let win: BrowserWindow | null = null
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
+
+function setupIpcHandlers() {
+  // Comprobar disponibilidad de Inkscape en el sistema
+  ipcMain.handle('eps:check-inkscape', async (_event, customPath?: string) => {
+    return await detectInkscape(customPath);
+  });
+
+  // Convertir SVG maestro a EPS Level 3 con validación
+  ipcMain.handle(
+    'eps:convert-svg',
+    async (
+      _event,
+      params: {
+        svgContent: string;
+        options?: EpsConversionOptions;
+        expectedDimensions?: { widthMm: number; heightMm: number };
+      }
+    ) => {
+      const { svgContent, options, expectedDimensions } = params || {};
+      return await convertSvgToEps(svgContent, options, expectedDimensions);
+    }
+  );
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -54,5 +80,6 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(() => {
+  setupIpcHandlers()
   createWindow()
 })

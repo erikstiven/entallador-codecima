@@ -2,10 +2,51 @@ import { PlacedNestingPiece } from '@/core/nesting/types';
 import { ExportOptions } from './types';
 import { mmToPt } from '@/core/units/units';
 import { rotatePoint } from '@/core/geometry/transform';
+import { generateFullRollSvg } from './svgExporter';
+import { convertSvgToEpsClient, EpsConversionOptions } from './epsConversionClient';
 
 /**
- * Genera un archivo EPS (Encapsulated PostScript Level 3) continuo a escala 1:1
- * Para talleres con RIPs o plotters legados que requieran archivos .eps puros.
+ * Convierte el SVG maestro de producción a EPS Level 3 completo de alta fidelidad
+ * utilizando el motor aislado Inkscape CLI a través de Electron.
+ */
+export async function generateFullRollEpsWithInkscape(
+  placedPieces: PlacedNestingPiece[],
+  widthMm: number,
+  heightMm: number,
+  options: Partial<ExportOptions> = {},
+  conversionOptions: EpsConversionOptions = {}
+): Promise<string> {
+  // 1. Obtener el SVG maestro existente como única fuente de verdad (sin alterarlo)
+  const masterSvg = generateFullRollSvg(placedPieces, widthMm, heightMm, options);
+
+  // 2. Ejecutar conversión mediante el cliente IPC seguro de Electron
+  const result = await convertSvgToEpsClient(
+    masterSvg,
+    {
+      dpi: conversionOptions.dpi || 300,
+      postscriptLevel: conversionOptions.postscriptLevel || 3,
+      convertTextToPaths: conversionOptions.convertTextToPaths !== false,
+      timeoutMs: conversionOptions.timeoutMs,
+      customInkscapePath: conversionOptions.customInkscapePath,
+    },
+    {
+      widthMm,
+      heightMm,
+    }
+  );
+
+  if (!result.success || !result.epsContent) {
+    throw new Error(
+      result.error ||
+        'No se pudo generar el archivo EPS mediante Inkscape CLI. Verifique la instalación del motor.'
+    );
+  }
+
+  return result.epsContent;
+}
+
+/**
+ * Generador PostScript estático directo (fallback para entornos sin Inkscape o tests unitarios)
  */
 export function generateFullRollEps(
   placedPieces: PlacedNestingPiece[],

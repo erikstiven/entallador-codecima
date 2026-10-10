@@ -4,6 +4,7 @@ import { generateFullRollPdf } from './pdfExporter';
 import { generateFullRollEps } from './epsExporter';
 import { generateProductionExcel, generateProductionCsv } from './productionSummaryExporter';
 import { resolvePieceSvg } from '@/modules/generator/garmentGenerator';
+import { convertSvgToEpsClient, isElectronEpsAvailable } from './epsConversionClient';
 
 /**
  * Servicio central de exportación para HMB Entallador.
@@ -70,13 +71,51 @@ export async function exportProductionRoll(
     }
 
     case 'EPS': {
-      const epsString = generateFullRollEps(
+      // 1. Generar SVG maestro existente (fuente de verdad vectorial)
+      const svgString = generateFullRollSvg(
         placedPieces,
         paperRollWidthMm,
         totalRollLengthMm,
         options
       );
-      blob = new Blob([epsString], { type: 'application/postscript;charset=utf-8' });
+
+      // 2. Si el puente Electron está disponible, convertir vía Inkscape CLI
+      if (isElectronEpsAvailable()) {
+        const conversionResult = await convertSvgToEpsClient(
+          svgString,
+          {
+            dpi: 300,
+            postscriptLevel: 3,
+            convertTextToPaths: true,
+          },
+          {
+            widthMm: paperRollWidthMm,
+            heightMm: totalRollLengthMm,
+          }
+        );
+
+        if (!conversionResult.success || !conversionResult.epsContent) {
+          throw new Error(
+            conversionResult.error ||
+              'No se pudo generar el archivo EPS mediante Inkscape. Verifique la instalación del motor.'
+          );
+        }
+
+        blob = new Blob([conversionResult.epsContent], { type: 'application/postscript;charset=utf-8' });
+      } else {
+        // En entorno puramente web sin Electron, advertir y usar generador directo
+        console.warn(
+          '[Export] Entorno de escritorio Electron no detectado; utilizando generador EPS directo.'
+        );
+        const epsString = generateFullRollEps(
+          placedPieces,
+          paperRollWidthMm,
+          totalRollLengthMm,
+          options
+        );
+        blob = new Blob([epsString], { type: 'application/postscript;charset=utf-8' });
+      }
+
       mimeType = 'application/postscript';
       ext = '.eps';
       break;

@@ -7,12 +7,15 @@ import {
   Scissors, 
   Ruler,
   Loader2,
-  Layers
+  Layers,
+  Info,
+  AlertCircle
 } from 'lucide-react';
 import { ExportOptions, ExportResult } from './types';
 import { exportProductionRoll, triggerFileDownload } from './exportService';
 import { PlacedNestingPiece, NestingResult } from '@/core/nesting/types';
 import { showAlert } from '@/core/ui/alerts';
+import { checkInkscapeAvailability, isElectronEpsAvailable } from './epsConversionClient';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -182,7 +185,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       const message = err instanceof Error ? err.message : 'No fue posible generar el archivo.';
       setExportStepText('');
       setExportProgressPercent(0);
-      showAlert.error('Error al Exportar', message);
+      if (selectedFormat === 'EPS' && message.includes('No se encontró Inkscape')) {
+        showAlert.error(
+          'Motor Inkscape No Encontrado',
+          'No se encontró Inkscape en el sistema.\n\nPara exportar en formato EPS es necesario instalar Inkscape (https://inkscape.org). La exportación SVG y PDF continúa disponible al 100%.'
+        );
+      } else {
+        showAlert.error('Error al Exportar', message);
+      }
     } finally {
       setIsExporting(false);
     }
@@ -271,6 +281,22 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 </button>
               ))}
             </div>
+            {selectedFormat === 'EPS' && (
+              <div className="mt-2 p-2 rounded-lg bg-purple-950/40 border border-violet-500/30 text-[11px] text-purple-200 flex items-start gap-2">
+                <Info className="w-3.5 h-3.5 text-purple-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>EPS Level 3 (Curvas 1:1):</strong> Motor aislado vía Inkscape CLI para RIPs (Mimaki, Epson, Wasatch) y plotters industriales.
+                </span>
+              </div>
+            )}
+            {selectedFormat === 'SVG' && (
+              <div className="mt-2 p-2 rounded-lg bg-slate-950/50 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
+                <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>SVG Maestro 1:1:</strong> Vectorial nativo con degradados, máscaras y tipografías trazadas. Compatible directo con Illustrator.
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Selector de alcance cuando hay múltiples pliegos */}
@@ -466,7 +492,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             ) : isExporting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin text-violet-400 shrink-0" />
-                Generando archivo 1:1 ({exportProgressPercent}%)...
+                {selectedFormat === 'EPS' && !exportProgressPercent
+                  ? 'Procesando EPS con Inkscape...'
+                  : `Generando archivo 1:1 (${exportProgressPercent}%)...`}
               </>
             ) : (
               <>
