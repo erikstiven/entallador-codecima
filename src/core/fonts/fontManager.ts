@@ -1,8 +1,21 @@
 import * as opentype from 'opentype.js';
 import { DynamicPlaceholderRule } from '@/modules/designs/types';
 
+const MAX_FONT_CACHE_SIZE = 16;
+const MAX_GLYPH_OUTLINE_CACHE_SIZE = 2000;
+
 const fontCache = new Map<string, opentype.Font>();
+const fontAliasMap = new Map<string, string>();
+const fontReverseAliases = new Map<string, Set<string>>();
 const loadingPromises = new Map<string, Promise<opentype.Font | null>>();
+
+interface CachedGlyphOutline {
+  pathData: string;
+  naturalWidth: number;
+  yCenter: number;
+}
+
+const glyphOutlineCache = new Map<string, CachedGlyphOutline>();
 
 const FONT_FILE_MAP: Record<string, string> = {
   'bebas neue': '/fonts/bebas_neue.ttf',
@@ -31,20 +44,103 @@ function normalizeFontName(family?: string): string {
     .trim();
 }
 
+function resolveCanonicalKey(norm: string): string {
+  return fontAliasMap.get(norm) || norm;
+}
+
+function getFromFontCache(family?: string): opentype.Font | null {
+  const norm = normalizeFontName(family);
+  const canonicalKey = resolveCanonicalKey(norm);
+  const cached = fontCache.get(canonicalKey);
+  if (!cached) return null;
+
+  // Promoción LRU
+  fontCache.delete(canonicalKey);
+  fontCache.set(canonicalKey, cached);
+  return cached;
+}
+
+function evictOldestFontIfNeeded(): void {
+  while (fontCache.size >= MAX_FONT_CACHE_SIZE) {
+    const oldestCanonical = fontCache.keys().next().value;
+    if (oldestCanonical === undefined) break;
+
+    fontCache.delete(oldestCanonical);
+    const aliases = fontReverseAliases.get(oldestCanonical);
+    if (aliases) {
+      for (const alias of aliases) {
+        fontAliasMap.delete(alias);
+      }
+      fontReverseAliases.delete(oldestCanonical);
+    }
+  }
+}
+
 /**
- * Registra una instancia opentype.Font directamente en memoria
+ * Limpia la caché de fuentes y contornos en memoria para liberar buffers pesados
+ */
+export function clearFontCache(): void {
+  fontCache.clear();
+  fontAliasMap.clear();
+  fontReverseAliases.clear();
+  glyphOutlineCache.clear();
+}
+
+/**
+ * Registra una instancia opentype.Font directamente en memoria evitando duplicación por alias
  */
 export function registerOpentypeFont(name: string, font: opentype.Font): void {
-  const aliases = new Set<string>([name]);
+  const aliases = new Set<string>([normalizeFontName(name)]);
   const names = font.names as unknown as Record<string, Record<string, string> | undefined>;
   for (const key of ['fontFamily', 'fullName', 'postScriptName', 'preferredFamily']) {
     const localized = names?.[key];
     if (!localized) continue;
     for (const value of Object.values(localized)) {
-      if (typeof value === 'string' && value.trim()) aliases.add(value);
+      if (typeof value === 'string' && value.trim()) {
+        aliases.add(normalizeFontName(value));
+      }
     }
   }
-  aliases.forEach((alias) => fontCache.set(normalizeFontName(alias), font));
+
+  // Verificar si esta instancia o alguno de sus alias ya tiene una clave canónica registrada
+  let canonicalKey: string | undefined;
+  for (const [existingKey, existingFont] of fontCache.entries()) {
+    if (existingFont === font) {
+      canonicalKey = existingKey;
+      break;
+    }
+  }
+  if (!canonicalKey) {
+    for (const alias of aliases) {
+      const mapped = fontAliasMap.get(alias);
+      if (mapped && fontCache.has(mapped)) {
+        canonicalKey = mapped;
+        break;
+      }
+    }
+  }
+  if (!canonicalKey) {
+    canonicalKey = normalizeFontName(name);
+  }
+
+  if (fontCache.has(canonicalKey)) {
+    fontCache.delete(canonicalKey);
+  } else {
+    evictOldestFontIfNeeded();
+  }
+
+  fontCache.set(canonicalKey, font);
+
+  let reverseSet = fontReverseAliases.get(canonicalKey);
+  if (!reverseSet) {
+    reverseSet = new Set<string>();
+    fontReverseAliases.set(canonicalKey, reverseSet);
+  }
+
+  for (const alias of aliases) {
+    fontAliasMap.set(alias, canonicalKey);
+    reverseSet.add(alias);
+  }
 }
 
 async function loadInstalledBrowserFont(family: string): Promise<opentype.Font | null> {
@@ -61,8 +157,9 @@ async function loadInstalledBrowserFont(family: string): Promise<opentype.Font |
     if (!match || typeof match.blob !== 'function') return null;
 
     const blob = await match.blob();
-    const buffer = await blob.arrayBuffer();
+    let buffer: ArrayBuffer | null = await blob.arrayBuffer();
     const font = opentype.parse(buffer);
+    buffer = null;
     registerOpentypeFont(family, font);
     return font;
   } catch (err) {
@@ -72,10 +169,12 @@ async function loadInstalledBrowserFont(family: string): Promise<opentype.Font |
 }
 
 export function getOpentypeFont(family?: string): opentype.Font | null {
-  const norm = normalizeFontName(family);
-  if (fontCache.has(norm)) {
-    return fontCache.get(norm)!;
+  const cached = getFromFontCache(family);
+  if (cached) {
+    return cached;
   }
+
+  const norm = normalizeFontName(family);
 
   // En entorno Node / Vitest, cargar sincrónicamente el archivo si existe en public/fonts
   if (typeof process !== 'undefined' && process.versions && process.versions.node) {
@@ -85,8 +184,9 @@ export function getOpentypeFont(family?: string): opentype.Font | null {
       const relPath = FONT_FILE_MAP[norm] || `/fonts/${norm.replace(/\s+/g, '_')}.ttf`;
       const localPath = p.join(process.cwd(), 'public', relPath.replace(/^\//, ''));
       if (fs.existsSync(localPath)) {
-        const buf = fs.readFileSync(localPath);
-        const font = opentype.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+        const buf: Buffer = fs.readFileSync(localPath);
+        const arrayBuf = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+        const font = opentype.parse(arrayBuf);
         registerOpentypeFont(family || norm, font);
         return font;
       }
@@ -102,19 +202,21 @@ export function getOpentypeFont(family?: string): opentype.Font | null {
  * Carga asíncronamente una fuente TTF/OTF desde el servidor local o URL
  */
 export async function loadOpentypeFont(family: string): Promise<opentype.Font | null> {
-  const norm = normalizeFontName(family);
-  if (fontCache.has(norm)) {
-    return fontCache.get(norm)!;
+  const cached = getFromFontCache(family);
+  if (cached) {
+    return cached;
   }
 
-  if (loadingPromises.has(norm)) {
-    return loadingPromises.get(norm)!;
+  const norm = normalizeFontName(family);
+  const path = FONT_FILE_MAP[norm] || `/fonts/${norm.replace(/\s+/g, '_')}.ttf`;
+  const inflightKey = FONT_FILE_MAP[norm] ? path : norm;
+
+  if (loadingPromises.has(inflightKey)) {
+    return loadingPromises.get(inflightKey)!;
   }
 
   const promise = (async () => {
     try {
-      const path = FONT_FILE_MAP[norm] || `/fonts/${norm.replace(/\s+/g, '_')}.ttf`;
-      
       let buffer: ArrayBuffer | null = null;
       if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
         const res = await fetch(path);
@@ -138,6 +240,7 @@ export async function loadOpentypeFont(family: string): Promise<opentype.Font | 
 
       if (buffer) {
         const font = opentype.parse(buffer);
+        buffer = null; // Liberar referencia al ArrayBuffer crudo tras el parseo
         registerOpentypeFont(family, font);
         return font;
       }
@@ -152,19 +255,21 @@ export async function loadOpentypeFont(family: string): Promise<opentype.Font | 
     return null;
   })();
 
-  loadingPromises.set(norm, promise);
+  loadingPromises.set(inflightKey, promise);
   // Un fallo suele significar que Local Font Access aún no tenía permiso.
   // No conservar resultados negativos: después de "Sincronizar PC / TTF"
   // debe poder intentarse nuevamente y leer el archivo real.
   void promise.finally(() => {
-    loadingPromises.delete(norm);
+    loadingPromises.delete(inflightKey);
   });
   return promise;
 }
 
 /** Indica si la familia exacta ya está disponible para convertir a curvas. */
 export function isOpentypeFontReady(family?: string): boolean {
-  return fontCache.has(normalizeFontName(family));
+  const norm = normalizeFontName(family);
+  const canonicalKey = resolveCanonicalKey(norm);
+  return fontCache.has(canonicalKey);
 }
 
 /**
@@ -214,6 +319,44 @@ export function pathToSvgData(path: opentype.Path, decimals = 3): string {
   return d;
 }
 
+function getCachedGlyphOutline(
+  font: opentype.Font,
+  canonicalFontKey: string,
+  safeText: string,
+  fontSizeMm: number
+): CachedGlyphOutline | null {
+  const outlineKey = `${canonicalFontKey}|${safeText}|${formatSvgNumber(fontSizeMm, 3)}`;
+  const cached = glyphOutlineCache.get(outlineKey);
+  if (cached !== undefined) {
+    glyphOutlineCache.delete(outlineKey);
+    glyphOutlineCache.set(outlineKey, cached);
+    return cached;
+  }
+
+  const rawPath = font.getPath(safeText, 0, 0, fontSizeMm);
+  const bbox = rawPath.getBoundingBox();
+  const glyphWidth = bbox.x2 - bbox.x1;
+  const naturalWidth = font.getAdvanceWidth(safeText, fontSizeMm) || glyphWidth;
+
+  if (naturalWidth <= 0) return null;
+
+  const outline: CachedGlyphOutline = {
+    pathData: pathToSvgData(rawPath, 3),
+    naturalWidth,
+    yCenter: (bbox.y1 + bbox.y2) / 2,
+  };
+
+  if (glyphOutlineCache.size >= MAX_GLYPH_OUTLINE_CACHE_SIZE) {
+    const oldestKey = glyphOutlineCache.keys().next().value;
+    if (oldestKey !== undefined) {
+      glyphOutlineCache.delete(oldestKey);
+    }
+  }
+  glyphOutlineCache.set(outlineKey, outline);
+
+  return outline;
+}
+
 /**
  * Convierte texto deportivo a curvas vectoriales nativas (<path d="..." />)
  * garantizando visualización idéntica e inmutable en Illustrator, Corel, RIPs, etc.
@@ -233,15 +376,13 @@ export function convertTextToVectorPath(
   const safeText = text.trim().toUpperCase();
   if (!safeText) return '';
 
-  const rawPath = font.getPath(safeText, 0, 0, fontSizeMm);
-  const bbox = rawPath.getBoundingBox();
-  const glyphWidth = bbox.x2 - bbox.x1;
-  const naturalWidth = font.getAdvanceWidth(safeText, fontSizeMm) || glyphWidth;
+  const canonicalFontKey = resolveCanonicalKey(normalizeFontName(rule.fontFamily));
+  const outline = getCachedGlyphOutline(font, canonicalFontKey, safeText, fontSizeMm);
+  if (!outline) return null;
 
-  if (naturalWidth <= 0) return null;
+  const { pathData, naturalWidth, yCenter } = outline;
 
   const scaleX = visualWidthMm / naturalWidth;
-  const yCenter = (bbox.y1 + bbox.y2) / 2;
 
   const anchorX = Number.isFinite(rule.anchorX) ? rule.anchorX : 0;
   const anchorY = Number.isFinite(rule.anchorY) ? rule.anchorY : 0;
@@ -252,7 +393,6 @@ export function convertTextToVectorPath(
 
   const transY = anchorY - (yCenter * customScaleY);
 
-  const pathData = pathToSvgData(rawPath, 3);
   const fillColor = escapeXmlAttribute(rule.fillColor || '#ffffff');
 
   let strokeAttrs = '';

@@ -103,6 +103,89 @@ function calculateVisualTextWidth(
   return calculateCurrentTextWidth(text, fontSizeMm) * autoScaleX * customScaleX;
 }
 
+const MAX_VECTOR_PATH_CACHE_SIZE = 2000;
+const vectorPathCache = new Map<string, string>();
+
+function buildVectorCacheKey(
+  text: string,
+  rule: DynamicPlaceholderRule,
+  fontSizeMm: number,
+  visualWidthMm: number,
+  customScaleY: number
+): string {
+  const cleanText = normalizeText(text);
+  const fontFamily = normalizeFontFamily(rule.fontFamily).toLowerCase();
+  const customScaleX = safeScale(rule.customScaleX);
+  const strokeWidth = Number.isFinite(rule.strokeWidthMm)
+    ? Math.max(0, rule.strokeWidthMm as number)
+    : 0;
+  const strokeColor = strokeWidth > 0 ? normalizeColor(rule.strokeColor, '#000000') : '';
+  const fillColor = normalizeColor(rule.fillColor, '#ffffff');
+  const anchorX = safeCoordinate(rule.anchorX);
+  const anchorY = safeCoordinate(rule.anchorY);
+  const align = rule.textAlign || 'center';
+
+  return [
+    cleanText,
+    fontFamily,
+    formatSvgNumber(fontSizeMm, 4),
+    formatSvgNumber(visualWidthMm, 4),
+    formatSvgNumber(customScaleX, 4),
+    formatSvgNumber(customScaleY, 4),
+    formatSvgNumber(strokeWidth, 4),
+    strokeColor,
+    fillColor,
+    formatSvgNumber(anchorX, 4),
+    formatSvgNumber(anchorY, 4),
+    align,
+  ].join('|');
+}
+
+function getMemoizedVectorPath(
+  text: string,
+  rule: DynamicPlaceholderRule,
+  fontSizeMm: number,
+  visualWidthMm: number,
+  customScaleY: number
+): string | null {
+  const cacheKey = buildVectorCacheKey(text, rule, fontSizeMm, visualWidthMm, customScaleY);
+  const cached = vectorPathCache.get(cacheKey);
+  if (cached !== undefined) {
+    // Promoción LRU: mover al final del Map
+    vectorPathCache.delete(cacheKey);
+    vectorPathCache.set(cacheKey, cached);
+    return cached;
+  }
+
+  const vectorPath = convertTextToVectorPath(
+    text,
+    rule,
+    fontSizeMm,
+    visualWidthMm,
+    customScaleY
+  );
+
+  if (vectorPath !== null) {
+    if (vectorPathCache.size >= MAX_VECTOR_PATH_CACHE_SIZE) {
+      const oldestKey = vectorPathCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        vectorPathCache.delete(oldestKey);
+      }
+    }
+    vectorPathCache.set(cacheKey, vectorPath);
+  }
+
+  return vectorPath;
+}
+
+export function clearTextVectorCache(): void {
+  vectorPathCache.clear();
+}
+
+export function getTextVectorCacheSize(): number {
+  return vectorPathCache.size;
+}
+
 /**
  * Kept as explicit text instead of pretending to contain vector outlines.
  * textLength fixes the physical width in Illustrator even when it substitutes
@@ -116,8 +199,8 @@ function buildSvgText(
   visualWidthMm: number,
   customScaleY: number
 ): string {
-  // 1. Intentar renderizar a curvas vectoriales nativas (<path d="..." />) con opentype.js
-  const vectorPath = convertTextToVectorPath(
+  // 1. Intentar renderizar a curvas vectoriales nativas (<path d="..." />) con opentype.js (memoizado O(1))
+  const vectorPath = getMemoizedVectorPath(
     text,
     rule,
     fontSizeMm,

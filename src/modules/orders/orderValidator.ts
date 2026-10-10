@@ -65,7 +65,8 @@ export function normalizeGarmentType(raw: string): GarmentType {
 export function validateOrderItem(
   item: OrderItem,
   config: OrderValidationConfig,
-  allItems: OrderItem[] = []
+  allItems: OrderItem[] = [],
+  numberFrequencyMap?: ReadonlyMap<string, number>
 ): OrderItem {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
@@ -117,12 +118,14 @@ export function validateOrderItem(
   } else {
     // Si se activa unicidad estricta de dorsal en el mismo equipo/pedido
     if (config.strictNumberUniqueness) {
-      const isDuplicate = allItems.some(
-        (other) =>
-          other.id !== item.id &&
-          other.playerNumber === item.playerNumber &&
-          item.playerNumber !== ''
-      );
+      const isDuplicate = numberFrequencyMap
+        ? item.playerNumber !== '' && (numberFrequencyMap.get(item.playerNumber) ?? 0) > 1
+        : allItems.some(
+            (other) =>
+              other.id !== item.id &&
+              other.playerNumber === item.playerNumber &&
+              item.playerNumber !== ''
+          );
       if (isDuplicate) {
         errors.push({
           field: 'playerNumber',
@@ -164,13 +167,25 @@ export function validateOrderItem(
 }
 
 /**
- * Valida una lista completa de ítems de pedido
+ * Valida una lista completa de ítems de pedido en tiempo O(N)
  */
 export function validateOrderList(
   items: OrderItem[],
   config: OrderValidationConfig
 ): OrderItem[] {
-  return items.map((item) => validateOrderItem(item, config, items));
+  let numberFrequencyMap: Map<string, number> | undefined;
+
+  if (config.strictNumberUniqueness) {
+    numberFrequencyMap = new Map<string, number>();
+    for (let i = 0; i < items.length; i++) {
+      const num = items[i].playerNumber;
+      if (num) {
+        numberFrequencyMap.set(num, (numberFrequencyMap.get(num) || 0) + 1);
+      }
+    }
+  }
+
+  return items.map((item) => validateOrderItem(item, config, items, numberFrequencyMap));
 }
 
 /**
