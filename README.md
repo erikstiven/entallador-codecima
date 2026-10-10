@@ -10,11 +10,10 @@
 
 ---
 
-## 📖 Documentación Completa del Sistema
+## 📖 Documentación y Gestión del Proyecto
 
-Para desarrolladores, colaboradores e ingenieros que deseen colaborar, revisar la arquitectura o añadir nuevas funciones, consulta la guía completa:
-
-👉 **[DOCUMENTACION_SISTEMA.md](./DOCUMENTACION_SISTEMA.md)**
+- 📘 **Guía de Arquitectura del Sistema:** 👉 **[DOCUMENTACION_SISTEMA.md](./DOCUMENTACION_SISTEMA.md)**
+- 📌 **Gestión de Features, Roadmap y Tareas en Notion:** 👉 **[Espacio de Trabajo en Notion](https://www.notion.so/)** *(Revisa el panel de gestión para seguimiento de features, backlog y especificaciones de producto)*
 
 ---
 
