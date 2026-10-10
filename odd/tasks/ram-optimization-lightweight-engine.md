@@ -1,0 +1,59 @@
+# Feature: Optimización Extrema de Memoria RAM y Rendimiento (Laptops 8 GB)
+
+- **Feature Name:** `ram-optimization-lightweight-engine`
+- **Objective:** Reducir drásticamente el consumo de memoria RAM de ~1.5 GB a < 150 MB y garantizar fluidez constante (60 FPS sin bloqueos de UI) en laptops estándar de 8 GB RAM mediante el patrón Flyweight, eliminación de fugas en WebAssembly/localStorage, virtualización de renderizado y activación real de Web Workers.
+- **Why:** Las laptops de 8 GB RAM tienen solo ~2.5 GB de memoria física libre bajo Windows. La acumulación descontrolada de strings SVG en Zustand, las fugas en sentencias de SQLite WASM, la saturación del DOM con 30,000+ elementos y la ejecución pesada en el hilo principal provocan congelamientos y caídas por Out-Of-Memory.
+- **Delivery Strategy:** `ask-on-risk` (SDD vocabulary heuristic)
+- **TDD Mode:** Functional checks enabled (Vitest suite `npm test`)
+
+---
+
+## Tasks Checklist
+
+- [x] **TASK-1: Blindaje de SQLite WASM y eliminación de cuellos de botella en localStorage**
+  - **ID:** `TASK-1`
+  - **Scope:** `src/core/database/db.ts`, `src/modules/designs/designStore.ts`, `src/modules/patterns/patternStore.ts`
+  - **Description:** Envolver sentencias SQLite en `try ... finally { stmt.free(); }` para evitar fugas en el heap de WebAssembly. Eliminar sincronización de megabytes de SVG/polígonos en `localStorage` (que saturan el límite de 5 MB y bloquean el hilo principal) delegando 100% en IndexedDB/SQLite con debouncing en auto-guardado.
+  - **Acceptance Criteria:** `db.test.ts` y pruebas existentes pasan sin fugas. Cero errores de `QuotaExceededError`.
+  - **Route:** Delegated Direct (Writer trigger: 3 files).
+  - **Evidence:** Sentencias SQLite protegidas con `try ... finally { stmt.free(); }` en `query`, manejo seguro de excepciones en `run`, mutex de concurrencia en `persistBrowserDb`. Eliminada persistencia en `localStorage` en `designStore` y `patternStore`, reemplazando llamadas síncronas bloqueantes por `scheduleAutoSave()`. Pruebas ejecutadas con éxito: `npm test src/core/database/db.test.ts src/modules/designs/designRepository.test.ts src/modules/patterns/patternRepository.test.ts` (3 archivos, 8 tests pasados) y suite completa `npm test` (23 archivos, 106 tests pasados).
+
+- [ ] **TASK-2: Arquitectura Flyweight para Generador de Prendas y Store de Nesting**
+  - **ID:** `TASK-2`
+  - **Scope:** `src/modules/generator/types.ts`, `src/modules/generator/garmentGenerator.ts`, `src/modules/generator/generatorStore.ts`, `src/core/nesting/types.ts`, `src/core/nesting/nestingStore.ts`
+  - **Description:** Rediseñar `GeneratedPiece` y `PlacedNestingPiece` para separar metadatos livianos (coordenadas, rotación, dimensiones, dorsales, tallas) del contenido SVG masivo. Almacenar el arte maestro una sola vez como plantilla y resolver el ensamblado completo únicamente bajo demanda (streaming durante exportación o previsualización individual). Eliminar la triplicación en `nestingStore`.
+  - **Acceptance Criteria:** La memoria para un pedido de 50+ jugadores pasa de cientos de megabytes a < 5 MB en Zustand. Pruebas de generador y exportación pasan.
+  - **Route:** Delegated Direct (Writer trigger: 5 files).
+  - **Evidence:** Pending.
+
+- [ ] **TASK-3: Estabilización de Event Listeners y Viewport Culling en el Lienzo**
+  - **ID:** `TASK-3`
+  - **Scope:** `src/modules/canvas/useInteractiveCanvas.ts`, `src/views/ProductionNestingView.tsx`
+  - **Description:** Migrar estado de arrastre en `useInteractiveCanvas` a `useRef` para evitar desmonte/remonte masivo (60-120x/seg) de listeners en `window`. Implementar Viewport Culling (recorte de piezas fuera de la vista) y representación visual ligera para que el DOM no mantenga miles de nodos SVG activos a la vez.
+  - **Acceptance Criteria:** Paneo y arrastre fluidos a 60 FPS sin fugas de listeners ni caídas de frames.
+  - **Route:** Delegated Direct (Writer trigger: 2 files).
+  - **Evidence:** Pending.
+
+- [ ] **TASK-4: Conexión y Activación Real del Web Worker de Nesting**
+  - **ID:** `TASK-4`
+  - **Scope:** `src/workers/nestingWorker.ts`, `src/core/nesting/worker/nestingWorkerClient.ts`, `src/core/nesting/nestingStore.ts`
+  - **Description:** Reemplazar el `setTimeout` falso de `nestingWorkerClient.ts` instanciando un `new Worker()` real con Vite. Delegar el cálculo del acomodo modular continuo (`performModularNesting`) y poligonal al worker en segundo plano, notificando progreso mediante mensajes sin bloquear la interfaz.
+  - **Acceptance Criteria:** La UI permanece 100% interactiva durante el cálculo de nesting. `modularNestingEngine.test.ts` y tests de nesting pasan.
+  - **Route:** Delegated Direct (Writer trigger: 3 files).
+  - **Evidence:** Pending.
+
+- [ ] **TASK-5: Aceleración Algorítmica y Caché Tipográfica**
+  - **ID:** `TASK-5`
+  - **Scope:** `src/modules/orders/orderValidator.ts`, `src/core/fonts/textVectorEngine.ts`, `src/core/fonts/fontManager.ts`
+  - **Description:** Optimizar la validación de dorsales repetidos a $O(N)$ mediante `Map`/`Set` en lugar de $O(N^2)$. Implementar memoización en `textVectorEngine` para no re-vectorizar glifos y números idénticos (ej. "10", tallas "M") cientos de veces.
+  - **Acceptance Criteria:** Escribir en la tabla de nómina es instantáneo. Pruebas de tipografía y validación de órdenes pasan.
+  - **Route:** Delegated Direct (Writer trigger: 3 files).
+  - **Evidence:** Pending.
+
+- [ ] **TASK-6: Verificación Integral End-to-End y Medición de Rendimiento**
+  - **ID:** `TASK-6`
+  - **Scope:** Suite completa de pruebas (`npm test`), verificación de compilación (`npm run build`).
+  - **Description:** Ejecutar todos los 106+ tests unitarios y de integración para asegurar que ninguna optimización rompió la calibración 1:1, exportaciones a PDF/SVG/EPS o compatibilidad con Mimaki/Epson.
+  - **Acceptance Criteria:** Todos los tests pasan en verde sin regresiones.
+  - **Route:** Direct Inline.
+  - **Evidence:** Pending.

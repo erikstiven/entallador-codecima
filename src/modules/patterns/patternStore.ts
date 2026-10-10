@@ -27,9 +27,6 @@ interface PatternStoreState {
   clearAllPatterns: () => void;
 }
 
-const PATTERNS_STORAGE_KEY = 'hmb_pattern_sets';
-const ACTIVE_PATTERN_ID_KEY = 'hmb_active_pattern_set_id';
-
 export function sanitizePatternSet(patternSet: PatternSet): PatternSet {
   patternSet.sizes.forEach((s) => {
     // 1. Corregir piezas mal clasificadas como manga que en realidad son pantaloneta
@@ -56,38 +53,9 @@ export function sanitizePatternSet(patternSet: PatternSet): PatternSet {
   return patternSet;
 }
 
-function loadFromLocalStorage(): { sets: PatternSet[]; activeSet: PatternSet | null } {
-  if (typeof window === 'undefined') return { sets: [], activeSet: null };
-  try {
-    const raw = localStorage.getItem(PATTERNS_STORAGE_KEY);
-    if (!raw) return { sets: [], activeSet: null };
-    const rawSets: PatternSet[] = JSON.parse(raw);
-    const sets: PatternSet[] = rawSets.map(sanitizePatternSet);
-    const activeId = localStorage.getItem(ACTIVE_PATTERN_ID_KEY);
-    const activeSet = sets.find((s) => s.id === activeId) || (sets.length > 0 ? sets[0] : null);
-    return { sets, activeSet };
-  } catch (_) {
-    return { sets: [], activeSet: null };
-  }
-}
-
-function saveToLocalStorage(sets: PatternSet[], activeSet: PatternSet | null): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(PATTERNS_STORAGE_KEY, JSON.stringify(sets));
-    if (activeSet) {
-      localStorage.setItem(ACTIVE_PATTERN_ID_KEY, activeSet.id);
-    } else {
-      localStorage.removeItem(ACTIVE_PATTERN_ID_KEY);
-    }
-  } catch (_) {}
-}
-
-const initialLocal = loadFromLocalStorage();
-
 export const usePatternStore = create<PatternStoreState>((set, get) => ({
-  patternSets: initialLocal.sets,
-  activePatternSet: initialLocal.activeSet,
+  patternSets: [],
+  activePatternSet: null,
   selectedPieceForAssignment: null,
 
   loadFromDatabase: () => {
@@ -108,28 +76,12 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
         const matching = currentActive ? sets.find((s) => s.id === currentActive.id) : null;
         const finalActive = matching || sets[0];
         set({ activePatternSet: finalActive });
-        saveToLocalStorage(sets, finalActive);
-        for (const s of sets) {
-          savePatternSetToDb(dbService, s);
-        }
-        dbService.persistBrowserDb();
       } else {
-        // Si SQLite está vacío pero localStorage tiene moldes guardados, restaurarlos a SQLite
-        const local = loadFromLocalStorage();
-        if (local.sets.length > 0) {
-          for (const s of local.sets) {
-            savePatternSetToDb(dbService, s);
-          }
-          dbService.persistBrowserDb();
-          set({ patternSets: local.sets, activePatternSet: local.activeSet });
-        } else {
-          set({ patternSets: [], activePatternSet: null, selectedPieceForAssignment: null });
-        }
+        set({ patternSets: [], activePatternSet: null, selectedPieceForAssignment: null });
       }
     } catch (err) {
       console.warn('SQLite aún no disponible para moldes:', err);
-      const local = loadFromLocalStorage();
-      set({ patternSets: local.sets, activePatternSet: local.activeSet, selectedPieceForAssignment: null });
+      set({ patternSets: [], activePatternSet: null, selectedPieceForAssignment: null });
     }
   },
 
@@ -139,18 +91,15 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     const existing = get().patternSets.filter((p) => p.id !== patternSet.id);
     const updatedSets = [patternSet, ...existing];
 
-    // Guardar en memoria y localStorage de inmediato
     set({
       patternSets: updatedSets,
       activePatternSet: patternSet,
       selectedPieceForAssignment: patternSet.unassignedPieces.length > 0 ? patternSet.unassignedPieces[0] : null,
     });
-    saveToLocalStorage(updatedSets, patternSet);
 
-    // Guardar en base de datos local SQLite e IndexedDB
     try {
       savePatternSetToDb(dbService, patternSet);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (err) {
       console.error('Error persistiendo molde en SQLite:', err);
     }
@@ -208,7 +157,10 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
       updatedAt: new Date().toISOString(),
     };
 
+    const updatedSets = get().patternSets.map((s) => s.id === updatedSet.id ? updatedSet : s);
+
     set({
+      patternSets: updatedSets,
       activePatternSet: updatedSet,
       selectedPieceForAssignment: newUnassigned.length > 0 ? newUnassigned[0] : null,
     });
@@ -216,7 +168,7 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     // Persistir cambios en SQLite
     try {
       savePatternSetToDb(dbService, updatedSet);
-      get().loadFromDatabase();
+      dbService.scheduleAutoSave();
     } catch (err) {
       console.error('Error actualizando molde en SQLite:', err);
     }
@@ -227,14 +179,13 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     if (!activePatternSet) return;
     try {
       savePatternSetToDb(dbService, activePatternSet);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (err) {
       console.error('Error guardando molde:', err);
     }
     const updatedSets = patternSets.some((s) => s.id === activePatternSet.id)
       ? patternSets.map((s) => (s.id === activePatternSet.id ? activePatternSet : s))
       : [...patternSets, activePatternSet];
-    saveToLocalStorage(updatedSets, activePatternSet);
     set({ patternSets: updatedSets });
   },
 
@@ -243,19 +194,17 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
       activePatternSet: patternSet,
       selectedPieceForAssignment: patternSet?.unassignedPieces[0] || null,
     });
-    saveToLocalStorage(get().patternSets, patternSet);
   },
 
   deletePatternSet: (id) => {
     try {
       deletePatternSetFromDb(dbService, id);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (err) {
       console.error('Error eliminando molde de SQLite:', err);
     }
     const remaining = get().patternSets.filter((p) => p.id !== id);
     const newActive = remaining.length > 0 ? remaining[0] : null;
-    saveToLocalStorage(remaining, newActive);
     set({
       patternSets: remaining,
       activePatternSet: newActive,
@@ -272,15 +221,15 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
       unassignedPieces: remaining,
       updatedAt: new Date().toISOString(),
     };
+    const updatedSets = get().patternSets.map((s) => s.id === updated.id ? updated : s);
     set({
+      patternSets: updatedSets,
       activePatternSet: updated,
       selectedPieceForAssignment: remaining.length > 0 ? remaining[0] : null,
     });
-    const updatedSets = get().patternSets.map((s) => s.id === updated.id ? updated : s);
-    saveToLocalStorage(updatedSets, updated);
     try {
       savePatternSetToDb(dbService, updated);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (_) {}
   },
 
@@ -292,15 +241,15 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
       unassignedPieces: [],
       updatedAt: new Date().toISOString(),
     };
+    const updatedSets = get().patternSets.map((s) => s.id === updated.id ? updated : s);
     set({
+      patternSets: updatedSets,
       activePatternSet: updated,
       selectedPieceForAssignment: null,
     });
-    const updatedSets = get().patternSets.map((s) => s.id === updated.id ? updated : s);
-    saveToLocalStorage(updatedSets, updated);
     try {
       savePatternSetToDb(dbService, updated);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (_) {}
   },
 
@@ -323,13 +272,12 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     };
 
     const updatedSets = get().patternSets.map((s) => s.id === updatedSet.id ? updatedSet : s);
-    saveToLocalStorage(updatedSets, updatedSet);
     set({ activePatternSet: updatedSet, patternSets: updatedSets });
 
     try {
       dbService.run('DELETE FROM pattern_pieces WHERE id = ?', [pieceId]);
       savePatternSetToDb(dbService, updatedSet);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (err) {
       console.error('Error eliminando pieza de SQLite:', err);
     }
@@ -362,12 +310,11 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     };
 
     const updatedSets = get().patternSets.map((s) => s.id === updatedSet.id ? updatedSet : s);
-    saveToLocalStorage(updatedSets, updatedSet);
     set({ activePatternSet: updatedSet, patternSets: updatedSets });
 
     try {
       savePatternSetToDb(dbService, updatedSet);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (err) {
       console.error('Error actualizando tipo de pieza en SQLite:', err);
     }
@@ -378,11 +325,10 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
       dbService.run('DELETE FROM pattern_sets');
       dbService.run('DELETE FROM pattern_sizes');
       dbService.run('DELETE FROM pattern_pieces');
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (err) {
       console.error('Error limpiando moldes de SQLite:', err);
     }
-    saveToLocalStorage([], null);
     set({
       patternSets: [],
       activePatternSet: null,

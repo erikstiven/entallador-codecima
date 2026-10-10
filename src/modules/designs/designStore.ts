@@ -34,40 +34,9 @@ interface DesignStoreState {
   clearAllDesigns: () => void;
 }
 
-const DESIGNS_STORAGE_KEY = 'hmb_master_designs';
-const ACTIVE_DESIGN_ID_KEY = 'hmb_active_design_id';
-
-function loadDesignsFromLocalStorage(): { designs: MasterDesign[]; activeDesign: MasterDesign | null } {
-  if (typeof window === 'undefined') return { designs: [], activeDesign: null };
-  try {
-    const raw = localStorage.getItem(DESIGNS_STORAGE_KEY);
-    if (!raw) return { designs: [], activeDesign: null };
-    const designs: MasterDesign[] = JSON.parse(raw);
-    const activeId = localStorage.getItem(ACTIVE_DESIGN_ID_KEY);
-    const activeDesign = designs.find((d) => d.id === activeId) || (designs.length > 0 ? designs[0] : null);
-    return { designs, activeDesign };
-  } catch (_) {
-    return { designs: [], activeDesign: null };
-  }
-}
-
-function saveDesignsToLocalStorage(designs: MasterDesign[], activeDesign: MasterDesign | null): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(DESIGNS_STORAGE_KEY, JSON.stringify(designs));
-    if (activeDesign) {
-      localStorage.setItem(ACTIVE_DESIGN_ID_KEY, activeDesign.id);
-    } else {
-      localStorage.removeItem(ACTIVE_DESIGN_ID_KEY);
-    }
-  } catch (_) {}
-}
-
-const initialDesigns = loadDesignsFromLocalStorage();
-
 export const useDesignStore = create<DesignStoreState>((set, get) => ({
-  designs: initialDesigns.designs,
-  activeDesign: initialDesigns.activeDesign,
+  designs: [],
+  activeDesign: null,
 
   loadDesignsFromDatabase: () => {
     try {
@@ -85,23 +54,12 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
         const matching = currentActive ? list.find((d) => d.id === currentActive.id) : null;
         const finalActive = matching || list[0];
         set({ activeDesign: finalActive });
-        saveDesignsToLocalStorage(list, finalActive);
       } else {
-        const local = loadDesignsFromLocalStorage();
-        if (local.designs.length > 0) {
-          for (const d of local.designs) {
-            saveDesignToDb(dbService, d);
-          }
-          dbService.persistBrowserDb();
-          set({ designs: local.designs, activeDesign: local.activeDesign });
-        } else {
-          set({ designs: [], activeDesign: null });
-        }
+        set({ designs: [], activeDesign: null });
       }
     } catch (err) {
       console.warn('SQLite aún no disponible para diseños:', err);
-      const local = loadDesignsFromLocalStorage();
-      set({ designs: local.designs, activeDesign: local.activeDesign });
+      set({ designs: [], activeDesign: null });
     }
   },
 
@@ -109,10 +67,9 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     const newDesign = parseDesignSvg(svgContent, name, sport, fileName);
     try {
       saveDesignToDb(dbService, newDesign);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (_) {}
     const updated = [newDesign, ...get().designs.filter((d) => d.id !== newDesign.id)];
-    saveDesignsToLocalStorage(updated, newDesign);
     set({ designs: updated, activeDesign: newDesign });
     return newDesign;
   },
@@ -120,9 +77,8 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
   clearAllDesigns: () => {
     try {
       dbService.run('DELETE FROM designs');
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (_) {}
-    saveDesignsToLocalStorage([], null);
     set({ designs: [], activeDesign: null });
   },
 
@@ -150,11 +106,10 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 
     try {
       saveDesignToDb(dbService, newDesign);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (_) {}
 
     const updated = [newDesign, ...get().designs.filter((d) => d.id !== newDesign.id)];
-    saveDesignsToLocalStorage(updated, newDesign);
     set({ designs: updated, activeDesign: newDesign });
     return newDesign;
   },
@@ -173,11 +128,10 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 
     try {
       saveDesignToDb(dbService, newDesign);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (_) {}
 
     const updated = [newDesign, ...get().designs.filter((d) => d.id !== newDesign.id)];
-    saveDesignsToLocalStorage(updated, newDesign);
     set({ designs: updated, activeDesign: newDesign });
     return newDesign;
   },
@@ -217,14 +171,13 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 
     try {
       saveDesignToDb(dbService, updatedDesign);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (_) {}
 
     const updatedDesigns = get().designs.map((d) => (d.id === updatedDesign.id ? updatedDesign : d));
     if (!updatedDesigns.some((d) => d.id === updatedDesign.id)) {
       updatedDesigns.unshift(updatedDesign);
     }
-    saveDesignsToLocalStorage(updatedDesigns, updatedDesign);
     set({ designs: updatedDesigns, activeDesign: updatedDesign });
   },
 
@@ -243,11 +196,10 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 
     try {
       saveDesignToDb(dbService, updatedDesign);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (_) {}
 
     const updatedDesigns = get().designs.map((d) => (d.id === updatedDesign.id ? updatedDesign : d));
-    saveDesignsToLocalStorage(updatedDesigns, updatedDesign);
     set({ designs: updatedDesigns, activeDesign: updatedDesign });
   },
 
@@ -314,30 +266,27 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 
     try {
       saveDesignToDb(dbService, updatedDesign);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (_) {}
 
     const updatedDesigns = get().designs.map((d) => (d.id === updatedDesign.id ? updatedDesign : d));
     if (!updatedDesigns.some((d) => d.id === updatedDesign.id)) {
       updatedDesigns.unshift(updatedDesign);
     }
-    saveDesignsToLocalStorage(updatedDesigns, updatedDesign);
     set({ designs: updatedDesigns, activeDesign: updatedDesign });
   },
 
   setActiveDesign: (design) => {
     set({ activeDesign: design });
-    saveDesignsToLocalStorage(get().designs, design);
   },
 
   saveActiveDesign: async () => {
-    const { activeDesign, designs } = get();
+    const { activeDesign } = get();
     if (!activeDesign) return false;
 
     try {
       saveDesignToDb(dbService, activeDesign);
-      saveDesignsToLocalStorage(designs, activeDesign);
-      await dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
       return true;
     } catch (error) {
       console.error('Error guardando el diseño activo:', error);
@@ -371,11 +320,10 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 
     try {
       saveDesignToDb(dbService, updatedDesign);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (_) {}
 
     const updatedDesigns = designs.map((d) => (d.id === updatedDesign.id ? updatedDesign : d));
-    saveDesignsToLocalStorage(updatedDesigns, updatedDesign);
     set({ designs: updatedDesigns, activeDesign: updatedDesign });
   },
 
@@ -394,25 +342,23 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 
     try {
       saveDesignToDb(dbService, updatedDesign);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (_) {}
 
     const updatedDesigns = designs.map((d) => (d.id === id ? updatedDesign : d));
     const newActive = activeDesign?.id === id ? updatedDesign : activeDesign;
-    saveDesignsToLocalStorage(updatedDesigns, newActive);
     set({ designs: updatedDesigns, activeDesign: newActive });
   },
 
   deleteDesign: (id) => {
     try {
       deleteDesignFromDb(dbService, id);
-      dbService.persistBrowserDb();
+      dbService.scheduleAutoSave();
     } catch (err) {
       console.error('Error eliminando diseño de SQLite:', err);
     }
     const remaining = get().designs.filter((d) => d.id !== id);
     const newActive = remaining.length > 0 ? remaining[0] : null;
-    saveDesignsToLocalStorage(remaining, newActive);
     set({ designs: remaining, activeDesign: newActive });
   },
 }));

@@ -81,6 +81,7 @@ export class DatabaseService {
   private saveDebounceTimer: any = null;
   private initializationPromise: Promise<Database> | null = null;
   private persistencePromise: Promise<void> | null = null;
+  private isPersisting = false;
   private mutationRevision = 0;
   private persistedRevision = -1;
 
@@ -178,18 +179,23 @@ export class DatabaseService {
    */
   run(sql: string, params: any[] = []): void {
     const db = this.getDb();
-    db.run(sql, params);
+    try {
+      db.run(sql, params);
 
-    // Auto-guardar en IndexedDB si la consulta modifica datos en el navegador
-    const upper = sql.trim().toUpperCase();
-    if (
-      upper.startsWith('INSERT') ||
-      upper.startsWith('UPDATE') ||
-      upper.startsWith('DELETE') ||
-      upper.startsWith('REPLACE')
-    ) {
-      this.mutationRevision += 1;
-      this.scheduleAutoSave();
+      // Auto-guardar en IndexedDB si la consulta modifica datos en el navegador
+      const upper = sql.trim().toUpperCase();
+      if (
+        upper.startsWith('INSERT') ||
+        upper.startsWith('UPDATE') ||
+        upper.startsWith('DELETE') ||
+        upper.startsWith('REPLACE')
+      ) {
+        this.mutationRevision += 1;
+        this.scheduleAutoSave();
+      }
+    } catch (error) {
+      console.error(`DatabaseService: Error ejecutando SQL: ${sql}`, error);
+      throw error;
     }
   }
 
@@ -213,29 +219,43 @@ export class DatabaseService {
 
   /**
    * Exporta y persiste de forma inmediata la base de datos completa en IndexedDB
+   * con control estricto de concurrencia para evitar exports simultáneos superpuestos.
    */
   async persistBrowserDb(): Promise<void> {
     if (typeof window === 'undefined' || !this.db) return;
     if (this.persistedRevision === this.mutationRevision) return;
-    if (this.persistencePromise) {
-      await this.persistencePromise;
-      if (this.persistedRevision !== this.mutationRevision) return this.persistBrowserDb();
+
+    if (this.isPersisting) {
+      if (this.persistencePromise) {
+        await this.persistencePromise;
+      }
+      if (this.persistedRevision !== this.mutationRevision) {
+        return this.persistBrowserDb();
+      }
       return;
     }
 
+    this.isPersisting = true;
     const revisionToPersist = this.mutationRevision;
     this.persistencePromise = (async () => {
       try {
-        const data = this.db!.export();
+        if (!this.db) return;
+        const data = this.db.export();
         await saveDbToIndexedDb(data);
         this.persistedRevision = revisionToPersist;
       } catch (e) {
         console.error('Error persistiendo SQLite en IndexedDB:', e);
       } finally {
+        this.isPersisting = false;
         this.persistencePromise = null;
       }
     })();
+
     await this.persistencePromise;
+
+    if (this.persistedRevision !== this.mutationRevision) {
+      return this.persistBrowserDb();
+    }
   }
 
   /**
@@ -244,16 +264,19 @@ export class DatabaseService {
   query<T = any>(sql: string, params: any[] = []): T[] {
     const db = this.getDb();
     const stmt = db.prepare(sql);
-    if (params.length > 0) {
-      stmt.bind(params);
-    }
+    try {
+      if (params.length > 0) {
+        stmt.bind(params);
+      }
 
-    const results: T[] = [];
-    while (stmt.step()) {
-      results.push(stmt.getAsObject() as unknown as T);
+      const results: T[] = [];
+      while (stmt.step()) {
+        results.push(stmt.getAsObject() as unknown as T);
+      }
+      return results;
+    } finally {
+      stmt.free();
     }
-    stmt.free();
-    return results;
   }
 
   /**
@@ -296,6 +319,10 @@ export class DatabaseService {
    * Cierra la conexión de base de datos
    */
   close(): void {
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+      this.saveDebounceTimer = null;
+    }
     if (this.db) {
       this.db.close();
       this.db = null;
