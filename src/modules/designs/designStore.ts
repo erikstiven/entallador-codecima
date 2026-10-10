@@ -34,12 +34,32 @@ interface DesignStoreState {
   clearAllDesigns: () => void;
 }
 
+const ACTIVE_DESIGN_ID_KEY = 'hmb_active_design_id_v1';
+const LEGACY_DESIGNS_STORAGE_KEY = 'hmb_master_designs_v1';
+
+function persistActiveDesignId(design: MasterDesign | null): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    if (design?.id) {
+      localStorage.setItem(ACTIVE_DESIGN_ID_KEY, design.id);
+    } else {
+      localStorage.removeItem(ACTIVE_DESIGN_ID_KEY);
+    }
+  } catch (_) {}
+}
+
 export const useDesignStore = create<DesignStoreState>((set, get) => ({
   designs: [],
   activeDesign: null,
 
   loadDesignsFromDatabase: () => {
     try {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem(LEGACY_DESIGNS_STORAGE_KEY);
+        }
+      } catch (_) {}
+
       try {
         dbService.run("DELETE FROM designs WHERE id IN ('des_holanda', 'des_brasil', 'des_argentina')");
       } catch (_) {}
@@ -49,12 +69,18 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       );
 
       if (list.length > 0) {
-        set({ designs: list });
-        const currentActive = get().activeDesign;
-        const matching = currentActive ? list.find((d) => d.id === currentActive.id) : null;
+        let savedActiveId: string | null = get().activeDesign?.id || null;
+        try {
+          if (!savedActiveId && typeof localStorage !== 'undefined') {
+            savedActiveId = localStorage.getItem(ACTIVE_DESIGN_ID_KEY);
+          }
+        } catch (_) {}
+        const matching = savedActiveId ? list.find((d) => d.id === savedActiveId) : null;
         const finalActive = matching || list[0];
-        set({ activeDesign: finalActive });
+        persistActiveDesignId(finalActive);
+        set({ designs: list, activeDesign: finalActive });
       } else {
+        persistActiveDesignId(null);
         set({ designs: [], activeDesign: null });
       }
     } catch (err) {
@@ -70,6 +96,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       dbService.scheduleAutoSave();
     } catch (_) {}
     const updated = [newDesign, ...get().designs.filter((d) => d.id !== newDesign.id)];
+    persistActiveDesignId(newDesign);
     set({ designs: updated, activeDesign: newDesign });
     return newDesign;
   },
@@ -79,6 +106,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       dbService.run('DELETE FROM designs');
       dbService.scheduleAutoSave();
     } catch (_) {}
+    persistActiveDesignId(null);
     set({ designs: [], activeDesign: null });
   },
 
@@ -110,6 +138,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     } catch (_) {}
 
     const updated = [newDesign, ...get().designs.filter((d) => d.id !== newDesign.id)];
+    persistActiveDesignId(newDesign);
     set({ designs: updated, activeDesign: newDesign });
     return newDesign;
   },
@@ -132,6 +161,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     } catch (_) {}
 
     const updated = [newDesign, ...get().designs.filter((d) => d.id !== newDesign.id)];
+    persistActiveDesignId(newDesign);
     set({ designs: updated, activeDesign: newDesign });
     return newDesign;
   },
@@ -178,6 +208,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     if (!updatedDesigns.some((d) => d.id === updatedDesign.id)) {
       updatedDesigns.unshift(updatedDesign);
     }
+    persistActiveDesignId(updatedDesign);
     set({ designs: updatedDesigns, activeDesign: updatedDesign });
   },
 
@@ -200,6 +231,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     } catch (_) {}
 
     const updatedDesigns = get().designs.map((d) => (d.id === updatedDesign.id ? updatedDesign : d));
+    persistActiveDesignId(updatedDesign);
     set({ designs: updatedDesigns, activeDesign: updatedDesign });
   },
 
@@ -273,10 +305,12 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     if (!updatedDesigns.some((d) => d.id === updatedDesign.id)) {
       updatedDesigns.unshift(updatedDesign);
     }
+    persistActiveDesignId(updatedDesign);
     set({ designs: updatedDesigns, activeDesign: updatedDesign });
   },
 
   setActiveDesign: (design) => {
+    persistActiveDesignId(design);
     set({ activeDesign: design });
   },
 
@@ -324,6 +358,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     } catch (_) {}
 
     const updatedDesigns = designs.map((d) => (d.id === updatedDesign.id ? updatedDesign : d));
+    persistActiveDesignId(updatedDesign);
     set({ designs: updatedDesigns, activeDesign: updatedDesign });
   },
 
@@ -347,6 +382,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 
     const updatedDesigns = designs.map((d) => (d.id === id ? updatedDesign : d));
     const newActive = activeDesign?.id === id ? updatedDesign : activeDesign;
+    persistActiveDesignId(newActive);
     set({ designs: updatedDesigns, activeDesign: newActive });
   },
 
@@ -358,7 +394,14 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       console.error('Error eliminando diseño de SQLite:', err);
     }
     const remaining = get().designs.filter((d) => d.id !== id);
-    const newActive = remaining.length > 0 ? remaining[0] : null;
+    const currentActive = get().activeDesign;
+    const newActive =
+      currentActive && currentActive.id !== id
+        ? remaining.find((d) => d.id === currentActive.id) || (remaining.length > 0 ? remaining[0] : null)
+        : remaining.length > 0
+          ? remaining[0]
+          : null;
+    persistActiveDesignId(newActive);
     set({ designs: remaining, activeDesign: newActive });
   },
 }));

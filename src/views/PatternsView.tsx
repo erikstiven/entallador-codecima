@@ -61,7 +61,9 @@ export const PatternsView: React.FC = () => {
   const [rot270, setRot270] = useState<boolean>(false);
 
   useEffect(() => {
-    loadFromDatabase();
+    if (patternSets.length === 0) {
+      loadFromDatabase();
+    }
   }, []);
 
   useEffect(() => {

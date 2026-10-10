@@ -1,4 +1,5 @@
-const CACHE_LIMIT = 100;
+const CACHE_LIMIT = 24;
+const MAX_CACHEABLE_SVG_LENGTH = 32768;
 const namespaceCache = new Map<string, string>();
 
 function escapeRegExp(value: string): string {
@@ -22,9 +23,12 @@ export function namespaceSvgIds(svgContent: string, namespace: string): string {
   if (!svgContent) return svgContent;
 
   const safeNamespace = namespace.replace(/[^a-zA-Z0-9_-]/g, '_') || 'svg';
-  const cacheKey = `${safeNamespace}\u0000${svgContent}`;
-  const cached = namespaceCache.get(cacheKey);
-  if (cached !== undefined) return cached;
+  const canCache = svgContent.length <= MAX_CACHEABLE_SVG_LENGTH;
+  const cacheKey = canCache ? `${safeNamespace}\u0000${svgContent}` : '';
+  if (canCache) {
+    const cached = namespaceCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+  }
 
   const ids = new Set<string>();
   const idPattern = /\bid\s*=\s*(["'])([^"']+)\1/gi;
@@ -90,5 +94,5 @@ export function namespaceSvgIds(svgContent: string, namespace: string): string {
     return `class=${quote}${namespacedClasses}${quote}`;
   });
 
-  return cacheResult(cacheKey, result);
+  return canCache ? cacheResult(cacheKey, result) : result;
 }

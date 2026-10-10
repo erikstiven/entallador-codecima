@@ -318,7 +318,7 @@ export const ProductionNestingView: React.FC = () => {
 
   // Viewport Culling: filtrar piezas fuera del área visible del contenedor (+ margen de overscan)
   const visiblePieces = useMemo(() => {
-    const OVERSCAN_PX = 500;
+    const OVERSCAN_PX = 800;
     const vw = viewportSize.width > 0 ? viewportSize.width : 1280;
     const vh = viewportSize.height > 0 ? viewportSize.height : 900;
     const rollLeftPx = (vw - canvasWidthPx) / 2 + pan.x;
@@ -461,9 +461,8 @@ export const ProductionNestingView: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  const w = typeof window !== 'undefined' ? window.innerWidth : 1100;
                   const h = typeof window !== 'undefined' ? window.innerHeight : 800;
-                  fitToAll(w - 80, h - 160);
+                  fitToAll(h - 160, currentCanvasHeightMm);
                 }}
                 className="px-2 py-0.5 hover:text-white hover:bg-slate-800 rounded font-mono text-[10px] text-sky-400 cursor-pointer"
                 title="Ver todo el largo del rollo"
@@ -513,7 +512,6 @@ export const ProductionNestingView: React.FC = () => {
               areaMm2: gp.areaMm2,
               allowedRotations: gp.allowedRotationsDeg,
               cutPolygon: gp.cutPolygon,
-              svgContent: gp.svgContent,
             }));
             if (inputs.length > 0 && !isNesting) {
               handleRunNesting(inputs);
@@ -531,6 +529,7 @@ export const ProductionNestingView: React.FC = () => {
                 <span className="text-[10px] text-slate-400 uppercase font-mono">Bobina:</span>
                 <select
                   value={printableWidthMm}
+                  disabled={isNesting}
                   onChange={(e) => {
                     const newW = Number(e.target.value);
                     setPrintableWidthMm(newW);
@@ -550,6 +549,7 @@ export const ProductionNestingView: React.FC = () => {
                 <span className="text-[10px] text-slate-400 uppercase font-mono">Máx. Pliego:</span>
                 <select
                   value={maxSheetLengthMm}
+                  disabled={isNesting}
                   onChange={(e) => {
                     const newH = Number(e.target.value);
                     setMaxSheetLengthMm(newH);
@@ -569,6 +569,7 @@ export const ProductionNestingView: React.FC = () => {
                 <span className="text-[10px] text-slate-400 uppercase font-mono">Separación:</span>
                 <select
                   value={spacingMm}
+                  disabled={isNesting}
                   onChange={(e) => {
                     const newS = Number(e.target.value);
                     setSpacingMm(newS);
@@ -718,7 +719,7 @@ export const ProductionNestingView: React.FC = () => {
             >
               {/* Pliego / Rollo de papel */}
               <div 
-                className={`bg-slate-900 border-2 border-violet-500/50 shadow-2xl relative ${
+                className={`flex-shrink-0 shrink-0 bg-slate-900 border-2 border-violet-500/50 shadow-2xl relative ${
                   isPanning ? '' : 'transition-transform duration-75'
                 }`}
                 style={{

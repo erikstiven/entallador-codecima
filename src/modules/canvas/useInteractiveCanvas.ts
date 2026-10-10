@@ -26,6 +26,8 @@ export function useInteractiveCanvas() {
     movePiece,
     rotatePiece,
     toggleLockPiece,
+    printableWidthMm,
+    spacingMm,
   } = useNestingStore();
 
   const [zoomLevel, setZoomLevelState] = useState<number>(100); // Vista fija y legible del rollo
@@ -42,6 +44,8 @@ export function useInteractiveCanvas() {
   const placedPiecesRef = useRef<PlacedNestingPiece[]>(placedPieces);
   const selectedPieceIdRef = useRef<string | null>(selectedPieceId);
   const activeProfileRef = useRef(activeProfile);
+  const printableWidthMmRef = useRef<number>(printableWidthMm);
+  const spacingMmRef = useRef<number>(spacingMm);
   const actionsRef = useRef({
     setSelectedPieceId,
     movePiece,
@@ -69,6 +73,8 @@ export function useInteractiveCanvas() {
   placedPiecesRef.current = placedPieces;
   selectedPieceIdRef.current = selectedPieceId;
   activeProfileRef.current = activeProfile;
+  printableWidthMmRef.current = printableWidthMm;
+  spacingMmRef.current = spacingMm;
   actionsRef.current = {
     setSelectedPieceId,
     movePiece,
@@ -136,7 +142,13 @@ export function useInteractiveCanvas() {
 
       const pieces = placedPiecesRef.current;
       const draggedPiece = pieces.find((p) => p.id === pieceId) || null;
-      const otherPieces = pieces.filter((p) => p.id !== pieceId);
+      const otherPieces = draggedPiece
+        ? pieces.filter(
+            (p) =>
+              p.id !== draggedPiece.id &&
+              (p.sheetIndex ?? 0) === (draggedPiece.sheetIndex ?? 0)
+          )
+        : [];
       dragContextRef.current = {
         pieceId,
         draggedPiece,
@@ -179,7 +191,7 @@ export function useInteractiveCanvas() {
 
   // Ajustar el rollo al ancho visible de la pantalla (Modo óptimo de taller)
   const fitToWidth = useCallback((containerWidthPx: number = 1100) => {
-    const targetWidthMm = activeProfileRef.current.printableWidthMm || 1120;
+    const targetWidthMm = printableWidthMmRef.current || activeProfileRef.current.printableWidthMm || 1120;
     const desiredZoom = Math.round(((containerWidthPx * 0.82) / (targetWidthMm * 0.75)) * 100);
     const clampedZoom = Math.max(30, Math.min(160, desiredZoom));
     setZoomLevel(clampedZoom);
@@ -188,7 +200,8 @@ export function useInteractiveCanvas() {
 
   // Ajustar el rollo completo (largo y ancho) para ver la bobina entera
   const fitToAll = useCallback((containerHeightPx: number = 650, rollLengthMm: number = 4000) => {
-    const totalRollMm = Math.max(800, rollLengthMm);
+    const targetWidthMm = printableWidthMmRef.current || activeProfileRef.current.printableWidthMm || 1120;
+    const totalRollMm = Math.max(800, rollLengthMm, targetWidthMm);
     const desiredZoom = Math.round(((containerHeightPx * 0.85) / (totalRollMm * 0.75)) * 100);
     const clampedZoom = Math.max(12, Math.min(80, desiredZoom));
     setZoomLevel(clampedZoom);
@@ -244,8 +257,15 @@ export function useInteractiveCanvas() {
         let otherPieces = dragContextRef.current.otherPieces;
         if (!draggedPiece || dragContextRef.current.pieceId !== currentDrag.pieceId) {
           const pieces = placedPiecesRef.current;
-          draggedPiece = pieces.find((p) => p.id === currentDrag.pieceId) || null;
-          otherPieces = pieces.filter((p) => p.id !== currentDrag.pieceId);
+          const foundPiece = pieces.find((p) => p.id === currentDrag.pieceId) || null;
+          draggedPiece = foundPiece;
+          otherPieces = foundPiece
+            ? pieces.filter(
+                (p) =>
+                  p.id !== foundPiece.id &&
+                  (p.sheetIndex ?? 0) === (foundPiece.sheetIndex ?? 0)
+              )
+            : [];
           dragContextRef.current = {
             pieceId: currentDrag.pieceId,
             draggedPiece,
@@ -261,8 +281,8 @@ export function useInteractiveCanvas() {
           currentY: rawTargetY,
           widthMm: draggedPiece.effectiveWidthMm,
           heightMm: draggedPiece.effectiveHeightMm,
-          printableWidthMm: profile.printableWidthMm,
-          spacingMm: profile.pieceSpacingMm || 7.0,
+          printableWidthMm: printableWidthMmRef.current || profile.printableWidthMm || 1120,
+          spacingMm: spacingMmRef.current ?? profile.pieceSpacingMm ?? 3.0,
           otherPieces,
           thresholdMm: 14.0, // Imantación perceptible
         });

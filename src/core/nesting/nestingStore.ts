@@ -7,10 +7,12 @@ import {
   NestingOptions,
   NestingSheet
 } from './types';
-import { executeNestingWithWorker } from './worker/nestingWorkerClient';
+import { executeNestingWithWorker, terminateActiveNestingWorkers } from './worker/nestingWorkerClient';
 import { pieceSvgRegistry } from '@/modules/generator/garmentGenerator';
 
 export type NestingAlgorithm = 'MODULAR_INDUSTRIAL' | 'POLYGONAL_CLIPPER2' | 'BOUNDING_BOX';
+
+let currentRunId = 0;
 
 interface NestingState {
   placedPieces: PlacedNestingPiece[];
@@ -66,19 +68,18 @@ export const useNestingStore = create<NestingState>((set, get) => ({
   setSelectedPieceId: (id) => set({ selectedPieceId: id }),
 
   runNesting: async (pieces, customOptions = {}) => {
+    const runId = ++currentRunId;
+    terminateActiveNestingWorkers();
     set({ isNesting: true, nestingProgress: 0 });
     const { nestingMode, nestingAlgorithm, spacingMm, printableWidthMm, maxSheetLengthMm } = get();
 
     // Flyweight: Asegurar que svgContent no se duplique en el store ni se serialice al Web Worker
     const lightweightPieces: NestingPieceInput[] = pieces.map((p) => {
-      if (p.svgContent) {
-        if (!pieceSvgRegistry.has(p.id)) {
-          pieceSvgRegistry.set(p.id, p.svgContent);
-        }
-        const { svgContent: _discard, ...rest } = p;
-        return rest;
+      const { svgContent, ...rest } = p;
+      if (typeof svgContent === 'string' && svgContent.length > 0) {
+        pieceSvgRegistry.set(p.id, svgContent);
       }
-      return p;
+      return rest;
     });
 
     const options: NestingOptions = {
@@ -93,8 +94,16 @@ export const useNestingStore = create<NestingState>((set, get) => ({
       lightweightPieces,
       options,
       nestingAlgorithm,
-      (progress) => set({ nestingProgress: progress })
+      (progress) => {
+        if (runId === currentRunId) {
+          set({ nestingProgress: progress });
+        }
+      }
     );
+
+    if (runId !== currentRunId) {
+      return get().nestingResult || result;
+    }
 
     const placedPieces = result.placedPieces;
     const sheets = result.sheets || [];
@@ -260,16 +269,36 @@ export const useNestingStore = create<NestingState>((set, get) => ({
   },
 
   reoptimizeUnlocked: async (allPieces) => {
-    const { runNesting } = get();
-    return runNesting(allPieces);
+    const { placedPieces, runNesting } = get();
+    const lockedById = new Map(
+      placedPieces.filter((p) => p.isLocked).map((p) => [p.id, p])
+    );
+    const mergedPieces: NestingPieceInput[] = allPieces.map((p) => {
+      const existing = lockedById.get(p.id);
+      if (existing) {
+        return {
+          ...p,
+          isLocked: true,
+          xMm: existing.xMm,
+          yMm: existing.yMm,
+          rotationDeg: existing.rotationDeg,
+        };
+      }
+      return p;
+    });
+    return runNesting(mergedPieces);
   },
 
   clearNesting: () => {
+    ++currentRunId;
+    terminateActiveNestingWorkers();
     set({
       placedPieces: [],
       sheets: [],
       activeSheetIndex: 0,
       nestingResult: null,
+      isNesting: false,
+      nestingProgress: 0,
       selectedPieceId: null,
     });
   },

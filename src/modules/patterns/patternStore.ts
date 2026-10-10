@@ -53,6 +53,20 @@ export function sanitizePatternSet(patternSet: PatternSet): PatternSet {
   return patternSet;
 }
 
+const ACTIVE_PATTERN_ID_KEY = 'hmb_active_pattern_id_v1';
+const LEGACY_PATTERNS_STORAGE_KEY = 'hmb_pattern_sets_v2';
+
+function persistActivePatternId(patternSet: PatternSet | null): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    if (patternSet?.id) {
+      localStorage.setItem(ACTIVE_PATTERN_ID_KEY, patternSet.id);
+    } else {
+      localStorage.removeItem(ACTIVE_PATTERN_ID_KEY);
+    }
+  } catch (_) {}
+}
+
 export const usePatternStore = create<PatternStoreState>((set, get) => ({
   patternSets: [],
   activePatternSet: null,
@@ -60,23 +74,62 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
 
   loadFromDatabase: () => {
     try {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem(LEGACY_PATTERNS_STORAGE_KEY);
+        }
+      } catch (_) {}
+
       // Purgar cualquier molde demo remanente en SQLite
       try {
         dbService.run("DELETE FROM pattern_sets WHERE name = 'MOLDES FUTBOL OFICIAL 2026' OR id LIKE '%demo%' OR id = 'set_moldes_futbol_2026'");
       } catch (_) {}
 
+      const existingSetsInMemory = get().patternSets;
       const rawSets = getPatternSetsFromDb(dbService).filter(
         (s) => s.name !== 'MOLDES FUTBOL OFICIAL 2026' && !s.id.includes('demo') && s.id !== 'set_moldes_futbol_2026'
       );
-      const sets = rawSets.map(sanitizePatternSet);
+      const sets = rawSets.map((rawSet) => {
+        const sanitized = sanitizePatternSet(rawSet);
+        const inMemory = existingSetsInMemory.find((m) => m.id === sanitized.id);
+        if (
+          inMemory &&
+          inMemory.unassignedPieces &&
+          inMemory.unassignedPieces.length > 0 &&
+          sanitized.unassignedPieces.length === 0
+        ) {
+          return {
+            ...sanitized,
+            unassignedPieces: inMemory.unassignedPieces,
+          };
+        }
+        return sanitized;
+      });
 
       if (sets.length > 0) {
-        set({ patternSets: sets });
-        const currentActive = get().activePatternSet;
-        const matching = currentActive ? sets.find((s) => s.id === currentActive.id) : null;
+        let savedActiveId: string | null = get().activePatternSet?.id || null;
+        try {
+          if (!savedActiveId && typeof localStorage !== 'undefined') {
+            savedActiveId = localStorage.getItem(ACTIVE_PATTERN_ID_KEY);
+          }
+        } catch (_) {}
+        const matching = savedActiveId ? sets.find((s) => s.id === savedActiveId) : null;
         const finalActive = matching || sets[0];
-        set({ activePatternSet: finalActive });
+        persistActivePatternId(finalActive);
+        const currentSelectedPiece = get().selectedPieceForAssignment;
+        const nextSelectedPiece =
+          currentSelectedPiece && finalActive.unassignedPieces.some((p) => p.id === currentSelectedPiece.id)
+            ? currentSelectedPiece
+            : finalActive.unassignedPieces.length > 0
+              ? finalActive.unassignedPieces[0]
+              : null;
+        set({
+          patternSets: sets,
+          activePatternSet: finalActive,
+          selectedPieceForAssignment: nextSelectedPiece,
+        });
       } else {
+        persistActivePatternId(null);
         set({ patternSets: [], activePatternSet: null, selectedPieceForAssignment: null });
       }
     } catch (err) {
@@ -91,6 +144,7 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     const existing = get().patternSets.filter((p) => p.id !== patternSet.id);
     const updatedSets = [patternSet, ...existing];
 
+    persistActivePatternId(patternSet);
     set({
       patternSets: updatedSets,
       activePatternSet: patternSet,
@@ -159,6 +213,7 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
 
     const updatedSets = get().patternSets.map((s) => s.id === updatedSet.id ? updatedSet : s);
 
+    persistActivePatternId(updatedSet);
     set({
       patternSets: updatedSets,
       activePatternSet: updatedSet,
@@ -190,6 +245,7 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
   },
 
   setActivePatternSet: (patternSet) => {
+    persistActivePatternId(patternSet);
     set({
       activePatternSet: patternSet,
       selectedPieceForAssignment: patternSet?.unassignedPieces[0] || null,
@@ -204,7 +260,14 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
       console.error('Error eliminando molde de SQLite:', err);
     }
     const remaining = get().patternSets.filter((p) => p.id !== id);
-    const newActive = remaining.length > 0 ? remaining[0] : null;
+    const currentActive = get().activePatternSet;
+    const newActive =
+      currentActive && currentActive.id !== id
+        ? remaining.find((p) => p.id === currentActive.id) || (remaining.length > 0 ? remaining[0] : null)
+        : remaining.length > 0
+          ? remaining[0]
+          : null;
+    persistActivePatternId(newActive);
     set({
       patternSets: remaining,
       activePatternSet: newActive,
@@ -329,6 +392,7 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     } catch (err) {
       console.error('Error limpiando moldes de SQLite:', err);
     }
+    persistActivePatternId(null);
     set({
       patternSets: [],
       activePatternSet: null,

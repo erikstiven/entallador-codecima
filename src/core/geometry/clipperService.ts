@@ -21,10 +21,13 @@ export async function getClipperInstance(): Promise<any> {
       const clipperModule = await import('clipper2-wasm');
       const factory = clipperModule.default || clipperModule;
       
-      const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
+      const isBrowserOrWorker =
+        (typeof window !== 'undefined' && typeof window.document !== 'undefined') ||
+        (typeof self !== 'undefined' && typeof (self as any).WorkerGlobalScope !== 'undefined') ||
+        !(typeof process !== 'undefined' && process.versions?.node);
       
       let wasmPath = '';
-      if (!isBrowser) {
+      if (!isBrowserOrWorker) {
         try {
           const { createRequire } = await import('node:module');
           const require = createRequire(import.meta.url);
@@ -37,7 +40,7 @@ export async function getClipperInstance(): Promise<any> {
 
       clipperInstance = await factory({
         locateFile: (file: string) => {
-          if (isBrowser) {
+          if (isBrowserOrWorker) {
             return `/${file}`;
           }
           return wasmPath || file;
@@ -45,6 +48,7 @@ export async function getClipperInstance(): Promise<any> {
       });
       return clipperInstance;
     } catch (err) {
+      initPromise = null;
       console.error('[ClipperService] Error inicializando Clipper2 WASM:', err);
       throw err;
     }

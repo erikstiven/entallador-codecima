@@ -641,6 +641,7 @@ export const NewOrderView: React.FC = () => {
                   );
                   return;
                 }
+                useNestingStore.getState().clearNesting();
                 showAlert.toast('success', `¡${useGeneratorStore.getState().generatedPieces.length} piezas vectoriales generadas!`);
                 setCurrentView('NESTING');
               }}

@@ -175,23 +175,34 @@ export class DatabaseService {
   }
 
   /**
-   * Ejecuta una sentencia SQL (INSERT, UPDATE, DELETE, REPLACE)
+   * Ejecuta una sentencia SQL (INSERT, UPDATE, DELETE, REPLACE, CREATE, ALTER, DROP)
    */
   run(sql: string, params: any[] = []): void {
     const db = this.getDb();
     try {
       db.run(sql, params);
 
-      // Auto-guardar en IndexedDB si la consulta modifica datos en el navegador
+      // Auto-guardar en IndexedDB solo si la consulta realmente modifica datos o esquema
       const upper = sql.trim().toUpperCase();
-      if (
+      const isDml =
         upper.startsWith('INSERT') ||
         upper.startsWith('UPDATE') ||
         upper.startsWith('DELETE') ||
-        upper.startsWith('REPLACE')
-      ) {
+        upper.startsWith('REPLACE');
+      const isDdl =
+        upper.startsWith('CREATE') ||
+        upper.startsWith('ALTER') ||
+        upper.startsWith('DROP');
+
+      if (isDdl) {
         this.mutationRevision += 1;
         this.scheduleAutoSave();
+      } else if (isDml) {
+        const rowsModified = typeof db.getRowsModified === 'function' ? db.getRowsModified() : 1;
+        if (rowsModified > 0) {
+          this.mutationRevision += 1;
+          this.scheduleAutoSave();
+        }
       }
     } catch (error) {
       console.error(`DatabaseService: Error ejecutando SQL: ${sql}`, error);

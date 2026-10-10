@@ -106,14 +106,14 @@ export function setPieceSvgContent(pieceId: string, svgContent: string): void {
 /**
  * Resuelve el SVG completo de una pieza:
  * 1. Si trae svgContent con contenido, lo usa directamente.
- * 2. Si svgContent es explícitamente undefined (ej. prueba de sólo geometría), retorna vacío.
- * 3. En otro caso, lo resuelve desde pieceSvgRegistry.
+ * 2. Si existe en pieceSvgRegistry, lo resuelve desde el registro.
+ * 3. Si svgContent es explícitamente '', retorna vacío.
  */
 export function resolvePieceSvg(piece: { id: string; svgContent?: string }): string {
   if (typeof piece.svgContent === 'string' && piece.svgContent.length > 0) {
     return piece.svgContent;
   }
-  if ('svgContent' in piece && piece.svgContent === undefined) {
+  if ('svgContent' in piece && (piece.svgContent === undefined || piece.svgContent === '')) {
     return '';
   }
   return pieceSvgRegistry.get(piece.id) || '';
@@ -126,20 +126,54 @@ export function clearPieceSvgRegistry(): void {
   pieceSvgRegistry.clear();
 }
 
-// Caché de normalización de mesas de trabajo por contenido SVG base
+const ARTWORK_CACHE_LIMIT = 64;
+
+/**
+ * Calcula una huella rápida determinista FNV-1a (32-bit) más la longitud del SVG.
+ */
+function computeArtworkFingerprint(content: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < content.length; i++) {
+    hash ^= content.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `${(hash >>> 0).toString(36)}_${content.length}`;
+}
+
+function getFromLruCache(cache: Map<string, string>, key: string): string | undefined {
+  const val = cache.get(key);
+  if (val !== undefined) {
+    cache.delete(key);
+    cache.set(key, val);
+  }
+  return val;
+}
+
+function setInLruCache(cache: Map<string, string>, key: string, value: string): void {
+  if (cache.has(key)) {
+    cache.delete(key);
+  } else if (cache.size >= ARTWORK_CACHE_LIMIT) {
+    const oldestKey = cache.keys().next().value;
+    if (oldestKey !== undefined) cache.delete(oldestKey);
+  }
+  cache.set(key, value);
+}
+
+// Caché de normalización de mesas de trabajo por huella del contenido SVG base (LRU máx. 64)
 const normalizedArtworkCache = new Map<string, string>();
 
 export function getCachedNormalizedArtwork(rawSvgContent: string): string {
-  let cached = normalizedArtworkCache.get(rawSvgContent);
+  const cacheKey = computeArtworkFingerprint(rawSvgContent);
+  let cached = getFromLruCache(normalizedArtworkCache, cacheKey);
   if (cached !== undefined) return cached;
 
   const withoutText = rawSvgContent.replace(/<text\b([^>]*)>([\s\S]*?)<\/text>/gi, '');
   cached = normalizeArtworkSvgForMold(withoutText);
-  normalizedArtworkCache.set(rawSvgContent, cached);
+  setInLruCache(normalizedArtworkCache, cacheKey, cached);
   return cached;
 }
 
-// Caché de arte escalado por molde y talla: clave (prefix + width + height + offsetY)
+// Caché de arte escalado por molde, talla y huella del arte (LRU máx. 64)
 const scaledArtworkCache = new Map<string, string>();
 
 export function getCachedScaledArtwork(
@@ -149,8 +183,9 @@ export function getCachedScaledArtwork(
   artOffsetY: number,
   cacheKeyPrefix: string
 ): string {
-  const cacheKey = `${cacheKeyPrefix}_${width.toFixed(1)}_${height.toFixed(1)}_${artOffsetY}`;
-  let cached = scaledArtworkCache.get(cacheKey);
+  const artFingerprint = computeArtworkFingerprint(rawArtSvg);
+  const cacheKey = `${cacheKeyPrefix}_${artFingerprint}_${width.toFixed(1)}_${height.toFixed(1)}_${artOffsetY}`;
+  const cached = getFromLruCache(scaledArtworkCache, cacheKey);
   if (cached !== undefined) return cached;
 
   const cleanArtSvg = getCachedNormalizedArtwork(rawArtSvg);
@@ -165,7 +200,7 @@ export function getCachedScaledArtwork(
     });
   }
 
-  scaledArtworkCache.set(cacheKey, scaledArtSvg);
+  setInLruCache(scaledArtworkCache, cacheKey, scaledArtSvg);
   return scaledArtSvg;
 }
 
@@ -187,6 +222,7 @@ export function generateGarmentPieces(
   masterDesign: MasterDesign,
   customConfig: Partial<GenerationConfig> = {}
 ): GenerationResult {
+  pieceSvgRegistry.clear();
   const config: GenerationConfig = { ...DEFAULT_CONFIG, ...customConfig };
   const generatedPieces: GeneratedPiece[] = [];
   const warnings: string[] = [];
@@ -405,10 +441,11 @@ export function generateGarmentPieces(
 
     // Para cada pieza requerida, generar las variantes según la cantidad
     for (let q = 1; q <= orderItem.quantity; q++) {
-      for (const patternPiece of piecesToGenerate) {
+      for (let pieceIndex = 0; pieceIndex < piecesToGenerate.length; pieceIndex++) {
+        const patternPiece = piecesToGenerate[pieceIndex];
         const pieceType = patternPiece.pieceType;
         const maskId = `mask_${orderItem.id}_${patternPiece.id}_${q}`;
-        const uniquePieceId = `gen_${orderItem.id}_${pieceType}_${q}_${Math.random().toString(36).substring(2, 6)}`;
+        const uniquePieceId = `gen_${orderItem.id}_${pieceIndex}_${pieceType}_${q}`;
 
         // Normalizar polígono de corte al origen local (0, 0)
         const bbox = patternPiece.cutPolygon.length > 0
