@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Download, 
   Printer, 
   CheckCircle2, 
   Scissors, 
-  Ruler
+  Ruler,
+  Loader2,
+  Layers
 } from 'lucide-react';
-import { ExportOptions } from './types';
+import { ExportOptions, ExportResult } from './types';
 import { exportProductionRoll, triggerFileDownload } from './exportService';
 import { PlacedNestingPiece, NestingResult } from '@/core/nesting/types';
 import { showAlert } from '@/core/ui/alerts';
@@ -31,59 +33,155 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     `PRODUCCION_UNIFORMES_${new Date().toISOString().slice(0, 10)}`
   );
   const [isExporting, setIsExporting] = useState<boolean>(false);
-  const [exportSuccess, setExportSuccess] = useState<boolean>(false);
+  const [exportStepText, setExportStepText] = useState<string>('');
+  const [exportProgressPercent, setExportProgressPercent] = useState<number>(0);
+  const [exportSuccessDone, setExportSuccessDone] = useState<boolean>(false);
+  const [downloadedFiles, setDownloadedFiles] = useState<ExportResult[]>([]);
 
   const [selectedFormat, setSelectedFormat] = useState<ExportOptions['format']>('SVG');
   const [includeCalibration, setIncludeCalibration] = useState<boolean>(false);
   const [includeCutContour, setIncludeCutContour] = useState<boolean>(false);
+  const [exportAllSheets, setExportAllSheets] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsExporting(false);
+      setExportStepText('');
+      setExportProgressPercent(0);
+      setExportSuccessDone(false);
+      setDownloadedFiles([]);
+    }
+  }, [isOpen]);
 
   if (!isOpen || !nestingResult || placedPieces.length === 0) return null;
 
+  const sheets = nestingResult.sheets && nestingResult.sheets.length > 0 ? nestingResult.sheets : [];
+  const hasMultipleSheets = sheets.length > 1 && selectedFormat !== 'EXCEL_SUMMARY';
+  const targetSheetCount = hasMultipleSheets && exportAllSheets ? sheets.length : 1;
+
   const totalLengthM = (nestingResult.totalRollLengthMm / 1000.0).toFixed(2);
   const efficiency = nestingResult.utilizationPercent.toFixed(1);
+  const formatDisplay = selectedFormat === 'EXCEL_SUMMARY' ? 'Excel' : selectedFormat;
+
+  const handleClose = () => {
+    if (isExporting) return;
+    onClose();
+  };
 
   const handleExport = async () => {
+    if (isExporting) return;
+
     setIsExporting(true);
-    setExportSuccess(false);
+    setExportSuccessDone(false);
+    setDownloadedFiles([]);
+    setExportProgressPercent(12);
+    setExportStepText('Paso 1/3: Verificando vectores y tipografías 1:1...');
 
     try {
-      const effectiveSheetHeightMm = Math.max(
-        100,
-        placedPieces.reduce((max, p) => Math.max(max, p.yMm + p.effectiveHeightMm), 0) + 15
+      await new Promise((resolve) => setTimeout(resolve, 140));
+
+      const baseFileName = fileName.trim() || 'PRODUCCION_TEXTIL';
+      const generatedResults: ExportResult[] = [];
+
+      if (hasMultipleSheets && exportAllSheets) {
+        for (let idx = 0; idx < sheets.length; idx++) {
+          const sheet = sheets[idx];
+          const stepStartPct = Math.round(25 + (idx / sheets.length) * 60);
+          setExportProgressPercent(stepStartPct);
+          setExportStepText(
+            `Paso 2/3: Generando pliego PARTE ${idx + 1} de ${sheets.length} en escala real...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          const sheetHeightMm = Math.max(
+            100,
+            sheet.heightMm ||
+              sheet.placedPieces.reduce((max, p) => Math.max(max, p.yMm + p.effectiveHeightMm), 0) + 15
+          );
+
+          const sheetOptions: ExportOptions = {
+            format: selectedFormat,
+            fileName: `${baseFileName}_PARTE_${idx + 1}`,
+            ripProfile: 'MIMAKI_RASTERLINK',
+            includeCutContour,
+            cutContourColor: '#ff0000',
+            cutContourWidthMm: 0.25,
+            includeSeamLabels: false,
+            includeCalibrationSquare: includeCalibration,
+            paperRollWidthMm: sheet.widthMm || printableWidthMm,
+            totalRollLengthMm: sheetHeightMm,
+          };
+
+          const result = await exportProductionRoll(
+            {
+              placedPieces: sheet.placedPieces,
+              nestingResult,
+              projectName: `${baseFileName}_PARTE_${idx + 1}`,
+            },
+            sheetOptions
+          );
+
+          triggerFileDownload(result);
+          generatedResults.push(result);
+        }
+      } else {
+        setExportProgressPercent(52);
+        setExportStepText(
+          `Paso 2/3: Generando pliego PARTE 1 de 1 en escala real (${formatDisplay} 1:1)...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, 120));
+
+        const effectiveSheetHeightMm = Math.max(
+          100,
+          placedPieces.reduce((max, p) => Math.max(max, p.yMm + p.effectiveHeightMm), 0) + 15
+        );
+
+        const options: ExportOptions = {
+          format: selectedFormat,
+          fileName: baseFileName,
+          ripProfile: 'MIMAKI_RASTERLINK',
+          includeCutContour,
+          cutContourColor: '#ff0000',
+          cutContourWidthMm: 0.25,
+          includeSeamLabels: false,
+          includeCalibrationSquare: includeCalibration,
+          paperRollWidthMm: printableWidthMm,
+          totalRollLengthMm: effectiveSheetHeightMm,
+        };
+
+        const result = await exportProductionRoll(
+          {
+            placedPieces,
+            nestingResult,
+            projectName: baseFileName,
+          },
+          options
+        );
+
+        setExportProgressPercent(88);
+        setExportStepText('Paso 3/3: Iniciando descarga automática en tu equipo...');
+        await new Promise((resolve) => setTimeout(resolve, 90));
+
+        triggerFileDownload(result);
+        generatedResults.push(result);
+      }
+
+      setExportProgressPercent(100);
+      setExportStepText('¡Exportación completada! Archivos descargados.');
+      setDownloadedFiles(generatedResults);
+      setExportSuccessDone(true);
+
+      showAlert.toast(
+        'success',
+        generatedResults.length > 1
+          ? `¡${generatedResults.length} pliegos ${formatDisplay} 1:1 descargados con éxito!`
+          : `¡Archivo ${formatDisplay} 1:1 descargado con éxito!`
       );
-
-      const options: ExportOptions = {
-        format: selectedFormat,
-        fileName: fileName.trim() || 'PRODUCCION_TEXTIL',
-        ripProfile: 'MIMAKI_RASTERLINK',
-        includeCutContour,
-        cutContourColor: '#ff0000',
-        cutContourWidthMm: 0.25,
-        includeSeamLabels: false,
-        includeCalibrationSquare: includeCalibration,
-        paperRollWidthMm: printableWidthMm,
-        totalRollLengthMm: effectiveSheetHeightMm,
-      };
-
-      const result = await exportProductionRoll(
-        {
-          placedPieces,
-          nestingResult,
-          projectName: fileName,
-        },
-        options
-      );
-
-      triggerFileDownload(result);
-      setExportSuccess(true);
-      showAlert.toast('success', `¡Archivo ${selectedFormat} descargado con éxito!`);
-      setTimeout(() => {
-        setExportSuccess(false);
-        onClose();
-      }, 1200);
     } catch (err) {
       console.error('Error al exportar bobina:', err);
       const message = err instanceof Error ? err.message : 'No fue posible generar el archivo.';
+      setExportStepText('');
+      setExportProgressPercent(0);
       showAlert.error('Error al Exportar', message);
     } finally {
       setIsExporting(false);
@@ -101,19 +199,26 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                Exportar para Illustrator / RIP
+                Exportar Producción a Escala Real
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-violet-500/40 font-mono">
-                  {selectedFormat} 1:1
+                  {formatDisplay} 1:1
                 </span>
               </h2>
               <p className="text-[11px] text-slate-400">
-                Archivo vectorial a escala física real con curvas nativas
+                Archivo vectorial 1:1 listo para impresión en plotter / RIP / Illustrator
               </p>
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            type="button"
+            onClick={handleClose}
+            disabled={isExporting}
+            title={isExporting ? 'Espera a que termine la exportación' : 'Cerrar ventana'}
+            className={`p-1 rounded-lg transition-colors ${
+              isExporting
+                ? 'text-slate-600 cursor-not-allowed opacity-50'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -124,13 +229,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {/* File Name */}
           <div>
             <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-              Nombre del Archivo
+              Nombre del Archivo de Salida
             </label>
             <input
               type="text"
               value={fileName}
-              onChange={(e) => setFileName(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-violet-500 focus:outline-none"
+              disabled={isExporting}
+              onChange={(e) => {
+                setFileName(e.target.value);
+                setExportSuccessDone(false);
+              }}
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-violet-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="PRODUCCION_UNIFORMES"
             />
           </div>
@@ -138,34 +247,96 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {/* Format Selector */}
           <div>
             <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-              Formato de Exportación
+              Formato de Exportación (Selecciona uno)
             </label>
             <div className="grid grid-cols-4 gap-2 text-xs">
               {(['SVG', 'PDF', 'EPS', 'EXCEL_SUMMARY'] as const).map((fmt) => (
                 <button
                   key={fmt}
                   type="button"
-                  onClick={() => setSelectedFormat(fmt)}
-                  className={`py-2 px-1.5 rounded-lg border font-mono font-bold text-center transition-all cursor-pointer ${
+                  disabled={isExporting}
+                  onClick={() => {
+                    setSelectedFormat(fmt);
+                    setExportSuccessDone(false);
+                  }}
+                  className={`py-2 px-1.5 rounded-lg border font-mono font-bold text-center transition-all ${
+                    isExporting ? 'opacity-50 cursor-not-allowed ' : 'cursor-pointer '
+                  }${
                     selectedFormat === fmt
                       ? 'bg-violet-600 text-white border-violet-400 shadow-md'
                       : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'
                   }`}
                 >
-                  {fmt === 'EXCEL_SUMMARY' ? 'Excel' : fmt}
+                  {fmt === 'EXCEL_SUMMARY' ? 'Excel' : `${fmt} 1:1`}
                 </button>
               ))}
             </div>
           </div>
 
+          {/* Selector de alcance cuando hay múltiples pliegos */}
+          {sheets.length > 1 && selectedFormat !== 'EXCEL_SUMMARY' && (
+            <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 space-y-2">
+              <div className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-purple-400" />
+                Cantidad de Pliegos a Descargar
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => {
+                    setExportAllSheets(true);
+                    setExportSuccessDone(false);
+                  }}
+                  className={`py-2 px-2.5 rounded-lg border font-semibold text-left transition-all ${
+                    isExporting ? 'opacity-50 cursor-not-allowed ' : 'cursor-pointer '
+                  }${
+                    exportAllSheets
+                      ? 'bg-purple-950/80 border-violet-500 text-white'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <div className="font-bold">Todos ({sheets.length} Pliegos)</div>
+                  <div className="text-[10px] text-slate-400">Descarga la orden completa</div>
+                </button>
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => {
+                    setExportAllSheets(false);
+                    setExportSuccessDone(false);
+                  }}
+                  className={`py-2 px-2.5 rounded-lg border font-semibold text-left transition-all ${
+                    isExporting ? 'opacity-50 cursor-not-allowed ' : 'cursor-pointer '
+                  }${
+                    !exportAllSheets
+                      ? 'bg-purple-950/80 border-violet-500 text-white'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <div className="font-bold">Solo Vista Actual (1 Pliego)</div>
+                  <div className="text-[10px] text-slate-400">{placedPieces.length} piezas en pantalla</div>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Options */}
           <div className="space-y-2 bg-slate-950/70 p-3 rounded-xl border border-slate-800 text-xs">
-            <label className="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+            <label
+              className={`flex items-center gap-2 text-slate-300 ${
+                isExporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:text-white'
+              }`}
+            >
               <input
                 type="checkbox"
                 checked={includeCalibration}
-                onChange={(e) => setIncludeCalibration(e.target.checked)}
-                className="rounded border-slate-700 text-violet-600 w-3.5 h-3.5"
+                disabled={isExporting}
+                onChange={(e) => {
+                  setIncludeCalibration(e.target.checked);
+                  setExportSuccessDone(false);
+                }}
+                className="rounded border-slate-700 text-violet-600 w-3.5 h-3.5 disabled:cursor-not-allowed"
               />
               <span className="font-semibold flex items-center gap-1">
                 <Ruler className="w-3.5 h-3.5 text-purple-400" />
@@ -173,12 +344,20 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               </span>
             </label>
 
-            <label className="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+            <label
+              className={`flex items-center gap-2 text-slate-300 ${
+                isExporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:text-white'
+              }`}
+            >
               <input
                 type="checkbox"
                 checked={includeCutContour}
-                onChange={(e) => setIncludeCutContour(e.target.checked)}
-                className="rounded border-slate-700 text-violet-600 w-3.5 h-3.5"
+                disabled={isExporting}
+                onChange={(e) => {
+                  setIncludeCutContour(e.target.checked);
+                  setExportSuccessDone(false);
+                }}
+                className="rounded border-slate-700 text-violet-600 w-3.5 h-3.5 disabled:cursor-not-allowed"
               />
               <span>Incluir línea técnica de corte (Contorno)</span>
             </label>
@@ -188,49 +367,113 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2 text-slate-400">
               <Ruler className="w-4 h-4 text-purple-400" />
-              <span><strong className="text-white font-mono">{printableWidthMm} mm × {totalLengthM} m</strong></span>
+              <span>
+                <strong className="text-white font-mono">
+                  {printableWidthMm} mm × {totalLengthM} m
+                </strong>
+              </span>
             </div>
             <div className="flex items-center gap-2 text-slate-400">
               <Scissors className="w-4 h-4 text-sky-400" />
-              <span><strong className="text-white font-mono">{placedPieces.length} piezas</strong></span>
+              <span>
+                <strong className="text-white font-mono">{placedPieces.length} piezas</strong>
+              </span>
             </div>
             <div className="text-slate-400 font-mono">
-              <span className="text-purple-400 font-bold">{efficiency}%</span> uso
+              <span className="text-purple-400 font-bold">{efficiency}%</span> aprovechamiento
             </div>
           </div>
+
+          {/* Panel de Progreso Paso a Paso durante la exportación */}
+          {isExporting && (
+            <div className="bg-violet-950/60 border border-violet-500/60 rounded-xl p-4 space-y-2.5 animate-in fade-in duration-150">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-violet-200 flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 text-violet-400 animate-spin shrink-0" />
+                  {exportStepText || 'Procesando archivo de producción 1:1...'}
+                </span>
+                <span className="font-mono font-bold text-violet-300 bg-violet-950 px-2 py-0.5 rounded border border-violet-500/40">
+                  {exportProgressPercent}%
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-violet-500/30">
+                <div
+                  className="h-full bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-400 transition-all duration-200"
+                  style={{ width: `${exportProgressPercent}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-violet-300/90">
+                Por favor espera unos segundos. Estamos preparando tus moldes a tamaño real (1:1) sin alterar medidas ni tipografías.
+              </p>
+            </div>
+          )}
+
+          {/* Banner Verde Claro de Confirmación al Terminar */}
+          {exportSuccessDone && !isExporting && (
+            <div className="bg-emerald-950/80 border border-emerald-500/60 rounded-xl p-3.5 space-y-1.5 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{exportStepText || '¡Exportación completada! Archivos descargados.'}</span>
+              </div>
+              {downloadedFiles.length > 0 && (
+                <div className="text-[11px] text-emerald-200/90 font-mono pl-6 space-y-0.5">
+                  {downloadedFiles.map((f, i) => (
+                    <div key={`${f.fileName}_${i}`} className="truncate">
+                      • {f.fileName} ({f.totalPieces} piezas — {f.widthMm} × {Math.round(f.heightMm)} mm)
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-[11px] text-emerald-300/80 pl-6">
+                Revisa tu carpeta de Descargas. El archivo está calibrado a escala 1:1 listo para imprimir.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-3">
           <button
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+            type="button"
+            onClick={handleClose}
+            disabled={isExporting}
+            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors ${
+              isExporting
+                ? 'text-slate-600 cursor-not-allowed opacity-50'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer'
+            }`}
           >
-            Cancelar
+            {exportSuccessDone ? 'Cerrar Ventana' : 'Cancelar'}
           </button>
 
           <button
+            type="button"
             onClick={handleExport}
             disabled={isExporting}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all ${
-              exportSuccess
-                ? 'bg-violet-600 text-white shadow-purple-950'
+            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all ${
+              exportSuccessDone && !isExporting
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/60 cursor-pointer'
                 : isExporting
-                ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
+                ? 'bg-slate-800 text-violet-300 border border-violet-500/40 cursor-not-allowed'
                 : 'bg-violet-600 hover:bg-violet-500 text-white shadow-purple-950 cursor-pointer active:scale-95'
             }`}
           >
-            {exportSuccess ? (
+            {exportSuccessDone && !isExporting ? (
               <>
-                <CheckCircle2 className="w-4 h-4 text-white" />
-                ¡Archivo Descargado!
+                <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
+                ¡Archivo 1:1 Descargado con Éxito!
               </>
             ) : isExporting ? (
-              'Generando Vectorial 1:1...'
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-violet-400 shrink-0" />
+                Generando archivo 1:1 ({exportProgressPercent}%)...
+              </>
             ) : (
               <>
-                <Download className="w-4 h-4" />
-                Descargar {selectedFormat} (1:1)
+                <Download className="w-4 h-4 shrink-0" />
+                {targetSheetCount > 1
+                  ? `Descargar ${sheets.length} Pliegos en ${selectedFormat} 1:1`
+                  : `Descargar ${formatDisplay} 1:1 para Impresión`}
               </>
             )}
           </button>
@@ -239,3 +482,4 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     </div>
   );
 };
+
