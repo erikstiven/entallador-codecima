@@ -151,10 +151,6 @@ export function performModularNesting(
   if (camisetaPlayerList.length > 0) {
     let currentSheet = createNewSheet('CAMISETA');
     let jerseyY = topMarginMm;
-    let mangaCol1Y = topMarginMm;
-    let mangaCol2Y = topMarginMm;
-    let mangaSingleY = topMarginMm;
-    let sleeveToggleRotation = 90; // Alterna 90° y 270° para encastre intercalado
 
     // Calcular ancho máximo de delanteros y espaldas
     const maxDelanteroW = camisetaPlayerList.reduce((max, p) => Math.max(max, p.delantero?.bbox.width || 0), 0) || 400;
@@ -163,51 +159,329 @@ export function performModularNesting(
     const rightBandX = Number((shirtsBandWidth + spacingMm).toFixed(2));
     const availableRightWidth = printableWidthMm - rightBandX - sideMarginMm;
 
-    const remainingSleeves: NestingPieceInput[] = [];
-    const remainingCollars: NestingPieceInput[] = [];
+    const sheetSleeves: NestingPieceInput[] = [];
+    const sheetCollars: NestingPieceInput[] = [];
 
-    // Calcular altura total acumulada de camisetas en el lote
-    const totalJerseysHeight = camisetaPlayerList.reduce(
-      (sum, p) => sum + Math.max(p.delantero?.bbox.height || 0, p.espalda?.bbox.height || 0) + spacingMm,
-      topMarginMm
-    );
+    /**
+     * Fase 2 por pliego: Empaquetado inteligente de mangas (columna derecha limitada a jerseyBottomY)
+     * + Evaluador Multi-Variante (Variantes 1, 2 y 3) para la zona inferior bajo las camisetas
+     * + Empaquetado de cuellos y piezas adicionales.
+     */
+    const planSheetAccessories = (
+      jerseyBottomY: number,
+      sleevesToPlace: NestingPieceInput[],
+      collarsToPlace: NestingPieceInput[],
+      sheetIdx: number
+    ): { placedAccessories: PlacedNestingPiece[]; bottomY: number; heightMm: number } => {
+      const placedAccessories: PlacedNestingPiece[] = [];
+      const remainingSleeves: NestingPieceInput[] = [];
+      const remainingCollars: NestingPieceInput[] = [];
 
-    const finalizeCurrentSheet = () => {
-      let bottomY = Math.max(jerseyY, mangaCol1Y, mangaCol2Y, mangaSingleY);
-      let bottomX = sideMarginMm;
-      let bottomRowH = 0;
+      const hasJerseys = jerseyBottomY > topMarginMm;
+      let mangaY = topMarginMm;
+      let sleeveToggleRotation = 90; // Alterna 90° y 270° para encastre intercalado
 
-      for (const sleeve of remainingSleeves) {
-        const sW = sleeve.bbox.width;
-        const sH = sleeve.bbox.height;
+      // 2.1 Colocar mangas en la Columna Derecha ÚNICAMENTE mientras mangaY + sH <= jerseyBottomY
+      let i = 0;
+      while (i < sleevesToPlace.length) {
+        const m1 = sleevesToPlace[i];
+        const m2 = i + 1 < sleevesToPlace.length ? sleevesToPlace[i + 1] : undefined;
 
-        if (bottomX + sW + sideMarginMm > printableWidthMm) {
-          bottomY += bottomRowH + spacingMm;
-          bottomX = sideMarginMm;
-          bottomRowH = 0;
+        const sW1 = m1.bbox.height; // rot 90/270
+        const sH1 = m1.bbox.width;
+        const sW2 = m2 ? m2.bbox.height : 0;
+        const sH2 = m2 ? m2.bbox.width : 0;
+
+        const canFitDoubleColumn = m2 !== undefined && availableRightWidth >= sW1 + spacingMm + sW2;
+        const canFitSingleColumn = availableRightWidth >= sW1;
+
+        if (canFitDoubleColumn && m2) {
+          const pairH = Math.max(sH1, sH2);
+          if (!hasJerseys || mangaY + pairH <= jerseyBottomY) {
+            const col1X = rightBandX;
+            const col2X = Number((rightBandX + sW1 + spacingMm).toFixed(2));
+
+            placedAccessories.push(
+              {
+                ...m1,
+                xMm: col1X,
+                yMm: Number(mangaY.toFixed(2)),
+                rotationDeg: 90,
+                effectiveWidthMm: sW1,
+                effectiveHeightMm: sH1,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              },
+              {
+                ...m2,
+                xMm: col2X,
+                yMm: Number(mangaY.toFixed(2)),
+                rotationDeg: 90,
+                effectiveWidthMm: sW2,
+                effectiveHeightMm: sH2,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              }
+            );
+            mangaY += pairH + spacingMm;
+            i += 2;
+            continue;
+          }
         }
 
-        const placedSleeve: PlacedNestingPiece = {
-          ...sleeve,
-          xMm: Number(bottomX.toFixed(2)),
-          yMm: Number(bottomY.toFixed(2)),
-          rotationDeg: 0,
-          effectiveWidthMm: sW,
-          effectiveHeightMm: sH,
-          isLocked: false,
-          sheetIndex: currentSheet.sheetNumber - 1,
+        if (canFitSingleColumn && (!hasJerseys || mangaY + sH1 <= jerseyBottomY)) {
+          placedAccessories.push({
+            ...m1,
+            xMm: rightBandX,
+            yMm: Number(mangaY.toFixed(2)),
+            rotationDeg: sleeveToggleRotation,
+            effectiveWidthMm: sW1,
+            effectiveHeightMm: sH1,
+            isLocked: false,
+            sheetIndex: sheetIdx,
+          });
+          mangaY += sH1 + spacingMm;
+          sleeveToggleRotation = sleeveToggleRotation === 90 ? 270 : 90;
+          i += 1;
+        } else {
+          // REGLA DE ORO: Rebasaría jerseyBottomY (o no cabe en columna derecha) -> enviar a zona inferior
+          remainingSleeves.push(m1);
+          i += 1;
+        }
+      }
+
+      // 2.2 Evaluador Inteligente Multi-Variante para remainingSleeves en la zona inferior
+      let bottomY = Math.max(jerseyBottomY, mangaY);
+
+      if (remainingSleeves.length > 0) {
+        const baseStartY = Math.max(jerseyBottomY, mangaY);
+
+        // --- VARIANTE 1: Horizontal (0° / 180°) en filas a todo lo ancho ---
+        const evalVariant1 = (): { pieces: PlacedNestingPiece[]; bottomY: number } => {
+          const pieces: PlacedNestingPiece[] = [];
+          let currY = baseStartY;
+          let currX = sideMarginMm;
+          let rowH = 0;
+          let rotToggle = 0;
+
+          for (const sleeve of remainingSleeves) {
+            const sW = sleeve.bbox.width;
+            const sH = sleeve.bbox.height;
+
+            if (currX > sideMarginMm && currX + sW + sideMarginMm > printableWidthMm) {
+              currY += rowH + spacingMm;
+              currX = sideMarginMm;
+              rowH = 0;
+            }
+
+            pieces.push({
+              ...sleeve,
+              xMm: Number(currX.toFixed(2)),
+              yMm: Number(currY.toFixed(2)),
+              rotationDeg: rotToggle,
+              effectiveWidthMm: sW,
+              effectiveHeightMm: sH,
+              isLocked: false,
+              sheetIndex: sheetIdx,
+            });
+
+            rotToggle = rotToggle === 0 ? 180 : 0;
+            currX += sW + spacingMm;
+            rowH = Math.max(rowH, sH);
+          }
+
+          if (rowH > 0) {
+            currY += rowH + spacingMm;
+          }
+          return { pieces, bottomY: currY };
         };
-        currentSheet.placedPieces.push(placedSleeve);
-        allPlacedPieces.push(placedSleeve);
 
-        bottomX += sW + spacingMm;
-        bottomRowH = Math.max(bottomRowH, sH);
-      }
-      if (bottomRowH > 0) {
-        bottomY += bottomRowH + spacingMm;
+        // --- VARIANTE 2: Vertical (90° / 270°) Multi-Columna a todo lo ancho ---
+        const evalVariant2 = (): { pieces: PlacedNestingPiece[]; bottomY: number } => {
+          const pieces: PlacedNestingPiece[] = [];
+          let currY = baseStartY;
+          let currX = sideMarginMm;
+          let rowH = 0;
+          let rotToggle = 90;
+
+          for (const sleeve of remainingSleeves) {
+            const sW = sleeve.bbox.height;
+            const sH = sleeve.bbox.width;
+
+            if (currX > sideMarginMm && currX + sW + sideMarginMm > printableWidthMm) {
+              currY += rowH + spacingMm;
+              currX = sideMarginMm;
+              rowH = 0;
+            }
+
+            pieces.push({
+              ...sleeve,
+              xMm: Number(currX.toFixed(2)),
+              yMm: Number(currY.toFixed(2)),
+              rotationDeg: rotToggle,
+              effectiveWidthMm: sW,
+              effectiveHeightMm: sH,
+              isLocked: false,
+              sheetIndex: sheetIdx,
+            });
+
+            rotToggle = rotToggle === 90 ? 270 : 90;
+            currX += sW + spacingMm;
+            rowH = Math.max(rowH, sH);
+          }
+
+          if (rowH > 0) {
+            currY += rowH + spacingMm;
+          }
+          return { pieces, bottomY: currY };
+        };
+
+        // --- VARIANTE 3: Híbrida Compacta (bajo columnas de camiseta + nivelación con columna derecha) ---
+        const evalVariant3 = (): { pieces: PlacedNestingPiece[]; bottomY: number } => {
+          const pieces: PlacedNestingPiece[] = [];
+          const leftBandLimitX = rightBandX - spacingMm;
+          let leftX = sideMarginMm;
+          let leftY = jerseyBottomY;
+          let leftRowH = 0;
+          let rightY = mangaY;
+          let leftRotToggle = 0;
+          let rightRotToggle = sleeveToggleRotation;
+
+          for (const sleeve of remainingSleeves) {
+            const hW = sleeve.bbox.width;
+            const hH = sleeve.bbox.height;
+            const vW = sleeve.bbox.height;
+            const vH = sleeve.bbox.width;
+
+            // Si la fila izquierda ya superó a rightY, podemos usar todo el ancho disponible
+            const currentRowMaxX = leftY >= rightY ? printableWidthMm - sideMarginMm : leftBandLimitX;
+
+            if (leftX + hW <= currentRowMaxX) {
+              pieces.push({
+                ...sleeve,
+                xMm: Number(leftX.toFixed(2)),
+                yMm: Number(leftY.toFixed(2)),
+                rotationDeg: leftRotToggle,
+                effectiveWidthMm: hW,
+                effectiveHeightMm: hH,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              });
+              leftRotToggle = leftRotToggle === 0 ? 180 : 0;
+              leftX += hW + spacingMm;
+              leftRowH = Math.max(leftRowH, hH);
+              continue;
+            }
+
+            // Si ya hay mangas en la fila inferior bajo camisetas y la columna derecha tiene hueco para nivelar
+            const projectedLeftBottom = leftY + (leftRowH > 0 ? leftRowH + spacingMm : 0);
+            if (
+              leftRowH > 0 &&
+              availableRightWidth >= vW &&
+              rightY + vH + spacingMm <= projectedLeftBottom + hH
+            ) {
+              pieces.push({
+                ...sleeve,
+                xMm: rightBandX,
+                yMm: Number(rightY.toFixed(2)),
+                rotationDeg: rightRotToggle,
+                effectiveWidthMm: vW,
+                effectiveHeightMm: vH,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              });
+              rightRotToggle = rightRotToggle === 90 ? 270 : 90;
+              rightY += vH + spacingMm;
+              continue;
+            }
+
+            // Avanzar a una nueva fila inferior
+            if (leftRowH > 0) {
+              leftY += leftRowH + spacingMm;
+              leftX = sideMarginMm;
+              leftRowH = 0;
+            }
+
+            const newRowMaxX = leftY >= rightY ? printableWidthMm - sideMarginMm : leftBandLimitX;
+            if (leftX + hW <= newRowMaxX) {
+              pieces.push({
+                ...sleeve,
+                xMm: Number(leftX.toFixed(2)),
+                yMm: Number(leftY.toFixed(2)),
+                rotationDeg: leftRotToggle,
+                effectiveWidthMm: hW,
+                effectiveHeightMm: hH,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              });
+              leftRotToggle = leftRotToggle === 0 ? 180 : 0;
+              leftX += hW + spacingMm;
+              leftRowH = Math.max(leftRowH, hH);
+            } else {
+              // Usar el ancho completo desde Math.max(leftY, rightY)
+              leftY = Math.max(leftY, rightY);
+              leftX = sideMarginMm;
+              pieces.push({
+                ...sleeve,
+                xMm: Number(leftX.toFixed(2)),
+                yMm: Number(leftY.toFixed(2)),
+                rotationDeg: leftRotToggle,
+                effectiveWidthMm: hW,
+                effectiveHeightMm: hH,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              });
+              leftRotToggle = leftRotToggle === 0 ? 180 : 0;
+              leftX += hW + spacingMm;
+              leftRowH = Math.max(leftRowH, hH);
+            }
+          }
+
+          if (leftRowH > 0) {
+            leftY += leftRowH + spacingMm;
+          }
+
+          return { pieces, bottomY: Math.max(leftY, rightY) };
+        };
+
+        const v1 = evalVariant1();
+        const v2 = evalVariant2();
+        const v3 = evalVariant3();
+
+        // Selección automática de la variante con menor bottomY (mayor aprovechamiento de papel)
+        let bestVariant = v1;
+        for (const candidate of [v2, v3]) {
+          if (candidate.bottomY < bestVariant.bottomY - 0.01) {
+            bestVariant = candidate;
+          }
+        }
+
+        placedAccessories.push(...bestVariant.pieces);
+        bottomY = bestVariant.bottomY;
       }
 
-      // Empacar cuellos en fila horizontal
+      // 2.3 Cuellos y piezas adicionales: aprovechar hueco residual en columna derecha o empacar al fondo
+      for (const collar of collarsToPlace) {
+        const cW = collar.bbox.width;
+        const cH = collar.bbox.height;
+        if (remainingSleeves.length === 0 && mangaY + cH <= jerseyBottomY && availableRightWidth >= cW) {
+          placedAccessories.push({
+            ...collar,
+            xMm: rightBandX,
+            yMm: Number(mangaY.toFixed(2)),
+            rotationDeg: 0,
+            effectiveWidthMm: cW,
+            effectiveHeightMm: cH,
+            isLocked: false,
+            sheetIndex: sheetIdx,
+          });
+          mangaY += cH + spacingMm;
+          bottomY = Math.max(bottomY, mangaY);
+        } else {
+          remainingCollars.push(collar);
+        }
+      }
+
       let collarX = sideMarginMm;
       let collarRowH = 0;
       for (const collar of remainingCollars) {
@@ -220,7 +494,7 @@ export function performModularNesting(
           collarRowH = 0;
         }
 
-        const placedCollar: PlacedNestingPiece = {
+        placedAccessories.push({
           ...collar,
           xMm: Number(collarX.toFixed(2)),
           yMm: Number(bottomY.toFixed(2)),
@@ -228,10 +502,8 @@ export function performModularNesting(
           effectiveWidthMm: cW,
           effectiveHeightMm: cH,
           isLocked: false,
-          sheetIndex: currentSheet.sheetNumber - 1,
-        };
-        currentSheet.placedPieces.push(placedCollar);
-        allPlacedPieces.push(placedCollar);
+          sheetIndex: sheetIdx,
+        });
 
         collarX += cW + spacingMm;
         collarRowH = Math.max(collarRowH, cH);
@@ -240,14 +512,25 @@ export function performModularNesting(
         bottomY += collarRowH + spacingMm;
       }
 
-      currentSheet.heightMm = Number((bottomY + topMarginMm).toFixed(2));
-      currentSheet.fileName = `PARTE_${currentSheet.sheetNumber}_CAMISETAS_${printableWidthMm.toFixed(0)}x${currentSheet.heightMm.toFixed(0)}mm`;
-
-      remainingSleeves.length = 0;
-      remainingCollars.length = 0;
+      const heightMm = Number((bottomY + topMarginMm).toFixed(2));
+      return { placedAccessories, bottomY, heightMm };
     };
 
-    let mangaY = topMarginMm;
+    const finalizeCurrentSheet = () => {
+      const plan = planSheetAccessories(
+        jerseyY,
+        sheetSleeves,
+        sheetCollars,
+        currentSheet.sheetNumber - 1
+      );
+      currentSheet.placedPieces.push(...plan.placedAccessories);
+      allPlacedPieces.push(...plan.placedAccessories);
+      currentSheet.heightMm = plan.heightMm;
+      currentSheet.fileName = `PARTE_${currentSheet.sheetNumber}_CAMISETAS_${printableWidthMm.toFixed(0)}x${currentSheet.heightMm.toFixed(0)}mm`;
+
+      sheetSleeves.length = 0;
+      sheetCollars.length = 0;
+    };
 
     for (const playerSet of camisetaPlayerList) {
       const del = playerSet.delantero;
@@ -262,24 +545,33 @@ export function performModularNesting(
       const hEsp = esp ? esp.bbox.height : 0;
       const jerseyRowH = Math.max(hDel, hEsp);
 
-      const sW1 = m1 ? m1.bbox.height : 0; // rot 90/270
-      const sH1 = m1 ? m1.bbox.width : 0;
-      const sW2 = m2 ? m2.bbox.height : 0;
-      const sH2 = m2 ? m2.bbox.width : 0;
+      const candidateSleeves = [...sheetSleeves];
+      if (m1) candidateSleeves.push(m1);
+      if (m2) candidateSleeves.push(m2);
 
-      // Particionado de pliego si las camisetas o mangas exceden la longitud máxima
+      const candidateCollars = [...sheetCollars];
+      if (cuello) candidateCollars.push(cuello);
+      for (const o of playerSet.otherPieces) candidateCollars.push(o);
+
+      const nextJerseyY = jerseyY + (jerseyRowH > 0 ? jerseyRowH + spacingMm : 0);
+      const projectedPlan = planSheetAccessories(
+        nextJerseyY,
+        candidateSleeves,
+        candidateCollars,
+        currentSheet.sheetNumber - 1
+      );
+
+      // Particionado de pliego si las camisetas o el empaquetado total exceden la longitud máxima
       if (
-        (jerseyY + jerseyRowH + topMarginMm > maxSheetLengthMm || mangaY + Math.max(sH1, sH2) + topMarginMm > maxSheetLengthMm) &&
-        currentSheet.placedPieces.length > 0
+        (jerseyY + jerseyRowH + topMarginMm > maxSheetLengthMm || projectedPlan.heightMm > maxSheetLengthMm) &&
+        (currentSheet.placedPieces.length > 0 || sheetSleeves.length > 0 || sheetCollars.length > 0)
       ) {
         finalizeCurrentSheet();
         currentSheet = createNewSheet('CAMISETA');
         jerseyY = topMarginMm;
-        mangaY = topMarginMm;
-        sleeveToggleRotation = 90;
       }
 
-      // 1. Colocar Frente
+      // Fase 1: Colocar cuerpos (Frente y Espalda) y recolectar mangas y cuellos del pliego
       const delX = sideMarginMm;
       if (del) {
         const placedDel: PlacedNestingPiece = {
@@ -296,7 +588,6 @@ export function performModularNesting(
         allPlacedPieces.push(placedDel);
       }
 
-      // 2. Colocar Espalda alineada en su columna inmediatamente al lado del Frente
       const espX = Number((sideMarginMm + maxDelanteroW + spacingMm).toFixed(2));
       if (esp) {
         const placedEsp: PlacedNestingPiece = {
@@ -313,104 +604,14 @@ export function performModularNesting(
         allPlacedPieces.push(placedEsp);
       }
 
-      jerseyY += jerseyRowH + spacingMm;
-
-      // 3. Colocar Mangas en flujo continuo compacto hacia abajo (LLENA TODOS LOS HUECOS)
-      const canFitDoubleColumn = m1 && m2 && availableRightWidth >= (sW1 + spacingMm + sW2);
-      const canFitSingleColumn = availableRightWidth >= Math.max(sW1, sW2);
-
-      if (canFitDoubleColumn && m1 && m2) {
-        // ESTRATEGIA A: Doble Columna Continua (Columna 1 y Columna 2 fluyen hacia abajo)
-        const col1X = rightBandX;
-        const col2X = Number((rightBandX + sW1 + spacingMm).toFixed(2));
-
-        const placedM1: PlacedNestingPiece = {
-          ...m1,
-          xMm: col1X,
-          yMm: Number(mangaY.toFixed(2)),
-          rotationDeg: 90,
-          effectiveWidthMm: sW1,
-          effectiveHeightMm: sH1,
-          isLocked: false,
-          sheetIndex: currentSheet.sheetNumber - 1,
-        };
-        const placedM2: PlacedNestingPiece = {
-          ...m2,
-          xMm: col2X,
-          yMm: Number(mangaY.toFixed(2)),
-          rotationDeg: 90,
-          effectiveWidthMm: sW2,
-          effectiveHeightMm: sH2,
-          isLocked: false,
-          sheetIndex: currentSheet.sheetNumber - 1,
-        };
-        currentSheet.placedPieces.push(placedM1, placedM2);
-        allPlacedPieces.push(placedM1, placedM2);
-
-        mangaY += Math.max(sH1, sH2) + spacingMm;
-      } else if (canFitSingleColumn) {
-        // ESTRATEGIA B: Columna Simple Continua en Encastre Intercalado (90° / 270°)
-        if (m1) {
-          const placedM1: PlacedNestingPiece = {
-            ...m1,
-            xMm: rightBandX,
-            yMm: Number(mangaY.toFixed(2)),
-            rotationDeg: 90,
-            effectiveWidthMm: sW1,
-            effectiveHeightMm: sH1,
-            isLocked: false,
-            sheetIndex: currentSheet.sheetNumber - 1,
-          };
-          currentSheet.placedPieces.push(placedM1);
-          allPlacedPieces.push(placedM1);
-          mangaY += sH1 + spacingMm;
-        }
-
-        if (m2) {
-          const placedM2: PlacedNestingPiece = {
-            ...m2,
-            xMm: rightBandX,
-            yMm: Number(mangaY.toFixed(2)),
-            rotationDeg: 270,
-            effectiveWidthMm: sW2,
-            effectiveHeightMm: sH2,
-            isLocked: false,
-            sheetIndex: currentSheet.sheetNumber - 1,
-          };
-          currentSheet.placedPieces.push(placedM2);
-          allPlacedPieces.push(placedM2);
-          mangaY += sH2 + spacingMm;
-        }
-      } else {
-        // ESTRATEGIA C: Ancho insuficiente, enviar a fondo horizontal
-        if (m1) remainingSleeves.push(m1);
-        if (m2) remainingSleeves.push(m2);
+      if (jerseyRowH > 0) {
+        jerseyY += jerseyRowH + spacingMm;
       }
 
-      // 4. Cuellos: Se colocan en el espacio libre bajo las mangas en la columna derecha
-      if (cuello) {
-        const cW = cuello.bbox.width;
-        const cH = cuello.bbox.height;
-        if (mangaY + cH <= jerseyY && availableRightWidth >= cW) {
-          const placedCollar: PlacedNestingPiece = {
-            ...cuello,
-            xMm: rightBandX,
-            yMm: Number(mangaY.toFixed(2)),
-            rotationDeg: 0,
-            effectiveWidthMm: cW,
-            effectiveHeightMm: cH,
-            isLocked: false,
-            sheetIndex: currentSheet.sheetNumber - 1,
-          };
-          currentSheet.placedPieces.push(placedCollar);
-          allPlacedPieces.push(placedCollar);
-          mangaY += cH + spacingMm;
-        } else {
-          remainingCollars.push(cuello);
-        }
-      }
-
-      for (const o of playerSet.otherPieces) remainingCollars.push(o);
+      if (m1) sheetSleeves.push(m1);
+      if (m2) sheetSleeves.push(m2);
+      if (cuello) sheetCollars.push(cuello);
+      for (const o of playerSet.otherPieces) sheetCollars.push(o);
 
       if (!currentSheet.playerNames.includes(playerSet.playerName)) {
         currentSheet.playerNames.push(playerSet.playerName);

@@ -155,4 +155,53 @@ describe('modularNestingEngine', () => {
     expect(m2.rotationDeg).toBe(90);
     expect(m2.xMm).toBeGreaterThan(m1.xMm + m1.effectiveWidthMm);
   });
+
+  it('debe acomodar las mangas excedentes en la zona inferior bajo las columnas de camiseta (xMm < rightBandX) reduciendo el largo total del pliego', () => {
+    // 2 jugadores: Delantero (500x700), Espalda (500x700), 2 Mangas c/u (480x240) en bobina de 1280 mm
+    // rightBandX = 3 + 500 + 3 + 500 + 3 = 1009 mm
+    // Si se apilaran las 4 mangas en la columna derecha: 4 * 480 + separaciones ≈ 1940 mm
+    // Con relleno inferior inteligente: 2 mangas en columna derecha (967 mm <= jerseyBottomY 1410 mm)
+    // y las 2 restantes bajo las columnas de camiseta -> largo total ~1657 mm (< 1700 mm)
+    const pieces: NestingPieceInput[] = [
+      createMockPiece('p1_del', 'player_1', 'JUGADOR_1', 'DELANTERO', 500, 700),
+      createMockPiece('p1_esp', 'player_1', 'JUGADOR_1', 'ESPALDA', 500, 700),
+      createMockPiece('p1_m1', 'player_1', 'JUGADOR_1', 'MANGA_IZQ', 480, 240),
+      createMockPiece('p1_m2', 'player_1', 'JUGADOR_1', 'MANGA_DER', 480, 240),
+      createMockPiece('p2_del', 'player_2', 'JUGADOR_2', 'DELANTERO', 500, 700),
+      createMockPiece('p2_esp', 'player_2', 'JUGADOR_2', 'ESPALDA', 500, 700),
+      createMockPiece('p2_m1', 'player_2', 'JUGADOR_2', 'MANGA_IZQ', 480, 240),
+      createMockPiece('p2_m2', 'player_2', 'JUGADOR_2', 'MANGA_DER', 480, 240),
+    ];
+
+    const result = performModularNesting(pieces, {
+      printableWidthMm: 1280,
+      maxSheetLengthMm: 5000,
+    });
+
+    const rightBandX = 3 + 500 + 3 + 500 + 3; // 1009 mm
+    const stackedRightColumnHeight = 4 + 4 * 480 + 4 * 3 + 4; // 1940 mm
+
+    const sleeves = result.placedPieces.filter((p) => p.pieceType.startsWith('MANGA'));
+    expect(sleeves.length).toBe(4);
+
+    // Las mangas que sobrepasan la altura de las camisetas se acomodan bajo las columnas de camiseta (xMm < rightBandX)
+    const bottomSleeves = sleeves.filter((s) => s.xMm < rightBandX);
+    expect(bottomSleeves.length).toBe(2);
+    for (const s of bottomSleeves) {
+      expect(s.xMm).toBeLessThan(rightBandX);
+      expect(s.yMm).toBeGreaterThanOrEqual(1400);
+    }
+
+    // Ninguna manga en la columna derecha debe rebasar la altura de las camisetas (~1410 mm)
+    const rightColSleeves = sleeves.filter((s) => s.xMm >= rightBandX);
+    expect(rightColSleeves.length).toBe(2);
+    for (const s of rightColSleeves) {
+      expect(s.yMm + s.effectiveHeightMm).toBeLessThanOrEqual(1410);
+    }
+
+    // El largo total del pliego es significativamente menor que apilar las 4 mangas en la columna derecha
+    expect(result.sheets![0].heightMm).toBeLessThan(stackedRightColumnHeight - 200);
+    expect(result.sheets![0].heightMm).toBeLessThan(1700);
+  });
 });
+
