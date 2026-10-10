@@ -26,34 +26,34 @@
   - **Route:** Delegated Direct (Writer trigger: 5 files).
   - **Evidence:** Commit `57bd788`. Implementada arquitectura Flyweight en `garmentGenerator.ts` con `pieceSvgRegistry` fuera del estado reactivo de Zustand y resolución bajo demanda mediante `resolvePieceSvg` / `getPieceSvgContent`. Implementado caché de arte escalado por molde/talla (`getCachedNormalizedArtwork` y `getCachedScaledArtwork`) eliminando normalización y escalado redundante en jugadores repetidos. Eliminada la triplicación en `nestingStore` (`placedPieces`, `sheets` y `nestingResult` comparten referencias; `svgContent` se extrae al registry durante el acomodo y no satura los metadatos geométricos durante `movePiece`, `rotatePiece` o `toggleLockPiece`). Actualizados exportadores (`svgExporter`, `pdfExporter`, `exportService`) y vistas (`ProductionNestingView`, `GarmentInspectionTab`). Pruebas requeridas y suite completa al 100%: 24 archivos, 111 tests pasados (`npm test`), y compilación exitosa (`npm run build`).
 
-- [ ] **TASK-3: Estabilización de Event Listeners y Viewport Culling en el Lienzo**
+- [x] **TASK-3: Estabilización de Event Listeners y Viewport Culling en el Lienzo**
   - **ID:** `TASK-3`
-  - **Scope:** `src/modules/canvas/useInteractiveCanvas.ts`, `src/views/ProductionNestingView.tsx`
+  - **Scope:** `src/modules/canvas/useInteractiveCanvas.ts`, `src/modules/canvas/snappingService.ts`, `src/views/ProductionNestingView.tsx`
   - **Description:** Migrar estado de arrastre en `useInteractiveCanvas` a `useRef` para evitar desmonte/remonte masivo (60-120x/seg) de listeners en `window`. Implementar Viewport Culling (recorte de piezas fuera de la vista) y representación visual ligera para que el DOM no mantenga miles de nodos SVG activos a la vez.
   - **Acceptance Criteria:** Paneo y arrastre fluidos a 60 FPS sin fugas de listeners ni caídas de frames.
-  - **Route:** Delegated Direct (Writer trigger: 2 files).
-  - **Evidence:** Pending.
+  - **Route:** Delegated Direct (Writer trigger: 3 files).
+  - **Evidence:** Commit `9168d2b`. Listeners globales (`mousemove`, `mouseup`, `keydown`) estabilizados con referencias mutables (`useRef`) y sincronización coalescida con `requestAnimationFrame`. Filtrado espacial por proximidad $O(1)$ en `snappingService.ts`. Viewport Culling con `ResizeObserver` y margen de overscan de `500px`, componente `CanvasPieceItem` envuelto en `React.memo` y modo ligero (LOD) automático en zoom lejano o alta densidad. Pruebas `snappingService.test.ts` (5/5 pasadas) y compilación limpia (`tsc --noEmit`).
 
-- [ ] **TASK-4: Conexión y Activación Real del Web Worker de Nesting**
+- [x] **TASK-4: Conexión y Activación Real del Web Worker de Nesting**
   - **ID:** `TASK-4`
   - **Scope:** `src/workers/nestingWorker.ts`, `src/core/nesting/worker/nestingWorkerClient.ts`, `src/core/nesting/nestingStore.ts`
   - **Description:** Reemplazar el `setTimeout` falso de `nestingWorkerClient.ts` instanciando un `new Worker()` real con Vite. Delegar el cálculo del acomodo modular continuo (`performModularNesting`) y poligonal al worker en segundo plano, notificando progreso mediante mensajes sin bloquear la interfaz.
   - **Acceptance Criteria:** La UI permanece 100% interactiva durante el cálculo de nesting. `modularNestingEngine.test.ts` y tests de nesting pasan.
   - **Route:** Delegated Direct (Writer trigger: 3 files).
-  - **Evidence:** Pending.
+  - **Evidence:** Commit `0ae6f16`. Instanciación real de `new Worker(new URL('../../../workers/nestingWorker.ts', import.meta.url), { type: 'module' })` con soporte para `MODULAR_INDUSTRIAL`, `POLYGONAL_CLIPPER2` y `BOUNDING_BOX`, limpieza determinista de workers (`terminate()`), reconciliación de referencias tras Structured Clone y fallback transparente en entorno Node/Vitest. Empaquetado verificado en producción (`dist/assets/nestingWorker-DStQSuIa.js`) y pruebas en verde (3 archivos, 13 tests pasados).
 
-- [ ] **TASK-5: Aceleración Algorítmica y Caché Tipográfica**
+- [x] **TASK-5: Aceleración Algorítmica y Caché Tipográfica**
   - **ID:** `TASK-5`
   - **Scope:** `src/modules/orders/orderValidator.ts`, `src/core/fonts/textVectorEngine.ts`, `src/core/fonts/fontManager.ts`
   - **Description:** Optimizar la validación de dorsales repetidos a $O(N)$ mediante `Map`/`Set` en lugar de $O(N^2)$. Implementar memoización en `textVectorEngine` para no re-vectorizar glifos y números idénticos (ej. "10", tallas "M") cientos de veces.
   - **Acceptance Criteria:** Escribir en la tabla de nómina es instantáneo. Pruebas de tipografía y validación de órdenes pasan.
   - **Route:** Delegated Direct (Writer trigger: 3 files).
-  - **Evidence:** Pending.
+  - **Evidence:** Commit `2469ef8`. Validación de dorsales únicos optimizada a $O(N)$ con `numberFrequencyMap` precalculado en `validateOrderList`. Caché LRU de 2,000 entradas en `textVectorEngine.ts` (`getMemoizedVectorPath`) y caché LRU de 16 fuentes con deduplicación de alias (`fontAliasMap`) y liberación de `ArrayBuffer` en `fontManager.ts`. Pruebas en verde (3 archivos, 18 tests pasados).
 
-- [ ] **TASK-6: Verificación Integral End-to-End y Medición de Rendimiento**
+- [x] **TASK-6: Verificación Integral End-to-End y Medición de Rendimiento**
   - **ID:** `TASK-6`
   - **Scope:** Suite completa de pruebas (`npm test`), verificación de compilación (`npm run build`).
   - **Description:** Ejecutar todos los 106+ tests unitarios y de integración para asegurar que ninguna optimización rompió la calibración 1:1, exportaciones a PDF/SVG/EPS o compatibilidad con Mimaki/Epson.
   - **Acceptance Criteria:** Todos los tests pasan en verde sin regresiones.
   - **Route:** Direct Inline.
-  - **Evidence:** Pending.
+  - **Evidence:** Ejecución completa de `npm test` (24 archivos pasados, 111 tests pasados, 0 fallos) y `npm run build` (`tsc && vite build`, 0 errores, bundle de Web Worker y Electron generados exitosamente).
