@@ -113,7 +113,7 @@ export function validateOrderItem(
     warnings.push({
       field: 'playerNumber',
       message: 'Sin número dorsal asignado (la camiseta se generará únicamente con el nombre).',
-      code: 'EMPTY_NUMBER' as any,
+      code: 'EMPTY_NUMBER',
     });
   } else {
     // Si se activa unicidad estricta de dorsal en el mismo equipo/pedido

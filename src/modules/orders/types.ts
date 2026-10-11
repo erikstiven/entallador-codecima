@@ -22,6 +22,7 @@ export interface ValidationWarning {
   field: 'playerName' | 'playerNumber' | 'sizeName' | 'garmentType' | 'general';
   message: string;
   code: 
+    | 'EMPTY_NUMBER'
     | 'LONG_NAME'
     | 'NAME_TOO_SHORT'
     | 'NUMERIC_NAME'
