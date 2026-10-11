@@ -96,22 +96,50 @@ export function extractGarmentBBox(
   if (!canvasWidth) canvasWidth = parseFloat(svgEl.getAttribute('width') || '0') || 0;
   if (!canvasHeight) canvasHeight = parseFloat(svgEl.getAttribute('height') || '0') || 0;
 
-  // 0. Comprobar si existe un clipPath maestro de Illustrator con dimensiones exactas
-  const clipRect = svgEl.querySelector('clipPath rect, mask rect');
-  if (clipRect) {
-    const w = parseFloat(clipRect.getAttribute('width') || '0');
-    const h = parseFloat(clipRect.getAttribute('height') || '0');
-    if (w > 10 && h > 10) {
-      let x = parseFloat(clipRect.getAttribute('x') || '0');
-      let y = parseFloat(clipRect.getAttribute('y') || '0');
-      const parentClip = clipRect.closest('clipPath, mask');
-      const transformAttr = (parentClip?.getAttribute('transform') || '') + ' ' + (clipRect.getAttribute('transform') || '');
-      const translateMatch = transformAttr.match(/translate\s*\(\s*([^\s,]+)(?:[,\s]+([^\s,]+))?\s*\)/i);
-      if (translateMatch) {
-        x += parseFloat(translateMatch[1]);
-        if (translateMatch[2]) y += parseFloat(translateMatch[2]);
+  // 0. Comprobar si existe un clipPath maestro de Illustrator con silueta vectorial o recuadro
+  const clipEl = svgEl.querySelector('clipPath[id="clip-path"], clipPath');
+  if (clipEl) {
+    let tx = 0;
+    let ty = 0;
+    const transformAttr = clipEl.getAttribute('transform') || '';
+    const translateMatch = transformAttr.match(/translate\s*\(\s*([^\s,]+)(?:[,\s]+([^\s,]+))?\s*\)/i);
+    if (translateMatch) {
+      tx = parseFloat(translateMatch[1]) || 0;
+      ty = parseFloat(translateMatch[2]) || 0;
+    }
+
+    const clipPathEl = clipEl.querySelector('path');
+    if (clipPathEl) {
+      const d = clipPathEl.getAttribute('d') || '';
+      const poly = parseSvgPathToPolygon(d);
+      if (poly.length > 0) {
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        poly.forEach((pt) => {
+          minX = Math.min(minX, pt.x);
+          minY = Math.min(minY, pt.y);
+          maxX = Math.max(maxX, pt.x);
+          maxY = Math.max(maxY, pt.y);
+        });
+        const w = maxX - minX;
+        const h = maxY - minY;
+        if (w > 10 && h > 10) {
+          return { x: minX + tx, y: minY + ty, width: w, height: h };
+        }
       }
-      return { x, y, width: w, height: h };
+    }
+
+    const clipRect = clipEl.querySelector('rect');
+    if (clipRect) {
+      const w = parseFloat(clipRect.getAttribute('width') || '0');
+      const h = parseFloat(clipRect.getAttribute('height') || '0');
+      if (w > 10 && h > 10) {
+        const x = parseFloat(clipRect.getAttribute('x') || '0');
+        const y = parseFloat(clipRect.getAttribute('y') || '0');
+        return { x: x + tx, y: y + ty, width: w, height: h };
+      }
     }
   }
 
@@ -207,11 +235,55 @@ function normalizeSvgStringHeadless(
     .replace(/<rect\b[^>]*stroke=["'](?:none|transparent)["'][^>]*fill=["'](?:none|transparent)["'][^>]*\/?>/gi, '')
     .replace(/<rect\b[^>]*fill=["'](?:none|transparent)["'](?![^>]*\bstroke=)[^>]*\/?>/gi, '');
 
-  // 0. Comprobar si existe un clipPath maestro de Illustrator con dimensiones explícitas
-  const clipMatch = svgContent.match(/<clipPath\b([^>]*)>([\s\S]*?)<\/clipPath>/i);
-  if (clipMatch) {
-    const clipAttrs = clipMatch[1];
-    const clipInner = clipMatch[2];
+  // 0. Comprobar si existe un clipPath maestro de Illustrator con silueta vectorial o recuadro
+  const clipMatches = [...svgContent.matchAll(/<clipPath\b([^>]*)>([\s\S]*?)<\/clipPath>/gi)];
+  if (clipMatches.length > 0) {
+    const bestClip = clipMatches.find((c) => /id=["']clip-path["']/i.test(c[1])) || clipMatches[0];
+    const clipAttrs = bestClip[1];
+    const clipInner = bestClip[2];
+
+    let tx = 0;
+    let ty = 0;
+    const translateMatch = clipAttrs.match(/translate\s*\(\s*([^\s,]+)(?:[,\s]+([^\s,]+))?\s*\)/i);
+    if (translateMatch) {
+      tx = parseFloat(translateMatch[1]) || 0;
+      ty = parseFloat(translateMatch[2]) || 0;
+    }
+
+    const pathMatch = clipInner.match(/<path\b[^>]*\bd=["']([^"']+)["']/i);
+    if (pathMatch) {
+      const poly = parseSvgPathToPolygon(pathMatch[1]);
+      if (poly.length > 0) {
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        poly.forEach((pt) => {
+          minX = Math.min(minX, pt.x);
+          minY = Math.min(minY, pt.y);
+          maxX = Math.max(maxX, pt.x);
+          maxY = Math.max(maxY, pt.y);
+        });
+        const rw = maxX - minX;
+        const rh = maxY - minY;
+        if (rw > 10 && rh > 10) {
+          const rx = minX + tx;
+          const ry = minY + ty;
+          const padX = rw * paddingRatio;
+          const padY = rh * paddingRatio;
+          const vx = (rx - padX).toFixed(2);
+          const vy = (ry - padY).toFixed(2);
+          const vw = (rw + padX * 2).toFixed(2);
+          const vh = (rh + padY * 2).toFixed(2);
+
+          return cleaned.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
+            const cleanAttrs = attrs.replace(/\bviewBox\s*=\s*["'][^"']+["']/gi, '');
+            return `<svg viewBox="${vx} ${vy} ${vw} ${vh}" ${cleanAttrs}>`;
+          });
+        }
+      }
+    }
+
     const rectMatch = clipInner.match(/<rect\b([^>]*)\/?>/i);
     if (rectMatch) {
       const rectAttrs = rectMatch[1];
@@ -229,10 +301,10 @@ function normalizeSvgStringHeadless(
           if (yMatch) ry += parseFloat(yMatch[1]);
 
           const transformStr = clipAttrs + ' ' + rectAttrs;
-          const translateMatch = transformStr.match(/translate\s*\(\s*([^\s,]+)(?:[,\s]+([^\s,]+))?\s*\)/i);
-          if (translateMatch) {
-            rx += parseFloat(translateMatch[1]);
-            if (translateMatch[2]) ry += parseFloat(translateMatch[2]);
+          const rectTranslate = transformStr.match(/translate\s*\(\s*([^\s,]+)(?:[,\s]+([^\s,]+))?\s*\)/i);
+          if (rectTranslate) {
+            rx += parseFloat(rectTranslate[1]) || 0;
+            if (rectTranslate[2]) ry += parseFloat(rectTranslate[2]) || 0;
           }
 
           const padX = rw * paddingRatio;
