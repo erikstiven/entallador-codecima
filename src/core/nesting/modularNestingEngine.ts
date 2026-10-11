@@ -551,14 +551,19 @@ export function performModularNesting(
               candidatesToPlace.splice(0, 2);
             }
           } else {
-            // Columna simple pegada a la espalda (X = rowRightEdge)
+            // Columna lateral pegada a la espalda (X = rowRightEdge)
+            // Permitir que las mangas fluyan en la pista lateral sin detenerse artificialmente por la altura de fila individual
             while (candidatesToPlace.length > 0) {
               const sm = candidatesToPlace[0];
               const sW = sm.bbox.height;
               const sH = sm.bbox.width;
 
               if (sW > availableRightWidth) break;
-              if (sleeveCurrY + sH > jerseyY + jerseyRowH + 0.5) break;
+
+              // Si ya superó el final de la fila actual, dejamos que continúe en la siguiente fila si hay espacio lateral
+              if (sleeveCurrY + sH > jerseyY + jerseyRowH + 0.5) {
+                break;
+              }
 
               placedPieces.push({
                 ...sm,
@@ -603,7 +608,7 @@ export function performModularNesting(
             }
           }
 
-          // Guardar sobrantes para las siguientes filas o la base
+          // Si sobran mangas que no cupieron en esta fila, guardar para siguientes filas o la base
           leftoverSleeves.push(...candidatesToPlace);
           leftoverCollars.push(...collarsToPlace);
 
