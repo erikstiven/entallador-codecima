@@ -1,5 +1,6 @@
 import { OrderItem } from '@/modules/orders/types';
 import { PatternSet, PatternPiece, PieceType } from '@/modules/patterns/types';
+import { Point2D } from '@/core/geometry/types';
 import { MasterDesign, DynamicPlaceholderRule } from '@/modules/designs/types';
 import { 
   GeneratedPiece, 
@@ -22,6 +23,10 @@ const DEFAULT_CONFIG: GenerationConfig = {
   sizeMarkColor: '#000000',
   sizeMarkFontSizeMm: 8,
   sizeMarkBottomOffsetMm: 8,
+  sleeveArtOffsetYMm: 0,
+  frontArtOffsetYMm: 0,
+  backArtOffsetYMm: 0,
+  shortArtOffsetYMm: 0,
   includeShortNumber: true,
   shortNumberPiece: 'DER',
   shortNumberXPercent: 50,
@@ -183,6 +188,22 @@ export function resolvePieceSvg(piece: { id: string; svgContent?: string }): str
 }
 
 /**
+ * Obtiene el path SVG local (en origen 0,0) del contorno de corte de una pieza en O(1)
+ * desde pieceTemplateRegistry, o lo calcula a partir de su cutPolygon como fallback.
+ */
+export function getPieceMoldPath(piece: { id: string; cutPolygon: Point2D[] }): string {
+  const cachedPath = pieceTemplateRegistry.get(piece.id)?.svgPathData;
+  if (cachedPath) return cachedPath;
+
+  if (!piece.cutPolygon || piece.cutPolygon.length === 0) return '';
+  const bbox = computeBoundingBox(piece.cutPolygon);
+  const localPolygon = (bbox.minX !== 0 || bbox.minY !== 0)
+    ? piece.cutPolygon.map((pt) => ({ x: pt.x - bbox.minX, y: pt.y - bbox.minY }))
+    : piece.cutPolygon;
+  return polygonToSvgPath(localPolygon);
+}
+
+/**
  * Limpia los registros Flyweight de piezas y plantillas base.
  */
 export function clearPieceSvgRegistry(): void {
@@ -190,6 +211,7 @@ export function clearPieceSvgRegistry(): void {
 }
 
 const ARTWORK_CACHE_LIMIT = 64;
+const VECTOR_TEXT_CACHE_LIMIT = 256;
 
 /**
  * Calcula una huella rápida determinista FNV-1a (32-bit) más la longitud del SVG.
@@ -203,7 +225,7 @@ function computeArtworkFingerprint(content: string): string {
   return `${(hash >>> 0).toString(36)}_${content.length}`;
 }
 
-function getFromLruCache(cache: Map<string, string>, key: string): string | undefined {
+function getFromLruCache<V>(cache: Map<string, V>, key: string): V | undefined {
   const val = cache.get(key);
   if (val !== undefined) {
     cache.delete(key);
@@ -212,10 +234,15 @@ function getFromLruCache(cache: Map<string, string>, key: string): string | unde
   return val;
 }
 
-function setInLruCache(cache: Map<string, string>, key: string, value: string): void {
+function setInLruCache<V>(
+  cache: Map<string, V>,
+  key: string,
+  value: V,
+  limit: number = ARTWORK_CACHE_LIMIT
+): void {
   if (cache.has(key)) {
     cache.delete(key);
-  } else if (cache.size >= ARTWORK_CACHE_LIMIT) {
+  } else if (cache.size >= limit) {
     const oldestKey = cache.keys().next().value;
     if (oldestKey !== undefined) cache.delete(oldestKey);
   }
@@ -236,39 +263,33 @@ export function getCachedNormalizedArtwork(rawSvgContent: string): string {
   return cached;
 }
 
-// Caché de arte escalado por molde, talla y huella del arte (LRU máx. 64)
-const scaledArtworkCache = new Map<string, string>();
+// Caché de arte normalizado y con IDs aislados (namespaced) por diseño y tipo de pieza (SIN artOffsetY ni dimensiones)
+const namespacedArtworkCache = new Map<string, string>();
 
-export function getCachedScaledArtwork(
+export function getCachedNormalizedNamespacedArtwork(
+  designId: string,
+  pieceType: PieceType | string,
   rawArtSvg: string,
-  width: number,
-  height: number,
-  artOffsetY: number,
-  cacheKeyPrefix: string
+  preserveAspectRatioMode: string = 'xMidYMid slice'
 ): string {
   const artFingerprint = computeArtworkFingerprint(rawArtSvg);
-  const cacheKey = `${cacheKeyPrefix}_${artFingerprint}_${width.toFixed(1)}_${height.toFixed(1)}_${artOffsetY}`;
-  const cached = getFromLruCache(scaledArtworkCache, cacheKey);
+  const cacheKey = `${designId}_${pieceType}_${preserveAspectRatioMode}_${artFingerprint}`;
+  const cached = getFromLruCache(namespacedArtworkCache, cacheKey);
   if (cached !== undefined) return cached;
 
-  const cleanArtSvg = getCachedNormalizedArtwork(rawArtSvg);
-  let scaledArtSvg = cleanArtSvg;
-  if (scaledArtSvg.includes('<svg')) {
-    scaledArtSvg = scaledArtSvg.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
-      const clean = attrs
-        .replace(/\bwidth\s*=\s*["'][^"']+["']/gi, '')
-        .replace(/\bheight\s*=\s*["'][^"']+["']/gi, '')
-        .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']+["']/gi, '');
-      return `<svg x="0" y="${artOffsetY}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice" ${clean}>`;
-    });
-  }
+  const normalizedSvg = getCachedNormalizedArtwork(rawArtSvg);
+  const needsNamespacing =
+    normalizedSvg.includes('id=') ||
+    normalizedSvg.includes('ID=') ||
+    normalizedSvg.includes('<style') ||
+    normalizedSvg.includes('<STYLE');
+  const namespaced = needsNamespacing
+    ? namespaceSvgIds(normalizedSvg, `art_${designId}_${pieceType}`)
+    : normalizedSvg;
 
-  setInLruCache(scaledArtworkCache, cacheKey, scaledArtSvg);
-  return scaledArtSvg;
+  setInLruCache(namespacedArtworkCache, cacheKey, namespaced);
+  return namespaced;
 }
-
-// Caché de arte con IDs aislados (namespaced) por molde y talla (LRU máx. 64)
-const namespacedArtworkCache = new Map<string, string>();
 
 export function getCachedNamespacedArtwork(
   scaledArtSvg: string,
@@ -277,7 +298,7 @@ export function getCachedNamespacedArtwork(
   const cached = getFromLruCache(namespacedArtworkCache, cacheKey);
   if (cached !== undefined) return cached;
 
-  const namespaced = scaledArtSvg.includes('id=')
+  const namespaced = scaledArtSvg.includes('id=') || scaledArtSvg.includes('<style')
     ? namespaceSvgIds(scaledArtSvg, cacheKey)
     : scaledArtSvg;
 
@@ -285,13 +306,245 @@ export function getCachedNamespacedArtwork(
   return namespaced;
 }
 
+// Caché de arte escalado por molde, talla, offset y huella del arte (LRU máx. 64)
+const scaledArtworkCache = new Map<string, string>();
+
+export function getCachedScaledArtwork(
+  rawArtSvg: string,
+  width: number,
+  height: number,
+  artOffsetY: number,
+  cacheKeyPrefix: string,
+  designId: string = 'des',
+  pieceType: PieceType | string = 'piece',
+  preserveAspectRatioMode: string = 'xMidYMid slice'
+): string {
+  const artFingerprint = computeArtworkFingerprint(rawArtSvg);
+  const cacheKey = `${cacheKeyPrefix}_${artFingerprint}_${width.toFixed(1)}_${height.toFixed(1)}_${artOffsetY}_${preserveAspectRatioMode}`;
+  const cached = getFromLruCache(scaledArtworkCache, cacheKey);
+  if (cached !== undefined) return cached;
+
+  // Inversión de caché: primero normalizar + aislar IDs una sola vez (independiente de artOffsetY y dimensiones)
+  const namespacedArtSvg = getCachedNormalizedNamespacedArtwork(
+    designId,
+    pieceType,
+    rawArtSvg,
+    preserveAspectRatioMode
+  );
+
+  // Después ajustar únicamente la etiqueta <svg> raíz (< 0.01 ms)
+  let scaledArtSvg = namespacedArtSvg;
+  if (scaledArtSvg.includes('<svg')) {
+    scaledArtSvg = scaledArtSvg.replace(/<svg\b([^>]*)>/i, (_, attrs: string) => {
+      const clean = attrs
+        .replace(/\bx\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\by\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\bwidth\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\bheight\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\boverflow\s*=\s*["'][^"']*["']/gi, '')
+        .trim();
+      return `<svg x="0" y="${artOffsetY}" width="${width}" height="${height}" preserveAspectRatio="${preserveAspectRatioMode}" overflow="visible"${clean ? ' ' + clean : ''}>`;
+    });
+  }
+
+  setInLruCache(scaledArtworkCache, cacheKey, scaledArtSvg);
+  return scaledArtSvg;
+}
+
+// Cachés LRU para vectorización de dorsales y marcas de talla (evita invocar OpenType.js al calibrar arte)
+export const dorsalVectorCache = new Map<string, { svg: string; warnings: string[] }>();
+export const sizeMarkVectorCache = new Map<string, { svg: string; warnings: string[] }>();
+
+interface PreparedMoldPiece {
+  patternPiece: PatternPiece;
+  localCutPolygon: PatternPiece['cutPolygon'];
+  localBbox: PatternPiece['bbox'];
+  svgPathData: string;
+  translateTransform: string;
+}
+
+interface PreparedSizeMolds {
+  hasPieces: boolean;
+  delanteroV?: PreparedMoldPiece;
+  delanteroRedondo?: PreparedMoldPiece;
+  espalda?: PreparedMoldPiece;
+  mangaIzq?: PreparedMoldPiece;
+  mangaDer?: PreparedMoldPiece;
+  pantaIzq?: PreparedMoldPiece;
+  pantaDer?: PreparedMoldPiece;
+}
+
+const moldGeometryCache = new Map<string, PreparedMoldPiece>();
+
+function getPreparedMoldPiece(patternPiece: PatternPiece): PreparedMoldPiece {
+  const firstPt = patternPiece.cutPolygon[0];
+  const lastPt = patternPiece.cutPolygon[patternPiece.cutPolygon.length - 1];
+  const cacheKey = `${patternPiece.id}_${patternPiece.cutPolygon.length}_${firstPt ? `${firstPt.x},${firstPt.y}` : '0'}_${lastPt ? `${lastPt.x},${lastPt.y}` : '0'}_${patternPiece.bbox.width}_${patternPiece.bbox.height}`;
+  const cached = getFromLruCache(moldGeometryCache, cacheKey);
+  if (cached !== undefined) return cached;
+
+  const hasPolygon = patternPiece.cutPolygon.length > 0;
+  const bbox = hasPolygon
+    ? computeBoundingBox(patternPiece.cutPolygon)
+    : patternPiece.bbox;
+  const localCutPolygon = hasPolygon
+    ? patternPiece.cutPolygon.map((pt) => ({
+        x: pt.x - bbox.minX,
+        y: pt.y - bbox.minY,
+      }))
+    : patternPiece.cutPolygon;
+  const localBbox = hasPolygon ? computeBoundingBox(localCutPolygon) : patternPiece.bbox;
+  const svgPathData = hasPolygon
+    ? polygonToSvgPath(localCutPolygon)
+    : patternPiece.svgPathData;
+  const translateTransform = !hasPolygon && (bbox.minX !== 0 || bbox.minY !== 0)
+    ? ` transform="translate(-${bbox.minX}, -${bbox.minY})"`
+    : '';
+
+  const prepared: PreparedMoldPiece = {
+    patternPiece,
+    localCutPolygon,
+    localBbox,
+    svgPathData,
+    translateTransform,
+  };
+  setInLruCache(moldGeometryCache, cacheKey, prepared, VECTOR_TEXT_CACHE_LIMIT);
+  return prepared;
+}
+
+function buildPreparedSizeMolds(sizePieces: PatternPiece[]): PreparedSizeMolds {
+  if (!sizePieces || sizePieces.length === 0) {
+    return { hasPieces: false };
+  }
+
+  const delanteros = sizePieces.filter(
+    (p) => p.pieceType === 'DELANTERO' || p.pieceType === 'DELANTERO_V' || p.pieceType === 'DELANTERO_REDONDO'
+  );
+  const rawDelanteroV =
+    delanteros.find((p) => p.pieceType === 'DELANTERO_V') ||
+    delanteros.find((p) => p.pieceType === 'DELANTERO');
+  const rawDelanteroRedondo =
+    delanteros.find((p) => p.pieceType === 'DELANTERO_REDONDO') ||
+    delanteros.find((p) => p.pieceType === 'DELANTERO');
+
+  const rawEspalda = sizePieces.find((p) => p.pieceType === 'ESPALDA');
+
+  let rawMangaIzq = sizePieces.find((p) => p.pieceType === 'MANGA_IZQ');
+  let rawMangaDer = sizePieces.find((p) => p.pieceType === 'MANGA_DER');
+  if (!rawMangaIzq && !rawMangaDer) {
+    const genericManga = sizePieces.find((p) => p.pieceType.startsWith('MANGA'));
+    if (genericManga) {
+      const w = genericManga.bbox.width;
+      const mirroredPoly = genericManga.cutPolygon.map((pt) => ({
+        x: Number((w - pt.x).toFixed(2)),
+        y: pt.y,
+      }));
+      rawMangaIzq = {
+        ...genericManga,
+        id: `${genericManga.id}_izq`,
+        pieceType: 'MANGA_IZQ',
+        pieceName: `${genericManga.pieceName}_IZQ`,
+      };
+      rawMangaDer = {
+        ...genericManga,
+        id: `${genericManga.id}_der`,
+        pieceType: 'MANGA_DER',
+        pieceName: `${genericManga.pieceName}_DER`,
+        cutPolygon: mirroredPoly,
+        svgPathData: polygonToSvgPath(mirroredPoly),
+      };
+    }
+  } else if (rawMangaIzq && !rawMangaDer) {
+    const w = rawMangaIzq.bbox.width;
+    const mirroredPoly = rawMangaIzq.cutPolygon.map((pt) => ({
+      x: Number((w - pt.x).toFixed(2)),
+      y: pt.y,
+    }));
+    rawMangaDer = {
+      ...rawMangaIzq,
+      id: `${rawMangaIzq.id}_der`,
+      pieceType: 'MANGA_DER',
+      pieceName: `${rawMangaIzq.pieceName}_DER`,
+      cutPolygon: mirroredPoly,
+      svgPathData: polygonToSvgPath(mirroredPoly),
+    };
+  } else if (rawMangaDer && !rawMangaIzq) {
+    const w = rawMangaDer.bbox.width;
+    const mirroredPoly = rawMangaDer.cutPolygon.map((pt) => ({
+      x: Number((w - pt.x).toFixed(2)),
+      y: pt.y,
+    }));
+    rawMangaIzq = {
+      ...rawMangaDer,
+      id: `${rawMangaDer.id}_izq`,
+      pieceType: 'MANGA_IZQ',
+      pieceName: `${rawMangaDer.pieceName}_IZQ`,
+      cutPolygon: mirroredPoly,
+      svgPathData: polygonToSvgPath(mirroredPoly),
+    };
+  }
+
+  let rawPantaIzq = sizePieces.find((p) => p.pieceType === 'PANTALONETA_IZQ' || p.pieceType === 'SHORT_FRENTE');
+  let rawPantaDer = sizePieces.find((p) => p.pieceType === 'PANTALONETA_DER' || p.pieceType === 'SHORT_ESPALDA');
+  if (!rawPantaIzq && !rawPantaDer) {
+    const genericShort = sizePieces.find((p) => p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT'));
+    if (genericShort) {
+      rawPantaIzq = { ...genericShort, id: `${genericShort.id}_izq`, pieceType: 'PANTALONETA_IZQ' };
+      rawPantaDer = { ...genericShort, id: `${genericShort.id}_der`, pieceType: 'PANTALONETA_DER' };
+    }
+  } else if (rawPantaIzq && !rawPantaDer) {
+    const w = rawPantaIzq.bbox.width;
+    const mirroredPoly = rawPantaIzq.cutPolygon.map((pt) => ({
+      x: Number((w - pt.x).toFixed(2)),
+      y: pt.y,
+    }));
+    rawPantaDer = {
+      ...rawPantaIzq,
+      id: `${rawPantaIzq.id}_der`,
+      pieceType: 'PANTALONETA_DER',
+      pieceName: `${rawPantaIzq.pieceName}_DER`,
+      cutPolygon: mirroredPoly,
+      svgPathData: polygonToSvgPath(mirroredPoly),
+    };
+  } else if (rawPantaDer && !rawPantaIzq) {
+    const w = rawPantaDer.bbox.width;
+    const mirroredPoly = rawPantaDer.cutPolygon.map((pt) => ({
+      x: Number((w - pt.x).toFixed(2)),
+      y: pt.y,
+    }));
+    rawPantaIzq = {
+      ...rawPantaDer,
+      id: `${rawPantaDer.id}_izq`,
+      pieceType: 'PANTALONETA_IZQ',
+      pieceName: `${rawPantaDer.pieceName}_IZQ`,
+      cutPolygon: mirroredPoly,
+      svgPathData: polygonToSvgPath(mirroredPoly),
+    };
+  }
+
+  return {
+    hasPieces: true,
+    delanteroV: rawDelanteroV ? getPreparedMoldPiece(rawDelanteroV) : undefined,
+    delanteroRedondo: rawDelanteroRedondo ? getPreparedMoldPiece(rawDelanteroRedondo) : undefined,
+    espalda: rawEspalda ? getPreparedMoldPiece(rawEspalda) : undefined,
+    mangaIzq: rawMangaIzq ? getPreparedMoldPiece(rawMangaIzq) : undefined,
+    mangaDer: rawMangaDer ? getPreparedMoldPiece(rawMangaDer) : undefined,
+    pantaIzq: rawPantaIzq ? getPreparedMoldPiece(rawPantaIzq) : undefined,
+    pantaDer: rawPantaDer ? getPreparedMoldPiece(rawPantaDer) : undefined,
+  };
+}
+
 /**
- * Limpia todas las cachés del generador (normalización, escalado, namespacing y registro de piezas).
+ * Limpia todas las cachés del generador (normalización, escalado, namespacing, dorsales, moldes y registro de piezas).
  */
 export function clearGeneratorCaches(): void {
   normalizedArtworkCache.clear();
   scaledArtworkCache.clear();
   namespacedArtworkCache.clear();
+  dorsalVectorCache.clear();
+  sizeMarkVectorCache.clear();
+  moldGeometryCache.clear();
   pieceSvgRegistry.clear();
 }
 
@@ -314,6 +567,15 @@ export function generateGarmentPieces(
 
   let totalGarmentsCount = 0;
 
+  // Pre-calcular la geometría local y espejado de moldes una sola vez por talla fuera del bucle de jugadores
+  const preparedSizesMap = new Map<string, PreparedSizeMolds>();
+  for (const sizeEntry of patternSet.sizes) {
+    const normSize = normalizeSizeName(sizeEntry.sizeName).toUpperCase();
+    if (!preparedSizesMap.has(normSize)) {
+      preparedSizesMap.set(normSize, buildPreparedSizeMolds(sizeEntry.pieces));
+    }
+  }
+
   for (const orderItem of orderItems) {
     if (!orderItem.isValid) {
       warnings.push(`Fila #${orderItem.rowNumber} (${orderItem.playerName}): Se omitió por contener errores de validación.`);
@@ -322,15 +584,13 @@ export function generateGarmentPieces(
 
     const targetSize = normalizeSizeName(orderItem.sizeName).toUpperCase();
 
-    // 1. Buscar talla correspondiente en el conjunto de moldes
-    let sizeObj = patternSet.sizes.find(
-      (s) => normalizeSizeName(s.sizeName).toUpperCase() === targetSize
-    );
+    // 1. Buscar talla pre-calculada correspondiente en el conjunto de moldes
+    const preparedSize = preparedSizesMap.get(targetSize);
 
     // Nunca sustituir silenciosamente una talla: en producción una etiqueta T28 debe
     // corresponder a geometría T28 real. Generar con otra talla produciría una prenda
     // físicamente incorrecta aunque la etiqueta y el pedido parezcan válidos.
-    if (!sizeObj || sizeObj.pieces.length === 0) {
+    if (!preparedSize || !preparedSize.hasPieces) {
       warnings.push(`Jugador ${orderItem.playerName}: la talla "${orderItem.sizeName}" no existe o no tiene piezas en el molde. No se generó para evitar sustituirla por otra talla.`);
       continue;
     }
@@ -342,122 +602,24 @@ export function generateGarmentPieces(
       ? 'SHORT'
       : orderItem.garmentType;
 
-    // 1. Delantero: exactamente 1 pieza
-    const delanteros = sizeObj.pieces.filter((p) =>
-      p.pieceType === 'DELANTERO' || p.pieceType === 'DELANTERO_V' || p.pieceType === 'DELANTERO_REDONDO'
-    );
-    let chosenDelantero: PatternPiece | undefined;
-    if (delanteros.length > 0) {
-      const wantsV = orderItem.necklineType === 'V'
-        || (!orderItem.necklineType && (orderItem.notes || '').toUpperCase().includes('V'));
-      if (wantsV) {
-        chosenDelantero = delanteros.find((p) => p.pieceType === 'DELANTERO_V')
-          || delanteros.find((p) => p.pieceType === 'DELANTERO');
-      } else {
-        chosenDelantero = delanteros.find((p) => p.pieceType === 'DELANTERO_REDONDO')
-          || delanteros.find((p) => p.pieceType === 'DELANTERO');
-      }
-    }
+    const wantsNecklineV = orderItem.necklineType === 'V'
+      || (!orderItem.necklineType && (orderItem.notes || '').toUpperCase().includes('V'));
 
-    // 2. Espalda: exactamente 1 pieza
-    let espaldaPiece = sizeObj.pieces.find((p) => p.pieceType === 'ESPALDA');
+    const chosenDelantero = wantsNecklineV
+      ? preparedSize.delanteroV
+      : preparedSize.delanteroRedondo;
+    const espaldaPiece = preparedSize.espalda;
+    const mangaIzq = preparedSize.mangaIzq;
+    const mangaDer = preparedSize.mangaDer;
+    const pantaIzq = (effectiveGarmentType === 'SHORT' || effectiveGarmentType === 'COMPLETO')
+      ? preparedSize.pantaIzq
+      : undefined;
+    const pantaDer = (effectiveGarmentType === 'SHORT' || effectiveGarmentType === 'COMPLETO')
+      ? preparedSize.pantaDer
+      : undefined;
 
-    // 3. Mangas de ESTA talla: exactamente 2 piezas (izquierda y derecha en modo espejo)
-    let mangaIzq = sizeObj.pieces.find((p) => p.pieceType === 'MANGA_IZQ');
-    let mangaDer = sizeObj.pieces.find((p) => p.pieceType === 'MANGA_DER');
-    if (!mangaIzq && !mangaDer) {
-      const genericManga = sizeObj.pieces.find((p) => p.pieceType.startsWith('MANGA'));
-      if (genericManga) {
-        const w = genericManga.bbox.width;
-        const mirroredPoly = genericManga.cutPolygon.map((pt) => ({
-          x: Number((w - pt.x).toFixed(2)),
-          y: pt.y,
-        }));
-        mangaIzq = { ...genericManga, id: `${genericManga.id}_izq`, pieceType: 'MANGA_IZQ', pieceName: `${genericManga.pieceName}_IZQ` };
-        mangaDer = {
-          ...genericManga,
-          id: `${genericManga.id}_der`,
-          pieceType: 'MANGA_DER',
-          pieceName: `${genericManga.pieceName}_DER`,
-          cutPolygon: mirroredPoly,
-          svgPathData: polygonToSvgPath(mirroredPoly),
-        };
-      }
-    } else if (mangaIzq && !mangaDer) {
-      const w = mangaIzq.bbox.width;
-      const mirroredPoly = mangaIzq.cutPolygon.map((pt) => ({
-        x: Number((w - pt.x).toFixed(2)),
-        y: pt.y,
-      }));
-      mangaDer = {
-        ...mangaIzq,
-        id: `${mangaIzq.id}_der`,
-        pieceType: 'MANGA_DER',
-        pieceName: `${mangaIzq.pieceName}_DER`,
-        cutPolygon: mirroredPoly,
-        svgPathData: polygonToSvgPath(mirroredPoly),
-      };
-    } else if (mangaDer && !mangaIzq) {
-      const w = mangaDer.bbox.width;
-      const mirroredPoly = mangaDer.cutPolygon.map((pt) => ({
-        x: Number((w - pt.x).toFixed(2)),
-        y: pt.y,
-      }));
-      mangaIzq = {
-        ...mangaDer,
-        id: `${mangaDer.id}_izq`,
-        pieceType: 'MANGA_IZQ',
-        pieceName: `${mangaDer.pieceName}_IZQ`,
-        cutPolygon: mirroredPoly,
-        svgPathData: polygonToSvgPath(mirroredPoly),
-      };
-    }
-
-    // 4. Shorts / Pantalonetas (SOLO SI effectiveGarmentType es 'SHORT' o 'COMPLETO')
-    let pantaIzq: PatternPiece | undefined;
-    let pantaDer: PatternPiece | undefined;
-    if (effectiveGarmentType === 'SHORT' || effectiveGarmentType === 'COMPLETO') {
-      pantaIzq = sizeObj.pieces.find((p) => p.pieceType === 'PANTALONETA_IZQ' || p.pieceType === 'SHORT_FRENTE');
-      pantaDer = sizeObj.pieces.find((p) => p.pieceType === 'PANTALONETA_DER' || p.pieceType === 'SHORT_ESPALDA');
-      if (!pantaIzq && !pantaDer) {
-        const genericShort = sizeObj.pieces.find((p) => p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT'));
-        if (genericShort) {
-          pantaIzq = { ...genericShort, id: `${genericShort.id}_izq`, pieceType: 'PANTALONETA_IZQ' };
-          pantaDer = { ...genericShort, id: `${genericShort.id}_der`, pieceType: 'PANTALONETA_DER' };
-        }
-      } else if (pantaIzq && !pantaDer) {
-        const w = pantaIzq.bbox.width;
-        const mirroredPoly = pantaIzq.cutPolygon.map((pt) => ({
-          x: Number((w - pt.x).toFixed(2)),
-          y: pt.y,
-        }));
-        pantaDer = {
-          ...pantaIzq,
-          id: `${pantaIzq.id}_der`,
-          pieceType: 'PANTALONETA_DER',
-          pieceName: `${pantaIzq.pieceName}_DER`,
-          cutPolygon: mirroredPoly,
-          svgPathData: polygonToSvgPath(mirroredPoly),
-        };
-      } else if (pantaDer && !pantaIzq) {
-        const w = pantaDer.bbox.width;
-        const mirroredPoly = pantaDer.cutPolygon.map((pt) => ({
-          x: Number((w - pt.x).toFixed(2)),
-          y: pt.y,
-        }));
-        pantaIzq = {
-          ...pantaDer,
-          id: `${pantaDer.id}_izq`,
-          pieceType: 'PANTALONETA_IZQ',
-          pieceName: `${pantaDer.pieceName}_IZQ`,
-          cutPolygon: mirroredPoly,
-          svgPathData: polygonToSvgPath(mirroredPoly),
-        };
-      }
-    }
-
-    // 5. Construir lista final de piezas para este jugador
-    const piecesToGenerate: PatternPiece[] = [];
+    // 5. Construir lista final de piezas preparadas para este jugador
+    const piecesToGenerate: PreparedMoldPiece[] = [];
     if (effectiveGarmentType === 'CAMISETA' || effectiveGarmentType === 'COMPLETO') {
       if (chosenDelantero) piecesToGenerate.push(chosenDelantero);
       if (espaldaPiece) piecesToGenerate.push(espaldaPiece);
@@ -485,8 +647,6 @@ export function generateGarmentPieces(
 
     // Un arte ausente nunca debe sustituirse por un relleno inventado en producción.
     const missingArtworkGroups: string[] = [];
-    const wantsNecklineV = orderItem.necklineType === 'V'
-      || (!orderItem.necklineType && (orderItem.notes || '').toUpperCase().includes('V'));
 
     if (effectiveGarmentType === 'CAMISETA' || effectiveGarmentType === 'COMPLETO') {
       const hasFrontArtwork = wantsNecklineV
@@ -524,23 +684,13 @@ export function generateGarmentPieces(
     // Para cada pieza requerida, generar las variantes según la cantidad
     for (let q = 1; q <= orderItem.quantity; q++) {
       for (let pieceIndex = 0; pieceIndex < piecesToGenerate.length; pieceIndex++) {
-        const patternPiece = piecesToGenerate[pieceIndex];
+        const preparedPiece = piecesToGenerate[pieceIndex];
+        const patternPiece = preparedPiece.patternPiece;
         const pieceType = patternPiece.pieceType;
         const maskId = `mask_${orderItem.id}_${patternPiece.id}_${q}`;
         const uniquePieceId = `gen_${orderItem.id}_${pieceIndex}_${pieceType}_${q}`;
 
-        // Normalizar polígono de corte al origen local (0, 0)
-        const bbox = patternPiece.cutPolygon.length > 0
-          ? computeBoundingBox(patternPiece.cutPolygon)
-          : patternPiece.bbox;
-        const localCutPolygon = patternPiece.cutPolygon.map((pt) => ({
-          x: pt.x - bbox.minX,
-          y: pt.y - bbox.minY,
-        }));
-        const localBbox = computeBoundingBox(localCutPolygon);
-        const translateTransform = (bbox.minX !== 0 || bbox.minY !== 0)
-          ? ` transform="translate(-${bbox.minX}, -${bbox.minY})"`
-          : '';
+        const { localCutPolygon, localBbox, svgPathData: localSvgPathData, translateTransform } = preparedPiece;
 
         // 2. Extraer o generar arte base del diseño maestro para esta pieza
         let artwork = masterDesign.pieceArtworks[pieceType];
@@ -589,13 +739,11 @@ export function generateGarmentPieces(
           ? masterPlaceholder.strokeWidthMm
           : (artwork?.placeholders?.find((p) => p.strokeWidthMm !== undefined)?.strokeWidthMm ?? 2.5);
 
+        const typographyKey = `${configuredFont}|${configuredFill}|${configuredStroke}|${configuredStrokeWidth}`;
+
         // 3. Aplicar personalización de texto y números (DORSAL CENTRADO EN MM FÍSICOS Y PROPORCIONADO)
         let dorsalSvg = '';
         if (pieceType === 'ESPALDA') {
-          // Coordenadas físicas en milímetros centradas en la pieza real
-          const centerX = localBbox.width / 2;
-          const isYouth = localBbox.height < 580;
-
           const nameOffsetRatio = (config.nameVerticalOffsetPercent ?? 0) / 100;
           const numOffsetRatio = (config.numberVerticalOffsetPercent ?? 0) / 100;
           const nameScaleX = config.nameScaleX ?? 1.0;
@@ -603,72 +751,86 @@ export function generateGarmentPieces(
           const numScaleX = config.numberScaleX ?? (config.numberScaleFactor ?? 1.0);
           const numScaleY = config.numberScaleY ?? (config.numberScaleFactor ?? 1.0);
 
-          // Nombre: en la espalda alta (posicionado a ~21-22% de altura, debajo del escote)
-          const baseNameRatio = isYouth ? 0.22 : 0.21;
-          const nameY = localBbox.height * Math.max(0.12, Math.min(0.35, baseNameRatio + nameOffsetRatio));
+          const backDorsalConfigKey = `${nameOffsetRatio}_${numOffsetRatio}_${nameScaleX}_${nameScaleY}_${numScaleX}_${numScaleY}`;
+          const backCacheKey = `BACK|${orderItem.playerName}|${orderItem.playerNumber}|${targetSize}|${localBbox.width.toFixed(2)}|${localBbox.height.toFixed(2)}|${backDorsalConfigKey}|${typographyKey}`;
+          let cachedBack = getFromLruCache(dorsalVectorCache, backCacheKey);
 
-          // Número: centrado en la parte media de la espalda (a ~50% de altura)
-          const baseNumRatio = isYouth ? 0.50 : 0.50;
-          const numberY = localBbox.height * Math.max(0.30, Math.min(0.68, baseNumRatio + numOffsetRatio));
+          if (!cachedBack) {
+            const centerX = localBbox.width / 2;
+            const isYouth = localBbox.height < 580;
 
-          const nameFontSize = isYouth 
-            ? Math.min(32, Math.max(24, localBbox.width * 0.08))
-            : Math.min(38, Math.max(28, localBbox.width * 0.085));
+            const baseNameRatio = isYouth ? 0.22 : 0.21;
+            const nameY = localBbox.height * Math.max(0.12, Math.min(0.35, baseNameRatio + nameOffsetRatio));
 
-          const numberFontSize = isYouth
-            ? Math.min(150, Math.max(110, localBbox.height * 0.26))
-            : Math.min(190, Math.max(140, localBbox.height * 0.27));
+            const baseNumRatio = isYouth ? 0.50 : 0.50;
+            const numberY = localBbox.height * Math.max(0.30, Math.min(0.68, baseNumRatio + numOffsetRatio));
 
-          const nameRule: DynamicPlaceholderRule = {
-            id: 'NOMBRE',
-            tag: '{{NOMBRE}}',
-            targetPiece: 'ESPALDA',
-            anchorX: centerX,
-            anchorY: nameY,
-            maxWidthMm: localBbox.width * 0.65,
-            maxHeightMm: isYouth ? 38 : 45,
-            defaultFontSizeMm: nameFontSize,
-            minFontSizeMm: 20,
-            minScaleFactor: 0.50,
-            fontFamily: configuredFont,
-            fillColor: configuredFill,
-            strokeColor: configuredStroke,
-            strokeWidthMm: configuredStrokeWidth,
-            textAlign: 'center',
-            customScaleX: nameScaleX,
-            customScaleY: nameScaleY,
-          };
+            const nameFontSize = isYouth 
+              ? Math.min(32, Math.max(24, localBbox.width * 0.08))
+              : Math.min(38, Math.max(28, localBbox.width * 0.085));
 
-          const numberRule: DynamicPlaceholderRule = {
-            id: 'NUMERO_ESPALDA',
-            tag: '{{NUMERO}}',
-            targetPiece: 'ESPALDA',
-            anchorX: centerX,
-            anchorY: numberY,
-            maxWidthMm: localBbox.width * 0.55,
-            maxHeightMm: isYouth ? 155 : 200,
-            defaultFontSizeMm: numberFontSize,
-            minFontSizeMm: 100,
-            minScaleFactor: 0.60,
-            fontFamily: configuredFont,
-            fillColor: configuredFill,
-            strokeColor: configuredStroke,
-            strokeWidthMm: configuredStrokeWidth > 0 ? Math.max(configuredStrokeWidth, 3.0) : 0,
-            textAlign: 'center',
-            customScaleX: numScaleX,
-            customScaleY: numScaleY,
-          };
+            const numberFontSize = isYouth
+              ? Math.min(150, Math.max(110, localBbox.height * 0.26))
+              : Math.min(190, Math.max(140, localBbox.height * 0.27));
 
-          const nameFitting = computeTextFitting(orderItem.playerName, nameRule);
-          const numberFitting = computeTextFitting(orderItem.playerNumber, numberRule);
+            const nameRule: DynamicPlaceholderRule = {
+              id: 'NOMBRE',
+              tag: '{{NOMBRE}}',
+              targetPiece: 'ESPALDA',
+              anchorX: centerX,
+              anchorY: nameY,
+              maxWidthMm: localBbox.width * 0.65,
+              maxHeightMm: isYouth ? 38 : 45,
+              defaultFontSizeMm: nameFontSize,
+              minFontSizeMm: 20,
+              minScaleFactor: 0.50,
+              fontFamily: configuredFont,
+              fillColor: configuredFill,
+              strokeColor: configuredStroke,
+              strokeWidthMm: configuredStrokeWidth,
+              textAlign: 'center',
+              customScaleX: nameScaleX,
+              customScaleY: nameScaleY,
+            };
 
+            const numberRule: DynamicPlaceholderRule = {
+              id: 'NUMERO_ESPALDA',
+              tag: '{{NUMERO}}',
+              targetPiece: 'ESPALDA',
+              anchorX: centerX,
+              anchorY: numberY,
+              maxWidthMm: localBbox.width * 0.55,
+              maxHeightMm: isYouth ? 155 : 200,
+              defaultFontSizeMm: numberFontSize,
+              minFontSizeMm: 100,
+              minScaleFactor: 0.60,
+              fontFamily: configuredFont,
+              fillColor: configuredFill,
+              strokeColor: configuredStroke,
+              strokeWidthMm: configuredStrokeWidth > 0 ? Math.max(configuredStrokeWidth, 3.0) : 0,
+              textAlign: 'center',
+              customScaleX: numScaleX,
+              customScaleY: numScaleY,
+            };
+
+            const nameFitting = computeTextFitting(orderItem.playerName, nameRule);
+            const numberFitting = computeTextFitting(orderItem.playerNumber, numberRule);
+
+            cachedBack = {
+              svg: `${nameFitting.svgContent}\u0000${numberFitting.svgContent}`,
+              warnings: [],
+            };
+            setInLruCache(dorsalVectorCache, backCacheKey, cachedBack, VECTOR_TEXT_CACHE_LIMIT);
+          }
+
+          const [nameSvgContent, numberSvgContent] = cachedBack.svg.split('\u0000');
           dorsalSvg = `
             <!-- Dorsal Oficial: Nombre y Número centrados en mm reales -->
             <g id="dorsal_nombre_${uniquePieceId}">
-              ${nameFitting.svgContent}
+              ${nameSvgContent}
             </g>
             <g id="dorsal_numero_${uniquePieceId}">
-              ${numberFitting.svgContent}
+              ${numberSvgContent}
             </g>
           `;
         }
@@ -682,28 +844,36 @@ export function generateGarmentPieces(
           const xPercent = Math.max(10, Math.min(90, config.shortNumberXPercent ?? 50));
           const yPercent = Math.max(15, Math.min(85, config.shortNumberYPercent ?? 45));
           const shortScale = Math.max(0.4, Math.min(2.5, config.shortNumberScale ?? 1));
-          const shortNumberSize = Math.min(95, Math.max(45, localBbox.height * 0.28)) * shortScale;
-          const shortNumberRule: DynamicPlaceholderRule = {
-            id: 'NUMERO_SHORT',
-            tag: '{{NUMERO_SHORT}}',
-            targetPiece: pieceType,
-            anchorX: localBbox.width * (xPercent / 100),
-            anchorY: localBbox.height * (yPercent / 100),
-            maxWidthMm: localBbox.width * 0.42,
-            maxHeightMm: localBbox.height * 0.42,
-            defaultFontSizeMm: shortNumberSize,
-            minFontSizeMm: Math.max(28, shortNumberSize * 0.6),
-            minScaleFactor: 0.55,
-            fontFamily: configuredFont,
-            fillColor: configuredFill,
-            strokeColor: configuredStroke,
-            strokeWidthMm: configuredStrokeWidth,
-            textAlign: 'center',
-          };
-          const shortNumberFitting = computeTextFitting(orderItem.playerNumber, shortNumberRule);
+          const shortCacheKey = `SHORT|${orderItem.playerNumber}|${pieceType}|${targetSize}|${localBbox.width.toFixed(2)}|${localBbox.height.toFixed(2)}|${xPercent}_${yPercent}_${shortScale}|${typographyKey}`;
+          let cachedShort = getFromLruCache(dorsalVectorCache, shortCacheKey);
+
+          if (!cachedShort) {
+            const shortNumberSize = Math.min(95, Math.max(45, localBbox.height * 0.28)) * shortScale;
+            const shortNumberRule: DynamicPlaceholderRule = {
+              id: 'NUMERO_SHORT',
+              tag: '{{NUMERO_SHORT}}',
+              targetPiece: pieceType,
+              anchorX: localBbox.width * (xPercent / 100),
+              anchorY: localBbox.height * (yPercent / 100),
+              maxWidthMm: localBbox.width * 0.42,
+              maxHeightMm: localBbox.height * 0.42,
+              defaultFontSizeMm: shortNumberSize,
+              minFontSizeMm: Math.max(28, shortNumberSize * 0.6),
+              minScaleFactor: 0.55,
+              fontFamily: configuredFont,
+              fillColor: configuredFill,
+              strokeColor: configuredStroke,
+              strokeWidthMm: configuredStrokeWidth,
+              textAlign: 'center',
+            };
+            const shortNumberFitting = computeTextFitting(orderItem.playerNumber, shortNumberRule);
+            cachedShort = { svg: shortNumberFitting.svgContent, warnings: [] };
+            setInLruCache(dorsalVectorCache, shortCacheKey, cachedShort, VECTOR_TEXT_CACHE_LIMIT);
+          }
+
           dorsalSvg = `
             <g id="short_numero_${uniquePieceId}" data-hmb-role="short-number">
-              ${shortNumberFitting.svgContent}
+              ${cachedShort.svg}
             </g>
           `;
         }
@@ -718,35 +888,43 @@ export function generateGarmentPieces(
 
           const yPercent = Math.max(15, Math.min(85, config.frontNumberYPercent ?? 38));
           const frontScale = Math.max(0.3, Math.min(2.5, config.frontNumberScale ?? 1.0));
-          const isYouth = localBbox.height < 580;
-          const baseFrontSize = isYouth
-            ? Math.min(65, Math.max(45, localBbox.height * 0.12))
-            : Math.min(90, Math.max(60, localBbox.height * 0.13));
-          const frontNumberSize = baseFrontSize * frontScale;
+          const frontCacheKey = `FRONT|${orderItem.playerNumber}|${pieceType}|${targetSize}|${localBbox.width.toFixed(2)}|${localBbox.height.toFixed(2)}|${xPercent}_${yPercent}_${frontScale}|${typographyKey}`;
+          let cachedFront = getFromLruCache(dorsalVectorCache, frontCacheKey);
 
-          const frontNumberRule: DynamicPlaceholderRule = {
-            id: 'NUMERO_FRENTE',
-            tag: '{{NUMERO_FRENTE}}',
-            targetPiece: pieceType,
-            anchorX: localBbox.width * (xPercent / 100),
-            anchorY: localBbox.height * (yPercent / 100),
-            maxWidthMm: localBbox.width * 0.35,
-            maxHeightMm: localBbox.height * 0.25,
-            defaultFontSizeMm: frontNumberSize,
-            minFontSizeMm: Math.max(20, frontNumberSize * 0.6),
-            minScaleFactor: 0.55,
-            fontFamily: configuredFont,
-            fillColor: configuredFill,
-            strokeColor: configuredStroke,
-            strokeWidthMm: configuredStrokeWidth > 0 ? Math.max(configuredStrokeWidth * 0.75, 1.5) : 0,
-            textAlign: 'center',
-          };
+          if (!cachedFront) {
+            const isYouth = localBbox.height < 580;
+            const baseFrontSize = isYouth
+              ? Math.min(65, Math.max(45, localBbox.height * 0.12))
+              : Math.min(90, Math.max(60, localBbox.height * 0.13));
+            const frontNumberSize = baseFrontSize * frontScale;
 
-          const frontNumberFitting = computeTextFitting(orderItem.playerNumber, frontNumberRule);
+            const frontNumberRule: DynamicPlaceholderRule = {
+              id: 'NUMERO_FRENTE',
+              tag: '{{NUMERO_FRENTE}}',
+              targetPiece: pieceType,
+              anchorX: localBbox.width * (xPercent / 100),
+              anchorY: localBbox.height * (yPercent / 100),
+              maxWidthMm: localBbox.width * 0.35,
+              maxHeightMm: localBbox.height * 0.25,
+              defaultFontSizeMm: frontNumberSize,
+              minFontSizeMm: Math.max(20, frontNumberSize * 0.6),
+              minScaleFactor: 0.55,
+              fontFamily: configuredFont,
+              fillColor: configuredFill,
+              strokeColor: configuredStroke,
+              strokeWidthMm: configuredStrokeWidth > 0 ? Math.max(configuredStrokeWidth * 0.75, 1.5) : 0,
+              textAlign: 'center',
+            };
+
+            const frontNumberFitting = computeTextFitting(orderItem.playerNumber, frontNumberRule);
+            cachedFront = { svg: frontNumberFitting.svgContent, warnings: [] };
+            setInLruCache(dorsalVectorCache, frontCacheKey, cachedFront, VECTOR_TEXT_CACHE_LIMIT);
+          }
+
           dorsalSvg = `
             <!-- Número Delantero / Pecho Oficial vectorizado a curvas -->
             <g id="delantero_numero_${uniquePieceId}" data-hmb-role="front-number">
-              ${frontNumberFitting.svgContent}
+              ${cachedFront.svg}
             </g>
           `;
         }
@@ -757,26 +935,35 @@ export function generateGarmentPieces(
         if (config.includeSizeMark) {
           const sizeFontSize = Math.max(3, Math.min(20, config.sizeMarkFontSizeMm ?? 8));
           const bottomOffset = Math.max(-20, Math.min(localBbox.height * 0.25, config.sizeMarkBottomOffsetMm ?? 8));
-          const sizeRule: DynamicPlaceholderRule = {
-            id: 'TALLA_PIEZA',
-            tag: '{{TALLA}}',
-            targetPiece: pieceType,
-            anchorX: localBbox.width / 2,
-            anchorY: localBbox.height - bottomOffset - (sizeFontSize / 2),
-            maxWidthMm: Math.max(20, localBbox.width * 0.35),
-            maxHeightMm: sizeFontSize * 1.25,
-            defaultFontSizeMm: sizeFontSize,
-            minFontSizeMm: Math.max(3, sizeFontSize * 0.7),
-            minScaleFactor: 0.65,
-            fontFamily: configuredFont,
-            fillColor: config.sizeMarkColor || '#000000',
-            strokeWidthMm: 0,
-            textAlign: 'center',
-          };
-          const sizeFitting = computeTextFitting(orderItem.sizeName, sizeRule);
+          const sizeColor = config.sizeMarkColor || '#000000';
+          const sizeMarkCacheKey = `SIZE|${orderItem.sizeName}|${pieceType}|${targetSize}|${localBbox.width.toFixed(2)}|${localBbox.height.toFixed(2)}|${sizeFontSize}_${bottomOffset}_${configuredFont}_${sizeColor}`;
+          let cachedSizeMark = getFromLruCache(sizeMarkVectorCache, sizeMarkCacheKey);
+
+          if (!cachedSizeMark) {
+            const sizeRule: DynamicPlaceholderRule = {
+              id: 'TALLA_PIEZA',
+              tag: '{{TALLA}}',
+              targetPiece: pieceType,
+              anchorX: localBbox.width / 2,
+              anchorY: localBbox.height - bottomOffset - (sizeFontSize / 2),
+              maxWidthMm: Math.max(20, localBbox.width * 0.35),
+              maxHeightMm: sizeFontSize * 1.25,
+              defaultFontSizeMm: sizeFontSize,
+              minFontSizeMm: Math.max(3, sizeFontSize * 0.7),
+              minScaleFactor: 0.65,
+              fontFamily: configuredFont,
+              fillColor: sizeColor,
+              strokeWidthMm: 0,
+              textAlign: 'center',
+            };
+            const sizeFitting = computeTextFitting(orderItem.sizeName, sizeRule);
+            cachedSizeMark = { svg: sizeFitting.svgContent, warnings: [] };
+            setInLruCache(sizeMarkVectorCache, sizeMarkCacheKey, cachedSizeMark, VECTOR_TEXT_CACHE_LIMIT);
+          }
+
           sizeMarkSvg = `
             <g id="size_mark_${uniquePieceId}" data-hmb-role="size-mark">
-              ${sizeFitting.svgContent}
+              ${cachedSizeMark.svg}
             </g>
           `;
         }
@@ -791,7 +978,7 @@ export function generateGarmentPieces(
           isVisible: config.includeLabels,
         };
 
-        // Normalizar y escalar arte vectorial usando caché por molde/talla para evitar trabajo redundante
+        // Normalizar y escalar arte vectorial usando caché invertida por molde/talla para evitar trabajo redundante
         let artOffsetY = 0;
         if (pieceType.startsWith('MANGA')) {
           artOffsetY = config.sleeveArtOffsetYMm ?? 0;
@@ -799,26 +986,26 @@ export function generateGarmentPieces(
           artOffsetY = config.frontArtOffsetYMm ?? 0;
         } else if (pieceType === 'ESPALDA') {
           artOffsetY = config.backArtOffsetYMm ?? 0;
+        } else if (pieceType.startsWith('PANTALONETA') || pieceType.startsWith('SHORT')) {
+          artOffsetY = config.shortArtOffsetYMm ?? 0;
         }
 
-        const cachePrefix = `${masterDesign.id || 'des'}_${patternPiece.id || pieceType}_${targetSize}`;
-        const scaledArtSvg = getCachedScaledArtwork(
-          baseArtSvg,
-          localBbox.width,
-          localBbox.height,
-          artOffsetY,
-          cachePrefix
-        );
-
+        const designId = masterDesign.id || 'des';
+        const cachePrefix = `${designId}_${patternPiece.id || pieceType}_${targetSize}`;
         const templateKey = `${cachePrefix}_${artOffsetY}`;
-        const namespacedArt = getCachedNamespacedArtwork(
-          scaledArtSvg,
-          templateKey
-        );
 
         // Guardar plantilla base de la talla (compartida por todos los jugadores de esta talla)
         if (!baseArtworkRegistry.has(templateKey)) {
-          baseArtworkRegistry.set(templateKey, namespacedArt);
+          const scaledAndNamespacedArt = getCachedScaledArtwork(
+            baseArtSvg,
+            localBbox.width,
+            localBbox.height,
+            artOffsetY,
+            cachePrefix,
+            designId,
+            pieceType
+          );
+          baseArtworkRegistry.set(templateKey, scaledAndNamespacedArt);
         }
 
         // Registrar metadatos ligeros de la pieza (Cero duplicación de memoria RAM)
@@ -826,7 +1013,7 @@ export function generateGarmentPieces(
           templateKey,
           uniquePieceId,
           maskId,
-          svgPathData: patternPiece.svgPathData,
+          svgPathData: localSvgPathData,
           translateTransform,
           dorsalSvg,
           sizeMarkSvg,

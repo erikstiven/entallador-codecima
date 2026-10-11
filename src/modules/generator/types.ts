@@ -48,6 +48,7 @@ export interface GenerationConfig {
   sleeveArtOffsetYMm?: number; // Desplazamiento Y del arte de la manga en mm (ej: -15 para alejar de costura)
   frontArtOffsetYMm?: number; // Desplazamiento Y del arte del frente en mm (subir/bajar logos)
   backArtOffsetYMm?: number; // Desplazamiento Y del arte de la espalda en mm
+  shortArtOffsetYMm?: number; // Desplazamiento Y del arte de la pantaloneta en mm
 
   // Personalización dinámica de pantaloneta
   includeShortNumber?: boolean;

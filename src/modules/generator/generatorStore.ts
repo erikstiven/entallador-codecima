@@ -11,6 +11,7 @@ import {
   getPieceSvgContent,
   setPieceSvgContent,
   resolvePieceSvg,
+  getPieceMoldPath,
   clearPieceSvgRegistry,
   clearGeneratorCaches,
 } from './garmentGenerator';
@@ -20,6 +21,7 @@ export {
   getPieceSvgContent,
   setPieceSvgContent,
   resolvePieceSvg,
+  getPieceMoldPath,
   clearPieceSvgRegistry,
   clearGeneratorCaches,
 };
@@ -54,6 +56,10 @@ export const useGeneratorStore = create<GeneratorStoreState>((set, get) => ({
     sizeMarkColor: '#000000',
     sizeMarkFontSizeMm: 8,
     sizeMarkBottomOffsetMm: 8,
+    sleeveArtOffsetYMm: 0,
+    frontArtOffsetYMm: 0,
+    backArtOffsetYMm: 0,
+    shortArtOffsetYMm: 0,
     includeShortNumber: true,
     shortNumberPiece: 'DER',
     shortNumberXPercent: 50,

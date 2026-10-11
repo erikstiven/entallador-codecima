@@ -1,13 +1,20 @@
-const CACHE_LIMIT = 24;
-const MAX_CACHEABLE_SVG_LENGTH = 32768;
+const CACHE_LIMIT = 16;
+const MAX_CACHEABLE_SVG_LENGTH = 5_000_000;
 const namespaceCache = new Map<string, string>();
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function getCachedNamespaceResult(key: string): string | undefined {
+  const cached = namespaceCache.get(key);
+  if (cached !== undefined) {
+    namespaceCache.delete(key);
+    namespaceCache.set(key, cached);
+  }
+  return cached;
 }
 
 function cacheResult(key: string, value: string): string {
-  if (namespaceCache.size >= CACHE_LIMIT) {
+  if (namespaceCache.has(key)) {
+    namespaceCache.delete(key);
+  } else if (namespaceCache.size >= CACHE_LIMIT) {
     const oldestKey = namespaceCache.keys().next().value;
     if (oldestKey !== undefined) namespaceCache.delete(oldestKey);
   }
@@ -26,73 +33,85 @@ export function namespaceSvgIds(svgContent: string, namespace: string): string {
   const canCache = svgContent.length <= MAX_CACHEABLE_SVG_LENGTH;
   const cacheKey = canCache ? `${safeNamespace}\u0000${svgContent}` : '';
   if (canCache) {
-    const cached = namespaceCache.get(cacheKey);
+    const cached = getCachedNamespaceResult(cacheKey);
     if (cached !== undefined) return cached;
   }
 
+  // Paso 1: Recolectar y renombrar atributos id="..." en 1 sola pasada O(N)
   const ids = new Set<string>();
-  const idPattern = /\bid\s*=\s*(["'])([^"']+)\1/gi;
-  let match: RegExpExecArray | null;
-  while ((match = idPattern.exec(svgContent)) !== null) ids.add(match[2]);
-
-  let result = svgContent.replace(idPattern, (_full, quote: string, id: string) =>
-    `id=${quote}${safeNamespace}__${id}${quote}`
+  let result = svgContent.replace(
+    /\bid\s*=\s*(["'])([^"']+)\1/gi,
+    (_full, quote: string, idValue: string) => {
+      ids.add(idValue);
+      return `id=${quote}${safeNamespace}__${idValue}${quote}`;
+    }
   );
 
-  for (const id of Array.from(ids).sort((a, b) => b.length - a.length)) {
-    const escapedId = escapeRegExp(id);
-    const replacement = `${safeNamespace}__${id}`;
-
-    // Referencias de pintura, recorte, filtros y marcadores.
-    result = result.replace(
-      new RegExp(`url\\(\\s*(["']?)#${escapedId}\\1\\s*\\)`, 'g'),
-      (_full, quote: string) => `url(${quote}#${replacement}${quote})`,
-    );
-    // <use>, <image> y enlaces SVG 1.1/2.
-    result = result.replace(
-      new RegExp(`((?:href|xlink:href)\\s*=\\s*["'])#${escapedId}(["'])`, 'gi'),
-      `$1#${replacement}$2`,
-    );
-    // Referencias temporales SMIL: begin="shape.click".
-    result = result.replace(
-      new RegExp(`((?:begin|end)\\s*=\\s*["'][^"']*)\\b${escapedId}(?=\\.)`, 'gi'),
-      `$1${replacement}`,
-    );
-  }
-
+  // Paso 2: Recolectar clases de <style> y renombrar selectores #id y .class
+  // únicamente en la parte de los selectores CSS (antes de '{') en 1 sola pasada por bloque <style>
   const classNames = new Set<string>();
-  const classPattern = /\bclass\s*=\s*(["'])([^"']+)\1/gi;
-  while ((match = classPattern.exec(svgContent)) !== null) {
-    match[2].split(/\s+/).filter(Boolean).forEach((name) => classNames.add(name));
+  if (result.includes('<style') || result.includes('<STYLE')) {
+    result = result.replace(
+      /(<style\b[^>]*>)([\s\S]*?)(<\/style>)/gi,
+      (_all, open: string, css: string, close: string) => {
+        const scopedCss = css.replace(
+          /([^{}]+)\{([^{}]*)\}/g,
+          (_rule, selectors: string, declarations: string) => {
+            let scopedSelectors = selectors.replace(
+              /\.([a-zA-Z_-][a-zA-Z0-9_-]*)\b/g,
+              (_m, cls: string) => {
+                classNames.add(cls);
+                return `.${safeNamespace}__${cls}`;
+              }
+            );
+            if (ids.size > 0) {
+              scopedSelectors = scopedSelectors.replace(
+                /#([a-zA-Z0-9_-]+)\b/g,
+                (match, refId: string) =>
+                  ids.has(refId) ? `#${safeNamespace}__${refId}` : match
+              );
+            }
+            return `${scopedSelectors}{${declarations}}`;
+          }
+        );
+        return `${open}${scopedCss}${close}`;
+      }
+    );
   }
 
-  // Limitar el reemplazo de selectores al contenido de <style>; así no se
-  // alteran números decimales, texto ni atributos ajenos.
-  result = result.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)/gi, (_all, open, css, close) => {
-    let scopedCss = css;
-    for (const className of Array.from(classNames).sort((a, b) => b.length - a.length)) {
-      scopedCss = scopedCss.replace(
-        new RegExp(`\\.${escapeRegExp(className)}(?![\\w-])`, 'g'),
-        `.${safeNamespace}__${className}`,
-      );
-    }
-    for (const id of Array.from(ids).sort((a, b) => b.length - a.length)) {
-      scopedCss = scopedCss.replace(
-        new RegExp(`#${escapeRegExp(id)}(?![\\w-])`, 'g'),
-        `#${safeNamespace}__${id}`,
-      );
-    }
-    return `${open}${scopedCss}${close}`;
-  });
+  // Paso 3: Reemplazar referencias url(#id), href="#id", xlink:href="#id" y SMIL begin/end en 1 sola pasada cada una
+  if (ids.size > 0) {
+    result = result.replace(
+      /url\(\s*(['"]?)#([^'")\s]+)\1\s*\)/g,
+      (m, q: string, id: string) =>
+        ids.has(id) ? `url(${q}#${safeNamespace}__${id}${q})` : m
+    );
+    result = result.replace(
+      /((?:xlink:href|href)\s*=\s*)(["'])#([^"']+)\2/gi,
+      (m, attr: string, q: string, id: string) =>
+        ids.has(id) ? `${attr}${q}#${safeNamespace}__${id}${q}` : m
+    );
+    result = result.replace(
+      /(\b(?:begin|end)\s*=\s*)(["'])([^"'.;\s]+)(\.[^"']*\2)/gi,
+      (m, attr: string, q: string, id: string, rest: string) =>
+        ids.has(id) ? `${attr}${q}${safeNamespace}__${id}${rest}` : m
+    );
+  }
 
-  result = result.replace(classPattern, (_full, quote: string, classes: string) => {
-    const namespacedClasses = classes
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((className) => `${safeNamespace}__${className}`)
-      .join(' ');
-    return `class=${quote}${namespacedClasses}${quote}`;
-  });
+  // Paso 4: Reemplazar atributos class="..." en 1 sola pasada si existen clases en <style>
+  if (classNames.size > 0) {
+    result = result.replace(
+      /(\bclass\s*=\s*)(["'])([^"']+)\2/gi,
+      (_m, attr: string, q: string, val: string) => {
+        const updated = val
+          .trim()
+          .split(/\s+/)
+          .map((t) => (classNames.has(t) ? `${safeNamespace}__${t}` : t))
+          .join(' ');
+        return `${attr}${q}${updated}${q}`;
+      }
+    );
+  }
 
   return canCache ? cacheResult(cacheKey, result) : result;
 }

@@ -5,6 +5,7 @@ import {
   pieceSvgRegistry,
   getPieceSvgContent,
   resolvePieceSvg,
+  getPieceMoldPath,
   clearPieceSvgRegistry,
 } from './garmentGenerator';
 import { OrderItem } from '@/modules/orders/types';
@@ -341,6 +342,229 @@ describe('Garment Generator Engine (Fusión de Molde + Diseño + Jugador)', () =
     // Ambos tienen sus piezas registradas en el registry
     expect(pieceSvgRegistry.has(pieceA.id)).toBe(true);
     expect(pieceSvgRegistry.has(pieceB.id)).toBe(true);
+  });
+
+  it('debe aplicar y actualizar correctamente los offsets verticales de calibración (sleeve, front, back, short) y preservar IDs con namespace sin colisiones', () => {
+    const svgWithIds = (tagId: string) =>
+      `<svg viewBox="0 0 200 200"><defs><style>.cls-1{fill:url(#${tagId});stroke:#1a2b3c}</style><linearGradient id="${tagId}"><stop offset="0%" stop-color="#ff00aa"/></linearGradient></defs><path class="cls-1" d="M 0 0 L 200 0 L 200 200 L 0 200 Z"/></svg>`;
+
+    const customDesign: MasterDesign = {
+      ...mockDesign,
+      id: 'des_calib_offsets',
+      pieceArtworks: {
+        DELANTERO: { pieceType: 'DELANTERO', svgArtContent: svgWithIds('grad_front'), placeholders: [] },
+        ESPALDA: { pieceType: 'ESPALDA', svgArtContent: svgWithIds('grad_back'), placeholders: [] },
+        MANGA_IZQ: { pieceType: 'MANGA_IZQ', svgArtContent: svgWithIds('grad_sleeve'), placeholders: [] },
+        MANGA_DER: { pieceType: 'MANGA_DER', svgArtContent: svgWithIds('grad_sleeve'), placeholders: [] },
+        SHORT_FRENTE: { pieceType: 'SHORT_FRENTE', svgArtContent: svgWithIds('grad_short'), placeholders: [] },
+        SHORT_ESPALDA: { pieceType: 'SHORT_ESPALDA', svgArtContent: svgWithIds('grad_short'), placeholders: [] },
+      },
+    };
+
+    const orderItems: OrderItem[] = [
+      {
+        id: 'item_calib_1',
+        rowNumber: 1,
+        playerName: 'LUCAS',
+        playerNumber: '11',
+        sizeName: '28',
+        garmentType: 'COMPLETO',
+        quantity: 1,
+        isValid: true,
+        errors: [],
+        warnings: [],
+      },
+    ];
+
+    // 1. Posición inicial en 0 mm
+    const res0 = generateGarmentPieces(orderItems, mockPatternSet, customDesign, {
+      sleeveArtOffsetYMm: 0,
+      frontArtOffsetYMm: 0,
+      backArtOffsetYMm: 0,
+      shortArtOffsetYMm: 0,
+    });
+
+    const sleevePiece0 = res0.pieces.find((p) => p.pieceType === 'MANGA_IZQ')!;
+    const sleeve0 = resolvePieceSvg(sleevePiece0);
+    expect(sleeve0).toContain('y="0"');
+    expect(sleeve0).toContain('__grad_sleeve');
+    expect(getPieceMoldPath(sleevePiece0)).toBe('M 0.00 0.00 L 240.00 0.00 L 240.00 200.00 L 0.00 200.00 Z');
+
+    // 2. Calibrar offsets distintos por zona
+    const resMoved = generateGarmentPieces(orderItems, mockPatternSet, customDesign, {
+      sleeveArtOffsetYMm: -20,
+      frontArtOffsetYMm: -12,
+      backArtOffsetYMm: 8,
+      shortArtOffsetYMm: -15,
+    });
+
+    const frontMoved = resolvePieceSvg(resMoved.pieces.find((p) => p.pieceType === 'DELANTERO')!);
+    const backMoved = resolvePieceSvg(resMoved.pieces.find((p) => p.pieceType === 'ESPALDA')!);
+    const sleeveMoved = resolvePieceSvg(resMoved.pieces.find((p) => p.pieceType === 'MANGA_IZQ')!);
+    const shortMoved = resolvePieceSvg(resMoved.pieces.find((p) => p.pieceType === 'SHORT_FRENTE')!);
+
+    expect(frontMoved).toContain('y="-12"');
+    expect(frontMoved).toContain('__grad_front');
+    expect(backMoved).toContain('y="8"');
+    expect(backMoved).toContain('__grad_back');
+    expect(sleeveMoved).toContain('y="-20"');
+    expect(sleeveMoved).toContain('__grad_sleeve');
+    expect(shortMoved).toContain('y="-15"');
+    expect(shortMoved).toContain('__grad_short');
+
+    // 3. Regreso de sleeveArtOffsetYMm de -20 a 0
+    const resBackToZero = generateGarmentPieces(orderItems, mockPatternSet, customDesign, {
+      sleeveArtOffsetYMm: 0,
+      frontArtOffsetYMm: 0,
+      backArtOffsetYMm: 0,
+      shortArtOffsetYMm: 0,
+    });
+    const sleeveReset = resolvePieceSvg(resBackToZero.pieces.find((p) => p.pieceType === 'MANGA_IZQ')!);
+    expect(sleeveReset).toContain('y="0"');
+    expect(sleeveReset).not.toContain('y="-20"');
+  });
+
+  it('benchmark: recalibra 40 camisas (160 piezas por corrida, 800 piezas en 5 ajustes) en menos de 50 ms promedio por ajuste', () => {
+    const sizes = ['S', 'M', 'L', 'XL'];
+    const multiSizePatternSet: PatternSet = {
+      id: 'pat_bench_40',
+      name: 'MOLDES INDUSTRIALES S-XL',
+      garmentType: 'FUTBOL',
+      sizes: sizes.map((sz, idx) => ({
+        id: `sz_${sz}`,
+        sizeName: sz,
+        sortOrder: idx + 1,
+        pieces: [
+          {
+            id: `p_${sz}_delantero`,
+            sizeName: sz,
+            pieceType: 'DELANTERO',
+            pieceName: `${sz}_DELANTERO`,
+            cutPolygon: [{ x: 0, y: 0 }, { x: 500, y: 0 }, { x: 500, y: 700 }, { x: 0, y: 700 }],
+            bbox: { minX: 0, minY: 0, maxX: 500, maxY: 700, width: 500, height: 700 },
+            areaMm2: 350000,
+            allowedRotationsDeg: [0],
+            svgPathData: 'M 0 0 L 500 0 L 500 700 L 0 700 Z',
+            originalElementId: `${sz}_DELANTERO`,
+            placeholders: [],
+            isAssigned: true,
+          },
+          {
+            id: `p_${sz}_espalda`,
+            sizeName: sz,
+            pieceType: 'ESPALDA',
+            pieceName: `${sz}_ESPALDA`,
+            cutPolygon: [{ x: 0, y: 0 }, { x: 500, y: 0 }, { x: 500, y: 720 }, { x: 0, y: 720 }],
+            bbox: { minX: 0, minY: 0, maxX: 500, maxY: 720, width: 500, height: 720 },
+            areaMm2: 360000,
+            allowedRotationsDeg: [0],
+            svgPathData: 'M 0 0 L 500 0 L 500 720 L 0 720 Z',
+            originalElementId: `${sz}_ESPALDA`,
+            placeholders: [],
+            isAssigned: true,
+          },
+          {
+            id: `p_${sz}_manga_i`,
+            sizeName: sz,
+            pieceType: 'MANGA_IZQ',
+            pieceName: `${sz}_MANGA_I`,
+            cutPolygon: [{ x: 0, y: 0 }, { x: 260, y: 0 }, { x: 260, y: 220 }, { x: 0, y: 220 }],
+            bbox: { minX: 0, minY: 0, maxX: 260, maxY: 220, width: 260, height: 220 },
+            areaMm2: 57200,
+            allowedRotationsDeg: [0, 180],
+            svgPathData: 'M 0 0 L 260 0 L 260 220 L 0 220 Z',
+            originalElementId: `${sz}_MANGA_I`,
+            placeholders: [],
+            isAssigned: true,
+          },
+          {
+            id: `p_${sz}_manga_d`,
+            sizeName: sz,
+            pieceType: 'MANGA_DER',
+            pieceName: `${sz}_MANGA_D`,
+            cutPolygon: [{ x: 0, y: 0 }, { x: 260, y: 0 }, { x: 260, y: 220 }, { x: 0, y: 220 }],
+            bbox: { minX: 0, minY: 0, maxX: 260, maxY: 220, width: 260, height: 220 },
+            areaMm2: 57200,
+            allowedRotationsDeg: [0, 180],
+            svgPathData: 'M 0 0 L 260 0 L 260 220 L 0 220 Z',
+            originalElementId: `${sz}_MANGA_D`,
+            placeholders: [],
+            isAssigned: true,
+          },
+        ],
+      })),
+      unassignedPieces: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const buildIllustratorPieceSvg = (prefix: string) => {
+      const styles: string[] = [];
+      const defs: string[] = [];
+      const paths: string[] = [];
+      for (let i = 0; i < 120; i++) {
+        styles.push(`.cls-${i}{fill:url(#grad_${prefix}_${i});stroke:#112233}`);
+        defs.push(`<linearGradient id="grad_${prefix}_${i}"><stop offset="0%" stop-color="#ff0055"/><stop offset="100%" stop-color="#0055ff"/></linearGradient>`);
+        paths.push(`<path class="cls-${i}" d="M ${i * 2} 0 L ${i * 2 + 20} 100 L ${i * 2} 200 Z"/>`);
+      }
+      return `<svg viewBox="0 0 500 700"><defs><style>${styles.join('')}</style>${defs.join('')}</defs><g>${paths.join('')}</g></svg>`;
+    };
+
+    const heavyDesign: MasterDesign = {
+      id: 'des_bench_40',
+      name: 'Diseño Pesado Illustrator 40 Jugadores',
+      sport: 'FUTBOL',
+      colors: ['#ff0055', '#0055ff', '#ffffff'],
+      pieceArtworks: {
+        DELANTERO: { pieceType: 'DELANTERO', svgArtContent: buildIllustratorPieceSvg('front'), placeholders: [] },
+        ESPALDA: { pieceType: 'ESPALDA', svgArtContent: buildIllustratorPieceSvg('back'), placeholders: [] },
+        MANGA_IZQ: { pieceType: 'MANGA_IZQ', svgArtContent: buildIllustratorPieceSvg('sleeve_l'), placeholders: [] },
+        MANGA_DER: { pieceType: 'MANGA_DER', svgArtContent: buildIllustratorPieceSvg('sleeve_r'), placeholders: [] },
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const roster40: OrderItem[] = Array.from({ length: 40 }, (_, i) => ({
+      id: `player_${i + 1}`,
+      rowNumber: i + 1,
+      playerName: `JUGADOR ${i + 1}`,
+      playerNumber: String((i % 99) + 1),
+      sizeName: sizes[i % sizes.length],
+      garmentType: 'CAMISETA',
+      quantity: 1,
+      isValid: true,
+      errors: [],
+      warnings: [],
+    }));
+
+    // 1. Generación inicial de las 40 camisas (160 piezas)
+    const initialRes = generateGarmentPieces(roster40, multiSizePatternSet, heavyDesign, {
+      sleeveArtOffsetYMm: 0,
+      frontArtOffsetYMm: 0,
+    });
+    expect(initialRes.pieces.length).toBe(160);
+
+    // 2. Medir 5 ajustes consecutivos de calibración (800 piezas generadas en total)
+    const sleeveOffsets = [-10, -15, -20, -25, -30];
+    const start = performance.now();
+    let lastResult = initialRes;
+    for (const offset of sleeveOffsets) {
+      lastResult = generateGarmentPieces(roster40, multiSizePatternSet, heavyDesign, {
+        sleeveArtOffsetYMm: offset,
+        frontArtOffsetYMm: -15,
+      });
+    }
+    const totalElapsedMs = performance.now() - start;
+    const avgMsPerAdjustment = totalElapsedMs / sleeveOffsets.length;
+
+    expect(lastResult.pieces.length).toBe(160);
+    expect(avgMsPerAdjustment).toBeLessThan(50);
+
+    const sampleSleeve = resolvePieceSvg(lastResult.pieces.find((p) => p.pieceType === 'MANGA_IZQ')!);
+    const sampleFront = resolvePieceSvg(lastResult.pieces.find((p) => p.pieceType === 'DELANTERO')!);
+    expect(sampleSleeve).toContain('y="-30"');
+    expect(sampleFront).toContain('y="-15"');
   });
 });
 
