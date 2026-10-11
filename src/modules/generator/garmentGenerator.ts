@@ -82,32 +82,74 @@ export function normalizeArtworkSvgForMold(svgContent: string): string {
   return normalizeSvgArtboard(svgContent, { paddingRatio: 0 });
 }
 
+export interface PieceSvgTemplate {
+  templateKey: string;
+  uniquePieceId: string;
+  maskId: string;
+  svgPathData: string;
+  translateTransform: string;
+  dorsalSvg: string;
+  sizeMarkSvg: string;
+}
+
 /**
- * Almacén Flyweight fuera del estado reactivo de Zustand.
- * Mantiene el SVG completo indexado por ID de pieza para evitar que Zustand
- * retenga cientos de megabytes de strings en su árbol reactivo.
+ * Almacenes Flyweight fuera del estado reactivo de Zustand.
+ * - baseArtworkRegistry: Mantiene únicamente 1 copia del SVG de fondo por cada combinación de Molde + Talla.
+ * - pieceTemplateRegistry: Mantiene los metadatos ligeros de personalización de cada jugador (nombre, número).
+ * - pieceSvgRegistry: Fallback directo para piezas personalizadas independientes.
  */
-export const pieceSvgRegistry = new Map<string, string>();
+export const baseArtworkRegistry = new Map<string, string>();
+export const pieceTemplateRegistry = new Map<string, PieceSvgTemplate>();
+const pieceSvgFallbackRegistry = new Map<string, string>();
+
+/**
+ * Registro Flyweight con interfaz Map estándar compatible con el ecosistema.
+ */
+export const pieceSvgRegistry = {
+  get(id: string): string | undefined {
+    const res = resolvePieceSvg({ id });
+    return res || undefined;
+  },
+  has(id: string): boolean {
+    return pieceTemplateRegistry.has(id) || pieceSvgFallbackRegistry.has(id);
+  },
+  set(id: string, content: string): void {
+    pieceSvgFallbackRegistry.set(id, content);
+  },
+  delete(id: string): boolean {
+    const a = pieceTemplateRegistry.delete(id);
+    const b = pieceSvgFallbackRegistry.delete(id);
+    return a || b;
+  },
+  clear(): void {
+    pieceTemplateRegistry.clear();
+    pieceSvgFallbackRegistry.clear();
+    baseArtworkRegistry.clear();
+  },
+  get size(): number {
+    return pieceTemplateRegistry.size + pieceSvgFallbackRegistry.size;
+  },
+};
 
 /**
  * Obtiene el contenido SVG de una pieza desde el registro Flyweight.
  */
 export function getPieceSvgContent(pieceId: string): string {
-  return pieceSvgRegistry.get(pieceId) || '';
+  return resolvePieceSvg({ id: pieceId });
 }
 
 /**
  * Registra o actualiza el contenido SVG de una pieza en el almacén Flyweight.
  */
 export function setPieceSvgContent(pieceId: string, svgContent: string): void {
-  pieceSvgRegistry.set(pieceId, svgContent);
+  pieceSvgFallbackRegistry.set(pieceId, svgContent);
 }
 
 /**
- * Resuelve el SVG completo de una pieza:
+ * Resuelve el SVG completo de una pieza bajo demanda:
  * 1. Si trae svgContent con contenido, lo usa directamente.
- * 2. Si existe en pieceSvgRegistry, lo resuelve desde el registro.
- * 3. Si svgContent es explícitamente '', retorna vacío.
+ * 2. Si existe en pieceTemplateRegistry, combina la plantilla base de la talla con el dorsal (Cero duplicación de RAM).
+ * 3. Si existe en pieceSvgFallbackRegistry, lo resuelve desde el registro.
  */
 export function resolvePieceSvg(piece: { id: string; svgContent?: string }): string {
   if (typeof piece.svgContent === 'string' && piece.svgContent.length > 0) {
@@ -116,11 +158,32 @@ export function resolvePieceSvg(piece: { id: string; svgContent?: string }): str
   if ('svgContent' in piece && (piece.svgContent === undefined || piece.svgContent === '')) {
     return '';
   }
-  return pieceSvgRegistry.get(piece.id) || '';
+
+  const tmpl = pieceTemplateRegistry.get(piece.id);
+  if (tmpl) {
+    const baseArt = baseArtworkRegistry.get(tmpl.templateKey) || '';
+    return `
+      <g id="${tmpl.uniquePieceId}">
+        <defs>
+          <clipPath id="${tmpl.maskId}">
+            <path d="${tmpl.svgPathData}"${tmpl.translateTransform} />
+          </clipPath>
+        </defs>
+        <!-- Arte recortado exactamente con el molde -->
+        <g clip-path="url(#${tmpl.maskId})">
+          ${baseArt}
+          ${tmpl.dorsalSvg}
+          ${tmpl.sizeMarkSvg}
+        </g>
+      </g>
+    `.trim();
+  }
+
+  return pieceSvgFallbackRegistry.get(piece.id) || '';
 }
 
 /**
- * Limpia el registro Flyweight de piezas.
+ * Limpia los registros Flyweight de piezas y plantillas base.
  */
 export function clearPieceSvgRegistry(): void {
   pieceSvgRegistry.clear();
@@ -743,30 +806,27 @@ export function generateGarmentPieces(
           cachePrefix
         );
 
-        // Aislar IDs de gradientes/filtros con caché por molde/talla para rendimiento ultrarrápido
+        const templateKey = `${cachePrefix}_${artOffsetY}`;
         const namespacedArt = getCachedNamespacedArtwork(
           scaledArtSvg,
-          `${cachePrefix}_${artOffsetY}`
+          templateKey
         );
 
-        const fullPieceSvg = `
-          <g id="${uniquePieceId}">
-            <defs>
-              <clipPath id="${maskId}">
-                <path d="${patternPiece.svgPathData}"${translateTransform} />
-              </clipPath>
-            </defs>
-            <!-- Arte recortado exactamente con el molde -->
-            <g clip-path="url(#${maskId})">
-              ${namespacedArt}
-              ${dorsalSvg}
-              ${sizeMarkSvg}
-            </g>
-          </g>
-        `.trim();
+        // Guardar plantilla base de la talla (compartida por todos los jugadores de esta talla)
+        if (!baseArtworkRegistry.has(templateKey)) {
+          baseArtworkRegistry.set(templateKey, namespacedArt);
+        }
 
-        // Almacenar en el registro Flyweight fuera del estado de Zustand
-        pieceSvgRegistry.set(uniquePieceId, fullPieceSvg);
+        // Registrar metadatos ligeros de la pieza (Cero duplicación de memoria RAM)
+        pieceTemplateRegistry.set(uniquePieceId, {
+          templateKey,
+          uniquePieceId,
+          maskId,
+          svgPathData: patternPiece.svgPathData,
+          translateTransform,
+          dorsalSvg,
+          sizeMarkSvg,
+        });
 
         const genPiece: GeneratedPiece = {
           id: uniquePieceId,
