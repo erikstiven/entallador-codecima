@@ -345,10 +345,22 @@ export const DesignsView: React.FC = () => {
     if (!activeDesign) return;
     updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NOMBRE', updates);
     updatePlaceholderRule(activeDesign.id, 'ESPALDA', 'NUMERO_ESPALDA', updates);
-    if (activeDesign.pieceArtworks['DELANTERO']) {
-      updatePlaceholderRule(activeDesign.id, 'DELANTERO', 'NUMERO_FRENTE', updates);
-      // Compatibilidad con diseños importados que usan el identificador anterior.
-      updatePlaceholderRule(activeDesign.id, 'DELANTERO', 'NUMERO_DELANTERO', updates);
+
+    // Sincronizar en todas las variantes de delantero
+    const frontPieces: PieceType[] = ['DELANTERO', 'DELANTERO_V', 'DELANTERO_REDONDO'];
+    for (const dType of frontPieces) {
+      if (activeDesign.pieceArtworks[dType]) {
+        updatePlaceholderRule(activeDesign.id, dType, 'NUMERO_FRENTE', updates);
+        updatePlaceholderRule(activeDesign.id, dType, 'NUMERO_DELANTERO', updates);
+      }
+    }
+
+    // Sincronizar en todas las piezas de pantaloneta/short
+    const shortPieces: PieceType[] = ['PANTALONETA_IZQ', 'PANTALONETA_DER', 'SHORT_FRENTE', 'SHORT_ESPALDA'];
+    for (const sType of shortPieces) {
+      if (activeDesign.pieceArtworks[sType]) {
+        updatePlaceholderRule(activeDesign.id, sType, 'NUMERO_SHORT', updates);
+      }
     }
 
     // Las piezas generadas contienen una instantánea SVG del diseño. Al cambiar

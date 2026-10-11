@@ -570,20 +570,24 @@ export function generateGarmentPieces(
           <path d="M 0,${localBbox.height * 0.3} L ${localBbox.width},${localBbox.height * 0.45} L ${localBbox.width},${localBbox.height * 0.52} L 0,${localBbox.height * 0.37} Z" fill="${secondaryColor}" opacity="0.4" />
         `;
 
-        // Extraer configuraciones de tipografía y color de espalda
+        // Extraer configuraciones de tipografía y color maestro del diseño (Espalda / Dorsal oficial)
         const espaldaArt = masterDesign.pieceArtworks['ESPALDA'];
-        const configuredFont = artwork?.placeholders?.find((p) => p.fontFamily)?.fontFamily
-          || espaldaArt?.placeholders?.find((p) => p.fontFamily)?.fontFamily
+        const espaldaNamePlaceholder = espaldaArt?.placeholders?.find((p) => p.id === 'NOMBRE');
+        const espaldaNumPlaceholder = espaldaArt?.placeholders?.find((p) => p.id === 'NUMERO_ESPALDA' || p.id.includes('NUMERO'));
+        const masterPlaceholder = espaldaNumPlaceholder || espaldaNamePlaceholder;
+
+        const configuredFont = masterPlaceholder?.fontFamily
+          || artwork?.placeholders?.find((p) => p.fontFamily)?.fontFamily
           || 'Bebas Neue';
-        const configuredFill = artwork?.placeholders?.find((p) => p.fillColor)?.fillColor
-          || espaldaArt?.placeholders?.find((p) => p.fillColor)?.fillColor
+        const configuredFill = masterPlaceholder?.fillColor
+          || artwork?.placeholders?.find((p) => p.fillColor)?.fillColor
           || accentColor;
-        const configuredStroke = artwork?.placeholders?.find((p) => p.strokeColor)?.strokeColor
-          || espaldaArt?.placeholders?.find((p) => p.strokeColor)?.strokeColor
+        const configuredStroke = masterPlaceholder?.strokeColor
+          || artwork?.placeholders?.find((p) => p.strokeColor)?.strokeColor
           || '#000000';
-        const configuredStrokeWidth = artwork?.placeholders?.find((p) => p.strokeWidthMm !== undefined)?.strokeWidthMm
-          ?? espaldaArt?.placeholders?.find((p) => p.strokeWidthMm !== undefined)?.strokeWidthMm
-          ?? 2.5;
+        const configuredStrokeWidth = masterPlaceholder?.strokeWidthMm !== undefined
+          ? masterPlaceholder.strokeWidthMm
+          : (artwork?.placeholders?.find((p) => p.strokeWidthMm !== undefined)?.strokeWidthMm ?? 2.5);
 
         // 3. Aplicar personalización de texto y números (DORSAL CENTRADO EN MM FÍSICOS Y PROPORCIONADO)
         let dorsalSvg = '';
