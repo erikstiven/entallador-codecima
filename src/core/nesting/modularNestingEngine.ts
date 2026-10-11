@@ -404,17 +404,27 @@ export function performModularNesting(
      * - Cuellos residuales en cualquier espacio libre lateral.
      * - Mangas sobrantes y cuellos restantes en la base del pliego evaluados multi-variante.
      */
+    /**
+     * Planifica y acomoda un bloque de camisetas para un pliego con Aprovechamiento Máximo:
+     * 1. Cada fila junta Delantero y Espalda del mismo jugador a la izquierda con solo spacingMm (2 mm).
+     * 2. Se calcula el ancho libre real a la derecha DE ESA FILA: availableRightW = printableWidthMm - (espX + wEsp + spacing) - sideMargin.
+     * 3. Si caben 2 mangas en paralelo (ej. Ailanny, Thiago, tallas infantiles/juveniles):
+     *    se colocan las 2 mangas inmediatamente al lado de la espalda en 2 columnas (cero hueco blanco!).
+     * 4. Si cabe 1 manga: se coloca pegada a la espalda, y cualquier espacio vertical debajo de ella
+     *    se aprovecha con cuellos o piezas adicionales de inmediato.
+     * 5. Cualquier manga o cuello que no quepa en los laterales se acumula para la base del pliego (evaluador multi-variante).
+     */
     const layoutCamisetaSheet = (
       sheetPlayers: PlayerGarmentSet[],
       sheetIdx: number
     ): SheetLayoutPlan => {
       const placedPieces: PlacedNestingPiece[] = [];
       const playerNames: string[] = [];
+      const leftoverSleeves: NestingPieceInput[] = [];
+      const leftoverCollars: NestingPieceInput[] = [];
 
       let jerseyY = topMarginMm;
-      let maxJerseyRightEdge = sideMarginMm;
 
-      // 1. Acomodo de Camisetas a la izquierda
       for (const playerSet of sheetPlayers) {
         if (!playerNames.includes(playerSet.playerName)) {
           playerNames.push(playerSet.playerName);
@@ -422,18 +432,30 @@ export function performModularNesting(
 
         const del = playerSet.delantero;
         const esp = playerSet.espalda;
+        const m1 = playerSet.mangaIzq;
+        const m2 = playerSet.mangaDer;
+        const cuello = playerSet.cuello;
 
         const wDel = del ? del.bbox.width : 0;
         const hDel = del ? del.bbox.height : 0;
         const wEsp = esp ? esp.bbox.width : 0;
         const hEsp = esp ? esp.bbox.height : 0;
+        const jerseyRowH = Math.max(hDel, hEsp);
 
         const pairWidth = sideMarginMm + wDel + (del && esp ? spacingMm : 0) + wEsp + sideMarginMm;
         const canFitBothInRow = del && esp && pairWidth <= printableWidthMm;
 
-        if (canFitBothInRow || (del && !esp) || (!del && esp)) {
-          const jerseyRowH = Math.max(hDel, hEsp);
+        // Pool de mangas candidatas para esta fila (mangas del jugador actual primero + sobrantes previos)
+        const rowSleeves: NestingPieceInput[] = [];
+        if (m1) rowSleeves.push(m1);
+        if (m2) rowSleeves.push(m2);
 
+        const rowCollars: NestingPieceInput[] = [];
+        if (cuello) rowCollars.push(cuello);
+        for (const o of playerSet.otherPieces) rowCollars.push(o);
+
+        if (canFitBothInRow || (del && !esp) || (!del && esp)) {
+          // --- Fila con Delantero y Espalda lado a lado ---
           const delX = sideMarginMm;
           if (del) {
             placedPieces.push({
@@ -463,10 +485,131 @@ export function performModularNesting(
           }
 
           const rowRightEdge = (esp ? espX + wEsp : delX + wDel) + spacingMm;
-          maxJerseyRightEdge = Math.max(maxJerseyRightEdge, rowRightEdge);
+          const availableRightWidth = printableWidthMm - rowRightEdge - sideMarginMm;
+
+          // Combinar mangas del jugador con sobrantes acumulados
+          const candidatesToPlace = [...rowSleeves, ...leftoverSleeves];
+          leftoverSleeves.length = 0;
+
+          const collarsToPlace = [...rowCollars, ...leftoverCollars];
+          leftoverCollars.length = 0;
+
+          // Colocar mangas inmediatamente pegadas al borde derecho de esta fila
+          let sleeveCurrY = jerseyY;
+          let sleeveToggle = 90;
+
+          // 1. Probar doble columna si hay suficiente ancho para 2 mangas
+          let canFitDoubleCol = false;
+          if (candidatesToPlace.length >= 2) {
+            const sW1 = candidatesToPlace[0].bbox.height;
+            const sW2 = candidatesToPlace[1].bbox.height;
+            if (availableRightWidth >= sW1 + spacingMm + sW2) {
+              canFitDoubleCol = true;
+            }
+          }
+
+          if (canFitDoubleCol) {
+            while (candidatesToPlace.length >= 2) {
+              const sm1 = candidatesToPlace[0];
+              const sm2 = candidatesToPlace[1];
+              const sW1 = sm1.bbox.height;
+              const sH1 = sm1.bbox.width;
+              const sW2 = sm2.bbox.height;
+              const sH2 = sm2.bbox.width;
+              const pairH = Math.max(sH1, sH2);
+
+              if (sW1 + spacingMm + sW2 > availableRightWidth) break;
+              if (sleeveCurrY + pairH > jerseyY + jerseyRowH + 0.5) break;
+
+              const col1X = Number(rowRightEdge.toFixed(2));
+              const col2X = Number((rowRightEdge + sW1 + spacingMm).toFixed(2));
+
+              placedPieces.push(
+                {
+                  ...sm1,
+                  xMm: col1X,
+                  yMm: Number(sleeveCurrY.toFixed(2)),
+                  rotationDeg: 90,
+                  effectiveWidthMm: sW1,
+                  effectiveHeightMm: sH1,
+                  isLocked: false,
+                  sheetIndex: sheetIdx,
+                },
+                {
+                  ...sm2,
+                  xMm: col2X,
+                  yMm: Number(sleeveCurrY.toFixed(2)),
+                  rotationDeg: 90,
+                  effectiveWidthMm: sW2,
+                  effectiveHeightMm: sH2,
+                  isLocked: false,
+                  sheetIndex: sheetIdx,
+                }
+              );
+
+              sleeveCurrY += pairH + spacingMm;
+              candidatesToPlace.splice(0, 2);
+            }
+          } else {
+            // Columna simple pegada a la espalda (X = rowRightEdge)
+            while (candidatesToPlace.length > 0) {
+              const sm = candidatesToPlace[0];
+              const sW = sm.bbox.height;
+              const sH = sm.bbox.width;
+
+              if (sW > availableRightWidth) break;
+              if (sleeveCurrY + sH > jerseyY + jerseyRowH + 0.5) break;
+
+              placedPieces.push({
+                ...sm,
+                xMm: Number(rowRightEdge.toFixed(2)),
+                yMm: Number(sleeveCurrY.toFixed(2)),
+                rotationDeg: sleeveToggle,
+                effectiveWidthMm: sW,
+                effectiveHeightMm: sH,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              });
+
+              sleeveCurrY += sH + spacingMm;
+              sleeveToggle = sleeveToggle === 90 ? 270 : 90;
+              candidatesToPlace.splice(0, 1);
+            }
+          }
+
+          // Relleno de huecos residuales con cuellos debajo de las mangas de esta fila
+          const remainingGapH = (jerseyY + jerseyRowH) - sleeveCurrY;
+          if (remainingGapH > 20 && collarsToPlace.length > 0) {
+            let gapY = sleeveCurrY;
+            while (collarsToPlace.length > 0) {
+              const cIdx = collarsToPlace.findIndex(
+                (c) => c.bbox.width <= availableRightWidth && gapY + c.bbox.height <= jerseyY + jerseyRowH + 0.5
+              );
+              if (cIdx === -1) break;
+
+              const collar = collarsToPlace.splice(cIdx, 1)[0];
+              placedPieces.push({
+                ...collar,
+                xMm: Number(rowRightEdge.toFixed(2)),
+                yMm: Number(gapY.toFixed(2)),
+                rotationDeg: 0,
+                effectiveWidthMm: collar.bbox.width,
+                effectiveHeightMm: collar.bbox.height,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              });
+
+              gapY += collar.bbox.height + spacingMm;
+            }
+          }
+
+          // Guardar sobrantes para las siguientes filas o la base
+          leftoverSleeves.push(...candidatesToPlace);
+          leftoverCollars.push(...collarsToPlace);
 
           jerseyY += jerseyRowH + spacingMm;
         } else {
+          // --- Tallas adultas extra grandes que no caben juntas en ancho ---
           if (del) {
             placedPieces.push({
               ...del,
@@ -478,7 +621,41 @@ export function performModularNesting(
               isLocked: false,
               sheetIndex: sheetIdx,
             });
-            maxJerseyRightEdge = Math.max(maxJerseyRightEdge, sideMarginMm + wDel + spacingMm);
+
+            const rowRightEdge = sideMarginMm + wDel + spacingMm;
+            const availableRightWidth = printableWidthMm - rowRightEdge - sideMarginMm;
+
+            const candidatesToPlace = [...rowSleeves, ...leftoverSleeves];
+            leftoverSleeves.length = 0;
+
+            let sleeveCurrY = jerseyY;
+            let sleeveToggle = 90;
+
+            while (candidatesToPlace.length > 0) {
+              const sm = candidatesToPlace[0];
+              const sW = sm.bbox.height;
+              const sH = sm.bbox.width;
+
+              if (sW > availableRightWidth) break;
+              if (sleeveCurrY + sH > jerseyY + hDel + 0.5) break;
+
+              placedPieces.push({
+                ...sm,
+                xMm: Number(rowRightEdge.toFixed(2)),
+                yMm: Number(sleeveCurrY.toFixed(2)),
+                rotationDeg: sleeveToggle,
+                effectiveWidthMm: sW,
+                effectiveHeightMm: sH,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              });
+
+              sleeveCurrY += sH + spacingMm;
+              sleeveToggle = sleeveToggle === 90 ? 270 : 90;
+              candidatesToPlace.splice(0, 1);
+            }
+
+            leftoverSleeves.push(...candidatesToPlace);
             jerseyY += hDel + spacingMm;
           }
 
@@ -493,168 +670,56 @@ export function performModularNesting(
               isLocked: false,
               sheetIndex: sheetIdx,
             });
-            maxJerseyRightEdge = Math.max(maxJerseyRightEdge, sideMarginMm + wEsp + spacingMm);
-            jerseyY += hEsp + spacingMm;
-          }
-        }
-      }
 
-      const jerseyBottomY = jerseyY;
+            const rowRightEdge = sideMarginMm + wEsp + spacingMm;
+            const availableRightWidth = printableWidthMm - rowRightEdge - sideMarginMm;
 
-      // 2. Recolectar mangas y cuellos de los jugadores de este pliego
-      const sheetSleevesPool: NestingPieceInput[] = [];
-      const sheetCollarsPool: NestingPieceInput[] = [];
+            const candidatesToPlace = [...leftoverSleeves];
+            leftoverSleeves.length = 0;
 
-      for (const playerSet of sheetPlayers) {
-        if (playerSet.mangaIzq) sheetSleevesPool.push(playerSet.mangaIzq);
-        if (playerSet.mangaDer) sheetSleevesPool.push(playerSet.mangaDer);
-        if (playerSet.cuello) sheetCollarsPool.push(playerSet.cuello);
-        if (playerSet.otherPieces && playerSet.otherPieces.length > 0) {
-          sheetCollarsPool.push(...playerSet.otherPieces);
-        }
-      }
+            let sleeveCurrY = jerseyY;
+            let sleeveToggle = 90;
 
-      // 3. PISTA VERTICAL CONTINUA DESACOPLADA DE MANGAS A LA DERECHA
-      const trackX = Number(maxJerseyRightEdge.toFixed(2));
-      const availableRightWidth = printableWidthMm - trackX - sideMarginMm;
+            while (candidatesToPlace.length > 0) {
+              const sm = candidatesToPlace[0];
+              const sW = sm.bbox.height;
+              const sH = sm.bbox.width;
 
-      let sleeveTrackCurrY = topMarginMm;
+              if (sW > availableRightWidth) break;
+              if (sleeveCurrY + sH > jerseyY + hEsp + 0.5) break;
 
-      if (availableRightWidth > 0 && sheetSleevesPool.length > 0) {
-        // Evaluar si cabe doble columna paralela continua
-        let canDoubleCol = false;
-        if (sheetSleevesPool.length >= 2) {
-          const sW1 = sheetSleevesPool[0].bbox.height;
-          const sW2 = sheetSleevesPool[1].bbox.height;
-          if (availableRightWidth >= sW1 + spacingMm + sW2) {
-            canDoubleCol = true;
-          }
-        }
-
-        if (canDoubleCol) {
-          while (sheetSleevesPool.length >= 2) {
-            const m1 = sheetSleevesPool[0];
-            const m2 = sheetSleevesPool[1];
-            const sW1 = m1.bbox.height;
-            const sH1 = m1.bbox.width;
-            const sW2 = m2.bbox.height;
-            const sH2 = m2.bbox.width;
-            const pairH = Math.max(sH1, sH2);
-
-            if (sW1 + spacingMm + sW2 > availableRightWidth) break;
-            if (sleeveTrackCurrY + pairH > jerseyBottomY + 0.5) break;
-
-            const col1X = Number(trackX.toFixed(2));
-            const col2X = Number((trackX + sW1 + spacingMm).toFixed(2));
-
-            placedPieces.push(
-              {
-                ...m1,
-                xMm: col1X,
-                yMm: Number(sleeveTrackCurrY.toFixed(2)),
-                rotationDeg: 90,
-                effectiveWidthMm: sW1,
-                effectiveHeightMm: sH1,
-                isLocked: false,
-                sheetIndex: sheetIdx,
-              },
-              {
-                ...m2,
-                xMm: col2X,
-                yMm: Number(sleeveTrackCurrY.toFixed(2)),
-                rotationDeg: 90,
-                effectiveWidthMm: sW2,
-                effectiveHeightMm: sH2,
-                isLocked: false,
-                sheetIndex: sheetIdx,
-              }
-            );
-
-            sleeveTrackCurrY += pairH + spacingMm;
-            sheetSleevesPool.splice(0, 2);
-          }
-
-          // Si quedó 1 manga impar y cabe antes de jerseyBottomY
-          if (sheetSleevesPool.length === 1) {
-            const m = sheetSleevesPool[0];
-            const sW = m.bbox.height;
-            const sH = m.bbox.width;
-            if (sW <= availableRightWidth && sleeveTrackCurrY + sH <= jerseyBottomY + 0.5) {
               placedPieces.push({
-                ...m,
-                xMm: Number(trackX.toFixed(2)),
-                yMm: Number(sleeveTrackCurrY.toFixed(2)),
-                rotationDeg: 90,
+                ...sm,
+                xMm: Number(rowRightEdge.toFixed(2)),
+                yMm: Number(sleeveCurrY.toFixed(2)),
+                rotationDeg: sleeveToggle,
                 effectiveWidthMm: sW,
                 effectiveHeightMm: sH,
                 isLocked: false,
                 sheetIndex: sheetIdx,
               });
-              sleeveTrackCurrY += sH + spacingMm;
-              sheetSleevesPool.splice(0, 1);
+
+              sleeveCurrY += sH + spacingMm;
+              sleeveToggle = sleeveToggle === 90 ? 270 : 90;
+              candidatesToPlace.splice(0, 1);
             }
+
+            leftoverSleeves.push(...candidatesToPlace);
+            jerseyY += hEsp + spacingMm;
           }
-        } else {
-          // Columna simple continua apilada verticalmente a la derecha
-          let sleeveToggle = 90;
 
-          while (sheetSleevesPool.length > 0) {
-            const m = sheetSleevesPool[0];
-            const sW = m.bbox.height;
-            const sH = m.bbox.width;
-
-            if (sW > availableRightWidth) break;
-            if (sleeveTrackCurrY + sH > jerseyBottomY + 0.5) break;
-
-            placedPieces.push({
-              ...m,
-              xMm: Number(trackX.toFixed(2)),
-              yMm: Number(sleeveTrackCurrY.toFixed(2)),
-              rotationDeg: sleeveToggle,
-              effectiveWidthMm: sW,
-              effectiveHeightMm: sH,
-              isLocked: false,
-              sheetIndex: sheetIdx,
-            });
-
-            sleeveTrackCurrY += sH + spacingMm;
-            sleeveToggle = sleeveToggle === 90 ? 270 : 90;
-            sheetSleevesPool.splice(0, 1);
-          }
-        }
-
-        // Relleno inteligente de huecos residuales con cuellos en la pista lateral
-        const remainingGapH = jerseyBottomY - sleeveTrackCurrY;
-        if (remainingGapH > 20 && sheetCollarsPool.length > 0) {
-          let gapY = sleeveTrackCurrY;
-          while (sheetCollarsPool.length > 0) {
-            const cIdx = sheetCollarsPool.findIndex(
-              (c) => c.bbox.width <= availableRightWidth && gapY + c.bbox.height <= jerseyBottomY + 0.5
-            );
-            if (cIdx === -1) break;
-
-            const collar = sheetCollarsPool.splice(cIdx, 1)[0];
-            placedPieces.push({
-              ...collar,
-              xMm: Number(trackX.toFixed(2)),
-              yMm: Number(gapY.toFixed(2)),
-              rotationDeg: 0,
-              effectiveWidthMm: collar.bbox.width,
-              effectiveHeightMm: collar.bbox.height,
-              isLocked: false,
-              sheetIndex: sheetIdx,
-            });
-
-            gapY += collar.bbox.height + spacingMm;
-          }
+          if (cuello) leftoverCollars.push(cuello);
+          for (const o of playerSet.otherPieces) leftoverCollars.push(o);
         }
       }
 
-      // 4. Acomodo de mangas sobrantes y cuellos en la zona inferior bajo las camisetas
+      const jerseyBottomY = jerseyY;
+
+      // Acomodo de mangas sobrantes y cuellos en la zona inferior bajo las camisetas
       const plan = planSheetAccessories(
         jerseyBottomY,
-        sheetSleevesPool,
-        sheetCollarsPool,
+        leftoverSleeves,
+        leftoverCollars,
         sheetIdx
       );
 

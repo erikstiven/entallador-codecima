@@ -204,7 +204,7 @@ describe('modularNestingEngine', () => {
     expect(result.sheets![0].heightMm).toBeLessThan(1700);
   });
 
-  it('debe eliminar completamente los huecos blancos laterales apilando mangas en pista vertical continua desacoplada con separación exacta de 3mm', () => {
+  it('debe eliminar huecos muertos colocando mangas adyacentes a la espalda y sobrantes en base compacta', () => {
     // 3 jugadores con camisetas de 600 mm de altura y mangas de 350 mm de largo
     const pieces: NestingPieceInput[] = [];
     for (let i = 1; i <= 3; i++) {
@@ -222,25 +222,22 @@ describe('modularNestingEngine', () => {
       spacingMm: 3,
     });
 
-    const rightTrackSleeves = result.placedPieces
-      .filter((p) => p.pieceType.startsWith('MANGA') && p.xMm >= 800)
+    // 1 manga por fila colocada inmediatamente al lado de la espalda (X >= 800)
+    const rowSideSleeves = result.placedPieces
+      .filter((p) => p.pieceType.startsWith('MANGA') && p.xMm >= 800 && p.yMm < 1800)
       .sort((a, b) => a.yMm - b.yMm);
 
-    // En la pista continua deben caber 5 mangas sin huecos (la 6ta va al fondo)
-    expect(rightTrackSleeves.length).toBe(5);
+    expect(rowSideSleeves.length).toBe(3);
 
-    // Verificar que cada manga consecutiva está separada exactamente por spacingMm (3mm),
-    // eliminando por completo los antiguos huecos de 25 cm por fila
-    for (let i = 0; i < rightTrackSleeves.length - 1; i++) {
-      const current = rightTrackSleeves[i];
-      const next = rightTrackSleeves[i + 1];
-      const distanceY = next.yMm - (current.yMm + current.effectiveHeightMm);
-      expect(Math.abs(distanceY - 3)).toBeLessThan(0.1);
+    // Verificar que cada manga lateral está pegada a la espalda (X = 809mm) sin hueco muerto horizontal
+    for (const sleeve of rowSideSleeves) {
+      expect(sleeve.xMm).toBeCloseTo(809, 0);
     }
 
-    // Manga 2 cruza limpiamente la frontera entre fila 1 y fila 2 (600mm)
-    expect(rightTrackSleeves[1].yMm).toBeLessThan(600);
-    expect(rightTrackSleeves[1].yMm + rightTrackSleeves[1].effectiveHeightMm).toBeGreaterThan(600);
+    // Las 3 mangas restantes van empaquetadas en la base del pliego (yMm >= 1800)
+    const bottomSleeves = result.placedPieces
+      .filter((p) => p.pieceType.startsWith('MANGA') && p.yMm >= 1800);
+    expect(bottomSleeves.length).toBe(3);
   });
 
   it('debe ejecutar el acomodo modular continuo en tiempo ultrarrápido (< 50ms) para 20 jugadores', () => {
