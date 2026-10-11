@@ -100,6 +100,25 @@ function cubicBezierPoint(
 }
 
 /**
+ * Evalúa un punto en una curva Bézier cuadrática para un parámetro t en [0, 1]
+ */
+function quadraticBezierPoint(
+  p0: Point2D,
+  p1: Point2D,
+  p2: Point2D,
+  t: number
+): Point2D {
+  const mt = 1 - t;
+  const mt2 = mt * mt;
+  const t2 = t * t;
+
+  return {
+    x: mt2 * p0.x + 2 * mt * t * p1.x + t2 * p2.x,
+    y: mt2 * p0.y + 2 * mt * t * p1.y + t2 * p2.y,
+  };
+}
+
+/**
  * Tokeniza una cadena SVG path data en comandos y números
  */
 function tokenizePathData(d: string): (string | number)[] {
@@ -135,7 +154,8 @@ export function parseSvgPathToPolygon(
   let startY = 0;
   let lastControlX = 0;
   let lastControlY = 0;
-  let lastCmdWasCurve = false;
+  let lastCmdWasCubicCurve = false;
+  let lastCmdWasQuadCurve = false;
   let currentCmd = '';
 
   let i = 0;
@@ -160,7 +180,8 @@ export function parseSvgPathToPolygon(
         startY = currentY;
         lastControlX = currentX;
         lastControlY = currentY;
-        lastCmdWasCurve = false;
+        lastCmdWasCubicCurve = false;
+        lastCmdWasQuadCurve = false;
         rawPoints.push({ x: currentX, y: currentY });
 
         // Si siguen más números sin letra, SVG los interpreta como comandos L / l subsiguientes
@@ -175,7 +196,8 @@ export function parseSvgPathToPolygon(
         currentY = isRelative ? currentY + y : y;
         lastControlX = currentX;
         lastControlY = currentY;
-        lastCmdWasCurve = false;
+        lastCmdWasCubicCurve = false;
+        lastCmdWasQuadCurve = false;
         rawPoints.push({ x: currentX, y: currentY });
         break;
       }
@@ -185,7 +207,8 @@ export function parseSvgPathToPolygon(
         currentX = isRelative ? currentX + x : x;
         lastControlX = currentX;
         lastControlY = currentY;
-        lastCmdWasCurve = false;
+        lastCmdWasCubicCurve = false;
+        lastCmdWasQuadCurve = false;
         rawPoints.push({ x: currentX, y: currentY });
         break;
       }
@@ -195,7 +218,8 @@ export function parseSvgPathToPolygon(
         currentY = isRelative ? currentY + y : y;
         lastControlX = currentX;
         lastControlY = currentY;
-        lastCmdWasCurve = false;
+        lastCmdWasCubicCurve = false;
+        lastCmdWasQuadCurve = false;
         rawPoints.push({ x: currentX, y: currentY });
         break;
       }
@@ -222,7 +246,8 @@ export function parseSvgPathToPolygon(
         currentY = p3.y;
         lastControlX = p2.x;
         lastControlY = p2.y;
-        lastCmdWasCurve = true;
+        lastCmdWasCubicCurve = true;
+        lastCmdWasQuadCurve = false;
         break;
       }
 
@@ -232,9 +257,9 @@ export function parseSvgPathToPolygon(
         const x = Number(tokens[i++]);
         const y = Number(tokens[i++]);
 
-        // Reflejar el último punto de control solo si el comando anterior fue una curva (C o S)
+        // Reflejar el último punto de control solo si el comando anterior fue una curva C o S
         const p0 = { x: currentX, y: currentY };
-        const p1 = lastCmdWasCurve
+        const p1 = lastCmdWasCubicCurve
           ? { x: 2 * currentX - lastControlX, y: 2 * currentY - lastControlY }
           : { x: currentX, y: currentY };
         const p2 = { x: isRelative ? currentX + x2 : x2, y: isRelative ? currentY + y2 : y2 };
@@ -249,7 +274,76 @@ export function parseSvgPathToPolygon(
         currentY = p3.y;
         lastControlX = p2.x;
         lastControlY = p2.y;
-        lastCmdWasCurve = true;
+        lastCmdWasCubicCurve = true;
+        lastCmdWasQuadCurve = false;
+        break;
+      }
+
+      case 'Q': { // Quadratic Bézier (x1, y1, x, y)
+        const x1 = Number(tokens[i++]);
+        const y1 = Number(tokens[i++]);
+        const x = Number(tokens[i++]);
+        const y = Number(tokens[i++]);
+
+        const p0 = { x: currentX, y: currentY };
+        const p1 = { x: isRelative ? currentX + x1 : x1, y: isRelative ? currentY + y1 : y1 };
+        const p2 = { x: isRelative ? currentX + x : x, y: isRelative ? currentY + y : y };
+
+        for (let s = 1; s <= samplesPerCurve; s++) {
+          const t = s / samplesPerCurve;
+          rawPoints.push(quadraticBezierPoint(p0, p1, p2, t));
+        }
+
+        currentX = p2.x;
+        currentY = p2.y;
+        lastControlX = p1.x;
+        lastControlY = p1.y;
+        lastCmdWasQuadCurve = true;
+        lastCmdWasCubicCurve = false;
+        break;
+      }
+
+      case 'T': { // Smooth Quadratic Bézier (x, y)
+        const x = Number(tokens[i++]);
+        const y = Number(tokens[i++]);
+
+        // Reflejar el último punto de control solo si el comando anterior fue una curva Q o T
+        const p0 = { x: currentX, y: currentY };
+        const p1 = lastCmdWasQuadCurve
+          ? { x: 2 * currentX - lastControlX, y: 2 * currentY - lastControlY }
+          : { x: currentX, y: currentY };
+        const p2 = { x: isRelative ? currentX + x : x, y: isRelative ? currentY + y : y };
+
+        for (let s = 1; s <= samplesPerCurve; s++) {
+          const t = s / samplesPerCurve;
+          rawPoints.push(quadraticBezierPoint(p0, p1, p2, t));
+        }
+
+        currentX = p2.x;
+        currentY = p2.y;
+        lastControlX = p1.x;
+        lastControlY = p1.y;
+        lastCmdWasQuadCurve = true;
+        lastCmdWasCubicCurve = false;
+        break;
+      }
+
+      case 'A': { // Elliptical Arc (rx, ry, angle, largeArcFlag, sweepFlag, x, y)
+        const _rx = Number(tokens[i++]);
+        const _ry = Number(tokens[i++]);
+        const _angle = Number(tokens[i++]);
+        const _largeArcFlag = Number(tokens[i++]);
+        const _sweepFlag = Number(tokens[i++]);
+        const x = Number(tokens[i++]);
+        const y = Number(tokens[i++]);
+
+        currentX = isRelative ? currentX + x : x;
+        currentY = isRelative ? currentY + y : y;
+        lastControlX = currentX;
+        lastControlY = currentY;
+        lastCmdWasCubicCurve = false;
+        lastCmdWasQuadCurve = false;
+        rawPoints.push({ x: currentX, y: currentY });
         break;
       }
 
@@ -259,12 +353,12 @@ export function parseSvgPathToPolygon(
           currentX = startX;
           currentY = startY;
         }
-        lastCmdWasCurve = false;
+        lastCmdWasCubicCurve = false;
+        lastCmdWasQuadCurve = false;
         break;
       }
 
       default:
-        // Si no reconocemos un comando poco común (como Arcos elípticos densos), avanzar
         i++;
         break;
     }
