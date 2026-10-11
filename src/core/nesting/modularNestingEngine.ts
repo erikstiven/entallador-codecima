@@ -156,7 +156,8 @@ export function performModularNesting(
     const sheetCollars: NestingPieceInput[] = [];
 
     /**
-     * Llena el espacio sobrante horizontal a la derecha de una fila de camiseta con mangas.
+     * Llena el espacio sobrante horizontal a la derecha de una fila de camiseta con mangas,
+     * y aprovecha cualquier hueco vertical residual con cuellos u otras piezas pequeñas.
      * Soporta 1 o 2 columnas paralelas y apilamiento vertical hasta rowH.
      */
     const fillRowSideZoneWithSleeves = (
@@ -165,10 +166,11 @@ export function performModularNesting(
       availableW: number,
       zoneH: number,
       sleevePool: NestingPieceInput[],
+      collarPool: NestingPieceInput[],
       sheetIdx: number
     ): PlacedNestingPiece[] => {
       const placed: PlacedNestingPiece[] = [];
-      if (sleevePool.length === 0 || availableW <= 0 || zoneH <= 0) return placed;
+      if (availableW <= 0 || zoneH <= 0) return placed;
 
       let sleeveToggle = 90;
 
@@ -182,8 +184,9 @@ export function performModularNesting(
         }
       }
 
+      let currY = zoneY;
+
       if (canDoubleCol) {
-        let currY = zoneY;
         while (sleevePool.length >= 2) {
           const m1 = sleevePool[0];
           const m2 = sleevePool[1];
@@ -224,34 +227,59 @@ export function performModularNesting(
           currY += pairH + spacingMm;
           sleevePool.splice(0, 2);
         }
-        return placed;
+      } else {
+        // 2. Columna simple (apilada verticalmente a la derecha)
+        while (sleevePool.length > 0) {
+          const idx = sleevePool.findIndex(
+            (m) => m.bbox.height <= availableW && currY + m.bbox.width <= zoneY + zoneH + 0.5
+          );
+          if (idx === -1) break;
+
+          const m = sleevePool.splice(idx, 1)[0];
+          const sW = m.bbox.height;
+          const sH = m.bbox.width;
+
+          placed.push({
+            ...m,
+            xMm: Number(zoneX.toFixed(2)),
+            yMm: Number(currY.toFixed(2)),
+            rotationDeg: sleeveToggle,
+            effectiveWidthMm: sW,
+            effectiveHeightMm: sH,
+            isLocked: false,
+            sheetIndex: sheetIdx,
+          });
+
+          currY += sH + spacingMm;
+          sleeveToggle = sleeveToggle === 90 ? 270 : 90;
+        }
       }
 
-      // 2. Columna simple (apilada verticalmente a la derecha)
-      let currY = zoneY;
-      while (sleevePool.length > 0) {
-        const idx = sleevePool.findIndex(
-          (m) => m.bbox.height <= availableW && currY + m.bbox.width <= zoneY + zoneH + 0.5
-        );
-        if (idx === -1) break;
+      // 3. Relleno inteligente de huecos residuales con cuellos o piezas pequeñas
+      // Si sobra altura (currY < zoneY + zoneH) y hay cuellos/piezas pendientes en collarPool
+      const remainingGapH = (zoneY + zoneH) - currY;
+      if (remainingGapH > 20 && collarPool.length > 0) {
+        let gapY = currY;
+        while (collarPool.length > 0) {
+          const cIdx = collarPool.findIndex(
+            (c) => c.bbox.width <= availableW && gapY + c.bbox.height <= zoneY + zoneH + 0.5
+          );
+          if (cIdx === -1) break;
 
-        const m = sleevePool.splice(idx, 1)[0];
-        const sW = m.bbox.height;
-        const sH = m.bbox.width;
+          const collar = collarPool.splice(cIdx, 1)[0];
+          placed.push({
+            ...collar,
+            xMm: Number(zoneX.toFixed(2)),
+            yMm: Number(gapY.toFixed(2)),
+            rotationDeg: 0,
+            effectiveWidthMm: collar.bbox.width,
+            effectiveHeightMm: collar.bbox.height,
+            isLocked: false,
+            sheetIndex: sheetIdx,
+          });
 
-        placed.push({
-          ...m,
-          xMm: Number(zoneX.toFixed(2)),
-          yMm: Number(currY.toFixed(2)),
-          rotationDeg: sleeveToggle,
-          effectiveWidthMm: sW,
-          effectiveHeightMm: sH,
-          isLocked: false,
-          sheetIndex: sheetIdx,
-        });
-
-        currY += sH + spacingMm;
-        sleeveToggle = sleeveToggle === 90 ? 270 : 90;
+          gapY += collar.bbox.height + spacingMm;
+        }
       }
 
       return placed;
@@ -575,21 +603,26 @@ export function performModularNesting(
         const rightEdge = (esp ? espX + wEsp : delX + wDel) + spacingMm;
         const availableRightWidth = printableWidthMm - rightEdge - sideMarginMm;
 
-        const candidatePool = [...rowSleevesPool, ...sheetSleeves];
+        const candidateSleeves = [...rowSleevesPool, ...sheetSleeves];
         sheetSleeves.length = 0;
+
+        const candidateCollars = (cuello ? [cuello] : []).concat(playerSet.otherPieces).concat(sheetCollars);
+        sheetCollars.length = 0;
 
         const placedRowSleeves = fillRowSideZoneWithSleeves(
           rightEdge,
           jerseyY,
           availableRightWidth,
           jerseyRowH,
-          candidatePool,
+          candidateSleeves,
+          candidateCollars,
           currentSheet.sheetNumber - 1
         );
 
         currentSheet.placedPieces.push(...placedRowSleeves);
         allPlacedPieces.push(...placedRowSleeves);
-        sheetSleeves.push(...candidatePool);
+        sheetSleeves.push(...candidateSleeves);
+        sheetCollars.push(...candidateCollars);
 
         jerseyY += jerseyRowH + spacingMm;
       } else {
@@ -619,21 +652,26 @@ export function performModularNesting(
           const rightEdge = sideMarginMm + wDel + spacingMm;
           const availableRightWidth = printableWidthMm - rightEdge - sideMarginMm;
 
-          const candidatePool = [...rowSleevesPool, ...sheetSleeves];
+          const candidateSleeves = [...rowSleevesPool, ...sheetSleeves];
           sheetSleeves.length = 0;
+
+          const candidateCollars = (cuello ? [cuello] : []).concat(playerSet.otherPieces).concat(sheetCollars);
+          sheetCollars.length = 0;
 
           const placedRowSleeves = fillRowSideZoneWithSleeves(
             rightEdge,
             jerseyY,
             availableRightWidth,
             hDel,
-            candidatePool,
+            candidateSleeves,
+            candidateCollars,
             currentSheet.sheetNumber - 1
           );
 
           currentSheet.placedPieces.push(...placedRowSleeves);
           allPlacedPieces.push(...placedRowSleeves);
-          sheetSleeves.push(...candidatePool);
+          sheetSleeves.push(...candidateSleeves);
+          sheetCollars.push(...candidateCollars);
 
           jerseyY += hDel + spacingMm;
         }
@@ -664,28 +702,30 @@ export function performModularNesting(
           const rightEdge = sideMarginMm + wEsp + spacingMm;
           const availableRightWidth = printableWidthMm - rightEdge - sideMarginMm;
 
-          const candidatePool = [...sheetSleeves];
+          const candidateSleeves = [...sheetSleeves];
           sheetSleeves.length = 0;
+
+          const candidateCollars = [...sheetCollars];
+          sheetCollars.length = 0;
 
           const placedRowSleeves = fillRowSideZoneWithSleeves(
             rightEdge,
             jerseyY,
             availableRightWidth,
             hEsp,
-            candidatePool,
+            candidateSleeves,
+            candidateCollars,
             currentSheet.sheetNumber - 1
           );
 
           currentSheet.placedPieces.push(...placedRowSleeves);
           allPlacedPieces.push(...placedRowSleeves);
-          sheetSleeves.push(...candidatePool);
+          sheetSleeves.push(...candidateSleeves);
+          sheetCollars.push(...candidateCollars);
 
           jerseyY += hEsp + spacingMm;
         }
       }
-
-      if (cuello) sheetCollars.push(cuello);
-      for (const o of playerSet.otherPieces) sheetCollars.push(o);
 
       if (!currentSheet.playerNames.includes(playerSet.playerName)) {
         currentSheet.playerNames.push(playerSet.playerName);
