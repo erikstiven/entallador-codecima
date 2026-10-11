@@ -389,8 +389,14 @@ export function normalizeSvgArtboard(
 ): string {
   if (!svgContent || !svgContent.includes('<svg')) return svgContent;
 
+  // 1. Intentar normalización ultrarrápida sin mutar el DOM (0.1 ms)
+  const fastResult = normalizeSvgStringHeadless(svgContent, options);
+  if (fastResult !== svgContent) {
+    return fastResult;
+  }
+
   if (typeof document === 'undefined') {
-    return normalizeSvgStringHeadless(svgContent, options);
+    return fastResult;
   }
 
   try {

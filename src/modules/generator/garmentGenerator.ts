@@ -204,12 +204,31 @@ export function getCachedScaledArtwork(
   return scaledArtSvg;
 }
 
+// Caché de arte con IDs aislados (namespaced) por molde y talla (LRU máx. 64)
+const namespacedArtworkCache = new Map<string, string>();
+
+export function getCachedNamespacedArtwork(
+  scaledArtSvg: string,
+  cacheKey: string
+): string {
+  const cached = getFromLruCache(namespacedArtworkCache, cacheKey);
+  if (cached !== undefined) return cached;
+
+  const namespaced = scaledArtSvg.includes('id=')
+    ? namespaceSvgIds(scaledArtSvg, cacheKey)
+    : scaledArtSvg;
+
+  setInLruCache(namespacedArtworkCache, cacheKey, namespaced);
+  return namespaced;
+}
+
 /**
- * Limpia todas las cachés del generador (normalización, escalado y registro de piezas).
+ * Limpia todas las cachés del generador (normalización, escalado, namespacing y registro de piezas).
  */
 export function clearGeneratorCaches(): void {
   normalizedArtworkCache.clear();
   scaledArtworkCache.clear();
+  namespacedArtworkCache.clear();
   pieceSvgRegistry.clear();
 }
 
@@ -724,10 +743,11 @@ export function generateGarmentPieces(
           cachePrefix
         );
 
-        // Aislar IDs de gradientes/filtros únicamente si la pieza los contiene
-        const namespacedArt = scaledArtSvg.includes('id=')
-          ? namespaceSvgIds(scaledArtSvg, uniquePieceId)
-          : scaledArtSvg;
+        // Aislar IDs de gradientes/filtros con caché por molde/talla para rendimiento ultrarrápido
+        const namespacedArt = getCachedNamespacedArtwork(
+          scaledArtSvg,
+          `${cachePrefix}_${artOffsetY}`
+        );
 
         const fullPieceSvg = `
           <g id="${uniquePieceId}">

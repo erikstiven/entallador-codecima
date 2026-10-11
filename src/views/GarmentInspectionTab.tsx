@@ -70,10 +70,30 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
   const unitStepMm = displayUnit === 'mm' ? 1 : toMm(0.1, displayUnit);
   const formatDisplayMm = (valueMm: number) => formatWithUnits(valueMm);
 
+  const debounceTimerRef = React.useRef<number | null>(null);
+  const pendingUpdatesRef = React.useRef<Partial<typeof generationConfig>>({});
+
   const updateConfig = (partial: Parameters<typeof rawUpdateConfig>[0]) => {
-    rawUpdateConfig(partial);
+    pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...partial };
     setSyncPulse(true);
+
+    if (debounceTimerRef.current) {
+      window.clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = window.setTimeout(() => {
+      rawUpdateConfig(pendingUpdatesRef.current);
+      pendingUpdatesRef.current = {};
+      debounceTimerRef.current = null;
+    }, 40);
   };
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        window.clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!syncPulse) return;
