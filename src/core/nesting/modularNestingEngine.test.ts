@@ -203,5 +203,67 @@ describe('modularNestingEngine', () => {
     expect(result.sheets![0].heightMm).toBeLessThan(stackedRightColumnHeight - 200);
     expect(result.sheets![0].heightMm).toBeLessThan(1700);
   });
+
+  it('debe eliminar completamente los huecos blancos laterales apilando mangas en pista vertical continua desacoplada con separación exacta de 3mm', () => {
+    // 3 jugadores con camisetas de 600 mm de altura y mangas de 350 mm de largo
+    const pieces: NestingPieceInput[] = [];
+    for (let i = 1; i <= 3; i++) {
+      pieces.push(
+        createMockPiece(`p${i}_del`, `player_${i}`, `JUGADOR_${i}`, 'DELANTERO', 400, 600),
+        createMockPiece(`p${i}_esp`, `player_${i}`, `JUGADOR_${i}`, 'ESPALDA', 400, 600),
+        createMockPiece(`p${i}_m1`, `player_${i}`, `JUGADOR_${i}`, 'MANGA_IZQ', 350, 200),
+        createMockPiece(`p${i}_m2`, `player_${i}`, `JUGADOR_${i}`, 'MANGA_DER', 350, 200)
+      );
+    }
+
+    const result = performModularNesting(pieces, {
+      printableWidthMm: 1120,
+      maxSheetLengthMm: 5000,
+      spacingMm: 3,
+    });
+
+    const rightTrackSleeves = result.placedPieces
+      .filter((p) => p.pieceType.startsWith('MANGA') && p.xMm >= 800)
+      .sort((a, b) => a.yMm - b.yMm);
+
+    // En la pista continua deben caber 5 mangas sin huecos (la 6ta va al fondo)
+    expect(rightTrackSleeves.length).toBe(5);
+
+    // Verificar que cada manga consecutiva está separada exactamente por spacingMm (3mm),
+    // eliminando por completo los antiguos huecos de 25 cm por fila
+    for (let i = 0; i < rightTrackSleeves.length - 1; i++) {
+      const current = rightTrackSleeves[i];
+      const next = rightTrackSleeves[i + 1];
+      const distanceY = next.yMm - (current.yMm + current.effectiveHeightMm);
+      expect(Math.abs(distanceY - 3)).toBeLessThan(0.1);
+    }
+
+    // Manga 2 cruza limpiamente la frontera entre fila 1 y fila 2 (600mm)
+    expect(rightTrackSleeves[1].yMm).toBeLessThan(600);
+    expect(rightTrackSleeves[1].yMm + rightTrackSleeves[1].effectiveHeightMm).toBeGreaterThan(600);
+  });
+
+  it('debe ejecutar el acomodo modular continuo en tiempo ultrarrápido (< 50ms) para 20 jugadores', () => {
+    const pieces: NestingPieceInput[] = [];
+    for (let i = 1; i <= 20; i++) {
+      pieces.push(
+        createMockPiece(`p${i}_del`, `player_${i}`, `JUGADOR_${i}`, 'DELANTERO', 400, 650),
+        createMockPiece(`p${i}_esp`, `player_${i}`, `JUGADOR_${i}`, 'ESPALDA', 400, 650),
+        createMockPiece(`p${i}_m1`, `player_${i}`, `JUGADOR_${i}`, 'MANGA_IZQ', 320, 180),
+        createMockPiece(`p${i}_m2`, `player_${i}`, `JUGADOR_${i}`, 'MANGA_DER', 320, 180)
+      );
+    }
+
+    const result = performModularNesting(pieces, {
+      printableWidthMm: 1120,
+      maxSheetLengthMm: 5000,
+    });
+
+    expect(result.placedPieces.length).toBe(80);
+    expect(result.executionTimeMs).toBeLessThan(50);
+    expect(result.sheets!.length).toBeGreaterThan(1);
+    expect(result.utilizationPercent).toBeGreaterThan(60);
+  });
 });
+
 
