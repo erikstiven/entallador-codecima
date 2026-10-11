@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import * as path from 'path';
+import * as fs from 'fs';
 import { performModularNesting } from './modularNestingEngine';
 import { NestingPieceInput } from './types';
+import { parsePatternSvg } from '@/modules/patterns/patternParser';
 
 function createMockPiece(
   id: string,
@@ -321,6 +324,57 @@ describe('modularNestingEngine', () => {
     // Las columnas de mangas deben empezar en el margen superior (4 mm)
     expect(col1Sleeves[0].yMm).toBe(4);
     expect(col2Sleeves[0].yMm).toBe(4);
+  });
+
+  it('debe encastrar mangas tête-bêche (90° y 270°) cuando no caben dos columnas paralelas (Caso Imagen 2)', () => {
+    // Cargar mangas reales del molde de fútbol oficial (talla 28)
+    const svgPath = path.resolve(__dirname, '../../../tests/fixtures/patterns/moldes_futbol_2026.svg');
+    const svgContent = fs.readFileSync(svgPath, 'utf8');
+    const { patternSet } = parsePatternSvg(svgContent, 'FUTBOL', 'FUTBOL', 'moldes.svg');
+    const t28 = patternSet.sizes.find((s: any) => s.sizeName === '28')!;
+    const mIzq = t28.pieces.find((p: any) => p.pieceType === 'MANGA_IZQ')!;
+    const mDer = t28.pieces.find((p: any) => p.pieceType === 'MANGA_DER')!;
+
+    // 1 jugador con delantero 445x650 y espalda 445x650
+    // En bobina 1120 mm: 3 + 445 + 3 + 445 + 3 = 899 mm ocupados.
+    // Ancho libre lateral = 1120 - 899 - 3 = 218 mm.
+    // Como las mangas rotadas 90° miden 212.5 mm de ancho, cabe exactamente 1 columna (212.5 <= 218).
+    // Dos columnas paralelas requerirían 212.5 + 3 + 212.5 = 428 mm > 218 mm (no caben 2 columnas).
+    const pieces: NestingPieceInput[] = [
+      createMockPiece('p1_del', 'player_1', 'CAMILA', 'DELANTERO', 445, 650),
+      createMockPiece('p1_esp', 'player_1', 'CAMILA', 'ESPALDA', 445, 650),
+      {
+        ...createMockPiece('p1_m1', 'player_1', 'CAMILA', 'MANGA_IZQ', mIzq.bbox.width, mIzq.bbox.height),
+        cutPolygon: mIzq.cutPolygon,
+      },
+      {
+        ...createMockPiece('p1_m2', 'player_1', 'CAMILA', 'MANGA_DER', mDer.bbox.width, mDer.bbox.height),
+        cutPolygon: mDer.cutPolygon,
+      },
+    ];
+
+    const result = performModularNesting(pieces, {
+      printableWidthMm: 1120,
+      maxSheetLengthMm: 5000,
+      spacingMm: 3,
+    });
+
+    const m1 = result.placedPieces.find((p) => p.pieceType === 'MANGA_IZQ')!;
+    const m2 = result.placedPieces.find((p) => p.pieceType === 'MANGA_DER')!;
+
+    expect(m1.yMm).toBeLessThan(650);
+    expect(m2.yMm).toBeLessThan(650);
+
+    // Manga 1 con puño a la izquierda (90°) y Manga 2 con puño a la derecha (270°) encastrada
+    expect(m1.rotationDeg).toBe(90);
+    expect(m2.rotationDeg).toBe(270);
+    expect(m1.xMm).toBeGreaterThanOrEqual(890);
+    expect(m2.xMm).toBeGreaterThanOrEqual(890);
+
+    // La altura total del par encastrado debe ser menor que la suma de sus bounding boxes separadas
+    const totalPairHeight = Math.max(m1.yMm + m1.effectiveHeightMm, m2.yMm + m2.effectiveHeightMm) - m1.yMm;
+    const separatedHeight = m1.effectiveHeightMm + 3 + m2.effectiveHeightMm;
+    expect(totalPairHeight).toBeLessThan(separatedHeight);
   });
 });
 

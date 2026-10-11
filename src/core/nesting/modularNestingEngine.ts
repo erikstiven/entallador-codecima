@@ -5,12 +5,112 @@ import {
   NestingResult,
   NestingSheet,
 } from './types';
+import { getOrientedPolygon, computeBoundingBox } from '../geometry/transform';
+import { Point2D } from '../geometry/types';
 
 const DEFAULT_PRINTABLE_WIDTH_MM = 1120.0;
 const DEFAULT_MAX_SHEET_LENGTH_MM = 5000.0; // 5.0 metros
 const DEFAULT_SPACING_MM = 3.0; // Separación compacta de 3 mm
 const DEFAULT_SIDE_MARGIN_MM = 3.0; // Margen lateral de 3 mm
 const DEFAULT_TOP_MARGIN_MM = 4.0; // Margen superior/inferior de 4 mm
+
+interface SegmentProfile {
+  getYAtX(x: number): { minY: number; maxY: number };
+}
+
+function getPolygonSegmentProfiles(poly: Point2D[]): SegmentProfile {
+  const segments: { p1: Point2D; p2: Point2D; minX: number; maxX: number }[] = [];
+  const n = poly.length;
+  for (let i = 0; i < n; i++) {
+    const p1 = poly[i];
+    const p2 = poly[(i + 1) % n];
+    segments.push({
+      p1,
+      p2,
+      minX: Math.min(p1.x, p2.x),
+      maxX: Math.max(p1.x, p2.x),
+    });
+  }
+
+  return {
+    getYAtX(x: number): { minY: number; maxY: number } {
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (const seg of segments) {
+        if (x >= seg.minX && x <= seg.maxX) {
+          if (Math.abs(seg.p2.x - seg.p1.x) < 0.0001) {
+            minY = Math.min(minY, seg.p1.y, seg.p2.y);
+            maxY = Math.max(maxY, seg.p1.y, seg.p2.y);
+          } else {
+            const t = (x - seg.p1.x) / (seg.p2.x - seg.p1.x);
+            const y = seg.p1.y + t * (seg.p2.y - seg.p1.y);
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      return { minY, maxY };
+    },
+  };
+}
+
+function computeMinNonCollidingY(
+  poly1: Point2D[],
+  poly2Base: Point2D[],
+  candidateX2: number,
+  spacingMm: number
+): number {
+  if (!poly1 || poly1.length < 3 || !poly2Base || poly2Base.length < 3) {
+    const bbox1 = computeBoundingBox(poly1 || []);
+    return bbox1.maxY + spacingMm;
+  }
+
+  const poly2AtCandidateX = poly2Base.map((p) => ({ x: p.x + candidateX2, y: p.y }));
+  const prof1 = getPolygonSegmentProfiles(poly1);
+  const prof2 = getPolygonSegmentProfiles(poly2AtCandidateX);
+
+  const bbox1 = computeBoundingBox(poly1);
+  const bbox2 = computeBoundingBox(poly2AtCandidateX);
+
+  const overlapMinX = Math.max(bbox1.minX, bbox2.minX);
+  const overlapMaxX = Math.min(bbox1.maxX, bbox2.maxX);
+
+  if (overlapMinX > overlapMaxX) {
+    return bbox1.minY;
+  }
+
+  let maxReqY = -Infinity;
+  const step = 2.0;
+  for (let x = overlapMinX; x <= overlapMaxX; x += step) {
+    const y1 = prof1.getYAtX(x).maxY;
+    const y2 = prof2.getYAtX(x).minY;
+    if (Number.isFinite(y1) && Number.isFinite(y2)) {
+      const reqY = y1 - y2 + spacingMm;
+      if (reqY > maxReqY) maxReqY = reqY;
+    }
+  }
+
+  for (const pt of poly1) {
+    if (pt.x >= overlapMinX && pt.x <= overlapMaxX) {
+      const y2 = prof2.getYAtX(pt.x).minY;
+      if (Number.isFinite(y2)) {
+        const reqY = pt.y - y2 + spacingMm;
+        if (reqY > maxReqY) maxReqY = reqY;
+      }
+    }
+  }
+  for (const pt of poly2AtCandidateX) {
+    if (pt.x >= overlapMinX && pt.x <= overlapMaxX) {
+      const y1 = prof1.getYAtX(pt.x).maxY;
+      if (Number.isFinite(y1)) {
+        const reqY = y1 - pt.y + spacingMm;
+        if (reqY > maxReqY) maxReqY = reqY;
+      }
+    }
+  }
+
+  return Number.isFinite(maxReqY) ? maxReqY : bbox1.maxY + spacingMm;
+}
 
 interface PlayerGarmentSet {
   orderItemId: string;
@@ -549,33 +649,105 @@ export function performModularNesting(
               candidatesToPlace.splice(0, 2);
             }
           } else {
-            // Columna lateral simple pegada a la espalda (X = rowRightEdge)
-            let sleeveToggle = 90;
-            const maxSleevesThisRow = Math.max(1, Math.floor(jerseyRowH / (candidatesToPlace[0]?.bbox.width || 350)));
-            let placedThisRow = 0;
+            // ENCASTRE TÊTE-BÊCHE INDUSTRIAL (Imagen 2)
+            // Cuando no entran 2 columnas paralelas en el ancho libre, se encastran las mangas en pares
+            // alternando 90° (puño a la izquierda) y 270° (puño a la derecha) aprovechando el corte diagonal de la sisa.
+            while (candidatesToPlace.length >= 2) {
+              const sm1 = candidatesToPlace[0];
+              const sm2 = candidatesToPlace[1];
+              const sW1 = sm1.bbox.height;
+              const sH1 = sm1.bbox.width;
+              const sW2 = sm2.bbox.height;
+              const sH2 = sm2.bbox.width;
 
-            while (candidatesToPlace.length > 0 && placedThisRow < maxSleevesThisRow) {
-              const sm = candidatesToPlace[0];
-              const sW = sm.bbox.height;
-              const sH = sm.bbox.width;
+              if (sW1 > availableRightWidth && sW2 > availableRightWidth) break;
 
-              if (sW > availableRightWidth) break;
+              const x1 = Number(rowRightEdge.toFixed(2));
+              const y1 = Number(continuousCol1Y.toFixed(2));
+              const poly1 = (sm1.cutPolygon && sm1.cutPolygon.length >= 3)
+                ? getOrientedPolygon(sm1.cutPolygon, 90, x1, y1)
+                : [{ x: x1, y: y1 }, { x: x1 + sW1, y: y1 }, { x: x1 + sW1, y: y1 + sH1 }, { x: x1, y: y1 + sH1 }];
 
+              const poly2Base = (sm2.cutPolygon && sm2.cutPolygon.length >= 3)
+                ? getOrientedPolygon(sm2.cutPolygon, 270, 0, 0)
+                : [{ x: 0, y: 0 }, { x: sW2, y: 0 }, { x: sW2, y: sH2 }, { x: 0, y: sH2 }];
+
+              const minShiftX = x1;
+              const maxShiftX = Math.max(minShiftX, Math.min(rowRightEdge + availableRightWidth - sW2, printableWidthMm - sideMarginMm - sW2));
+
+              // Buscar el mejor desplazamiento X2 que minimice la altura total del par encastrado
+              let bestX2 = maxShiftX;
+              let bestY2 = y1 + sH1 + spacingMm;
+              let bestTotalH = Infinity;
+
+              const step = Math.max(2.0, (maxShiftX - minShiftX) / 8);
+              for (let sx = minShiftX; sx <= maxShiftX + 0.1; sx += step) {
+                const reqY2 = computeMinNonCollidingY(poly1, poly2Base, sx, spacingMm);
+                const totalH = Math.max(y1 + sH1, reqY2 + sH2) - y1;
+                if (totalH < bestTotalH) {
+                  bestTotalH = totalH;
+                  bestY2 = reqY2;
+                  bestX2 = sx;
+                }
+              }
+
+              // El par se coloca si cabe directamente en la altura de la fila o si el encastre tête-bêche diagonal (Imagen 2) lo hace encajar
+              const fitsDirectly = (sH1 + spacingMm + sH2) <= jerseyRowH + 0.5;
+              const diagonalSaving = (sH1 + spacingMm + sH2) - bestTotalH;
+              const fitsInterlocked = bestTotalH <= jerseyRowH + 20;
+
+              if (!fitsDirectly && !fitsInterlocked) {
+                // Si excede la altura de la fila y no encastra: colocar 1 manga en columna simple
+                break;
+              }
+
+              // Colocar Manga 1 (90°, puño a la izquierda contra la espalda)
               placedPieces.push({
-                ...sm,
-                xMm: Number(rowRightEdge.toFixed(2)),
-                yMm: Number(continuousCol1Y.toFixed(2)),
-                rotationDeg: sleeveToggle,
-                effectiveWidthMm: sW,
-                effectiveHeightMm: sH,
+                ...sm1,
+                xMm: x1,
+                yMm: y1,
+                rotationDeg: 90,
+                effectiveWidthMm: sW1,
+                effectiveHeightMm: sH1,
                 isLocked: false,
                 sheetIndex: sheetIdx,
               });
 
-              continuousCol1Y += sH + spacingMm;
-              sleeveToggle = sleeveToggle === 90 ? 270 : 90;
-              candidatesToPlace.splice(0, 1);
-              placedThisRow++;
+              // Colocar Manga 2 (270°, puño a la derecha contra el margen de bobina, encastrada en diagonal)
+              placedPieces.push({
+                ...sm2,
+                xMm: Number(bestX2.toFixed(2)),
+                yMm: Number(bestY2.toFixed(2)),
+                rotationDeg: 270,
+                effectiveWidthMm: sW2,
+                effectiveHeightMm: sH2,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              });
+
+              continuousCol1Y = Math.max(y1 + sH1, bestY2 + sH2) + spacingMm;
+              candidatesToPlace.splice(0, 2);
+            }
+
+            // Si queda 1 manga impar que quepa en el ancho disponible:
+            if (candidatesToPlace.length >= 1) {
+              const sm = candidatesToPlace[0];
+              const sW = sm.bbox.height;
+              const sH = sm.bbox.width;
+              if (sW <= availableRightWidth) {
+                placedPieces.push({
+                  ...sm,
+                  xMm: Number(rowRightEdge.toFixed(2)),
+                  yMm: Number(continuousCol1Y.toFixed(2)),
+                  rotationDeg: 90,
+                  effectiveWidthMm: sW,
+                  effectiveHeightMm: sH,
+                  isLocked: false,
+                  sheetIndex: sheetIdx,
+                });
+                continuousCol1Y += sH + spacingMm;
+                candidatesToPlace.splice(0, 1);
+              }
             }
           }
 
