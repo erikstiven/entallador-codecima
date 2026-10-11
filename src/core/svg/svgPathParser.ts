@@ -135,6 +135,7 @@ export function parseSvgPathToPolygon(
   let startY = 0;
   let lastControlX = 0;
   let lastControlY = 0;
+  let lastCmdWasCurve = false;
   let currentCmd = '';
 
   let i = 0;
@@ -159,6 +160,7 @@ export function parseSvgPathToPolygon(
         startY = currentY;
         lastControlX = currentX;
         lastControlY = currentY;
+        lastCmdWasCurve = false;
         rawPoints.push({ x: currentX, y: currentY });
 
         // Si siguen más números sin letra, SVG los interpreta como comandos L / l subsiguientes
@@ -173,6 +175,7 @@ export function parseSvgPathToPolygon(
         currentY = isRelative ? currentY + y : y;
         lastControlX = currentX;
         lastControlY = currentY;
+        lastCmdWasCurve = false;
         rawPoints.push({ x: currentX, y: currentY });
         break;
       }
@@ -181,6 +184,8 @@ export function parseSvgPathToPolygon(
         const x = Number(tokens[i++]);
         currentX = isRelative ? currentX + x : x;
         lastControlX = currentX;
+        lastControlY = currentY;
+        lastCmdWasCurve = false;
         rawPoints.push({ x: currentX, y: currentY });
         break;
       }
@@ -188,7 +193,9 @@ export function parseSvgPathToPolygon(
       case 'V': { // Vertical Line
         const y = Number(tokens[i++]);
         currentY = isRelative ? currentY + y : y;
+        lastControlX = currentX;
         lastControlY = currentY;
+        lastCmdWasCurve = false;
         rawPoints.push({ x: currentX, y: currentY });
         break;
       }
@@ -215,6 +222,7 @@ export function parseSvgPathToPolygon(
         currentY = p3.y;
         lastControlX = p2.x;
         lastControlY = p2.y;
+        lastCmdWasCurve = true;
         break;
       }
 
@@ -224,12 +232,11 @@ export function parseSvgPathToPolygon(
         const x = Number(tokens[i++]);
         const y = Number(tokens[i++]);
 
-        // Reflejar el último punto de control
+        // Reflejar el último punto de control solo si el comando anterior fue una curva (C o S)
         const p0 = { x: currentX, y: currentY };
-        const p1 = {
-          x: 2 * currentX - lastControlX,
-          y: 2 * currentY - lastControlY,
-        };
+        const p1 = lastCmdWasCurve
+          ? { x: 2 * currentX - lastControlX, y: 2 * currentY - lastControlY }
+          : { x: currentX, y: currentY };
         const p2 = { x: isRelative ? currentX + x2 : x2, y: isRelative ? currentY + y2 : y2 };
         const p3 = { x: isRelative ? currentX + x : x, y: isRelative ? currentY + y : y };
 
@@ -242,6 +249,7 @@ export function parseSvgPathToPolygon(
         currentY = p3.y;
         lastControlX = p2.x;
         lastControlY = p2.y;
+        lastCmdWasCurve = true;
         break;
       }
 
@@ -251,6 +259,7 @@ export function parseSvgPathToPolygon(
           currentX = startX;
           currentY = startY;
         }
+        lastCmdWasCurve = false;
         break;
       }
 
