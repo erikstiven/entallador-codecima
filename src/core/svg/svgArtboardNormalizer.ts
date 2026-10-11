@@ -96,6 +96,25 @@ export function extractGarmentBBox(
   if (!canvasWidth) canvasWidth = parseFloat(svgEl.getAttribute('width') || '0') || 0;
   if (!canvasHeight) canvasHeight = parseFloat(svgEl.getAttribute('height') || '0') || 0;
 
+  // 0. Comprobar si existe un clipPath maestro de Illustrator con dimensiones exactas
+  const clipRect = svgEl.querySelector('clipPath rect, mask rect');
+  if (clipRect) {
+    const w = parseFloat(clipRect.getAttribute('width') || '0');
+    const h = parseFloat(clipRect.getAttribute('height') || '0');
+    if (w > 10 && h > 10) {
+      let x = parseFloat(clipRect.getAttribute('x') || '0');
+      let y = parseFloat(clipRect.getAttribute('y') || '0');
+      const parentClip = clipRect.closest('clipPath, mask');
+      const transformAttr = (parentClip?.getAttribute('transform') || '') + ' ' + (clipRect.getAttribute('transform') || '');
+      const translateMatch = transformAttr.match(/translate\s*\(\s*([^\s,]+)(?:[,\s]+([^\s,]+))?\s*\)/i);
+      if (translateMatch) {
+        x += parseFloat(translateMatch[1]);
+        if (translateMatch[2]) y += parseFloat(translateMatch[2]);
+      }
+      return { x, y, width: w, height: h };
+    }
+  }
+
   // 1. Ocultar temporalmente solo los rectángulos de artboard identificados para medir
   const hiddenArtboardNodes: SVGElement[] = [];
   const allNodes = svgEl.querySelectorAll<SVGElement>('rect, [id*="artboard" i], [id*="mesa" i], [id*="guide" i], [id*="guia" i], [id*="canvas" i]');
@@ -187,6 +206,50 @@ function normalizeSvgStringHeadless(
     .replace(/<rect\b[^>]*fill=["'](?:none|transparent)["'][^>]*stroke=["'](?:none|transparent)["'][^>]*\/?>/gi, '')
     .replace(/<rect\b[^>]*stroke=["'](?:none|transparent)["'][^>]*fill=["'](?:none|transparent)["'][^>]*\/?>/gi, '')
     .replace(/<rect\b[^>]*fill=["'](?:none|transparent)["'](?![^>]*\bstroke=)[^>]*\/?>/gi, '');
+
+  // 0. Comprobar si existe un clipPath maestro de Illustrator con dimensiones explícitas
+  const clipMatch = svgContent.match(/<clipPath\b([^>]*)>([\s\S]*?)<\/clipPath>/i);
+  if (clipMatch) {
+    const clipAttrs = clipMatch[1];
+    const clipInner = clipMatch[2];
+    const rectMatch = clipInner.match(/<rect\b([^>]*)\/?>/i);
+    if (rectMatch) {
+      const rectAttrs = rectMatch[1];
+      const wMatch = rectAttrs.match(/\bwidth\s*=\s*["']([^"']+)["']/i);
+      const hMatch = rectAttrs.match(/\bheight\s*=\s*["']([^"']+)["']/i);
+      if (wMatch && hMatch) {
+        const rw = parseFloat(wMatch[1]);
+        const rh = parseFloat(hMatch[1]);
+        if (rw > 10 && rh > 10) {
+          let rx = 0;
+          let ry = 0;
+          const xMatch = rectAttrs.match(/\bx\s*=\s*["']([^"']+)["']/i);
+          const yMatch = rectAttrs.match(/\by\s*=\s*["']([^"']+)["']/i);
+          if (xMatch) rx += parseFloat(xMatch[1]);
+          if (yMatch) ry += parseFloat(yMatch[1]);
+
+          const transformStr = clipAttrs + ' ' + rectAttrs;
+          const translateMatch = transformStr.match(/translate\s*\(\s*([^\s,]+)(?:[,\s]+([^\s,]+))?\s*\)/i);
+          if (translateMatch) {
+            rx += parseFloat(translateMatch[1]);
+            if (translateMatch[2]) ry += parseFloat(translateMatch[2]);
+          }
+
+          const padX = rw * paddingRatio;
+          const padY = rh * paddingRatio;
+          const vx = (rx - padX).toFixed(2);
+          const vy = (ry - padY).toFixed(2);
+          const vw = (rw + padX * 2).toFixed(2);
+          const vh = (rh + padY * 2).toFixed(2);
+
+          return cleaned.replace(/<svg\b([^>]*)>/i, (_, attrs) => {
+            const cleanAttrs = attrs.replace(/\bviewBox\s*=\s*["'][^"']+["']/gi, '');
+            return `<svg viewBox="${vx} ${vy} ${vw} ${vh}" ${cleanAttrs}>`;
+          });
+        }
+      }
+    }
+  }
 
   let minX = Infinity;
   let minY = Infinity;
