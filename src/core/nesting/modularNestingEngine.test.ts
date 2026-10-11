@@ -261,6 +261,67 @@ describe('modularNestingEngine', () => {
     expect(result.sheets!.length).toBeGreaterThan(1);
     expect(result.utilizationPercent).toBeGreaterThan(60);
   });
+
+  it('debe estructurar mangas continuas en doble columna sin huecos muertos verticales entre filas (Caso Imagen 4)', () => {
+    // 6 jugadores infantiles/juveniles (ancho delantero 360, espalda 360, mangas 280x140)
+    // En bobina 1120 mm: 3 + 360 + 3 + 360 + 3 = 729 mm ocupados por camisetas.
+    // Espacio libre lateral: 1120 - 729 - 3 = 388 mm.
+    // 2 mangas rotadas: 140 + 3 + 140 = 283 mm <= 388 mm -> Doble columna activa.
+    const playerNames = ['MATEO', 'CAMILA', 'CARLOS', 'DANIELA', 'ALVARO', 'VALENTINA'];
+    const pieces: NestingPieceInput[] = [];
+
+    for (let i = 0; i < playerNames.length; i++) {
+      const p = playerNames[i];
+      pieces.push(
+        createMockPiece(`p${i}_del`, `item_${i}`, p, 'DELANTERO', 360, 520),
+        createMockPiece(`p${i}_esp`, `item_${i}`, p, 'ESPALDA', 360, 520),
+        createMockPiece(`p${i}_m1`, `item_${i}`, p, 'MANGA_IZQ', 280, 140),
+        createMockPiece(`p${i}_m2`, `item_${i}`, p, 'MANGA_DER', 280, 140)
+      );
+    }
+
+    const result = performModularNesting(pieces, {
+      printableWidthMm: 1120,
+      maxSheetLengthMm: 5000,
+      spacingMm: 3,
+    });
+
+    expect(result.sheets).toBeDefined();
+    expect(result.sheets!.length).toBe(1);
+
+    // Todas las mangas izquierdas en Columna 1
+    const col1Sleeves = result.placedPieces
+      .filter((p) => p.pieceType === 'MANGA_IZQ')
+      .sort((a, b) => a.yMm - b.yMm);
+
+    // Todas las mangas derechas en Columna 2
+    const col2Sleeves = result.placedPieces
+      .filter((p) => p.pieceType === 'MANGA_DER')
+      .sort((a, b) => a.yMm - b.yMm);
+
+    expect(col1Sleeves.length).toBe(6);
+    expect(col2Sleeves.length).toBe(6);
+
+    // Verificar que en Columna 1 cada manga se apila inmediatamente debajo de la anterior (sin el hueco de 270 mm)
+    for (let i = 1; i < col1Sleeves.length; i++) {
+      const prev = col1Sleeves[i - 1];
+      const curr = col1Sleeves[i];
+      const expectedY = prev.yMm + prev.effectiveHeightMm + 3;
+      expect(curr.yMm).toBeCloseTo(expectedY, 1);
+    }
+
+    // Verificar que en Columna 2 cada manga se apila inmediatamente debajo de la anterior
+    for (let i = 1; i < col2Sleeves.length; i++) {
+      const prev = col2Sleeves[i - 1];
+      const curr = col2Sleeves[i];
+      const expectedY = prev.yMm + prev.effectiveHeightMm + 3;
+      expect(curr.yMm).toBeCloseTo(expectedY, 1);
+    }
+
+    // Las columnas de mangas deben empezar en el margen superior (4 mm)
+    expect(col1Sleeves[0].yMm).toBe(4);
+    expect(col2Sleeves[0].yMm).toBe(4);
+  });
 });
 
 

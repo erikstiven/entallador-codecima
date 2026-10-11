@@ -424,6 +424,8 @@ export function performModularNesting(
       const leftoverCollars: NestingPieceInput[] = [];
 
       let jerseyY = topMarginMm;
+      let continuousCol1Y = topMarginMm;
+      let continuousCol2Y = topMarginMm;
 
       for (const playerSet of sheetPlayers) {
         if (!playerNames.includes(playerSet.playerName)) {
@@ -494,10 +496,6 @@ export function performModularNesting(
           const collarsToPlace = [...rowCollars, ...leftoverCollars];
           leftoverCollars.length = 0;
 
-          // Colocar mangas inmediatamente pegadas al borde derecho de esta fila
-          let sleeveCurrY = jerseyY;
-          let sleeveToggle = 90;
-
           // 1. Probar doble columna si hay suficiente ancho para 2 mangas
           let canFitDoubleCol = false;
           if (candidatesToPlace.length >= 2) {
@@ -509,6 +507,7 @@ export function performModularNesting(
           }
 
           if (canFitDoubleCol) {
+            // DOBLE COLUMNA CONTINUA INDUSTRIAL (Sin huecos verticales entre filas)
             while (candidatesToPlace.length >= 2) {
               const sm1 = candidatesToPlace[0];
               const sm2 = candidatesToPlace[1];
@@ -516,10 +515,8 @@ export function performModularNesting(
               const sH1 = sm1.bbox.width;
               const sW2 = sm2.bbox.height;
               const sH2 = sm2.bbox.width;
-              const pairH = Math.max(sH1, sH2);
 
               if (sW1 + spacingMm + sW2 > availableRightWidth) break;
-              if (sleeveCurrY + pairH > jerseyY + jerseyRowH + 0.5) break;
 
               const col1X = Number(rowRightEdge.toFixed(2));
               const col2X = Number((rowRightEdge + sW1 + spacingMm).toFixed(2));
@@ -528,7 +525,7 @@ export function performModularNesting(
                 {
                   ...sm1,
                   xMm: col1X,
-                  yMm: Number(sleeveCurrY.toFixed(2)),
+                  yMm: Number(continuousCol1Y.toFixed(2)),
                   rotationDeg: 90,
                   effectiveWidthMm: sW1,
                   effectiveHeightMm: sH1,
@@ -538,7 +535,7 @@ export function performModularNesting(
                 {
                   ...sm2,
                   xMm: col2X,
-                  yMm: Number(sleeveCurrY.toFixed(2)),
+                  yMm: Number(continuousCol2Y.toFixed(2)),
                   rotationDeg: 90,
                   effectiveWidthMm: sW2,
                   effectiveHeightMm: sH2,
@@ -547,28 +544,27 @@ export function performModularNesting(
                 }
               );
 
-              sleeveCurrY += pairH + spacingMm;
+              continuousCol1Y += sH1 + spacingMm;
+              continuousCol2Y += sH2 + spacingMm;
               candidatesToPlace.splice(0, 2);
             }
           } else {
-            // Columna lateral pegada a la espalda (X = rowRightEdge)
-            // Permitir que las mangas fluyan en la pista lateral sin detenerse artificialmente por la altura de fila individual
-            while (candidatesToPlace.length > 0) {
+            // Columna lateral simple pegada a la espalda (X = rowRightEdge)
+            let sleeveToggle = 90;
+            const maxSleevesThisRow = Math.max(1, Math.floor(jerseyRowH / (candidatesToPlace[0]?.bbox.width || 350)));
+            let placedThisRow = 0;
+
+            while (candidatesToPlace.length > 0 && placedThisRow < maxSleevesThisRow) {
               const sm = candidatesToPlace[0];
               const sW = sm.bbox.height;
               const sH = sm.bbox.width;
 
               if (sW > availableRightWidth) break;
 
-              // Si ya superó el final de la fila actual, dejamos que continúe en la siguiente fila si hay espacio lateral
-              if (sleeveCurrY + sH > jerseyY + jerseyRowH + 0.5) {
-                break;
-              }
-
               placedPieces.push({
                 ...sm,
                 xMm: Number(rowRightEdge.toFixed(2)),
-                yMm: Number(sleeveCurrY.toFixed(2)),
+                yMm: Number(continuousCol1Y.toFixed(2)),
                 rotationDeg: sleeveToggle,
                 effectiveWidthMm: sW,
                 effectiveHeightMm: sH,
@@ -576,35 +572,10 @@ export function performModularNesting(
                 sheetIndex: sheetIdx,
               });
 
-              sleeveCurrY += sH + spacingMm;
+              continuousCol1Y += sH + spacingMm;
               sleeveToggle = sleeveToggle === 90 ? 270 : 90;
               candidatesToPlace.splice(0, 1);
-            }
-          }
-
-          // Relleno de huecos residuales con cuellos debajo de las mangas de esta fila
-          const remainingGapH = (jerseyY + jerseyRowH) - sleeveCurrY;
-          if (remainingGapH > 20 && collarsToPlace.length > 0) {
-            let gapY = sleeveCurrY;
-            while (collarsToPlace.length > 0) {
-              const cIdx = collarsToPlace.findIndex(
-                (c) => c.bbox.width <= availableRightWidth && gapY + c.bbox.height <= jerseyY + jerseyRowH + 0.5
-              );
-              if (cIdx === -1) break;
-
-              const collar = collarsToPlace.splice(cIdx, 1)[0];
-              placedPieces.push({
-                ...collar,
-                xMm: Number(rowRightEdge.toFixed(2)),
-                yMm: Number(gapY.toFixed(2)),
-                rotationDeg: 0,
-                effectiveWidthMm: collar.bbox.width,
-                effectiveHeightMm: collar.bbox.height,
-                isLocked: false,
-                sheetIndex: sheetIdx,
-              });
-
-              gapY += collar.bbox.height + spacingMm;
+              placedThisRow++;
             }
           }
 
@@ -718,7 +689,7 @@ export function performModularNesting(
         }
       }
 
-      const jerseyBottomY = jerseyY;
+      const jerseyBottomY = Math.max(jerseyY, continuousCol1Y, continuousCol2Y);
 
       // Acomodo de mangas sobrantes y cuellos en la zona inferior bajo las camisetas
       const plan = planSheetAccessories(

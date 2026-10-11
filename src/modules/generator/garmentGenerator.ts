@@ -344,7 +344,7 @@ export function getCachedScaledArtwork(
         .replace(/\bpreserveAspectRatio\s*=\s*["'][^"']*["']/gi, '')
         .replace(/\boverflow\s*=\s*["'][^"']*["']/gi, '')
         .trim();
-      return `<svg x="0" y="${artOffsetY}" width="${width}" height="${height}" preserveAspectRatio="${preserveAspectRatioMode}" overflow="visible"${clean ? ' ' + clean : ''}>`;
+      return `<svg x="0" y="${artOffsetY}" width="${width}" height="${height}" preserveAspectRatio="${preserveAspectRatioMode}" overflow="hidden"${clean ? ' ' + clean : ''}>`;
     });
   }
 

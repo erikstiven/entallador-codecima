@@ -264,6 +264,9 @@ export function namespaceSvgFragment(svgFragment: string, namespace: string): { 
     return '';
   });
 
+  // 8. Sanitize nested <svg> tags to ensure overflow is hidden (prevents Illustrator canvas limits)
+  result = result.replace(/(<svg\b[^>]*)\boverflow\s*=\s*["']visible["']/gi, '$1overflow="hidden"');
+
   return { fragment: result.trim(), styles: hoistedStyles, defs: hoistedDefs };
 }
 
