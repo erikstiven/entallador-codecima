@@ -596,18 +596,20 @@ export function performModularNesting(
           const collarsToPlace = [...rowCollars, ...leftoverCollars];
           leftoverCollars.length = 0;
 
-          // 1. Probar doble columna si hay suficiente ancho para 2 mangas
+          // 1. Probar doble columna solo si el ancho físico real de la bobina lo permite estrictamente
           let canFitDoubleCol = false;
           if (candidatesToPlace.length >= 2) {
             const sW1 = candidatesToPlace[0].bbox.height;
             const sW2 = candidatesToPlace[1].bbox.height;
-            if (availableRightWidth >= sW1 + spacingMm + sW2) {
+            const requiredDoubleWidth = sW1 + spacingMm + sW2;
+            const fitsStrictlyInRoll = (rowRightEdge + requiredDoubleWidth) <= (printableWidthMm - sideMarginMm);
+            if (availableRightWidth >= requiredDoubleWidth && fitsStrictlyInRoll) {
               canFitDoubleCol = true;
             }
           }
 
           if (canFitDoubleCol) {
-            // DOBLE COLUMNA CONTINUA INDUSTRIAL (Sin huecos verticales entre filas)
+            // DOBLE COLUMNA CONTINUA (Para bobinas anchas como 1600mm / 1800mm o tallas infantiles)
             while (candidatesToPlace.length >= 2) {
               const sm1 = candidatesToPlace[0];
               const sm2 = candidatesToPlace[1];
@@ -616,7 +618,7 @@ export function performModularNesting(
               const sW2 = sm2.bbox.height;
               const sH2 = sm2.bbox.width;
 
-              if (sW1 + spacingMm + sW2 > availableRightWidth) break;
+              if (rowRightEdge + sW1 + spacingMm + sW2 > printableWidthMm - sideMarginMm) break;
 
               const col1X = Number(rowRightEdge.toFixed(2));
               const col2X = Number((rowRightEdge + sW1 + spacingMm).toFixed(2));
@@ -649,9 +651,12 @@ export function performModularNesting(
               candidatesToPlace.splice(0, 2);
             }
           } else {
-            // ENCASTRE TÊTE-BÊCHE INDUSTRIAL (Imagen 2)
-            // Cuando no entran 2 columnas paralelas en el ancho libre, se encastran las mangas en pares
-            // alternando 90° (puño a la izquierda) y 270° (puño a la derecha) aprovechando el corte diagonal de la sisa.
+            // COLUMNA VERTICAL ÚNICA TÊTE-BÊCHE (Para bobina 1120 mm)
+            // Cuando no entran 2 columnas paralelas en el ancho libre, se apilan las mangas
+            // en UNA SOLA COLUMNA VERTICAL al lado derecho de la camiseta:
+            // - Manga 1 a 90° (puño a la izquierda contra la espalda, copa a la derecha)
+            // - Manga 2 a 270° (puño a la derecha contra el margen de bobina, copa a la izquierda)
+            // directamente debajo de Manga 1, ocupando solo el ancho de UNA manga (~180-220 mm).
             while (candidatesToPlace.length >= 2) {
               const sm1 = candidatesToPlace[0];
               const sm2 = candidatesToPlace[1];
@@ -660,48 +665,52 @@ export function performModularNesting(
               const sW2 = sm2.bbox.height;
               const sH2 = sm2.bbox.width;
 
-              if (sW1 > availableRightWidth && sW2 > availableRightWidth) break;
+              // Ambas mangas deben caber dentro del ancho disponible en la columna única
+              if (sW1 > availableRightWidth || sW2 > availableRightWidth) break;
+              if (rowRightEdge + Math.max(sW1, sW2) > printableWidthMm - sideMarginMm) break;
 
               const x1 = Number(rowRightEdge.toFixed(2));
-              const y1 = Number(continuousCol1Y.toFixed(2));
+              const x2 = x1;
+              const y1 = Number(Math.max(jerseyY, continuousCol1Y).toFixed(2));
+
               const poly1 = (sm1.cutPolygon && sm1.cutPolygon.length >= 3)
                 ? getOrientedPolygon(sm1.cutPolygon, 90, x1, y1)
                 : [{ x: x1, y: y1 }, { x: x1 + sW1, y: y1 }, { x: x1 + sW1, y: y1 + sH1 }, { x: x1, y: y1 + sH1 }];
 
               const poly2Base = (sm2.cutPolygon && sm2.cutPolygon.length >= 3)
-                ? getOrientedPolygon(sm2.cutPolygon, 270, 0, 0)
-                : [{ x: 0, y: 0 }, { x: sW2, y: 0 }, { x: sW2, y: sH2 }, { x: 0, y: sH2 }];
+                ? getOrientedPolygon(sm2.cutPolygon, 270, x2, 0)
+                : [{ x: x2, y: 0 }, { x: x2 + sW2, y: 0 }, { x: x2 + sW2, y: sH2 }, { x: x2, y: sH2 }];
 
-              const minShiftX = x1;
-              const maxShiftX = Math.max(minShiftX, Math.min(rowRightEdge + availableRightWidth - sW2, printableWidthMm - sideMarginMm - sW2));
+              // Calcular Y2 mínimo sin colisión directamente debajo de Manga 1 en la misma columna X
+              const reqY2 = computeMinNonCollidingY(poly1, poly2Base, 0, spacingMm);
+              const bestY2 = Number(Math.max(reqY2, y1 + spacingMm).toFixed(2));
+              const pairBottomY = Math.max(y1 + sH1, bestY2 + sH2);
+              const totalPairH = pairBottomY - y1;
 
-              // Buscar el mejor desplazamiento X2 que minimice la altura total del par encastrado
-              let bestX2 = maxShiftX;
-              let bestY2 = y1 + sH1 + spacingMm;
-              let bestTotalH = Infinity;
-
-              const step = Math.max(2.0, (maxShiftX - minShiftX) / 8);
-              for (let sx = minShiftX; sx <= maxShiftX + 0.1; sx += step) {
-                const reqY2 = computeMinNonCollidingY(poly1, poly2Base, sx, spacingMm);
-                const totalH = Math.max(y1 + sH1, reqY2 + sH2) - y1;
-                if (totalH < bestTotalH) {
-                  bestTotalH = totalH;
-                  bestY2 = reqY2;
-                  bestX2 = sx;
-                }
-              }
-
-              // El par se coloca si cabe directamente en la altura de la fila o si el encastre tête-bêche diagonal (Imagen 2) lo hace encajar
-              const fitsDirectly = (sH1 + spacingMm + sH2) <= jerseyRowH + 0.5;
-              const diagonalSaving = (sH1 + spacingMm + sH2) - bestTotalH;
-              const fitsInterlocked = bestTotalH <= jerseyRowH + 20;
+              // El par se coloca si cabe en la altura de la fila del uniforme (con tolerancia de 25 mm)
+              const fitsDirectly = (sH1 + spacingMm + sH2) <= jerseyRowH + 25;
+              const fitsInterlocked = totalPairH <= jerseyRowH + 25;
 
               if (!fitsDirectly && !fitsInterlocked) {
-                // Si excede la altura de la fila y no encastra: colocar 1 manga en columna simple
+                // Si excede la altura de la fila y no encastra: colocar 1 manga en columna simple si cabe
+                if (y1 + sH1 <= jerseyY + jerseyRowH + 5) {
+                  placedPieces.push({
+                    ...sm1,
+                    xMm: x1,
+                    yMm: y1,
+                    rotationDeg: 90,
+                    effectiveWidthMm: sW1,
+                    effectiveHeightMm: sH1,
+                    isLocked: false,
+                    sheetIndex: sheetIdx,
+                  });
+                  continuousCol1Y = y1 + sH1 + spacingMm;
+                  candidatesToPlace.splice(0, 1);
+                }
                 break;
               }
 
-              // Colocar Manga 1 (90°, puño a la izquierda contra la espalda)
+              // Colocar Manga 1 (90°, puño a la izquierda contra la espalda, copa a la derecha)
               placedPieces.push({
                 ...sm1,
                 xMm: x1,
@@ -713,11 +722,11 @@ export function performModularNesting(
                 sheetIndex: sheetIdx,
               });
 
-              // Colocar Manga 2 (270°, puño a la derecha contra el margen de bobina, encastrada en diagonal)
+              // Colocar Manga 2 (270°, puño a la derecha, copa a la izquierda encastrada en diagonal debajo de Manga 1)
               placedPieces.push({
                 ...sm2,
-                xMm: Number(bestX2.toFixed(2)),
-                yMm: Number(bestY2.toFixed(2)),
+                xMm: x2,
+                yMm: bestY2,
                 rotationDeg: 270,
                 effectiveWidthMm: sW2,
                 effectiveHeightMm: sH2,
@@ -725,27 +734,28 @@ export function performModularNesting(
                 sheetIndex: sheetIdx,
               });
 
-              continuousCol1Y = Math.max(y1 + sH1, bestY2 + sH2) + spacingMm;
+              continuousCol1Y = pairBottomY + spacingMm;
               candidatesToPlace.splice(0, 2);
             }
 
-            // Si queda 1 manga impar que quepa en el ancho disponible:
+            // Si queda 1 manga impar que quepa en el ancho disponible de la columna:
             if (candidatesToPlace.length >= 1) {
               const sm = candidatesToPlace[0];
               const sW = sm.bbox.height;
               const sH = sm.bbox.width;
-              if (sW <= availableRightWidth) {
+              const ySolo = Number(Math.max(jerseyY, continuousCol1Y).toFixed(2));
+              if (sW <= availableRightWidth && (rowRightEdge + sW) <= (printableWidthMm - sideMarginMm) && (ySolo + sH) <= (jerseyY + jerseyRowH + 15)) {
                 placedPieces.push({
                   ...sm,
                   xMm: Number(rowRightEdge.toFixed(2)),
-                  yMm: Number(continuousCol1Y.toFixed(2)),
+                  yMm: ySolo,
                   rotationDeg: 90,
                   effectiveWidthMm: sW,
                   effectiveHeightMm: sH,
                   isLocked: false,
                   sheetIndex: sheetIdx,
                 });
-                continuousCol1Y += sH + spacingMm;
+                continuousCol1Y = ySolo + sH + spacingMm;
                 candidatesToPlace.splice(0, 1);
               }
             }
