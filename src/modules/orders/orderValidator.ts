@@ -110,10 +110,10 @@ export function validateOrderItem(
 
   // 2. Validación del Número
   if (!item.playerNumber) {
-    errors.push({
+    warnings.push({
       field: 'playerNumber',
-      message: 'El número o dorsal del jugador no puede estar vacío.',
-      code: 'EMPTY_NUMBER',
+      message: 'Sin número dorsal asignado (la camiseta se generará únicamente con el nombre).',
+      code: 'EMPTY_NUMBER' as any,
     });
   } else {
     // Si se activa unicidad estricta de dorsal en el mismo equipo/pedido

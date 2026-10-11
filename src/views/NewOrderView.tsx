@@ -79,6 +79,7 @@ export const NewOrderView: React.FC = () => {
     teamName,
     sport,
     availableSizes,
+    setAvailableSizes,
     setClientName,
     setTeamName,
     setSport,
@@ -91,6 +92,13 @@ export const NewOrderView: React.FC = () => {
     setAllNecklineTypes,
     applyMassEdit,
   } = useOrderStore();
+
+  useEffect(() => {
+    if (currentPatternSet && currentPatternSet.sizes.length > 0) {
+      const patternSizes = currentPatternSet.sizes.map((s) => s.sizeName);
+      setAvailableSizes(patternSizes);
+    }
+  }, [currentPatternSet]);
 
   const handleSaveRoster = async () => {
     if (items.length === 0 || isSavingRoster) return;
