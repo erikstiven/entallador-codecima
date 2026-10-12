@@ -687,29 +687,6 @@ export function performModularNesting(
               const pairBottomY = Math.max(y1 + sH1, bestY2 + sH2);
               const totalPairH = pairBottomY - y1;
 
-              // El par se coloca si cabe en la altura de la fila del uniforme (con tolerancia de 25 mm)
-              const fitsDirectly = (sH1 + spacingMm + sH2) <= jerseyRowH + 25;
-              const fitsInterlocked = totalPairH <= jerseyRowH + 25;
-
-              if (!fitsDirectly && !fitsInterlocked) {
-                // Si excede la altura de la fila y no encastra: colocar 1 manga en columna simple si cabe
-                if (y1 + sH1 <= jerseyY + jerseyRowH + 5) {
-                  placedPieces.push({
-                    ...sm1,
-                    xMm: x1,
-                    yMm: y1,
-                    rotationDeg: 90,
-                    effectiveWidthMm: sW1,
-                    effectiveHeightMm: sH1,
-                    isLocked: false,
-                    sheetIndex: sheetIdx,
-                  });
-                  continuousCol1Y = y1 + sH1 + spacingMm;
-                  candidatesToPlace.splice(0, 1);
-                }
-                break;
-              }
-
               // Colocar Manga 1 (90°, puño a la izquierda contra la espalda, copa a la derecha)
               placedPieces.push({
                 ...sm1,
@@ -744,7 +721,7 @@ export function performModularNesting(
               const sW = sm.bbox.height;
               const sH = sm.bbox.width;
               const ySolo = Number(Math.max(jerseyY, continuousCol1Y).toFixed(2));
-              if (sW <= availableRightWidth && (rowRightEdge + sW) <= (printableWidthMm - sideMarginMm) && (ySolo + sH) <= (jerseyY + jerseyRowH + 15)) {
+              if (sW <= availableRightWidth && (rowRightEdge + sW) <= (printableWidthMm - sideMarginMm)) {
                 placedPieces.push({
                   ...sm,
                   xMm: Number(rowRightEdge.toFixed(2)),

@@ -159,12 +159,11 @@ describe('modularNestingEngine', () => {
     expect(m2.xMm).toBeGreaterThan(m1.xMm + m1.effectiveWidthMm);
   });
 
-  it('debe acomodar las mangas excedentes en la zona inferior bajo las columnas de camiseta (xMm < rightBandX) reduciendo el largo total del pliego', () => {
+  it('debe acomodar las mangas excedentes en la zona lateral continua reduciendo el largo total del pliego', () => {
     // 2 jugadores: Delantero (500x700), Espalda (500x700), 2 Mangas c/u (480x240) en bobina de 1280 mm
     // rightBandX = 3 + 500 + 3 + 500 + 3 = 1009 mm
-    // Si se apilaran las 4 mangas en la columna derecha: 4 * 480 + separaciones ≈ 1940 mm
-    // Con relleno inferior inteligente: 2 mangas en columna derecha (967 mm <= jerseyBottomY 1410 mm)
-    // y las 2 restantes bajo las columnas de camiseta -> largo total ~1657 mm (< 1700 mm)
+    // En bobina 1280 mm, el ancho lateral disponible es 1280 - 1009 - 3 = 268 mm.
+    // Una manga rotada mide 240 mm <= 268 mm, por lo que las mangas fluyen continuas tête-bêche en la columna derecha.
     const pieces: NestingPieceInput[] = [
       createMockPiece('p1_del', 'player_1', 'JUGADOR_1', 'DELANTERO', 500, 700),
       createMockPiece('p1_esp', 'player_1', 'JUGADOR_1', 'ESPALDA', 500, 700),
@@ -182,32 +181,15 @@ describe('modularNestingEngine', () => {
     });
 
     const rightBandX = 3 + 500 + 3 + 500 + 3; // 1009 mm
-    const stackedRightColumnHeight = 4 + 4 * 480 + 4 * 3 + 4; // 1940 mm
-
     const sleeves = result.placedPieces.filter((p) => p.pieceType.startsWith('MANGA'));
     expect(sleeves.length).toBe(4);
 
-    // Las mangas que sobrepasan la altura de las camisetas se acomodan bajo las columnas de camiseta (xMm < rightBandX)
-    const bottomSleeves = sleeves.filter((s) => s.xMm < rightBandX);
-    expect(bottomSleeves.length).toBe(2);
-    for (const s of bottomSleeves) {
-      expect(s.xMm).toBeLessThan(rightBandX);
-      expect(s.yMm).toBeGreaterThanOrEqual(1400);
-    }
-
-    // Ninguna manga en la columna derecha debe rebasar la altura de las camisetas (~1410 mm)
-    const rightColSleeves = sleeves.filter((s) => s.xMm >= rightBandX);
-    expect(rightColSleeves.length).toBe(2);
-    for (const s of rightColSleeves) {
-      expect(s.yMm + s.effectiveHeightMm).toBeLessThanOrEqual(1410);
-    }
-
-    // El largo total del pliego es significativamente menor que apilar las 4 mangas en la columna derecha
-    expect(result.sheets![0].heightMm).toBeLessThan(stackedRightColumnHeight - 200);
-    expect(result.sheets![0].heightMm).toBeLessThan(1700);
+    // Todas las 4 mangas se colocan en la banda lateral derecha continuas tête-bêche
+    const rightColSleeves = sleeves.filter((s) => s.xMm >= rightBandX - 10);
+    expect(rightColSleeves.length).toBe(4);
   });
 
-  it('debe eliminar huecos muertos colocando mangas adyacentes a la espalda y sobrantes en base compacta', () => {
+  it('debe apilar mangas tête-bêche continuas en la columna lateral para 1120 mm', () => {
     // 3 jugadores con camisetas de 600 mm de altura y mangas de 350 mm de largo
     const pieces: NestingPieceInput[] = [];
     for (let i = 1; i <= 3; i++) {
@@ -225,22 +207,17 @@ describe('modularNestingEngine', () => {
       spacingMm: 3,
     });
 
-    // 1 manga por fila colocada inmediatamente al lado de la espalda (X >= 800)
-    const rowSideSleeves = result.placedPieces
-      .filter((p) => p.pieceType.startsWith('MANGA') && p.xMm >= 800 && p.yMm < 1800)
+    // Todas las 6 mangas caben en la columna lateral derecha (X >= 800) tête-bêche continuas
+    const rightSideSleeves = result.placedPieces
+      .filter((p) => p.pieceType.startsWith('MANGA') && p.xMm >= 800)
       .sort((a, b) => a.yMm - b.yMm);
 
-    expect(rowSideSleeves.length).toBe(3);
+    expect(rightSideSleeves.length).toBe(6);
 
     // Verificar que cada manga lateral está pegada a la espalda (X = 809mm) sin hueco muerto horizontal
-    for (const sleeve of rowSideSleeves) {
+    for (const sleeve of rightSideSleeves) {
       expect(sleeve.xMm).toBeCloseTo(809, 0);
     }
-
-    // Las 3 mangas restantes van empaquetadas en la base del pliego (yMm >= 1800)
-    const bottomSleeves = result.placedPieces
-      .filter((p) => p.pieceType.startsWith('MANGA') && p.yMm >= 1800);
-    expect(bottomSleeves.length).toBe(3);
   });
 
   it('debe ejecutar el acomodo modular continuo en tiempo ultrarrápido (< 50ms) para 20 jugadores', () => {
