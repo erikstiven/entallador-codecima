@@ -16,7 +16,11 @@ import {
   Sliders,
   FileCheck,
   Loader2,
-  CheckCircle2
+  RotateCw,
+  Settings2,
+  Wrench,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
@@ -27,6 +31,8 @@ import { NestingPieceInput, NestingSheet, PlacedNestingPiece } from '@/core/nest
 import { ExportModal } from '@/modules/export/ExportModal';
 import { GarmentInspectionTab } from './GarmentInspectionTab';
 import { showAlert } from '@/core/ui/alerts';
+import { useUnits } from '@/core/units/useUnits';
+import { useNavigationStore } from '@/modules/navigation/navigationStore';
 
 interface CanvasPieceItemProps {
   piece: PlacedNestingPiece;
@@ -36,6 +42,7 @@ interface CanvasPieceItemProps {
   dragX?: number;
   dragY?: number;
   isLightweight: boolean;
+  showBorders: boolean;
   onPieceMouseDown: (e: React.MouseEvent, pieceId: string, initialX: number, initialY: number) => void;
   onSelectPiece: (pieceId: string) => void;
 }
@@ -48,9 +55,11 @@ const CanvasPieceItem = React.memo<CanvasPieceItemProps>(({
   dragX,
   dragY,
   isLightweight,
+  showBorders,
   onPieceMouseDown,
   onSelectPiece,
 }) => {
+  const { format: formatWithUnits } = useUnits();
   const currentX = isCurrentlyDragged && dragX !== undefined ? dragX : piece.xMm;
   const currentY = isCurrentlyDragged && dragY !== undefined ? dragY : piece.yMm;
 
@@ -69,12 +78,14 @@ const CanvasPieceItem = React.memo<CanvasPieceItemProps>(({
       data-piece="true"
       onMouseDown={(e) => onPieceMouseDown(e, piece.id, piece.xMm, piece.yMm)}
       onClick={() => onSelectPiece(piece.id)}
-      className={`absolute rounded transition-shadow group select-none overflow-hidden bg-slate-950/90 border ${
+      className={`absolute transition-all group select-none ${
         isCurrentlyDragged
-          ? 'cursor-grabbing ring-2 ring-cyan-400 border-cyan-400 shadow-2xl shadow-cyan-950 z-50 opacity-95 scale-[1.01]'
+          ? 'cursor-grabbing drop-shadow-[0_0_12px_rgba(34,211,238,0.85)] z-50 opacity-95 scale-[1.01]'
           : isSelected
-          ? 'ring-2 ring-sky-400 border-sky-400 shadow-xl shadow-sky-950/60 z-30 cursor-grab'
-          : 'border-slate-700/80 hover:border-slate-400 hover:shadow-lg z-10 cursor-grab'
+          ? 'drop-shadow-[0_0_10px_rgba(56,189,248,0.85)] z-30 cursor-grab'
+          : showBorders
+          ? 'hover:drop-shadow-[0_0_6px_rgba(148,163,184,0.6)] z-10 cursor-grab'
+          : 'z-10 cursor-grab'
       }`}
       style={{
         left: `${posX}px`,
@@ -122,7 +133,7 @@ const CanvasPieceItem = React.memo<CanvasPieceItemProps>(({
         </div>
         <div className="flex items-center justify-between text-slate-400">
           <span>{piece.pieceType}</span>
-          <span>{piece.effectiveWidthMm.toFixed(0)} × {piece.effectiveHeightMm.toFixed(0)} mm</span>
+          <span>{formatWithUnits(piece.effectiveWidthMm)} × {formatWithUnits(piece.effectiveHeightMm)}</span>
         </div>
       </div>
     </div>
@@ -181,6 +192,9 @@ function summarizeProductionWarnings(warnings: string[]): string[] {
 }
 
 export const ProductionNestingView: React.FC = () => {
+  const { format: formatWithUnits } = useUnits();
+  const isPreviewMode = useNavigationStore((state) => state.isNestingPreviewMode);
+  const setPreviewMode = useNavigationStore((state) => state.setNestingPreviewMode);
   const { activeProfile } = useProfileStore();
   const { generatedPieces, generationResult, setProductionScope } = useGeneratorStore();
   const { 
@@ -203,7 +217,9 @@ export const ProductionNestingView: React.FC = () => {
     reoptimizeUnlocked,
     clearNesting,
     selectedPieceId,
-    setSelectedPieceId
+    setSelectedPieceId,
+    rotatePiece,
+    toggleLockPiece
   } = useNestingStore();
 
   const {
@@ -223,6 +239,7 @@ export const ProductionNestingView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'INSPECTION' | 'ROLL'>('INSPECTION');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [viewAllSheets, setViewAllSheets] = useState<boolean>(false);
+  const [showPieceBorders, setShowPieceBorders] = useState<boolean>(true);
 
   // Mapear piezas generadas al formato de entrada del motor de nesting
   const nestingPieceInputs: NestingPieceInput[] = useMemo(() => {
@@ -300,6 +317,16 @@ export const ProductionNestingView: React.FC = () => {
     if (viewAllSheets || !activeSheet) return placedPieces;
     return activeSheet.placedPieces;
   }, [placedPieces, activeSheet, viewAllSheets]);
+
+  const selectedPiece = useMemo(
+    () => placedPieces.find((piece) => piece.id === selectedPieceId),
+    [placedPieces, selectedPieceId]
+  );
+  const canRotateSelectedPiece = Boolean(
+    selectedPiece
+      && (selectedPiece.pieceType.toUpperCase().startsWith('MANGA')
+        || selectedPiece.allowedRotations.some((rotation) => rotation !== selectedPiece.rotationDeg))
+  );
 
   // Dimensiones del lienzo según el pliego activo
   const currentCanvasHeightMm = useMemo(() => {
@@ -399,8 +426,8 @@ export const ProductionNestingView: React.FC = () => {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-950 overflow-hidden select-none">
-      {generationResult && generationResult.warnings.length > 0 && (
+    <div className={`flex flex-col bg-slate-950 overflow-hidden select-none ${isPreviewMode ? 'h-screen' : 'h-[calc(100vh-4rem)]'}`}>
+      {!isPreviewMode && generationResult && generationResult.warnings.length > 0 && (
         <div className="flex-shrink-0 border-b border-amber-500/40 bg-amber-950/70 px-6 py-2 text-xs text-amber-100">
           <div className="flex items-start gap-2">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-amber-400" />
@@ -425,7 +452,7 @@ export const ProductionNestingView: React.FC = () => {
       )}
 
       {/* Barra de Navegación Principal del Flujo de Producción */}
-      <div className="bg-slate-900 border-b border-slate-800 px-6 py-2 flex items-center justify-between flex-shrink-0 z-30">
+      {!isPreviewMode && <div className="bg-slate-900 border-b border-slate-800 px-6 py-2 flex items-center justify-between flex-shrink-0 z-30">
         {/* Selector de Pestañas: 1. Revisión vs 2. Rollo */}
         <div className="flex items-center gap-3">
           <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-1 text-xs">
@@ -455,7 +482,7 @@ export const ProductionNestingView: React.FC = () => {
               }`}
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>2. Rollo de Sublimación ({printableWidthMm} mm)</span>
+              <span>2. Rollo de Sublimación ({formatWithUnits(printableWidthMm)})</span>
             </button>
           </div>
         </div>
@@ -500,6 +527,13 @@ export const ProductionNestingView: React.FC = () => {
               >
                 Ver Todo
               </button>
+              <button
+                onClick={() => setShowPieceBorders(v => !v)}
+                className={`px-2 py-0.5 hover:text-white hover:bg-slate-800 rounded font-mono text-[10px] cursor-pointer transition-colors ${showPieceBorders ? 'text-slate-400' : 'text-emerald-400 bg-slate-800'}`}
+                title={showPieceBorders ? 'Ocultar contornos de piezas' : 'Mostrar contornos de piezas'}
+              >
+                {showPieceBorders ? 'Ocultar Contornos' : 'Mostrar Contornos'}
+              </button>
             </div>
 
             <button 
@@ -521,9 +555,18 @@ export const ProductionNestingView: React.FC = () => {
               <Download className="w-3.5 h-3.5" />
               <span>🖨️ Exportar Producción 1:1 (PDF / SVG)</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setPreviewMode(true)}
+              className="flex items-center gap-2 rounded-lg border border-violet-500/50 bg-violet-950/70 px-3 py-2 text-xs font-bold text-violet-200 transition-colors hover:bg-violet-900"
+              title="Ocultar menús y ampliar el rollo"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+              <span>Vista previa</span>
+            </button>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* CONTENIDO SEGÚN LA PESTAÑA ACTIVA */}
       {activeTab === 'INSPECTION' ? (
@@ -563,9 +606,85 @@ export const ProductionNestingView: React.FC = () => {
       ) : (
         /* PESTAÑA 2: ROLLO DE SUBLIMACIÓN (NESTING MODULAR MULTI-ARCHIVO) */
         <div className="flex-1 flex flex-col overflow-hidden relative">
+          {isPreviewMode && (
+            <div className="z-30 flex flex-shrink-0 items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/95 px-3 py-1.5 text-xs shadow-lg backdrop-blur">
+              <div className="flex min-w-0 items-center gap-3 font-mono">
+                <strong className="truncate text-slate-100">Rollo de sublimación</strong>
+                <span className="text-sky-400">{actualLengthM} m</span>
+                <span className="text-violet-400">{efficiency}%</span>
+                {placedCount > 0 && <span className="h-2 w-2 rounded-full bg-emerald-400" title="Acomodo activo" />}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {selectedPiece && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={!canRotateSelectedPiece || isNesting}
+                      onClick={() => {
+                        if (selectedPieceId && !rotatePiece(selectedPieceId, 90)) {
+                          showAlert.toast('warning', 'No se puede rotar aquí: mueve la pieza a un espacio libre');
+                        }
+                      }}
+                      className="flex items-center gap-1 rounded-md border border-sky-500/40 bg-sky-950/70 px-2 py-1 text-sky-300 disabled:opacity-40"
+                      title="Rotar pieza seleccionada 90°"
+                    >
+                      <RotateCw className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Rotar</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleLockPiece(selectedPiece.id)}
+                      className={`flex items-center gap-1 rounded-md border px-2 py-1 ${selectedPiece.isLocked ? 'border-amber-500/50 bg-amber-950/70 text-amber-300' : 'border-slate-700 bg-slate-900 text-slate-300'}`}
+                      title={selectedPiece.isLocked ? 'Desbloquear pieza' : 'Bloquear pieza'}
+                    >
+                      <Lock className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">{selectedPiece.isLocked ? 'Fija' : 'Fijar'}</span>
+                    </button>
+                  </>
+                )}
+
+                <div className="flex items-center rounded-md border border-slate-700 bg-slate-900 text-slate-300">
+                  <button onClick={() => setZoomLevel((z) => Math.max(z - 10, 15))} className="p-1.5 hover:text-white" title="Reducir zoom"><ZoomOut className="h-3.5 w-3.5" /></button>
+                  <span className="min-w-10 text-center font-mono text-[10px]">{zoomLevel}%</span>
+                  <button onClick={() => setZoomLevel((z) => Math.min(z + 10, 300))} className="p-1.5 hover:text-white" title="Aumentar zoom"><ZoomIn className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => fitToWidth((typeof window !== 'undefined' ? window.innerWidth : 1100) - 48)} className="border-l border-slate-700 px-2 py-1 font-mono text-[10px] text-violet-300">Ancho</button>
+                  <button onClick={() => fitToAll((typeof window !== 'undefined' ? window.innerHeight : 800) - 90, currentCanvasHeightMm)} className="border-l border-slate-700 px-2 py-1 font-mono text-[10px] text-sky-300">Todo</button>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={placedCount === 0 || isNesting}
+                  onClick={() => setIsExportModalOpen(true)}
+                  className="flex items-center gap-1 rounded-md bg-sky-600 px-2.5 py-1.5 font-bold text-white disabled:opacity-40"
+                  title="Exportar producción 1:1"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">Exportar</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode(false)}
+                  className="flex items-center gap-1 rounded-md border border-violet-500/50 bg-violet-950/70 px-2.5 py-1.5 font-bold text-violet-200"
+                  title="Salir de vista previa"
+                >
+                  <Minimize2 className="h-3.5 w-3.5" />
+                  <span>Salir</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Cinta superior de configuración de Bobina y Pliego */}
-          <div className="bg-slate-900/95 border-b border-slate-800 px-6 py-2 flex flex-wrap items-center justify-between gap-4 z-20 text-xs">
+          {!isPreviewMode && <div className="bg-slate-900/95 border-b border-slate-800 px-6 py-2 flex flex-wrap items-center justify-between gap-4 z-20 text-xs">
             <div className="flex flex-wrap items-center gap-3">
+              <details className="group relative">
+                <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 font-semibold text-slate-200 hover:border-violet-500/60">
+                  <Settings2 className="h-3.5 w-3.5 text-violet-400" />
+                  <span>Configuración</span>
+                  <span className="font-mono text-[10px] text-slate-500">{printableWidthMm} mm · {spacingMm} mm</span>
+                </summary>
+                <div className="absolute left-0 top-full z-50 mt-2 flex min-w-max flex-col gap-2 rounded-xl border border-slate-700 bg-slate-950 p-3 shadow-2xl">
               {/* 1. Selector de Ancho de Bobina */}
               <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs">
                 <span className="text-[10px] text-slate-400 uppercase font-mono">Bobina:</span>
@@ -659,6 +778,8 @@ export const ProductionNestingView: React.FC = () => {
                   <span className="text-[10px] font-mono text-slate-500">mm</span>
                 </div>
               </div>
+                </div>
+              </details>
 
               {/* Botón Principal: ⚡ Acomodar Inteligente */}
               <button 
@@ -692,17 +813,49 @@ export const ProductionNestingView: React.FC = () => {
 
               {/* Indicador Visual de Estado de Acomodo Inteligente Activo */}
               {placedCount > 0 && !isNesting && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 text-[11px] font-mono font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                  <span>✓ Acomodo Inteligente Activo</span>
+                <div className="flex items-center gap-1.5 px-1.5 py-1 text-emerald-300 text-[11px] font-mono font-semibold" title="Acomodo inteligente activo">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
+                  <span>Activo</span>
                 </div>
               )}
 
-              {lockedCount > 0 && (
+              {selectedPiece && (
+                <div className="flex items-center gap-1 rounded-lg border border-sky-500/30 bg-sky-950/40 p-0.5">
+                  <span className="max-w-28 truncate px-1.5 text-[10px] text-sky-200">{selectedPiece.pieceType}</span>
+                  <button
+                    type="button"
+                    disabled={!canRotateSelectedPiece || isNesting}
+                    onClick={() => {
+                      if (selectedPieceId && !rotatePiece(selectedPieceId, 90)) {
+                        showAlert.toast('warning', 'No se puede rotar aquí: mueve la pieza a un espacio libre');
+                      }
+                    }}
+                    className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold text-sky-300 hover:bg-sky-900 disabled:opacity-40"
+                    title="Rotar pieza seleccionada 90° (tecla R)"
+                  >
+                    <RotateCw className="h-3.5 w-3.5" /> Rotar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleLockPiece(selectedPiece.id)}
+                    className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold ${selectedPiece.isLocked ? 'bg-amber-950 text-amber-300' : 'text-slate-300 hover:bg-slate-800'}`}
+                    title={selectedPiece.isLocked ? 'Desbloquear pieza' : 'Bloquear pieza'}
+                  >
+                    <Lock className="h-3.5 w-3.5" /> {selectedPiece.isLocked ? 'Fija' : 'Fijar'}
+                  </button>
+                </div>
+              )}
+
+              <details className="group relative">
+                <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-slate-300 hover:border-slate-600">
+                  <Wrench className="h-3.5 w-3.5" /> Herramientas
+                </summary>
+                <div className="absolute right-0 top-full z-50 mt-2 flex min-w-48 flex-col gap-1 rounded-xl border border-slate-700 bg-slate-950 p-2 shadow-2xl">
+                {lockedCount > 0 && (
                 <button 
                   onClick={handleReoptimize}
                   disabled={placedCount === 0 || isNesting}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-2 hover:bg-slate-800 text-slate-200 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
                   title="Reacomoda las piezas no bloqueadas alrededor de las fijadas con candado"
                 >
                   <Lock className="w-3.5 h-3.5 text-amber-400" />
@@ -722,12 +875,22 @@ export const ProductionNestingView: React.FC = () => {
                       showAlert.toast('info', 'Lienzo limpiado');
                     }
                   }}
-                  className="p-1.5 bg-slate-800 hover:bg-red-950 hover:text-red-400 text-slate-400 rounded-lg text-xs border border-slate-700 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-2 hover:bg-red-950 hover:text-red-400 text-slate-300 rounded-lg text-xs transition-colors cursor-pointer"
                   title="Limpiar acomodo"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
+                  <span>Limpiar acomodo</span>
                 </button>
               )}
+                <button
+                  type="button"
+                  onClick={() => setShowPieceBorders((value) => !value)}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800"
+                >
+                  <Eye className="h-3.5 w-3.5" /> {showPieceBorders ? 'Ocultar contornos' : 'Mostrar contornos'}
+                </button>
+                </div>
+              </details>
             </div>
 
             {/* Métricas directas de taller */}
@@ -742,7 +905,7 @@ export const ProductionNestingView: React.FC = () => {
                 Aprovechamiento: <strong className="text-purple-400">{efficiency}%</strong>
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* TIRA DE PESTAÑAS DE PLIEGOS PARTICIONADOS (PARTE 1, PARTE 2...) */}
           {sheets.length > 0 && (
@@ -832,12 +995,12 @@ export const ProductionNestingView: React.FC = () => {
                 {/* Regla Milimétrica Superior */}
                 <div className="h-7 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between px-3 text-[10px] font-mono text-slate-400 select-none sticky top-0 z-20 backdrop-blur-sm whitespace-nowrap overflow-hidden">
                   <span className="flex items-center gap-1 flex-shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span> 0 mm
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span> {formatWithUnits(0)}
                   </span>
                   <span className="text-purple-400 font-semibold tracking-wide uppercase truncate mx-2">
-                    {viewAllSheets ? `PEDIDO COMPLETO • ${printableWidthMm} mm` : `${activeSheet?.title || 'PLIEGO'} (${printableWidthMm} × ${currentCanvasHeightMm.toFixed(0)} mm)`}
+                    {viewAllSheets ? `PEDIDO COMPLETO • ${formatWithUnits(printableWidthMm)}` : `${activeSheet?.title || 'PLIEGO'} (${formatWithUnits(printableWidthMm)} × ${formatWithUnits(currentCanvasHeightMm)})`}
                   </span>
-                  <span className="flex-shrink-0">{printableWidthMm} mm</span>
+                  <span className="flex-shrink-0">{formatWithUnits(printableWidthMm)}</span>
                 </div>
 
                 {/* Regla de Largo en Metros */}
@@ -860,7 +1023,7 @@ export const ProductionNestingView: React.FC = () => {
                         style={{ left: `${leftPx}px` }}
                       >
                         <span className="bg-cyan-950/95 text-cyan-300 border border-cyan-500/80 text-[9px] font-mono px-1.5 py-0.5 rounded shadow absolute top-9 -left-2 whitespace-nowrap">
-                          {guide.label || `${guide.positionMm.toFixed(0)} mm`}
+                          {guide.label || formatWithUnits(guide.positionMm)}
                         </span>
                       </div>
                     );
@@ -873,7 +1036,7 @@ export const ProductionNestingView: React.FC = () => {
                         style={{ top: `${topPx}px` }}
                       >
                         <span className="bg-cyan-950/95 text-cyan-300 border border-cyan-500/80 text-[9px] font-mono px-1.5 py-0.5 rounded shadow absolute left-2 -top-5 whitespace-nowrap">
-                          {guide.label || `${guide.positionMm.toFixed(0)} mm`}
+                          {guide.label || formatWithUnits(guide.positionMm)}
                         </span>
                       </div>
                     );
@@ -886,7 +1049,7 @@ export const ProductionNestingView: React.FC = () => {
                     <div className="text-center">
                       <Sparkles className="w-20 h-20 mx-auto text-purple-400 mb-3" />
                       <div className="text-xl font-bold font-mono tracking-widest text-white">
-                        ÁREA ÚTIL {printableWidthMm} MM
+                        ÁREA ÚTIL {formatWithUnits(printableWidthMm).toUpperCase()}
                       </div>
                       <div className="text-xs text-slate-300 font-mono mt-1">
                         {totalPieces > 0 
@@ -914,6 +1077,7 @@ export const ProductionNestingView: React.FC = () => {
                         dragX={isCurrentlyDragged ? dragState.currentPieceX : undefined}
                         dragY={isCurrentlyDragged ? dragState.currentPieceY : undefined}
                         isLightweight={useLightweight}
+                        showBorders={showPieceBorders}
                         onPieceMouseDown={handlePieceMouseDown}
                         onSelectPiece={handleSelectPiece}
                       />

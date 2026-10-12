@@ -9,13 +9,16 @@ import {
   Loader2,
   Layers,
   Info,
-  AlertCircle
+  AlertCircle,
+  Tag
 } from 'lucide-react';
 import { ExportOptions, ExportResult } from './types';
 import { exportProductionRoll, triggerFileDownload } from './exportService';
 import { PlacedNestingPiece, NestingResult } from '@/core/nesting/types';
 import { showAlert } from '@/core/ui/alerts';
 import { checkInkscapeAvailability, isElectronEpsAvailable } from './epsConversionClient';
+import { useSystemSettingsStore } from '@/modules/settings/systemSettingsStore';
+import { useUnits } from '@/core/units/useUnits';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -32,6 +35,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   nestingResult,
   printableWidthMm,
 }) => {
+  const { settings } = useSystemSettingsStore();
+  const { format } = useUnits();
+
   const [fileName, setFileName] = useState<string>(
     `PRODUCCION_UNIFORMES_${new Date().toISOString().slice(0, 10)}`
   );
@@ -41,20 +47,28 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [exportSuccessDone, setExportSuccessDone] = useState<boolean>(false);
   const [downloadedFiles, setDownloadedFiles] = useState<ExportResult[]>([]);
 
-  const [selectedFormat, setSelectedFormat] = useState<ExportOptions['format']>('SVG');
+  const [selectedFormat, setSelectedFormat] = useState<ExportOptions['format']>(
+    settings.defaultExportFormat || 'SVG'
+  );
   const [includeCalibration, setIncludeCalibration] = useState<boolean>(false);
   const [includeCutContour, setIncludeCutContour] = useState<boolean>(false);
+  const [includeSeamLabels, setIncludeSeamLabels] = useState<boolean>(
+    settings.autoIncludeLabels ?? true
+  );
   const [exportAllSheets, setExportAllSheets] = useState<boolean>(true);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setSelectedFormat(settings.defaultExportFormat || 'SVG');
+      setIncludeSeamLabels(settings.autoIncludeLabels ?? true);
+    } else {
       setIsExporting(false);
       setExportStepText('');
       setExportProgressPercent(0);
       setExportSuccessDone(false);
       setDownloadedFiles([]);
     }
-  }, [isOpen]);
+  }, [isOpen, settings.defaultExportFormat, settings.autoIncludeLabels]);
 
   if (!isOpen || !nestingResult || placedPieces.length === 0) return null;
 
@@ -109,7 +123,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             includeCutContour,
             cutContourColor: '#ff0000',
             cutContourWidthMm: 0.25,
-            includeSeamLabels: false,
+            includeSeamLabels,
             includeCalibrationSquare: includeCalibration,
             paperRollWidthMm: sheet.widthMm || printableWidthMm,
             totalRollLengthMm: sheetHeightMm,
@@ -146,7 +160,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           includeCutContour,
           cutContourColor: '#ff0000',
           cutContourWidthMm: 0.25,
-          includeSeamLabels: false,
+          includeSeamLabels,
           includeCalibrationSquare: includeCalibration,
           paperRollWidthMm: printableWidthMm,
           totalRollLengthMm: effectiveSheetHeightMm,
@@ -387,6 +401,27 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               />
               <span>Incluir línea técnica de corte (Contorno)</span>
             </label>
+
+            <label
+              className={`flex items-center gap-2 text-slate-300 ${
+                isExporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:text-white'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={includeSeamLabels}
+                disabled={isExporting}
+                onChange={(e) => {
+                  setIncludeSeamLabels(e.target.checked);
+                  setExportSuccessDone(false);
+                }}
+                className="rounded border-slate-700 text-violet-600 w-3.5 h-3.5 disabled:cursor-not-allowed"
+              />
+              <span className="flex items-center gap-1">
+                <Tag className="w-3.5 h-3.5 text-purple-400" />
+                Incluir etiquetas de identificación de piezas fuera de la costura
+              </span>
+            </label>
           </div>
 
           {/* Summary Strip */}
@@ -395,7 +430,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <Ruler className="w-4 h-4 text-purple-400" />
               <span>
                 <strong className="text-white font-mono">
-                  {printableWidthMm} mm × {totalLengthM} m
+                  {format(printableWidthMm)} × {totalLengthM} m
                 </strong>
               </span>
             </div>
@@ -445,7 +480,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 <div className="text-[11px] text-emerald-200/90 font-mono pl-6 space-y-0.5">
                   {downloadedFiles.map((f, i) => (
                     <div key={`${f.fileName}_${i}`} className="truncate">
-                      • {f.fileName} ({f.totalPieces} piezas — {f.widthMm} × {Math.round(f.heightMm)} mm)
+                      • {f.fileName} ({f.totalPieces} piezas — {format(f.widthMm)} × {format(f.heightMm)})
                     </div>
                   ))}
                 </div>

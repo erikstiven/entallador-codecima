@@ -704,12 +704,18 @@ export const NewOrderView: React.FC = () => {
                   return;
                 }
                 useNestingStore.getState().clearNesting();
-                showAlert.toast('success', `¡${useGeneratorStore.getState().generatedPieces.length} piezas vectoriales generadas!`);
+                const generatedPieces = useGeneratorStore.getState().generatedPieces;
+                showAlert.toast('success', `¡${generatedPieces.length} piezas vectoriales generadas! Revisa los dorsales y ajustes en la pestaña de inspección.`);
                 setCurrentView('NESTING');
               } finally {
                 setIsGeneratingAction(false);
               }
             }}
+            title={
+              !canProceedToNesting
+                ? (disabledReasonMessage || 'Completa la nómina para generar prendas')
+                : 'Genera las piezas vectoriales 1:1 y conduce a la Inspección y Calibración de Prendas antes de acomodar en el rollo'
+            }
             className={`px-7 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-xl transition-all active:scale-95 ${
               !canProceedToNesting || isGeneratingAction
                 ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
@@ -724,10 +730,15 @@ export const NewOrderView: React.FC = () => {
                 <span>⏳ Generando uniformes 1:1...</span>
               </>
             ) : (
-              <>
-                <span>Generar Prendas y Avanzar al Entallado</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
+              <div className="flex flex-col items-center gap-0.5 text-center">
+                <div className="flex items-center gap-2">
+                  <span>Generar Prendas y Avanzar al Entallado</span>
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-normal normal-case tracking-normal text-purple-200/90">
+                  Genera piezas vectoriales e inicia la Inspección y Calibración antes del rollo
+                </span>
+              </div>
             )}
           </button>
 

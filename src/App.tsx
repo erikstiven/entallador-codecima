@@ -24,6 +24,8 @@ const ViewFallback: React.FC = () => (
 
 export const App: React.FC = () => {
   const currentView = useNavigationStore((state) => state.currentView);
+  const isNestingPreviewMode = useNavigationStore((state) => state.isNestingPreviewMode);
+  const isFocusedNesting = currentView === 'NESTING' && isNestingPreviewMode;
 
   useEffect(() => {
     // Inicializar base de datos SQLite embebida con persistencia local IndexedDB
@@ -57,11 +59,11 @@ export const App: React.FC = () => {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100">
       {/* Primary Sidebar Navigation */}
-      <Sidebar />
+      {!isFocusedNesting && <Sidebar />}
 
       {/* Main Workspace Area */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <Header />
+        {!isFocusedNesting && <Header />}
         <main className="flex-1 overflow-y-auto">
           <Suspense fallback={<ViewFallback />}>
             {renderCurrentView()}

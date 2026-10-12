@@ -10,10 +10,17 @@ export type AppView =
 
 interface NavigationState {
   currentView: AppView;
+  isNestingPreviewMode: boolean;
   setCurrentView: (view: AppView) => void;
+  setNestingPreviewMode: (active: boolean) => void;
 }
 
 export const useNavigationStore = create<NavigationState>((set) => ({
   currentView: 'NEW_ORDER',
-  setCurrentView: (view) => set({ currentView: view }),
+  isNestingPreviewMode: false,
+  setCurrentView: (view) => set({
+    currentView: view,
+    ...(view === 'NESTING' ? {} : { isNestingPreviewMode: false }),
+  }),
+  setNestingPreviewMode: (active) => set({ isNestingPreviewMode: active }),
 }));

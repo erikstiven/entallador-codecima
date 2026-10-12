@@ -4,6 +4,7 @@ import { PlacedNestingPiece } from '@/core/nesting/types';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { calculateSnapping } from './snappingService';
 import { CanvasDragState } from './types';
+import { showAlert } from '@/core/ui/alerts';
 
 const INITIAL_DRAG_STATE: CanvasDragState = {
   isDragging: false,
@@ -313,11 +314,14 @@ export function useInteractiveCanvas() {
       const currentDrag = dragStateRef.current;
       if (currentDrag.isDragging && currentDrag.pieceId) {
         // Guardar la nueva posición en el almacén de nesting (bloquea automáticamente la pieza)
-        actionsRef.current.movePiece(
+        const moved = actionsRef.current.movePiece(
           currentDrag.pieceId,
           currentDrag.currentPieceX,
           currentDrag.currentPieceY
         );
+        if (!moved) {
+          showAlert.toast('warning', 'Posición rechazada: colisión o separación insuficiente');
+        }
 
         dragContextRef.current = {
           pieceId: null,
@@ -343,7 +347,10 @@ export function useInteractiveCanvas() {
 
       if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
-        actionsRef.current.rotatePiece(currentSelectedId, 180);
+        const rotated = actionsRef.current.rotatePiece(currentSelectedId, 90);
+        if (!rotated) {
+          showAlert.toast('warning', 'No se puede rotar aquí: mueve la pieza a un espacio libre');
+        }
       } else if (e.key === 'l' || e.key === 'L') {
         e.preventDefault();
         actionsRef.current.toggleLockPiece(currentSelectedId);

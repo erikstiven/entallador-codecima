@@ -97,6 +97,9 @@ export function getDefaultRotationsForPieceType(pieceType: PieceType): number[] 
       return [0]; // Estricto: 0° únicamente (diseño frontal o dorsal vertical)
     case 'MANGA_IZQ':
     case 'MANGA_DER':
+      // En sublimación el motor ya acomoda mangas a 90°/270°. Mantener
+      // las cuatro orientaciones disponibles también para el ajuste manual.
+      return [0, 90, 180, 270];
     case 'PANTALONETA_IZQ':
     case 'PANTALONETA_DER':
     case 'SHORT_FRENTE':
@@ -316,12 +319,35 @@ export function parsePatternSvg(
     const isTorso = (p: PatternPiece) => (p.bbox.height >= 450 && p.bbox.height > p.bbox.width) || (p.areaMm2 >= 95000 && Math.min(p.bbox.width, p.bbox.height) >= 380);
     const torsoPieces = piecesInSize.filter(isTorso);
 
+    const getTorsoNeckDrop = (p: PatternPiece): number => {
+      if (!p.cutPolygon || p.cutPolygon.length === 0) return 0;
+      const minX = p.bbox.minX + p.bbox.width * 0.35;
+      const maxX = p.bbox.minX + p.bbox.width * 0.65;
+      let deepestDrop = 0;
+      for (const pt of p.cutPolygon) {
+        if (pt.x >= minX && pt.x <= maxX) {
+          const drop = pt.y - p.bbox.minY;
+          if (drop > deepestDrop && drop < p.bbox.height * 0.5) {
+            deepestDrop = drop;
+          }
+        }
+      }
+      return deepestDrop;
+    };
+
     if (torsoPieces.length === 3) {
       // 3 piezas de torso en la misma talla:
-      // 1. Mayor área física: ESPALDA (escote alto cerrado conserva mayor superficie)
-      // 2. Área media: DELANTERO CUELLO REDONDO
-      // 3. Menor área física: DELANTERO CUELLO EN V (el escote en V cala más profundo y resta tela)
-      torsoPieces.sort((a, b) => b.areaMm2 - a.areaMm2);
+      // 1. Menor caída de escote: ESPALDA (cuello alto cerrado, caída mínima)
+      // 2. Caída media: DELANTERO CUELLO REDONDO
+      // 3. Mayor caída de escote: DELANTERO CUELLO EN V (el escote en V cala más profundo y resta tela)
+      const drops = torsoPieces.map(getTorsoNeckDrop);
+      const minDrop = Math.min(...drops);
+      const maxDrop = Math.max(...drops);
+      if (maxDrop - minDrop > 15) {
+        torsoPieces.sort((a, b) => getTorsoNeckDrop(a) - getTorsoNeckDrop(b));
+      } else {
+        torsoPieces.sort((a, b) => b.areaMm2 - a.areaMm2);
+      }
 
       torsoPieces[0].pieceType = 'ESPALDA';
       torsoPieces[0].pieceName = `T${sizeName}_ESPALDA`;
@@ -335,16 +361,24 @@ export function parsePatternSvg(
       torsoPieces[2].pieceName = `T${sizeName}_DELANTERO_V`;
       torsoPieces[2].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO_V');
     } else if (torsoPieces.length === 2) {
-      torsoPieces.sort((a, b) => b.areaMm2 - a.areaMm2);
+      // 2 piezas de torso en la misma talla:
+      // La ESPALDA tiene cuello alto cerrado (menor caída de escote en el centro superior).
+      // El DELANTERO tiene escote profundo (mayor caída de escote en el centro superior).
+      const drop0 = getTorsoNeckDrop(torsoPieces[0]);
+      const drop1 = getTorsoNeckDrop(torsoPieces[1]);
+      if (Math.abs(drop0 - drop1) > 15) {
+        torsoPieces.sort((a, b) => getTorsoNeckDrop(a) - getTorsoNeckDrop(b));
+      } else {
+        torsoPieces.sort((a, b) => b.areaMm2 - a.areaMm2);
+      }
+
       torsoPieces[0].pieceType = 'ESPALDA';
       torsoPieces[0].pieceName = `T${sizeName}_ESPALDA`;
       torsoPieces[0].allowedRotationsDeg = getDefaultRotationsForPieceType('ESPALDA');
 
-      if (!torsoPieces[1].pieceType || torsoPieces[1].pieceType === 'ESPALDA') {
-        torsoPieces[1].pieceType = 'DELANTERO';
-        torsoPieces[1].pieceName = `T${sizeName}_DELANTERO`;
-        torsoPieces[1].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO');
-      }
+      torsoPieces[1].pieceType = 'DELANTERO';
+      torsoPieces[1].pieceName = `T${sizeName}_DELANTERO`;
+      torsoPieces[1].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO');
     }
 
     // Post-procesado para mangas y pantalonetas en esta talla:

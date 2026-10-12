@@ -4,6 +4,12 @@ import * as fs from 'fs';
 import { performModularNesting } from './modularNestingEngine';
 import { NestingPieceInput } from './types';
 import { parsePatternSvg } from '@/modules/patterns/patternParser';
+import { parseExcelBuffer } from '@/modules/orders/excelParser';
+import { generateGarmentPieces } from '@/modules/generator/garmentGenerator';
+import { parseDesignSvg } from '@/modules/designs/designParser';
+import { getOrientedPolygon, doPolygonsOverlap } from '@/core/geometry/transform';
+import { calculatePolygonalIntersectionArea } from '@/core/geometry/clipperService';
+import { validateManualPlacement, getPiecePolygon } from './placementValidation';
 
 function createMockPiece(
   id: string,
@@ -184,9 +190,14 @@ describe('modularNestingEngine', () => {
     const sleeves = result.placedPieces.filter((p) => p.pieceType.startsWith('MANGA'));
     expect(sleeves.length).toBe(4);
 
-    // Todas las 4 mangas se colocan en la banda lateral derecha continuas tête-bêche
+    // Solo dos caben dentro de la altura de las camisetas; las otras dos deben
+    // ir al fondo en una fila horizontal, que usa menos largo que forzar la columna.
     const rightColSleeves = sleeves.filter((s) => s.xMm >= rightBandX - 10);
-    expect(rightColSleeves.length).toBe(4);
+    const bottomSleeves = sleeves.filter((s) => s.xMm < rightBandX - 10);
+    expect(rightColSleeves.length).toBe(2);
+    expect(bottomSleeves.length).toBe(2);
+    expect(bottomSleeves[0].yMm).toBeCloseTo(bottomSleeves[1].yMm, 2);
+    expect(result.totalRollLengthMm).toBeLessThan(1700);
   });
 
   it('debe apilar mangas tête-bêche continuas en la columna lateral para 1120 mm', () => {
@@ -207,20 +218,24 @@ describe('modularNestingEngine', () => {
       spacingMm: 3,
     });
 
-    // Todas las 6 mangas caben en la columna lateral derecha (X >= 800) tête-bêche continuas
+    // Cinco mangas caben realmente dentro de la altura disponible; la sexta
+    // debe ir al fondo sin alargar artificialmente la columna lateral.
     const rightSideSleeves = result.placedPieces
       .filter((p) => p.pieceType.startsWith('MANGA') && p.xMm >= 800)
       .sort((a, b) => a.yMm - b.yMm);
 
-    expect(rightSideSleeves.length).toBe(6);
+    expect(rightSideSleeves.length).toBe(5);
+    expect(result.placedPieces.filter((p) => p.pieceType.startsWith('MANGA') && p.xMm < 800)).toHaveLength(1);
 
-    // Verificar que cada manga lateral está pegada a la espalda (X = 809mm) sin hueco muerto horizontal
+    // El barrido X puede acercarlas al cuerpo o al margen derecho según el
+    // hueco que reduzca más la altura total.
     for (const sleeve of rightSideSleeves) {
-      expect(sleeve.xMm).toBeCloseTo(809, 0);
+      expect(sleeve.xMm).toBeGreaterThanOrEqual(809);
+      expect(sleeve.xMm + sleeve.effectiveWidthMm).toBeLessThanOrEqual(1117);
     }
   });
 
-  it('debe ejecutar el acomodo modular continuo en tiempo ultrarrápido (< 50ms) para 20 jugadores', () => {
+  it('debe ejecutar el acomodo modular continuo en tiempo ultrarrápido (< 30ms) para 20 jugadores', () => {
     const pieces: NestingPieceInput[] = [];
     for (let i = 1; i <= 20; i++) {
       pieces.push(
@@ -237,9 +252,79 @@ describe('modularNestingEngine', () => {
     });
 
     expect(result.placedPieces.length).toBe(80);
-    expect(result.executionTimeMs).toBeLessThan(50);
+    expect(result.executionTimeMs).toBeLessThan(30);
     expect(result.sheets!.length).toBeGreaterThan(1);
     expect(result.utilizationPercent).toBeGreaterThan(60);
+  });
+
+  it('debe colocar una sola manga en el hueco lateral cuando la pareja completa no cabe', () => {
+    const pieces: NestingPieceInput[] = [
+      createMockPiece('p1_del', 'player_1', 'INIGO', 'DELANTERO', 450, 650),
+      createMockPiece('p1_esp', 'player_1', 'INIGO', 'ESPALDA', 450, 650),
+      createMockPiece('p1_m1', 'player_1', 'INIGO', 'MANGA_IZQ', 400, 180),
+      createMockPiece('p1_m2', 'player_1', 'INIGO', 'MANGA_DER', 400, 180),
+    ];
+
+    const result = performModularNesting(pieces, {
+      printableWidthMm: 1120,
+      maxSheetLengthMm: 5000,
+      spacingMm: 3,
+    });
+    const sleeves = result.placedPieces.filter((p) => p.pieceType.startsWith('MANGA'));
+    const lateral = sleeves.filter((p) => p.yMm < 650);
+    const bottom = sleeves.filter((p) => p.yMm >= 650);
+
+    expect(lateral).toHaveLength(1);
+    expect(bottom).toHaveLength(1);
+    expect(lateral[0].xMm).toBeGreaterThanOrEqual(906);
+  });
+
+  it('debe enviar dos mangas al fondo lado a lado cuando ninguna cabe en el lateral', () => {
+    const pieces: NestingPieceInput[] = [
+      createMockPiece('p1_del', 'player_1', 'INIGO', 'DELANTERO', 480, 650),
+      createMockPiece('p1_esp', 'player_1', 'INIGO', 'ESPALDA', 480, 650),
+      createMockPiece('p1_m1', 'player_1', 'INIGO', 'MANGA_IZQ', 400, 180),
+      createMockPiece('p1_m2', 'player_1', 'INIGO', 'MANGA_DER', 400, 180),
+    ];
+
+    const result = performModularNesting(pieces, {
+      printableWidthMm: 1120,
+      maxSheetLengthMm: 5000,
+      spacingMm: 3,
+    });
+    const sleeves = result.placedPieces
+      .filter((p) => p.pieceType.startsWith('MANGA'))
+      .sort((a, b) => a.xMm - b.xMm);
+
+    expect(sleeves).toHaveLength(2);
+    expect(sleeves[0].yMm).toBeCloseTo(sleeves[1].yMm, 2);
+    expect(sleeves[1].xMm).toBeGreaterThan(sleeves[0].xMm);
+    expect(sleeves.map((p) => p.rotationDeg).sort((a, b) => a - b)).toEqual([0, 180]);
+  });
+
+  it('debe usar huecos de filas anteriores para mangas de un jugador posterior', () => {
+    const pieces: NestingPieceInput[] = [
+      createMockPiece('p1_del', 'player_1', 'MATEO', 'DELANTERO', 450, 650),
+      createMockPiece('p1_esp', 'player_1', 'MATEO', 'ESPALDA', 450, 650),
+      createMockPiece('p2_del', 'player_2', 'ALVARO', 'DELANTERO', 450, 650),
+      createMockPiece('p2_esp', 'player_2', 'ALVARO', 'ESPALDA', 450, 650),
+      createMockPiece('p3_del', 'player_3', 'INIGO', 'DELANTERO', 480, 650),
+      createMockPiece('p3_esp', 'player_3', 'INIGO', 'ESPALDA', 480, 650),
+      createMockPiece('p3_m1', 'player_3', 'INIGO', 'MANGA_IZQ', 400, 180),
+      createMockPiece('p3_m2', 'player_3', 'INIGO', 'MANGA_DER', 400, 180),
+    ];
+
+    const result = performModularNesting(pieces, {
+      printableWidthMm: 1120,
+      maxSheetLengthMm: 5000,
+      spacingMm: 3,
+    });
+    const sleeves = result.placedPieces.filter((p) => p.pieceType.startsWith('MANGA'));
+    const thirdRowTop = 4 + 650 + 3 + 650 + 3;
+
+    expect(sleeves).toHaveLength(2);
+    expect(sleeves.every((p) => p.yMm < thirdRowTop)).toBe(true);
+    expect(sleeves.every((p) => p.xMm >= 906)).toBe(true);
   });
 
   it('debe estructurar mangas continuas en doble columna sin huecos muertos verticales entre filas (Caso Imagen 4)', () => {
@@ -352,6 +437,336 @@ describe('modularNestingEngine', () => {
     const totalPairHeight = Math.max(m1.yMm + m1.effectiveHeightMm, m2.yMm + m2.effectiveHeightMm) - m1.yMm;
     const separatedHeight = m1.effectiveHeightMm + 3 + m2.effectiveHeightMm;
     expect(totalPairHeight).toBeLessThan(separatedHeight);
+  });
+
+  it('reproduce caso exacto del usuario con moldes 2026 y PEDIDO_EJEMPLO_SIN_FALLAS.xlsx', async () => {
+    const excelPath = path.resolve(__dirname, '../../../tests/fixtures/pruebas/PEDIDO_EJEMPLO_SIN_FALLAS.xlsx');
+    const svgPath = path.resolve(__dirname, '../../../tests/fixtures/pruebas/moldes 2026.svg');
+    expect(fs.existsSync(excelPath)).toBe(true);
+    expect(fs.existsSync(svgPath)).toBe(true);
+
+    const excelBuf = fs.readFileSync(excelPath);
+    const parsedExcel = parseExcelBuffer(excelBuf);
+
+    const svgContent = fs.readFileSync(svgPath, 'utf8');
+    const { patternSet } = parsePatternSvg(svgContent, 'TEST', 'FUTBOL', 'moldes.svg');
+
+    const dummyDesign = parseDesignSvg('<svg width=\"100\" height=\"100\"><rect width=\"100\" height=\"100\" fill=\"red\"/></svg>', 'DUMMY', 'FUTBOL');
+    const gen = generateGarmentPieces(parsedExcel.items, patternSet, dummyDesign);
+
+    const nestingPieces: NestingPieceInput[] = gen.pieces.map((p: any) => ({
+      id: p.id,
+      orderItemId: p.orderItemId,
+      pieceId: p.pieceId || p.id,
+      pieceType: p.pieceType,
+      playerName: p.playerName,
+      playerNumber: p.playerNumber,
+      sizeName: p.sizeName,
+      bbox: p.bbox,
+      areaMm2: p.bbox.width * p.bbox.height,
+      allowedRotations: [0, 90, 180, 270],
+      cutPolygon: p.cutPolygon,
+      svgContent: p.svgContent,
+    }));
+
+    const result = performModularNesting(nestingPieces, {
+      printableWidthMm: 1120,
+      maxSheetLengthMm: 5000,
+      spacingMm: 3,
+    });
+
+    console.log('Result sheets count:', result.sheets?.length);
+    for (const p of gen.pieces) {
+      if (p.pieceType.startsWith('MANGA') && p.playerName === 'CARLOS') {
+        console.log(`[CARLOS ${p.pieceType}] bbox=${JSON.stringify(p.bbox)} cutPolyLen=${p.cutPolygon?.length}`);
+      }
+    }
+    for (const sheet of result.sheets || []) {
+      console.log(`Sheet #${sheet.sheetNumber} (${sheet.garmentType}) height=${sheet.heightMm}:`);
+      for (const p of sheet.placedPieces) {
+        console.log(`  [${p.playerName || 'NO_NAME'}] ${p.pieceType} x=${p.xMm} y=${p.yMm} w=${p.effectiveWidthMm} h=${p.effectiveHeightMm} rot=${p.rotationDeg}`);
+      }
+
+      // Validar que la manga de Carlos llena el espacio lateral junto a Camila (sin hueco muerto)
+      const carlosMangaIzq = sheet.placedPieces.find((p) => p.playerName === 'CARLOS' && p.pieceType === 'MANGA_IZQ');
+      expect(carlosMangaIzq).toBeDefined();
+      expect(carlosMangaIzq!.yMm).toBeLessThan(700); // Entra inmediatamente a ~626mm junto a Camila, no a 1007mm
+
+      // La pareja inferior debe entrar en la envolvente de la pareja superior,
+      // no comenzar debajo de su AABB completo.
+      const danielaSleeves = sheet.placedPieces.filter((p) => p.playerName === 'DANIELA' && p.pieceType.startsWith('MANGA'));
+      const alvaroSleeves = sheet.placedPieces.filter((p) => p.playerName === 'ALVARO' && p.pieceType.startsWith('MANGA'));
+      expect(danielaSleeves).toHaveLength(2);
+      expect(alvaroSleeves).toHaveLength(2);
+      const danielaBottom = Math.max(...danielaSleeves.map((p) => p.yMm + p.effectiveHeightMm));
+      const alvaroTop = Math.min(...alvaroSleeves.map((p) => p.yMm));
+      expect(alvaroTop).toBeLessThan(danielaBottom + 3);
+
+      // Validar reducción de pliego (de 3.81m original a ~3.43m)
+      expect(sheet.heightMm).toBeLessThan(3500);
+
+      // Validar coordenadas, límites y ausencia de intersección poligonal real.
+      for (const piece of sheet.placedPieces) {
+        expect(Number.isFinite(piece.xMm)).toBe(true);
+        expect(Number.isFinite(piece.yMm)).toBe(true);
+        expect(piece.xMm).toBeGreaterThanOrEqual(0);
+        expect(piece.xMm + piece.effectiveWidthMm).toBeLessThanOrEqual(1120);
+        const placement = validateManualPlacement(piece, sheet.placedPieces, 1120, 3);
+        expect(
+          placement.valid,
+          `Separación inválida en [${piece.playerName}] ${piece.pieceType}: ${placement.reason} contra ${placement.blockingPieceId}`
+        ).toBe(true);
+      }
+
+      for (let i = 0; i < sheet.placedPieces.length; i++) {
+        for (let j = i + 1; j < sheet.placedPieces.length; j++) {
+          const a = sheet.placedPieces[i];
+          const b = sheet.placedPieces[j];
+
+          const overlapX = Math.max(0, Math.min(a.xMm + a.effectiveWidthMm, b.xMm + b.effectiveWidthMm) - Math.max(a.xMm, b.xMm));
+          const overlapY = Math.max(0, Math.min(a.yMm + a.effectiveHeightMm, b.yMm + b.effectiveHeightMm) - Math.max(a.yMm, b.yMm));
+
+          if (overlapX > 0.1 && overlapY > 0.1) {
+            const polyA = getOrientedPolygon(a.cutPolygon, a.rotationDeg, a.xMm, a.yMm);
+            const polyB = getOrientedPolygon(b.cutPolygon, b.rotationDeg, b.xMm, b.yMm);
+            const intersectionArea = await calculatePolygonalIntersectionArea(polyA, polyB);
+            expect(
+              intersectionArea,
+              `Colisión poligonal entre [${a.playerName}] ${a.pieceType} y [${b.playerName}] ${b.pieceType}`
+            ).toBeLessThanOrEqual(0.001);
+          }
+        }
+      }
+    }
+  });
+
+  describe('Nesting en Bobinas Anchas (> 1200 mm: 1600 mm, 1800 mm, 1900 mm)', () => {
+    it('debe reducir el largo total y aprovechar el ancho en bobina de 1600 mm respecto a 1120 mm', () => {
+      // 4 jugadores completos
+      const pieces: NestingPieceInput[] = [];
+      for (let i = 1; i <= 4; i++) {
+        pieces.push(
+          createMockPiece(`p${i}_del`, `player_${i}`, `JUGADOR_${i}`, 'DELANTERO', 360, 500),
+          createMockPiece(`p${i}_esp`, `player_${i}`, `JUGADOR_${i}`, 'ESPALDA', 360, 500),
+          createMockPiece(`p${i}_m1`, `player_${i}`, `JUGADOR_${i}`, 'MANGA_IZQ', 300, 160),
+          createMockPiece(`p${i}_m2`, `player_${i}`, `JUGADOR_${i}`, 'MANGA_DER', 300, 160)
+        );
+      }
+
+      const res1120 = performModularNesting(pieces, {
+        printableWidthMm: 1120,
+        maxSheetLengthMm: 5000,
+        spacingMm: 3,
+      });
+
+      const res1600 = performModularNesting(pieces, {
+        printableWidthMm: 1600,
+        maxSheetLengthMm: 5000,
+        spacingMm: 3,
+      });
+
+      expect(res1120.placedPieces).toHaveLength(16);
+      expect(res1600.placedPieces).toHaveLength(16);
+
+      // En 1600 mm caben 4 cuerpos o 2 cuerpos con 3-4 columnas de mangas, reduciendo la altura
+      expect(res1600.totalRollLengthMm).toBeLessThan(res1120.totalRollLengthMm);
+
+      // Todas las piezas dentro del ancho útil de 1600 mm
+      for (const p of res1600.placedPieces) {
+        expect(p.xMm).toBeGreaterThanOrEqual(3);
+        expect(p.xMm + p.effectiveWidthMm).toBeLessThanOrEqual(1600 - 3);
+      }
+    });
+
+    it('debe colocar 4 cuerpos por fila en bobinas de 1800 mm y 1900 mm reduciendo el largo casi a la mitad', () => {
+      // 4 jugadores: delanteros y espaldas de 360 mm. 4 * 360 + 3*3 = 1449 mm <= 1800 mm
+      const pieces: NestingPieceInput[] = [];
+      for (let i = 1; i <= 4; i++) {
+        pieces.push(
+          createMockPiece(`p${i}_del`, `player_${i}`, `JUGADOR_${i}`, 'DELANTERO', 360, 500),
+          createMockPiece(`p${i}_esp`, `player_${i}`, `JUGADOR_${i}`, 'ESPALDA', 360, 500),
+          createMockPiece(`p${i}_m1`, `player_${i}`, `JUGADOR_${i}`, 'MANGA_IZQ', 300, 160),
+          createMockPiece(`p${i}_m2`, `player_${i}`, `JUGADOR_${i}`, 'MANGA_DER', 300, 160)
+        );
+      }
+
+      const res1800 = performModularNesting(pieces, {
+        printableWidthMm: 1800,
+        maxSheetLengthMm: 5000,
+        spacingMm: 3,
+      });
+
+      const res1900 = performModularNesting(pieces, {
+        printableWidthMm: 1900,
+        maxSheetLengthMm: 5000,
+        spacingMm: 3,
+      });
+
+      expect(res1800.placedPieces).toHaveLength(16);
+      expect(res1900.placedPieces).toHaveLength(16);
+
+      // En 1800 y 1900 mm los 4 jugadores quedan en 2 filas de 4 cuerpos en lugar de 4 filas de 2 cuerpos
+      expect(res1800.totalRollLengthMm).toBeLessThanOrEqual(res1900.totalRollLengthMm + 10);
+      expect(res1800.totalRollLengthMm).toBeLessThan(1800);
+
+      for (const p of res1800.placedPieces) {
+        expect(p.xMm).toBeGreaterThanOrEqual(3);
+        expect(p.xMm + p.effectiveWidthMm).toBeLessThanOrEqual(1800 - 3);
+      }
+
+      for (const p of res1900.placedPieces) {
+        expect(p.xMm).toBeGreaterThanOrEqual(3);
+        expect(p.xMm + p.effectiveWidthMm).toBeLessThanOrEqual(1900 - 3);
+      }
+    });
+
+    it('debe ejecutar el nesting en bobina de 1800 mm en tiempo casi instantáneo (< 50ms) para 20 jugadores', () => {
+      const pieces: NestingPieceInput[] = [];
+      for (let i = 1; i <= 20; i++) {
+        pieces.push(
+          createMockPiece(`p${i}_del`, `player_${i}`, `JUGADOR_${i}`, 'DELANTERO', 360, 500),
+          createMockPiece(`p${i}_esp`, `player_${i}`, `JUGADOR_${i}`, 'ESPALDA', 360, 500),
+          createMockPiece(`p${i}_m1`, `player_${i}`, `JUGADOR_${i}`, 'MANGA_IZQ', 300, 180),
+          createMockPiece(`p${i}_m2`, `player_${i}`, `JUGADOR_${i}`, 'MANGA_DER', 300, 180)
+        );
+      }
+
+      const start = performance.now();
+      const result = performModularNesting(pieces, {
+        printableWidthMm: 1800,
+        maxSheetLengthMm: 5000,
+        spacingMm: 3,
+      });
+      const duration = performance.now() - start;
+
+      expect(result.placedPieces).toHaveLength(80);
+      expect(duration).toBeLessThan(50);
+      expect(result.sheets!.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('garantiza con el pedido real de ejemplo que el largo en 1600mm es menor que en 1120mm sin colisiones', async () => {
+      const excelPath = path.resolve(__dirname, '../../../tests/fixtures/pruebas/PEDIDO_EJEMPLO_SIN_FALLAS.xlsx');
+      const svgPath = path.resolve(__dirname, '../../../tests/fixtures/pruebas/moldes 2026.svg');
+      if (!fs.existsSync(excelPath) || !fs.existsSync(svgPath)) return;
+
+      const excelBuf = fs.readFileSync(excelPath);
+      const parsedExcel = parseExcelBuffer(excelBuf);
+      const svgContent = fs.readFileSync(svgPath, 'utf8');
+      const { patternSet } = parsePatternSvg(svgContent, 'TEST', 'FUTBOL', 'moldes.svg');
+      const dummyDesign = parseDesignSvg('<svg width=\"100\" height=\"100\"><rect width=\"100\" height=\"100\" fill=\"red\"/></svg>', 'DUMMY', 'FUTBOL');
+      const gen = generateGarmentPieces(parsedExcel.items, patternSet, dummyDesign);
+
+      const nestingPieces: NestingPieceInput[] = gen.pieces.map((p: any) => ({
+        id: p.id,
+        orderItemId: p.orderItemId,
+        pieceId: p.pieceId || p.id,
+        pieceType: p.pieceType,
+        playerName: p.playerName,
+        playerNumber: p.playerNumber,
+        sizeName: p.sizeName,
+        bbox: p.bbox,
+        areaMm2: p.bbox.width * p.bbox.height,
+        allowedRotations: [0, 90, 180, 270],
+        cutPolygon: p.cutPolygon,
+        svgContent: p.svgContent,
+      }));
+
+      const res1120 = performModularNesting(nestingPieces, {
+        printableWidthMm: 1120,
+        maxSheetLengthMm: 5000,
+        spacingMm: 3,
+      });
+
+      const res1600 = performModularNesting(nestingPieces, {
+        printableWidthMm: 1600,
+        maxSheetLengthMm: 5000,
+        spacingMm: 3,
+      });
+
+      expect(res1600.placedPieces).toHaveLength(res1120.placedPieces.length);
+      expect(res1600.totalRollLengthMm).toBeLessThan(res1120.totalRollLengthMm);
+
+      // Validar no-colisión y respeto de márgenes en 1600 mm
+      for (const sheet of res1600.sheets || []) {
+        for (const piece of sheet.placedPieces) {
+          expect(piece.xMm).toBeGreaterThanOrEqual(0);
+          expect(piece.xMm + piece.effectiveWidthMm).toBeLessThanOrEqual(1600);
+        }
+
+        const pieces = sheet.placedPieces;
+        for (let i = 0; i < pieces.length; i++) {
+          const poly1 = getPiecePolygon(pieces[i]);
+          for (let j = i + 1; j < pieces.length; j++) {
+            const poly2 = getPiecePolygon(pieces[j]);
+            const overlap = doPolygonsOverlap(poly1, poly2);
+            if (overlap) {
+              console.error(`Solapamiento detectado entre ${pieces[i].playerName} (${pieces[i].pieceType}) y ${pieces[j].playerName} (${pieces[j].pieceType})`);
+            }
+            expect(overlap).toBe(false);
+          }
+        }
+      }
+    });
+
+    it('debe aprovechar huecos laterales con mangas multicolumna en 1600, 1800 y 1900 mm sin colisiones', () => {
+      const mockPieces: NestingPieceInput[] = [
+        createMockPiece('p1_del', 'p1', 'MATEO', 'DELANTERO', 360, 500),
+        createMockPiece('p1_esp', 'p1', 'MATEO', 'ESPALDA', 360, 500),
+        createMockPiece('p2_del', 'p2', 'CAMILA', 'DELANTERO', 360, 500),
+        createMockPiece('p2_esp', 'p2', 'CAMILA', 'ESPALDA', 360, 500),
+        createMockPiece('p3_del', 'p3', 'CARLOS', 'DELANTERO', 390, 530),
+        createMockPiece('p3_esp', 'p3', 'CARLOS', 'ESPALDA', 390, 530),
+        createMockPiece('p3_m1', 'p3', 'CARLOS', 'MANGA_IZQ', 345, 182),
+        createMockPiece('p3_m2', 'p3', 'CARLOS', 'MANGA_DER', 345, 182),
+        createMockPiece('p4_del', 'p4', 'DANIELA', 'DELANTERO', 420, 580),
+        createMockPiece('p4_esp', 'p4', 'DANIELA', 'ESPALDA', 420, 580),
+        createMockPiece('p4_m1', 'p4', 'DANIELA', 'MANGA_IZQ', 355, 187),
+        createMockPiece('p4_m2', 'p4', 'DANIELA', 'MANGA_DER', 355, 187),
+        createMockPiece('p5_del', 'p5', 'ALVARO', 'DELANTERO', 420, 580),
+        createMockPiece('p5_esp', 'p5', 'ALVARO', 'ESPALDA', 420, 580),
+        createMockPiece('p5_m1', 'p5', 'ALVARO', 'MANGA_IZQ', 355, 187),
+        createMockPiece('p5_m2', 'p5', 'ALVARO', 'MANGA_DER', 355, 187),
+        createMockPiece('p6_del', 'p6', 'VALENTINA', 'DELANTERO', 540, 720),
+        createMockPiece('p6_esp', 'p6', 'VALENTINA', 'ESPALDA', 540, 720),
+        createMockPiece('p6_m1', 'p6', 'VALENTINA', 'MANGA_IZQ', 425, 233),
+        createMockPiece('p6_m2', 'p6', 'VALENTINA', 'MANGA_DER', 425, 233),
+      ];
+
+      const res1120 = performModularNesting(mockPieces, { printableWidthMm: 1120, maxSheetLengthMm: 6000 });
+      const res1600 = performModularNesting(mockPieces, { printableWidthMm: 1600, maxSheetLengthMm: 6000 });
+      const res1800 = performModularNesting(mockPieces, { printableWidthMm: 1800, maxSheetLengthMm: 6000 });
+      const res1900 = performModularNesting(mockPieces, { printableWidthMm: 1900, maxSheetLengthMm: 6000 });
+
+      expect(res1120.placedPieces.length).toBe(mockPieces.length);
+      expect(res1600.placedPieces.length).toBe(mockPieces.length);
+      expect(res1800.placedPieces.length).toBe(mockPieces.length);
+      expect(res1900.placedPieces.length).toBe(mockPieces.length);
+
+      // El largo en bobinas anchas debe ser estrictamente menor que en 1120 mm
+      expect(res1600.totalRollLengthMm).toBeLessThan(res1120.totalRollLengthMm);
+      expect(res1800.totalRollLengthMm).toBeLessThanOrEqual(res1600.totalRollLengthMm);
+      expect(res1900.totalRollLengthMm).toBeLessThanOrEqual(res1800.totalRollLengthMm);
+
+      // Verificar que en 1600 mm hay mangas colocadas en los laterales de los cuerpos (x > 800)
+      const sleevesAtRight = res1600.placedPieces.filter(
+        (p) => p.pieceType.includes('MANGA') && p.xMm >= 800 && p.yMm < 2500
+      );
+      expect(sleevesAtRight.length).toBeGreaterThan(0);
+
+      // Verificar colisiones poligonales en todos los anchos
+      for (const res of [res1120, res1600, res1800, res1900]) {
+        for (const sheet of res.sheets || []) {
+          const pieces = sheet.placedPieces;
+          for (let i = 0; i < pieces.length; i++) {
+            const poly1 = getPiecePolygon(pieces[i]);
+            for (let j = i + 1; j < pieces.length; j++) {
+              const poly2 = getPiecePolygon(pieces[j]);
+              expect(doPolygonsOverlap(poly1, poly2)).toBe(false);
+            }
+          }
+        }
+      }
+    });
   });
 });
 
