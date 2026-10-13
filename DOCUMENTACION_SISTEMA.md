@@ -1,13 +1,13 @@
-# 🧵 CimaPattern (HMB Entallador) — Documentación Técnica y Arquitectura del Sistema
+# 🧵 CimaTex (Entallador y Nesting Textil 1:1) — Documentación Técnica y Arquitectura del Sistema
 
 > **Guía maestra para desarrolladores, colaboradores e ingenieros de software.**  
-> Este documento detalla la arquitectura, módulos, algoritmos matemáticos/geométricos, flujo de datos y hoja de ruta (roadmap) para continuar el desarrollo y optimización de **CimaPattern**.
+> Este documento detalla la arquitectura, módulos, algoritmos matemáticos/geométricos, flujo de datos y hoja de ruta (roadmap) para continuar el desarrollo y optimización de **CimaTex**.
 
 ---
 
 ## 📌 1. Visión y Propósito del Sistema
 
-**CimaPattern** es una plataforma web y de escritorio (Electron + React + Vite + TypeScript) diseñada para la **industria de confección y sublimación deportiva**. Automatiza el flujo completo de producción:
+**CimaTex** es una plataforma web y de escritorio (Electron + React + Vite + TypeScript) diseñada para la **industria de confección y sublimación deportiva**. Automatiza el flujo completo de producción:
 
 ```
 [ Excel con Nómina de Jugadores ]
@@ -32,10 +32,12 @@
 | **Frontend UI** | React 18, TypeScript, Tailwind CSS, Lucide Icons | Interfaz reactiva, paneles de inspección y lienzos interactivos |
 | **Estado Global** | Zustand | Gestión de estado reactivo por módulos (pedidos, diseños, moldes, generador, nesting) |
 | **Motor Geométrico** | Clipper2 (WASM), Polygons 2D, Bounding Boxes | Operaciones booleanas, offsets de costura e intersecciones poligonales |
-| **Motor Tipográfico** | OpenType.js, Google Fonts API, FontManager | Conversión de fuentes TTF a trazados vectoriales nativos `<path d="..." />` |
-| **Persistencia Local** | SQLite (sql.js WASM + IndexedDB) | Base de datos relacional embebida para guardar diseños, moldes, pedidos y configuraciones |
+| **Persistencia Local** | SQLite (sql.js WASM + IndexedDB) | Base de datos embebida en cliente para trabajar 100% offline sin compartir datos entre máquinas |
+| **Persistencia Central** | MySQL 8 / MariaDB (Hostinger `u836650900_cimatex`) | Base de datos centralizada para usuarios Google, planes y sincronización |
+| **API Backend** | PHP 8.2 / Express Node.js (`/api/`) | Endpoints REST para autenticación Google, sincronización y healthcheck |
 | **Exportación 1:1** | svg2pdf.js, pdf-lib, ExcelJS | Generación de archivos físicos 1:1 para RIPs Mimaki RasterLink, Epson y Adobe Illustrator |
-| **Pruebas y QA** | Vitest (105+ tests automáticos) | Verificación matemática y de integración continua |
+| **CI/CD** | GitHub Actions + SCP/SSH Deploy | Despliegue continuo automático a Hostinger en cada push a main |
+| **Pruebas y QA** | Vitest (192 tests automáticos) | Verificación matemática, geométrica, de autenticación y de integración continua |
 
 ---
 

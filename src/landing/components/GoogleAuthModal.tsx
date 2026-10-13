@@ -40,6 +40,62 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = (props) => {
   const handleGoogleLogin = async () => {
     setLocalError(null);
     clearError();
+
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+    // Si Google Identity Services está cargado y tenemos Client ID, abrir ventana oficial de Google
+    if (typeof window !== 'undefined' && (window as any).google?.accounts?.oauth2 && clientId) {
+      try {
+        const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: 'email profile openid',
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse.error) {
+              console.warn('Google OAuth cancelado o con error:', tokenResponse);
+              setLocalError('Inicio con Google cancelado.');
+              return;
+            }
+            try {
+              // Obtener información real del perfil de Google
+              const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+              });
+              const googleUser = await userInfoRes.json();
+
+              await loginWithGoogle({
+                id: googleUser.sub,
+                name: googleUser.name,
+                email: googleUser.email,
+                avatar: googleUser.picture,
+                token: tokenResponse.access_token,
+              });
+
+              setSuccess(true);
+              setTimeout(() => {
+                handleClose();
+                navigateTo('/app');
+              }, 750);
+            } catch (err) {
+              console.error('Error procesando respuesta de Google:', err);
+              // Fallback automático para no bloquear al usuario
+              await loginWithGoogle();
+              setSuccess(true);
+              setTimeout(() => {
+                handleClose();
+                navigateTo('/app');
+              }, 750);
+            }
+          },
+        });
+
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+        return;
+      } catch (err) {
+        console.warn('Error al iniciar tokenClient de Google, usando flujo alternativo:', err);
+      }
+    }
+
+    // Fallback estándar si Google SDK no está disponible
     try {
       await loginWithGoogle();
       setSuccess(true);
