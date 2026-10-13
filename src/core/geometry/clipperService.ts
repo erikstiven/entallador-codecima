@@ -41,7 +41,12 @@ export async function getClipperInstance(): Promise<any> {
       clipperInstance = await factory({
         locateFile: (file: string) => {
           if (isBrowserOrWorker) {
-            return `/${file}`;
+            // Intentar resolver relativo al módulo actual; si falla, buscar en /assets/
+            try {
+              return new URL(file, import.meta.url).href;
+            } catch {
+              return `/assets/${file}`;
+            }
           }
           return wasmPath || file;
         }
