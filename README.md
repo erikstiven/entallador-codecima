@@ -7,6 +7,15 @@
 [![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=flat&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Demo en Producción](https://img.shields.io/badge/🌐_Demo-cimatex.codecima.com-brightgreen?style=flat)](https://cimatex.codecima.com)
+
+---
+
+## 🌐 Demo en Producción
+
+> **[https://cimatex.codecima.com](https://cimatex.codecima.com)**
+
+La versión web permite probar el motor de nesting, importación de Excel y visualización de moldes directamente en el navegador, sin instalación.
 
 ---
 
