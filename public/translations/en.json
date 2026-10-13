@@ -1,0 +1,617 @@
+{
+  "nav": {
+    "features": "Features",
+    "howItWorks": "How to Start",
+    "pricing": "Pricing",
+    "diagnosis": "Your Workshop",
+    "solutions": "Solutions",
+    "benefits": "Benefits",
+    "demo": "The app",
+    "calculator": "Calculate your savings",
+    "faq": "FAQ",
+    "login": "Log in",
+    "getStarted": "Get Started"
+  },
+  "hero": {
+    "badge": "For custom apparel manufacturers",
+    "title": "Produce more. Fewer errors. Less waste.",
+    "titleLine1": "Your entire production process,",
+    "titleLine2": "automated in one place.",
+    "subtitle": "The system for sublimation and sportswear workshops that reduces errors, fabric waste and hours of work.",
+    "subtitle2": "Automate the preparation of patterns and print sheets to produce more with the same equipment.",
+    "demoNoCommitment": "Guided demo, no commitment.",
+    "getStarted": "Get Started",
+    "bookDemo": "Book a Demo",
+    "feature1": "Patterns ready to use and customize in minutes",
+    "feature2": "Automatically generate sublimation sheets ready to print",
+    "feature3": "Load names, numbers and sizes in bulk with no manual errors",
+    "cardSublimation": "Sublimation",
+    "cardDtf": "DTF",
+    "cardLaserCut": "Laser cutting",
+    "cardOrderTag": "Order",
+    "cardOrderStatus": "In production",
+    "cardOrderClient": "Progreso Athletic Club",
+    "cardOrderItem": "Striped jersey · Sublimation",
+    "cardOrderQtyLabel": "Quantity",
+    "cardOrderQtyValue": "24 pcs",
+    "cardOrderDueLabel": "Due",
+    "cardOrderDueValue": "Aug 22",
+    "cardUsageTag": "Usage",
+    "cardUsageLabel": "Paper · 7 days",
+    "cardUsageValue": "18.4 m",
+    "cardUsagePeriod": "this week",
+    "cardPatternTag": "Pattern",
+    "cardPatternPiece": "FRONT",
+    "cardPatternSize": "M",
+    "cardTrackTag": "Tracking",
+    "cardTrackStep1": "Received",
+    "cardTrackStep2": "Design",
+    "cardTrackStep3": "Printing",
+    "cardTrackStep4": "Sewing",
+    "cardTrackStep5": "Delivery",
+    "cardMixTag": "Production",
+    "cardMixLabel": "This month's mix",
+    "cardMixTotalLabel": "orders",
+    "cardMix1": "Sublimation",
+    "cardMix2": "DTF",
+    "cardMix3": "Cutting",
+    "cardProductTag": "Product",
+    "cardProductName": "Official shorts",
+    "cardProductParts": "Left + right"
+  },
+  "logos": {
+    "trustedBy": "From design to print",
+    "workflowTitle": "Your workflow in Sublimifyer"
+  },
+  "features": {
+    "badge": "Features",
+    "title": "Fewer errors. Less waste. More production.",
+    "subtitle": "Sublimifyer eliminates repetitive manual tasks in pattern assembly, sublimation sheets and garment customization, reducing errors and downtime in production.",
+    "feature1": {
+      "title": "Catalogs of Patterns, Designs & Fonts",
+      "description": "Access professional patterns ready to use and avoid recreating them from scratch on every order. Save hours of assembly and keep consistency across all your garments."
+    },
+    "feature2": {
+      "title": "Complete hundreds of orders in one click",
+      "description": "Automatically generate each client's files with their names, numbers and sizes without editing one by one."
+    },
+    "feature3": {
+      "title": "Less fabric waste",
+      "description": "Reduce fabric waste by automatically optimizing the layout of pieces on each sublimation sheet."
+    },
+    "feature4": {
+      "title": "Tracking & Management",
+      "description": "Centralize all your orders in one place and avoid information loss between design, production and delivery."
+    },
+    "feature5": {
+      "title": "Precise customization",
+      "description": "Place logos, names and numbers with precision and avoid positioning errors in printing."
+    },
+    "feature6": {
+      "title": "End-to-End Production Workflow Management",
+      "description": "Track every order from design to delivery in a single streamlined dashboard, with metrics, and many more features to come."
+    }
+  },
+  "howItWorks": {
+    "badge": "How to Start",
+    "title": "Simple Process, Powerful Results",
+    "subtitle": "Get started in minutes and see the difference our platform can make for your business.",
+    "step1": {
+      "title": "Initial Guidance/Consultation",
+      "description": "Get in touch with us and we help you adapt your system, integrate your patterns and generate your first sublimation sheets."
+    },
+    "step2": {
+      "title": "Complete Sales Automation",
+      "description": "Automate your entire sales process from design to delivery. Generate more orders with less effort and significantly increase your revenue."
+    },
+    "step3": {
+      "title": "Optimization and Time Savings",
+      "description": "Significantly reduce time spent on manual assembly and minimize costly production errors."
+    }
+  },
+  "diagnosis": {
+    "title": "Is this happening in your workshop?",
+    "subtitle": "Check these common issues. If you identify with several, the hidden cost of your operation may be higher than you think.",
+    "closing": "If you answered 'yes' to more than one, your operation has room for improvement.",
+    "question1": {
+      "question": "Are you still assembling sublimation sheets manually?",
+      "description": "Every sheet is laid out piece by piece. Hours per order, no scaling.",
+      "impact": "Labour hours per order, bottlenecks before printing, delays when volume spikes.",
+      "solution": "The system generates sublimation sheets from the order and patterns, with optimized layout, ready to print."
+    },
+    "question2": {
+      "question": "Do you waste time entering names and numbers one by one?",
+      "description": "Each name and number is typed or pasted onto each garment. For team or event orders, that's hundreds of entries.",
+      "impact": "Huge time per order, typos, rework when something goes wrong.",
+      "solution": "Bulk upload from a spreadsheet or list: the system assigns name, number and size to each garment and generates files with no manual input."
+    },
+    "question3": {
+      "question": "Do you make mistakes with sizes, names or player details?",
+      "description": "Data travels via WhatsApp, Excel or paper. It gets copied wrong, a row is missed or a size is mixed up.",
+      "impact": "Wrong personalization, complaints, reprints and loss of customer trust.",
+      "solution": "Single flow with data tied to the order: the system uses the correct information per garment and cuts transcription errors."
+    },
+    "question4": {
+      "question": "Do you have to redo orders because of production errors?",
+      "description": "Mistakes in design, size or personalization are caught after printing or cutting. Then you have to redo.",
+      "impact": "Wasted fabric, time and labour; delayed deliveries and unhappy customers.",
+      "solution": "Controlled flow from order to final file: fewer manual steps, fewer failure points, and review before printing."
+    },
+    "question5": {
+      "question": "Are you wasting more fabric than you should?",
+      "description": "Pieces are placed by eye or with a fixed layout. Extra fabric between pieces or over-cutting.",
+      "impact": "Extra fabric cost, lower yield per sheet, margin eaten by waste.",
+      "solution": "Automatic nesting: the system arranges pieces to use fabric better and reduce leftover."
+    },
+    "question6": {
+      "question": "Do you rebuild patterns from scratch for similar orders?",
+      "description": "Every 'new' order forces you to reassemble the pattern or layout even when it's almost the same as a previous one.",
+      "impact": "Hours of repetitive design work, delivery delays, little standardization.",
+      "solution": "Reusable pattern catalogs: pick the base, adjust what's needed and generate the order without starting from zero."
+    },
+    "question7": {
+      "question": "Is order information scattered across WhatsApp, Excel and designers?",
+      "description": "Orders in WhatsApp, lists in Excel, files on the designer's computer. No one has the full picture.",
+      "impact": "Lost orders, duplicated work, mistakes from outdated information.",
+      "solution": "Orders in one place: same record for sales, production and delivery, with history and tracking."
+    },
+    "question8": {
+      "question": "When volume goes up, does chaos go up too?",
+      "description": "More orders mean the same manual process repeated more. More errors, more delays, more stress.",
+      "impact": "Can't scale without hiring more or working late; bottlenecks around key people.",
+      "solution": "Automation that scales with volume: same flow for 10 or 500 garments, without multiplying manual hours at the same rate."
+    },
+    "question9": {
+      "question": "Do you depend too much on one person who 'knows how everything works'?",
+      "description": "One or a few people hold all the knowledge. If they're absent or leave, the operation stalls.",
+      "impact": "Operational risk, difficulty adding staff, overload on those people.",
+      "solution": "Standardized processes in the system: the 'how we do it' lives in flows and templates anyone can follow."
+    },
+    "question10": {
+      "question": "Is it hard to scale without hiring more people?",
+      "description": "More orders mean more hands on assembly, data entry and checking. Growth doesn't turn into margin.",
+      "impact": "Hiring just for repetitive tasks or turning down orders for lack of capacity.",
+      "solution": "The system does the repetitive work (sheets, data, nesting); the team focuses on design, quality and customers—you can grow without adding people at the same rate."
+    }
+  },
+  "testimonials": {
+    "badge": "Testimonials",
+    "title": "Trusted by custom apparel workshops",
+    "subtitle": "See how sublimation and sportswear businesses are producing more with fewer errors and less waste.",
+    "testimonial1": {
+      "quote": "We stopped assembling sublimation sheets by hand. Orders that took us hours now go out in minutes, and we make far fewer mistakes.",
+      "author": "Sublimation workshop",
+      "role": "Sportswear & sublimation, Argentina"
+    },
+    "testimonial2": {
+      "quote": "Data used to fly around on WhatsApp and Excel. Now everything is in one place—we know exactly what's in each order and we don't miss names or sizes anymore.",
+      "author": "Custom apparel business",
+      "role": "Team uniforms & events"
+    },
+    "testimonial3": {
+      "quote": "Support was there from day one. They helped us load our patterns and get our first sheets out. We were up and running in no time.",
+      "author": "Apparel workshop",
+      "role": "Sublimation and embroidery"
+    },
+    "testimonial4": {
+      "quote": "We were redoing orders all the time because of layout or personalization errors. With Sublimifyer we review before printing and the reprints dropped a lot.",
+      "author": "Clothing manufacturer",
+      "role": "Bulk customization"
+    },
+    "testimonial5": {
+      "quote": "The nesting optimization really cut our fabric waste. We're using more of each sheet and spending less on material.",
+      "author": "Textile workshop",
+      "role": "Sublimation printing"
+    },
+    "testimonial6": {
+      "quote": "When volume went up we used to drown in manual work. Now we handle more orders without adding people. The system does the repetitive part.",
+      "author": "Sportswear producer",
+      "role": "Custom team wear"
+    }
+  },
+  "pricing": {
+    "badge": "Pricing",
+    "title": "Choose based on how much you produce.",
+    "subtitle": "Every plan includes full access to Sublimifyer. The price depends on your monthly production volume.",
+    "logicIntro": "You pay based on how much you produce. The higher your volume, the greater the system's impact on your operation.",
+    "roiPhrase": "A single production error can cost more than a month of Sublimifyer.",
+    "roiReminderTitle": "Strategic ROI Reminder",
+    "roiReminderLine1": "A single production error can cost more than an entire month of the system.",
+    "roiReminderLine2": "When you reduce manual work, prevent reprints, and optimize fabric usage, the platform often pays for itself in avoided mistakes alone.",
+    "month": "/ month",
+    "founderPriceLabel": "Founder Price",
+    "mostPopular": "Most chosen",
+    "sharedFeaturesTitle": "Every plan includes full access",
+    "accessNote": "Full access to Sublimifyer",
+    "currencyLabel": "Currency",
+    "currencyArs": "Pesos (ARS)",
+    "currencyUsd": "Dollars (USD)",
+    "sharedFeatures": [
+      "Onboarding",
+      "Support",
+      "Production automation",
+      "Production file generation",
+      "Order management",
+      "Multiple users"
+    ],
+    "starter": {
+      "name": "Initial",
+      "volume": "Up to 1,000 garments/month",
+      "originalPrice": "119k ARS",
+      "price": "99k ARS",
+      "priceUsd": "69 USD",
+      "originalPriceUsd": "79 USD",
+      "description": "For small workshops starting to automate and eliminate manual errors. If you're still preparing sheets manually, adjusting names one by one, or fixing production mistakes, this plan helps you stabilize your workflow and save hours every week.",
+      "limits": "Up to 1,000 garments per month. Ideal for workshops beginning their automation journey.",
+      "cta": "Get Started",
+      "features": [
+        "Full system access",
+        "Ready-to-use professional pattern catalogs",
+        "Automatic sublimation sheet generation",
+        "Bulk name and number personalization",
+        "Automatic piece layout optimization",
+        "Centralized order management",
+        "Standard email support",
+        "Guided onboarding session",
+        "Up to 1,000 garments per month"
+      ]
+    },
+    "professional": {
+      "name": "Professional",
+      "volume": "Up to 2,500 garments/month",
+      "originalPrice": "229k ARS",
+      "price": "199k ARS",
+      "priceUsd": "139 USD",
+      "originalPriceUsd": "159 USD",
+      "description": "For workshops with steady production that need efficiency and reduced waste. At this level, every production improvement directly impacts margins. This plan helps you reduce material waste, improve operational flow, and scale without increasing staff.",
+      "limits": "Up to 2,500 garments per month. Designed for growing operations that need efficiency at scale.",
+      "cta": "Get Started",
+      "featuresIntro": "Includes everything in the previous plan, plus:",
+      "extraFeatures": [
+        "Priority support",
+        "Advanced production analytics",
+        "Workflow optimization recommendations",
+        "Faster processing priority",
+        "Up to 2,500 garments per month"
+      ]
+    },
+    "enterprise": {
+      "name": "Enterprise",
+      "volume": "Up to 5,000 garments/month",
+      "originalPrice": "399k ARS",
+      "price": "299k ARS",
+      "priceUsd": "199 USD",
+      "originalPriceUsd": "269 USD",
+      "description": "For large operations where every improvement affects thousands of garments. When you're producing at scale, small inefficiencies become expensive. This plan gives you maximum operational leverage and strategic support.",
+      "limits": "Up to 5,000 garments per month. Beyond 5,000: +49 ARS per additional garment.",
+      "note": "+49 ARS per additional garment",
+      "noteUsd": "+0.03 USD per additional garment",
+      "cta": "Get Started",
+      "featuresIntro": "Includes everything above, plus:",
+      "extraFeatures": [
+        "Up to 5,000 garments per month",
+        "Beyond 5,000: +49 ARS per extra garment",
+        "Dedicated onboarding and strategy session",
+        "Direct priority support channel",
+        "Early access to new features",
+        "Production performance review"
+      ]
+    },
+    "customPlan": "Need a custom plan?",
+    "customPlanCta": "Talk to us",
+    "customPlanMessage": "Hi! I produce more than the listed plans allow and I'd like to look at a custom plan."
+  },
+  "faq": {
+    "badge": "FAQ",
+    "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to common questions about our platform.",
+    "question1": {
+      "question": "Can I upload my own patterns, fonts, and designs?",
+      "answer": "Yes! Sublimifyer allows you to upload your own clothing patterns, fonts, and graphic designs. You can combine them with our curated library of patterns and templates, giving you full flexibility to create unique, customized apparel."
+    },
+    "question2": {
+      "question": "How does Sublimifyer help reduce fabric waste?",
+      "answer": "Our platform includes AI-powered 2D nesting optimization, which automatically arranges pattern pieces on the fabric to minimize unused space. This not only reduces material waste but also lowers production costs and improves efficiency."
+    },
+    "question3": {
+      "question": "How does the onboarding and assistance support work?",
+      "answer": "Our onboarding and assistance support gives you full access to all features of your selected plan."
+    },
+    "question4": {
+      "question": "Is Sublimifyer suitable for small clothing businesses?",
+      "answer": "Absolutely. Sublimifyer is designed to scale with your business. Small and medium-sized clothing brands can take advantage of professional design tools, production-ready file generation, and workflow management without needing a large design or technical team."
+    },
+    "question5": {
+      "question": "Can I change plans later?",
+      "answer": "Yes, you can upgrade or downgrade your plan at any time. If you upgrade, the new pricing will be prorated for the remainder of your billing cycle. If you downgrade, the new pricing will take effect at the start of your next billing cycle."
+    },
+    "question6": {
+      "question": "What kind of support do you offer?",
+      "answer": "Support varies by plan. All plans include email support, with the Professional plan offering priority email support. The Enterprise plan includes 24/7 phone and email support. We also have an extensive knowledge base and community forum available to all users."
+    }
+  },
+  "cta": {
+    "title1": "Ready to produce with no errors and less waste?",
+    "title2": "Start today. No credit card.",
+    "subtitle": "Set up your shop and print your first order in minutes",
+    "getStarted": "Start free trial",
+    "scheduleDemo": "Schedule a Demo",
+    "footer": "Start shaping your business with onboarding and assistance support TODAY."
+  },
+  "footer": {
+    "description": "The all-in-one platform that helps custom apparel companies, automate, and deliver exceptional results. Streamline processes and focus on your business.",
+    "product": "Product",
+    "features": "Features",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "demo": "Demo",
+    "resources": "Resources",
+    "documentation": "Documentation",
+    "guides": "Guides",
+    "blog": "Blog",
+    "support": "Support",
+    "company": "Company",
+    "about": "About",
+    "careers": "Careers",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "cookiePolicy": "Cookie Policy",
+    "copyright": "All rights reserved."
+  },
+  "language": {
+    "select": "Select Language",
+    "english": "English",
+    "portuguese": "Português",
+    "spanish": "Español"
+  },
+  "about": {
+    "backToHome": "Back to Home",
+    "title": "About Sublimifyer",
+    "subtitle": "Revolutionizing the custom apparel industry with cutting-edge technology and intelligent automation.",
+    "missionTitle": "Our Mission",
+    "missionDescription": "At Sublimifyer, we believe that every custom apparel company deserves access to professional tools that allow them to grow and compete in today's market. Our mission is to democratize design and production technology, making complex processes simple and accessible to everyone.",
+    "valuesTitle": "Our Values",
+    "valuesSubtitle": "The principles that guide everything we do",
+    "value1Title": "Collaboration",
+    "value1Description": "We work closely with our clients to understand their needs and create customized solutions.",
+    "value2Title": "Excellence",
+    "value2Description": "We strive to deliver the highest quality in every product and service we provide.",
+    "value3Title": "Innovation",
+    "value3Description": "We constantly explore new technologies to improve and optimize our clients' processes.",
+    "value4Title": "Passion",
+    "value4Description": "We love what we do and are passionate about helping our clients achieve their goals.",
+    "storyTitle": "Our Story",
+    "story1": "Sublimifyer was born from the need to simplify complex processes in the custom apparel industry. Our team, composed of technology experts and textile industry professionals, identified the main barriers companies face to grow and compete effectively.",
+    "story2": "After years of research and development, we created a comprehensive platform that combines artificial intelligence, automation, and professional design tools. Today, we help hundreds of companies optimize their processes, reduce costs, and increase their productivity.",
+    "story3": "Our commitment is to continue innovating and adapting to the changing needs of the market, always with the goal of empowering our clients to reach their full potential.",
+    "ctaTitle": "Ready to join us?",
+    "ctaDescription": "Discover how Sublimifyer can transform your business and take it to the next level.",
+    "ctaButton": "Get Started Now",
+    "contactButton": "Contact"
+  },
+  "careers": {
+    "backToHome": "Back to Home",
+    "title": "Join Our Team",
+    "subtitle": "Build the future of the custom apparel industry with us. We're looking for passionate talent who want to make a difference.",
+    "whyWorkTitle": "Why work with us?",
+    "whyWorkSubtitle": "We offer a dynamic work environment and exceptional growth opportunities",
+    "benefit1Title": "Inclusive Culture",
+    "benefit1Description": "We value diversity and create an environment where everyone can thrive and contribute with their unique ideas.",
+    "benefit2Title": "Cutting-edge Technology",
+    "benefit2Description": "Work with the latest technologies and tools in a constant innovation environment.",
+    "benefit3Title": "Professional Growth",
+    "benefit3Description": "Continuous investment in our employees' development with learning and promotion opportunities.",
+    "benefit4Title": "Remote Work",
+    "benefit4Description": "Flexibility to work from anywhere, with in-person meetings when necessary.",
+    "benefit5Title": "Impactful Projects",
+    "benefit5Description": "Contribute to solutions that transform industries and help thousands of companies grow.",
+    "benefit6Title": "Flexible Hours",
+    "benefit6Description": "Work-life balance with schedules adaptable to your needs.",
+    "positionsTitle": "Open Positions",
+    "positionsSubtitle": "Explore our current job opportunities",
+    "position1Title": "Senior Full Stack Developer",
+    "position1Location": "Remote",
+    "position1Type": "Full Time",
+    "position1Description": "We're looking for an experienced developer to lead the development of new features and improve our platform.",
+    "position2Title": "UX/UI Designer",
+    "position2Location": "Remote",
+    "position2Type": "Full Time",
+    "position2Description": "Join our design team to create exceptional user experiences and intuitive interfaces.",
+    "position3Title": "Digital Marketing Specialist",
+    "position3Location": "Remote",
+    "position3Type": "Full Time",
+    "position3Description": "Help us expand our market presence and connect with more custom apparel companies.",
+    "applyButton": "Apply Now",
+    "ctaTitle": "Don't see the perfect position?",
+    "ctaDescription": "We're always looking for exceptional talent. Send us your CV and we'll contact you when we have an opportunity that matches your profile.",
+    "ctaButton": "Send CV"
+  },
+  "privacy": {
+    "backToHome": "Back to Home",
+    "title": "Privacy Policy",
+    "subtitle": "Your privacy is important to us. This policy explains how we collect, use, and protect your information.",
+    "lastUpdated": "Last updated: December 2024",
+    "introductionTitle": "1. Introduction",
+    "introductionText": "At Sublimifyer, we are committed to protecting your privacy and personal data. This Privacy Policy describes how we collect, use, store, and protect your information when you use our automation service for custom apparel companies.",
+    "introductionText2": "By using our services, you agree to the practices described in this policy. If you disagree with any part of this policy, please do not use our services.",
+    "dataCollectionTitle": "2. Information We Collect",
+    "personalInfoTitle": "Personal Information",
+    "personalInfo1": "Full name and contact information (email, phone, address)",
+    "personalInfo2": "Company information (name, address, tax data)",
+    "personalInfo3": "Billing and payment information",
+    "personalInfo4": "Registration data and user profile",
+    "usageInfoTitle": "Usage Information",
+    "usageInfo1": "Platform usage data and features",
+    "usageInfo2": "Design patterns and generated sublimation files",
+    "usageInfo3": "Order and transaction information",
+    "usageInfo4": "Communication and technical support data",
+    "dataUsageTitle": "3. How We Use Your Information",
+    "usage1": "Provide and improve our automation services",
+    "usage2": "Process orders and manage your account",
+    "usage3": "Communicate with you about updates and support",
+    "usage4": "Personalize your platform experience",
+    "usage5": "Comply with legal and regulatory obligations",
+    "usage6": "Develop new features and improvements",
+    "dataProtectionTitle": "4. Data Protection",
+    "dataProtectionText": "We implement technical, administrative, and physical security measures to protect your information against unauthorized access, alteration, disclosure, or destruction. This includes:",
+    "security1": "Data encryption in transit and at rest",
+    "security2": "Restricted access to personal information",
+    "security3": "Regular security monitoring",
+    "security4": "Staff privacy training",
+    "dataSharingTitle": "5. Information Sharing",
+    "dataSharingText": "We do not sell, rent, or share your personal information with third parties, except in the following circumstances:",
+    "sharing1": "With your explicit consent",
+    "sharing2": "To comply with legal obligations",
+    "sharing3": "With service providers who help us operate (under confidentiality agreements)",
+    "sharing4": "In case of merger, acquisition, or asset sale",
+    "rightsTitle": "6. Your Rights",
+    "rightsText": "You have the right to:",
+    "right1": "Access your personal information",
+    "right2": "Correct inaccurate data",
+    "right3": "Request deletion of your data",
+    "right4": "Limit processing of your information",
+    "right5": "Data portability",
+    "right6": "Withdraw your consent at any time",
+    "contactTitle": "7. Contact",
+    "contactText": "If you have questions about this Privacy Policy or wish to exercise your rights, contact us:"
+  },
+  "terms": {
+    "backToHome": "Back to Home",
+    "title": "Terms of Service",
+    "subtitle": "These terms govern the use of our automation platform for custom apparel companies.",
+    "lastUpdated": "Last updated: December 2024",
+    "introductionTitle": "1. Acceptance of Terms",
+    "introductionText": "By accessing and using Sublimifyer, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you disagree with any of these terms, you must not use our service.",
+    "introductionText2": "We reserve the right to update these terms at any time. Changes will take effect immediately after their publication on our website.",
+    "serviceTitle": "2. Service Description",
+    "serviceText": "Sublimifyer is a SaaS platform that provides automation tools for custom apparel companies, including:",
+    "service1": "Pattern, design, and font catalogs",
+    "service2": "Automatic sublimation file generation",
+    "service3": "AI-powered 2D nesting optimization",
+    "service4": "Order tracking and management",
+    "service5": "Customization tools",
+    "serviceUptime": "We strive to keep the service continuously available, with a 98% up-time. However, the service may experience occasional interruptions due to scheduled maintenance, updates, or circumstances beyond our control.",
+    "subscriptionTitle": "3. Subscription Plans",
+    "billingTitle": "Billing and Payments",
+    "billing1": "Payments are processed monthly or annually according to the selected plan",
+    "billing2": "Prices are subject to change with 30 days' notice",
+    "billing3": "Payments are non-refundable except according to our refund policy",
+    "billing4": "Payment default may result in service suspension",
+    "limitsTitle": "Usage Limits",
+    "limits1": "Each plan has specific product limits per month",
+    "limits2": "Excessive use may result in additional charges",
+    "limits3": "Limits reset each billing month",
+    "responsibilitiesTitle": "4. User Responsibilities",
+    "accountTitle": "User Account",
+    "account1": "Maintain confidentiality of your access credentials",
+    "account2": "Provide accurate and up-to-date information",
+    "account3": "Immediately notify any unauthorized use",
+    "account4": "Be responsible for all activities in your account",
+    "contentTitle": "Content and Acceptable Use",
+    "content1": "Do not use the service for illegal or unauthorized activities",
+    "content2": "Respect third-party intellectual property rights",
+    "content3": "Do not upload malicious content or content that violates third-party rights",
+    "content4": "Comply with all applicable laws and regulations",
+    "ipTitle": "5. Intellectual Property",
+    "ipText": "Sublimifyer and its original content, features, and functionality are owned by Sublimifyer and are protected by copyright, trademark, and other intellectual property laws.",
+    "ipText2": "Users retain rights to their content but grant Sublimifyer a non-exclusive license to use, process, and store such content to provide the service.",
+    "terminationTitle": "6. Termination",
+    "terminationText": "Either party may terminate this agreement at any time. Users can cancel their subscription from their control panel.",
+    "terminationText2": "We reserve the right to suspend or terminate accounts that violate these terms or represent a risk to service security.",
+    "liabilityTitle": "7. Limitation of Liability",
+    "liabilityText": "To the maximum extent permitted by law, Sublimifyer shall not be liable for indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or use.",
+    "liabilityText2": "Our total liability shall not exceed the amount paid by the user in the 12 months prior to the event giving rise to the claim.",
+    "liabilityText3": "We are committed to maintaining a high level of service availability, with a target up-time of 98%, and we work to minimize any interruptions. Should interruptions occur due to scheduled maintenance, updates, or circumstances beyond our control, we will make every effort to restore the service as quickly as possible, without this giving rise to liability for indirect damages arising from such interruptions.",
+    "contactTitle": "8. Contact",
+    "contactText": "If you have questions about these Terms of Service, contact us:"
+  },
+  "shirtShowcase": {
+    "mode3d": "Interactive 3D",
+    "modeVideo": "Video",
+    "title": "From your order to a production-ready file.",
+    "description": "See visually how Sublimifyer connects your whole process."
+  },
+  "benefits": {
+    "titleLine1": "Produce more.",
+    "titleLine2": "Waste less.",
+    "subtitle": "Same workshop, same team, same machines. What changes is how much you get out of every hour and every meter of fabric.",
+    "items": [
+      {
+        "title": "Less fabric waste",
+        "metric": "fabric",
+        "description": "Smart nesting arranges every piece so you get more out of each roll."
+      },
+      {
+        "title": "Fewer production errors",
+        "metric": "rework",
+        "description": "Standardized, production-ready files, identical every time. No surprises at the printer."
+      },
+      {
+        "title": "Less manual work",
+        "metric": "hours",
+        "description": "The repetitive part runs on its own: what used to take hours is done in minutes."
+      },
+      {
+        "title": "More output",
+        "metric": "orders",
+        "description": "Organize and process more orders without adding hours or people to your shop."
+      }
+    ]
+  },
+  "appMock": {
+    "title": "Your entire process. One single platform.",
+    "description": "Explore how Sublimifyer works from the inside.",
+    "live": "Live"
+  },
+  "designAnimation": {
+    "badge": "Automated Design",
+    "title": "Design once, replicate for all",
+    "description": "Create your design once and automatically generate all variants with personalized names and numbers.",
+    "designer": "Designer",
+    "generate": "Generate →",
+    "result": "Result",
+    "name": "Name",
+    "number": "Number",
+    "back": "Back"
+  },
+  "nestingAnimation": {
+    "badge": "Visual Optimization",
+    "title": "From list to optimized nesting",
+    "description": "Watch how each piece of your order transforms into optimized shapes that minimize material waste.",
+    "size": "Size",
+    "name": "Name"
+  },
+  "chaosAnimation": {
+    "badge": "Before vs After",
+    "title": "Stop chasing orders on WhatsApp",
+    "description": "Your clients complete their orders on their own. You just focus on producing.",
+    "whatsappOrders": "WhatsApp Orders",
+    "size": "Size",
+    "number": "Number",
+    "name": "Name",
+    "choose": "Choose...",
+    "confirmOrder": "Confirm order",
+    "confirmed": "Confirmed",
+    "orderConfirmed": "Order #1247 confirmed",
+    "orderReceived": "Order received",
+    "inProduction": "In production",
+    "readyForDelivery": "Ready for delivery",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "summary": "Summary",
+    "players": "3 players",
+    "withSublimifyer": "With Sublimifyer",
+    "chaosToControl": "From chaos to control",
+    "client": "Client",
+    "msg1": "Hi, my size is M I think",
+    "msg2": "1 XL, 2S 10 Tomi, 1 L, 2 shorts no shirt XL and S",
+    "msg3": "How's my order coming?",
+    "msg4": "I sent a change by audio and it's not in my design 🎤",
+    "msg5": "Will we make it by Friday?",
+    "msg6": "I'll send you the design photo",
+    "msg7": "Hi I need 5 t-shirts and a half",
+    "msg8": "And???",
+    "msg9": "Changed my mind, XL instead",
+    "msg10": "Are you going to answer? 😤"
+  }
+}

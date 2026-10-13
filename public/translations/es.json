@@ -1,0 +1,786 @@
+{
+  "nav": {
+    "features": "Características",
+    "howItWorks": "Cómo Empezar",
+    "pricing": "Precios",
+    "diagnosis": "Tu taller",
+    "solutions": "Soluciones",
+    "benefits": "Beneficios",
+    "demo": "La app",
+    "calculator": "Calculá tu ahorro",
+    "faq": "FAQ",
+    "login": "Iniciar Sesión",
+    "getStarted": "Comenzar"
+  },
+  "hero": {
+    "badge": "Para fabricantes de ropa personalizada",
+    "title": "Producí más. Menos errores. Menos desperdicio.",
+    "titleLine1": "Todo tu proceso de producción,",
+    "titleLine2": "automatizado en un solo lugar.",
+    "subtitle": "El sistema para talleres de sublimado y ropa deportiva que genera archivos de producción, reduce desperdicio de tela y horas de trabajo.",
+    "subtitle2": "Automatizá la preparación de molderías y hojas de impresión para producir más con el mismo equipo.",
+    "demoNoCommitment": "Demo guiada, sin compromiso.",
+    "getStarted": "Comenzar",
+    "bookDemo": "Reservar Demo",
+    "feature1": "Molderías listas para usar y personalizar en minutos",
+    "feature2": "Genera automáticamente hojas de sublimación listas para imprimir",
+    "feature3": "Carga nombres, números y talles en masa sin errores manuales",
+    "categoryDefining": "Sublimifyer es el primer sistema de automatización de producción diseñado específicamente para talleres de sublimación y ropa deportiva en América Latina.",
+    "cardSublimation": "Sublimación",
+    "cardDtf": "DTF",
+    "cardLaserCut": "Corte láser",
+    "cardOrderTag": "Pedido",
+    "cardOrderStatus": "En producción",
+    "cardOrderClient": "Club Atlético Progreso",
+    "cardOrderItem": "Camiseta rayada · Sublimación",
+    "cardOrderQtyLabel": "Cantidad",
+    "cardOrderQtyValue": "24 u.",
+    "cardOrderDueLabel": "Entrega",
+    "cardOrderDueValue": "22 ago",
+    "cardUsageTag": "Consumo",
+    "cardUsageLabel": "Papel · 7 días",
+    "cardUsageValue": "18,4 m",
+    "cardUsagePeriod": "esta sem.",
+    "cardPatternTag": "Moldería",
+    "cardPatternPiece": "DELANTERO",
+    "cardPatternSize": "M",
+    "cardTrackTag": "Seguimiento",
+    "cardTrackStep1": "Recibido",
+    "cardTrackStep2": "Diseño",
+    "cardTrackStep3": "Impresión",
+    "cardTrackStep4": "Confección",
+    "cardTrackStep5": "Entrega",
+    "cardMixTag": "Producción",
+    "cardMixLabel": "Mix del mes",
+    "cardMixTotalLabel": "pedidos",
+    "cardMix1": "Sublimación",
+    "cardMix2": "DTF",
+    "cardMix3": "Corte",
+    "cardProductTag": "Producto",
+    "cardProductName": "Short oficial",
+    "cardProductParts": "Izquierda + derecha"
+  },
+  "logos": {
+    "trustedBy": "De diseño a impresión",
+    "workflowTitle": "Tu flujo de trabajo en Sublimifyer"
+  },
+  "features": {
+    "badge": "Características",
+    "title": "Menos errores. Menos desperdicio. Más producción.",
+    "subtitle": "Sublimifyer elimina tareas manuales repetitivas en el armado de molderías, hojas de sublimación y personalización de prendas, reduciendo errores y tiempos muertos en producción.",
+    "feature1": {
+      "title": "Catálogos de Molderías, Diseños y Fuentes",
+      "description": "Accede a molderías profesionales listas para usar y evita recrearlas desde cero en cada pedido. Ahorra horas de armado y mantén consistencia en todas tus prendas."
+    },
+    "feature2": {
+      "title": "Completa cientos de pedidos con un clic",
+      "description": "Genera automáticamente los archivos de cada cliente con sus nombres, números y talles sin editar uno por uno."
+    },
+    "feature3": {
+      "title": "Menos desperdicio de tela",
+      "description": "Reduce el desperdicio de tela optimizando automáticamente la disposición de piezas en cada hoja de sublimación."
+    },
+    "feature4": {
+      "title": "Seguimiento y Gestión",
+      "description": "Centraliza todos tus pedidos en un solo lugar y evita pérdidas de información entre diseño, producción y entrega."
+    },
+    "feature5": {
+      "title": "Personalización precisa",
+      "description": "Coloca logos, nombres y números con precisión y evita errores de posicionamiento en impresión."
+    },
+    "feature6": {
+      "title": "Gestión de Flujo de Trabajo de Producción de Extremo a Extremo",
+      "description": "Rastrea cada pedido desde el diseño hasta la entrega en un solo panel simplificado, con métricas y muchas más características por venir."
+    }
+  },
+  "howItWorks": {
+    "badge": "Cómo Empezar",
+    "title": "Proceso Simple, Resultados Poderosos",
+    "subtitle": "Comienza en minutos y ve la diferencia que nuestra plataforma puede hacer para tu negocio.",
+    "step1": {
+      "title": "Acompañamiento/Asesoramiento Inicial",
+      "description": "Ponete en contacto con nosotros y te ayudamos a adaptar tu sistema, integrar tus molderías y poder generar tus primeras hojas de sublimación."
+    },
+    "step2": {
+      "title": "Automatización Completa de Ventas",
+      "description": "Automatiza todo tu proceso de ventas desde el diseño hasta la entrega. Genera más pedidos con menos esfuerzo y aumenta tus ingresos significativamente."
+    },
+    "step3": {
+      "title": "Optimización y Ahorro de Tiempo",
+      "description": "Reduce significativamente el tiempo dedicado al armado manual y minimiza errores costosos en producción."
+    }
+  },
+  "diagnosis": {
+    "title": "¿Esto te está pasando en tu taller?",
+    "subtitle": "Revisá estos problemas habituales. Si te identificás con varios, el costo oculto de tu operación puede ser mayor del que creés.",
+    "closing": "Si respondiste 'sí' a más de una, tu operación tiene margen de mejora.",
+    "question1": {
+      "question": "¿Seguís armando las hojas de sublimación manualmente?",
+      "description": "Cada hoja se diseña y ubica pieza por pieza. Horas por pedido, sin escalar.",
+      "impact": "Horas-hombre por pedido, cuellos de botella antes de imprimir, retrasos cuando hay volumen.",
+      "solution": "El sistema genera las hojas de sublimación a partir del pedido y las molderías, con la disposición optimizada, listas para imprimir."
+    },
+    "question2": {
+      "question": "¿Pierden tiempo cargando nombres y números uno por uno?",
+      "description": "Cada nombre y número se tipea o pega en cada prenda. En pedidos de equipos o eventos, son cientos de datos.",
+      "impact": "Tiempo enorme por pedido, errores de tipeo, retrabajo cuando algo sale mal.",
+      "solution": "Carga masiva desde planilla o lista: el sistema asigna nombre, número y talle a cada prenda y genera los archivos sin intervención manual."
+    },
+    "question3": {
+      "question": "¿Se equivocan en talles, nombres o información de jugadores?",
+      "description": "Los datos viajan en WhatsApp, Excel o papel. Se copia mal, se pierde una fila o se confunde un talle.",
+      "impact": "Prendas mal personalizadas, reclamos, reimpresiones y pérdida de confianza del cliente.",
+      "solution": "Un solo flujo con datos vinculados al pedido: el sistema usa la información correcta para cada prenda y reduce errores de transcripción."
+    },
+    "question4": {
+      "question": "¿Tienen que rehacer pedidos por errores en producción?",
+      "description": "Errores en diseño, talle o personalización se detectan después de imprimir o cortar. Hay que rehacer.",
+      "impact": "Tela, tiempo y mano de obra desperdiciados; entregas atrasadas y clientes insatisfechos.",
+      "solution": "Flujo controlado desde el pedido hasta el archivo final: menos pasos manuales, menos puntos de fallo y revisión antes de imprimir."
+    },
+    "question5": {
+      "question": "¿Desperdician más tela de la que deberían?",
+      "description": "Las piezas se ubican a ojo o con criterio fijo. Sobra tela entre piezas o se corta de más.",
+      "impact": "Gasto extra en tela, menor rendimiento por plancha y margen comido por el desperdicio.",
+      "solution": "Optimización automática del tizado: el sistema dispone las piezas para aprovechar mejor la tela y reducir el sobrante."
+    },
+    "question6": {
+      "question": "¿Recrean molderías desde cero para pedidos similares?",
+      "description": "Cada pedido \"nuevo\" obliga a rearmar la moldería o el layout aunque sea muy parecido a uno anterior.",
+      "impact": "Horas de diseño repetitivo, demoras en entregar y poca estandarización.",
+      "solution": "Catálogos de molderías reutilizables: se elige la base, se ajusta lo necesario y se genera el pedido sin volver a cero."
+    },
+    "question7": {
+      "question": "¿La información de los pedidos está dispersa entre WhatsApp, Excel y diseñadores?",
+      "description": "Pedidos por WhatsApp, listas en Excel, archivos en la compu del diseñador. Nadie tiene el panorama completo.",
+      "impact": "Pérdida de pedidos, duplicación de trabajo, errores por información desactualizada.",
+      "solution": "Pedidos centralizados en un solo lugar: mismo registro para ventas, producción y entrega, con historial y seguimiento."
+    },
+    "question8": {
+      "question": "¿Cuando aumenta el volumen, aumenta el caos?",
+      "description": "Con más pedidos, los mismos procesos manuales se multiplican. Más errores, más retrasos, más estrés.",
+      "impact": "No poder escalar sin contratar de más o trabajar hasta tarde; cuellos de botella en personas clave.",
+      "solution": "Automatización que escala con el volumen: mismo flujo para 10 o 500 prendas, sin multiplicar horas manuales al mismo ritmo."
+    },
+    "question9": {
+      "question": "¿Dependés demasiado de una persona que sabe \"cómo se arma todo\"?",
+      "description": "Una o pocas personas concentran el conocimiento. Si faltan o se van, la operación se traba.",
+      "impact": "Riesgo operativo, dificultad para sumar gente y sobrecarga sobre esas personas.",
+      "solution": "Procesos estandarizados en el sistema: el \"cómo se hace\" queda en flujos y plantillas que cualquiera puede seguir."
+    },
+    "question10": {
+      "question": "¿Te cuesta escalar sin contratar más gente?",
+      "description": "Más pedidos implican más manos en el armado, la carga de datos y la revisión. El crecimiento no se traduce en margen.",
+      "impact": "Contratar solo para tareas repetitivas o rechazar pedidos por falta de capacidad.",
+      "solution": "El sistema hace el trabajo repetitivo (hojas, datos, tizado): el equipo se enfoca en diseño, calidad y cliente; podés crecer sin sumar gente al mismo ritmo."
+    }
+  },
+  "testimonials": {
+    "badge": "Testimonios",
+    "title": "Con la confianza de talleres de ropa personalizada",
+    "subtitle": "Mirá cómo talleres de sublimado y ropa deportiva producen más con menos errores y menos desperdicio.",
+    "testimonial1": {
+      "quote": "Dejamos de armar hojas de sublimación a mano. Los pedidos que nos llevaban horas ahora salen en minutos y cometemos muchos menos errores.",
+      "author": "Taller de sublimación",
+      "role": "Ropa deportiva y sublimado, Argentina"
+    },
+    "testimonial2": {
+      "quote": "Los datos antes viajaban por WhatsApp y Excel. Ahora todo está en un solo lugar: sabemos exactamente qué lleva cada pedido y ya no se nos pasan nombres ni talles.",
+      "author": "Empresa de ropa personalizada",
+      "role": "Uniformes de equipos y eventos"
+    },
+    "testimonial3": {
+      "quote": "El soporte estuvo desde el primer día. Nos ayudaron a cargar las molderías y sacar las primeras hojas. Estuvimos operando en seguida.",
+      "author": "Taller de indumentaria",
+      "role": "Sublimado y bordado"
+    },
+    "testimonial4": {
+      "quote": "Antes rehacíamos pedidos todo el tiempo por errores de armado o personalización. Con Sublimifyer revisamos antes de imprimir y las reimpresiones bajaron mucho.",
+      "author": "Fabricante de ropa",
+      "role": "Personalización en volumen"
+    },
+    "testimonial5": {
+      "quote": "La optimización del tizado nos redujo mucho el desperdicio de tela. Aprovechamos más cada plancha y gastamos menos en material.",
+      "author": "Taller textil",
+      "role": "Impresión por sublimación"
+    },
+    "testimonial6": {
+      "quote": "Cuando subía el volumen nos ahogábamos con trabajo manual. Ahora manejamos más pedidos sin sumar gente. El sistema hace la parte repetitiva.",
+      "author": "Productor de ropa deportiva",
+      "role": "Indumentaria deportiva a medida"
+    }
+  },
+  "pricing": {
+    "badge": "Precios",
+    "title": "Elegí según cuánto producís.",
+    "subtitle": "Todos los planes incluyen acceso completo a Sublimifyer. El precio depende de tu volumen mensual de producción.",
+    "logicIntro": "Pagás según cuánto producís. Cuanto mayor es tu volumen, mayor es el impacto del sistema en tu operación.",
+    "roiPhrase": "Un solo error de producción puede costar más que un mes de Sublimifyer.",
+    "roiReminderTitle": "Recordatorio de ROI estratégico",
+    "roiReminderLine1": "Un solo error de producción puede costar más que un mes entero del sistema.",
+    "roiReminderLine2": "Cuando reduces el trabajo manual, evitas reimpresiones y optimizas el uso de tela, la plataforma se paga solo con los errores que evita.",
+    "month": "/ mes",
+    "founderPriceLabel": "Precio Founder",
+    "mostPopular": "Más elegido",
+    "sharedFeaturesTitle": "Todos los planes incluyen acceso total",
+    "accessNote": "Acceso completo a Sublimifyer",
+    "currencyLabel": "Moneda",
+    "currencyArs": "Pesos (ARS)",
+    "currencyUsd": "Dólares (USD)",
+    "sharedFeatures": [
+      "Onboarding",
+      "Soporte",
+      "Automatización de producción",
+      "Generación de archivos de producción",
+      "Gestión de pedidos",
+      "Múltiples usuarios"
+    ],
+    "starter": {
+      "name": "Inicial",
+      "volume": "Hasta 1.000 prendas/mes",
+      "originalPrice": "119k ARS",
+      "price": "99k ARS",
+      "priceUsd": "69 USD",
+      "originalPriceUsd": "79 USD",
+      "description": "Para talleres pequeños que empiezan a automatizar y eliminar errores manuales. Si todavía armás planillas a mano, ajustás nombres uno por uno o corregís errores de producción, este plan te ayuda a estabilizar tu flujo y ahorrar horas cada semana.",
+      "limits": "Hasta 1.000 prendas por mes. Ideal para talleres que comienzan su camino de automatización.",
+      "cta": "Comenzar",
+      "features": [
+        "Acceso completo al sistema",
+        "Catálogos de molderías profesionales listos para usar",
+        "Generación automática de hojas de sublimación",
+        "Personalización masiva de nombres y números",
+        "Optimización automática de disposición de piezas",
+        "Gestión centralizada de pedidos",
+        "Soporte por email estándar",
+        "Sesión de onboarding guiado",
+        "Hasta 1.000 prendas por mes"
+      ]
+    },
+    "professional": {
+      "name": "Profesional",
+      "volume": "Hasta 2.500 prendas/mes",
+      "originalPrice": "229k ARS",
+      "price": "199k ARS",
+      "priceUsd": "139 USD",
+      "originalPriceUsd": "159 USD",
+      "description": "Para talleres con producción estable que necesitan eficiencia y menos desperdicio. En este nivel, cada mejora impacta directo en los márgenes. Este plan ayuda a reducir desperdicio de material, mejorar el flujo operativo y escalar sin sumar personal.",
+      "limits": "Hasta 2.500 prendas por mes. Pensado para operaciones en crecimiento que necesitan eficiencia a escala.",
+      "cta": "Comenzar",
+      "featuresIntro": "Incluye todo el plan anterior, más:",
+      "extraFeatures": [
+        "Soporte prioritario",
+        "Analíticas avanzadas de producción",
+        "Recomendaciones de optimización del flujo",
+        "Prioridad de procesamiento más rápida",
+        "Hasta 2.500 prendas por mes"
+      ]
+    },
+    "enterprise": {
+      "name": "Empresarial",
+      "volume": "Hasta 5.000 prendas/mes",
+      "originalPrice": "399k ARS",
+      "price": "299k ARS",
+      "priceUsd": "199 USD",
+      "originalPriceUsd": "269 USD",
+      "description": "Para operaciones grandes donde cada mejora afecta miles de prendas. Cuando producís a escala, las ineficiencias pequeñas se vuelven caras. Este plan te da máximo aprovechamiento operativo y soporte estratégico.",
+      "limits": "Hasta 5.000 prendas por mes. Más de 5.000: +49 ARS por prenda adicional.",
+      "note": "+49 ARS por prenda adicional",
+      "noteUsd": "+0,03 USD por prenda adicional",
+      "cta": "Comenzar",
+      "featuresIntro": "Incluye todo lo anterior, más:",
+      "extraFeatures": [
+        "Hasta 5.000 prendas por mes",
+        "Más de 5.000: +49 ARS por prenda extra",
+        "Sesión dedicada de onboarding y estrategia",
+        "Canal directo de soporte prioritario",
+        "Acceso anticipado a nuevas funciones",
+        "Revisión de desempeño de producción"
+      ]
+    },
+    "customPlan": "¿Necesitás un plan a medida?",
+    "customPlanCta": "Contactanos",
+    "customPlanMessage": "Hola! Produzco por encima de los planes publicados y me gustaría ver un plan a medida."
+  },
+  "faq": {
+    "badge": "FAQ",
+    "title": "Preguntas Frecuentes",
+    "subtitle": "Encuentra respuestas a preguntas comunes sobre nuestra plataforma.",
+    "question1": {
+      "question": "¿Puedo subir mis propios molderías, fuentes y diseños?",
+      "answer": "¡Sí! Sublimifyer te permite subir tus propios molderías de ropa, fuentes y diseños gráficos. Puedes combinarlos con nuestra biblioteca curada de molderías y plantillas, dándote total flexibilidad para crear ropa única y personalizada."
+    },
+    "question2": {
+      "question": "¿Cómo ayuda Sublimifyer a reducir el desperdicio de tela?",
+      "answer": "Nuestra plataforma incluye optimización de anidamiento 2D con IA, que automáticamente organiza las piezas del moldería en la tela para minimizar el espacio no utilizado. Esto no solo reduce el desperdicio de material, sino que también reduce los costos de producción y mejora la eficiencia."
+    },
+    "question3": {
+      "question": "¿Cómo funciona el soporte de incorporación y asistencia?",
+      "answer": "Nuestro soporte de incorporación y asistencia te da acceso completo a todas las características de tu plan seleccionado."
+    },
+    "question4": {
+      "question": "¿Es Sublimifyer adecuado para pequeñas empresas de ropa?",
+      "answer": "Absolutamente. Sublimifyer está diseñado para escalar con tu negocio. Pequeñas y medianas marcas de ropa pueden aprovechar herramientas de diseño profesionales, generación de archivos listos para producción y gestión de flujo de trabajo sin necesidad de un gran equipo de diseño o técnico."
+    },
+    "question5": {
+      "question": "¿Puedo cambiar de plan después?",
+      "answer": "Sí, puedes hacer upgrade o downgrade de tu plan en cualquier momento. Si haces upgrade, el nuevo precio será prorrateado por el resto de tu ciclo de facturación. Si haces downgrade, el nuevo precio entrará en vigor al inicio de tu próximo ciclo de facturación."
+    },
+    "question6": {
+      "question": "¿Qué tipo de soporte ofrecen?",
+      "answer": "El soporte varía por plan. Todos los planes incluyen soporte por email, con el plan Profesional ofreciendo soporte prioritario por email. El plan Empresarial incluye soporte 24/7 por teléfono y email. También tenemos una extensa base de conocimiento y foro de la comunidad disponible para todos los usuarios."
+    },
+    "question7": {
+      "question": "¿Sublimifyer reemplaza mi software RIP (Wasatch, SAi Flexi)?",
+      "answer": "No. Sublimifyer no es un software RIP y no controla tu impresora. Trabaja antes del RIP: prepara las hojas de sublimación con las piezas anidadas y los nombres/números ya aplicados, y genera los archivos listos para que los mandes a tu software RIP e imprimas. Son herramientas complementarias."
+    },
+    "question8": {
+      "question": "¿Para qué tipo de taller es Sublimifyer?",
+      "answer": "Sublimifyer está diseñado para talleres de sublimación y ropa deportiva que producen 500 o más prendas por mes, sin límite máximo. Es ideal para quienes trabajan con uniformes deportivos, camisetas de equipos, indumentaria para clubes y colegios, y cualquier producción de ropa personalizada con sublimación."
+    },
+    "question9": {
+      "question": "¿Funciona para talleres pequeños o solo para grandes?",
+      "answer": "Funciona para ambos. El plan Inicial está pensado para talleres de hasta 1.000 prendas por mes que quieren dejar de armar hojas a mano y eliminar errores. A medida que crecés, el sistema escala con vos sin necesidad de sumar personal para tareas repetitivas."
+    },
+    "question10": {
+      "question": "¿Qué pasa con mis molderías actuales? ¿Las puedo importar?",
+      "answer": "Sí. Podés subir tus propias molderías, diseños y fuentes. Además, durante el onboarding te ayudamos a cargar tus molderías existentes para que puedas empezar a producir desde el primer día."
+    },
+    "question11": {
+      "question": "¿En qué países está disponible Sublimifyer?",
+      "answer": "Sublimifyer está disponible en toda América Latina. Tenemos talleres activos en Argentina, Colombia, México, Chile, Perú y Panamá. Los precios se muestran en pesos argentinos (ARS) si entrás desde Argentina y en dólares (USD) desde el resto de la región, y todo el soporte es en español."
+    },
+    "question12": {
+      "question": "¿Cuál es la diferencia entre Sublimifyer y usar Excel para gestionar pedidos?",
+      "answer": "Excel no genera hojas de sublimación, no anida piezas automáticamente, no personaliza nombres y números en masa, y no te avisa cuando hay un error antes de imprimir. Sublimifyer automatiza todo ese proceso: desde que recibís el pedido hasta que tenés los archivos listos para la impresora. Los talleres que migran de Excel reducen errores de producción y ahorran horas de trabajo manual cada semana."
+    },
+    "question13": {
+      "question": "¿Sublimifyer es una alternativa a Printavo o DecoNetwork?",
+      "answer": "Printavo y DecoNetwork son sistemas de gestión de talleres de serigrafía y decoración pensados para el mercado estadounidense. Sublimifyer está diseñado específicamente para talleres de sublimación y ropa deportiva en América Latina, con funciones que esas plataformas no tienen: generación automática de hojas de sublimación, anidado de piezas y personalización masiva. Además, Sublimifyer tiene precios pensados para la región —en pesos argentinos o en dólares— y soporte en español."
+    },
+    "question14": {
+      "question": "¿Cómo ayuda Sublimifyer a reducir el desperdicio de tela?",
+      "answer": "El sistema optimiza automáticamente la disposición de las piezas en cada hoja de sublimación (anidado o tizado). En lugar de ubicar las piezas a ojo o con un criterio fijo, el algoritmo busca el acomodo que menos tela desperdicie. Los talleres que usan anidado automático pueden reducir el desperdicio de tela hasta un 30-40% comparado con el armado manual."
+    }
+  },
+  "cta": {
+    "title1": "¿Listo para producir sin errores y con menos desperdicio?",
+    "title2": "Empezá hoy. Sin tarjeta.",
+    "subtitle": "Configurá tu taller y sublimá tu primer pedido en minutos",
+    "getStarted": "Comenzar prueba gratuita",
+    "scheduleDemo": "Programar Demo",
+    "footer": "Comienza a moldear tu negocio con soporte de incorporación y asistencia HOY."
+  },
+  "whoIsItFor": {
+    "badge": "Para quién es Sublimifyer",
+    "title": "Hecho para talleres como el tuyo",
+    "subtitle": "Sublimifyer fue pensado para talleres reales de sublimación y ropa deportiva en América Latina que necesitan producir más sin sumar caos.",
+    "item1": "Talleres que producen 500 o más prendas por mes (sin límite máximo)",
+    "item2": "Que usan Excel, WhatsApp e Illustrator o CorelDRAW para gestionar pedidos",
+    "item3": "Que tienen a una persona que \"sabe cómo funciona todo\" y sin la cual la operación se detiene",
+    "item4": "Que ya probaron escalar y el caos creció junto con el volumen",
+    "item5": "Que trabajan con uniformes deportivos, camisetas de equipos e indumentaria para clubes y colegios",
+    "item6": "Que pierden tiempo y tela por armar hojas de sublimación a mano"
+  },
+  "howIsDifferent": {
+    "badge": "Cómo es diferente",
+    "title": "¿Por qué Sublimifyer y no otra cosa?",
+    "subtitle": "La mayoría de los talleres no usan un software de gestión: usan Excel, WhatsApp y una persona que sabe cómo se arma todo. Sublimifyer reemplaza ese sistema informal con automatización real.",
+    "comparison1": {
+      "vs": "vs. Excel + WhatsApp",
+      "description": "Excel no genera hojas de sublimación, no anida piezas, no personaliza nombres en masa y no rastrea pedidos. WhatsApp no es un sistema de gestión. Sublimifyer reemplaza esa combinación con un flujo automatizado de principio a fin."
+    },
+    "comparison2": {
+      "vs": "vs. Software RIP (Wasatch, SAi Flexi)",
+      "description": "Tu software RIP controla la impresora. Sublimifyer trabaja antes: prepara las hojas de sublimación, anida las piezas y personaliza los archivos que después mandás al RIP. No lo reemplaza, lo complementa."
+    },
+    "comparison3": {
+      "vs": "vs. Software genérico de gestión (ERP, CRM)",
+      "description": "Un ERP genérico no sabe qué es una moldería, un anidado de piezas o una hoja de sublimación. Sublimifyer está diseñado específicamente para el flujo de producción de talleres de sublimación y ropa deportiva."
+    },
+    "comparison4": {
+      "vs": "vs. Contratar más gente",
+      "description": "Sumar personal para tareas repetitivas (armar hojas, cargar nombres, revisar pedidos) no escala. Sublimifyer automatiza esas tareas para que tu equipo se enfoque en diseño, calidad y atención al cliente."
+    }
+  },
+  "notDesignSoftware": {
+    "title": "Sublimifyer no es un software de diseño",
+    "description": "Sublimifyer no reemplaza tu Photoshop, CorelDRAW ni tu software RIP. Se conecta al final del proceso de diseño y automatiza todo lo que viene después: la preparación de hojas de sublimación, el anidado de piezas, la personalización masiva de nombres y números, y la gestión del pedido hasta la entrega."
+  },
+  "socialProof": {
+    "text": "Talleres de sublimación y ropa deportiva en Argentina, Colombia, México y Panamá ya automatizan su producción con Sublimifyer.",
+    "countries": "Disponible en toda América Latina. Precios en ARS o USD. Soporte en español."
+  },
+  "recursos": {
+    "title": "Recursos para talleres de sublimación",
+    "subtitle": "Guías, comparativas y artículos para optimizar tu taller de sublimación y ropa deportiva.",
+    "link1": {
+      "text": "Qué es un software de gestión para talleres de sublimación",
+      "href": "/blog/software-gestion-taller-sublimacion"
+    },
+    "link2": {
+      "text": "Por qué Excel y WhatsApp ya no alcanzan para gestionar tu taller",
+      "href": "/blog/excel-whatsapp-gestion-taller"
+    },
+    "link3": {
+      "text": "Cómo el anidado automático reduce el desperdicio de tela",
+      "href": "/blog/anidado-automatico-piezas-sublimacion"
+    },
+    "link4": {
+      "text": "Sublimifyer vs. otras opciones para tu taller",
+      "href": "/blog/sublimifyer-vs-alternativas-taller"
+    },
+    "link5": {
+      "text": "Software para talleres en Argentina, Colombia y México",
+      "href": "/blog/software-talleres-sublimacion-latam"
+    },
+    "link6": {
+      "text": "Cómo automatizar nombres y números en uniformes deportivos",
+      "href": "/blog/automatizar-nombres-numeros-uniformes"
+    }
+  },
+  "footer": {
+    "description": "Sublimifyer es el sistema de automatización de producción para talleres de sublimación y ropa deportiva en América Latina. Genera hojas de sublimación, anida piezas, personaliza nombres y números en masa y centraliza tus pedidos.",
+    "product": "Producto",
+    "features": "Características",
+    "pricing": "Precios",
+    "faq": "Preguntas Frecuentes",
+    "demo": "Demo",
+    "resources": "Recursos",
+    "documentation": "Documentación",
+    "guides": "Guías",
+    "blog": "Blog",
+    "support": "Soporte",
+    "company": "Empresa",
+    "about": "Acerca de",
+    "careers": "Carreras",
+    "privacyPolicy": "Política de Privacidad",
+    "termsOfService": "Términos de Servicio",
+    "cookiePolicy": "Política de Cookies",
+    "copyright": "Todos los derechos reservados."
+  },
+  "language": {
+    "select": "Seleccionar Idioma",
+    "english": "English",
+    "portuguese": "Português",
+    "spanish": "Español"
+  },
+  "about": {
+    "backToHome": "Volver al Inicio",
+    "title": "Acerca de Sublimifyer",
+    "subtitle": "El sistema de automatización de producción para talleres de sublimación y ropa deportiva en América Latina.",
+    "definitionTitle": "¿Qué es Sublimifyer?",
+    "definitionText": "Sublimifyer es un software de automatización de producción diseñado específicamente para talleres de sublimación y ropa deportiva. Automatiza la generación de hojas de sublimación, el anidado de piezas, la personalización masiva de nombres y números, y la gestión centralizada de pedidos.",
+    "whoIsItForTitle": "¿Para quién es?",
+    "whoIsItForText": "Para talleres de sublimación y ropa deportiva en América Latina que producen 500 o más prendas por mes, sin límite máximo. Talleres que trabajan con uniformes deportivos, camisetas de equipos, indumentaria para clubes y colegios, y cualquier producción de ropa personalizada con sublimación.",
+    "whatIsItNotTitle": "¿Qué NO es Sublimifyer?",
+    "whatIsItNotText": "Sublimifyer no es un software de diseño gráfico (no reemplaza Photoshop ni CorelDRAW). No es un software RIP (no reemplaza Wasatch ni SAi Flexi). No es un ERP genérico. Es un sistema especializado que automatiza lo que viene después del diseño: la preparación de archivos para producción, el anidado de piezas, la personalización masiva y el seguimiento de pedidos.",
+    "whereTitle": "¿Dónde opera?",
+    "whereText": "Sublimifyer está enfocado en América Latina, con talleres activos en Argentina, Colombia, México, Chile, Perú y Panamá. Los precios se muestran en pesos argentinos (ARS) si entrás desde Argentina y en dólares (USD) desde el resto de la región, y todo el soporte es en español.",
+    "problemsTitle": "¿Qué problemas resuelve?",
+    "problem1": "Elimina el armado manual de hojas de sublimación pieza por pieza",
+    "problem2": "Automatiza la carga de nombres, números y talles en pedidos de uniformes",
+    "problem3": "Reduce el desperdicio de tela con anidado automático de piezas",
+    "problem4": "Centraliza la información de pedidos que antes estaba dispersa entre WhatsApp, Excel y diseñadores",
+    "problem5": "Permite escalar la producción sin sumar personal para tareas repetitivas",
+    "problem6": "Estandariza procesos para que la operación no dependa de una sola persona",
+    "missionTitle": "Nuestra Misión",
+    "missionDescription": "Creamos Sublimifyer porque vimos que los talleres de sublimación y ropa deportiva en América Latina no tenían herramientas de automatización hechas para ellos. Existían software de diseño, software RIP, ERPs genéricos, pero nada que automatizara el proceso de producción específico de un taller de sublimación. Nuestra misión es que cada taller pueda producir más, con menos errores y menos desperdicio, sin depender de procesos manuales que no escalan.",
+    "valuesTitle": "Nuestros Valores",
+    "valuesSubtitle": "Los principios que guían todo lo que hacemos",
+    "value1Title": "Especialización",
+    "value1Description": "Conocemos el flujo de trabajo de un taller de sublimación porque trabajamos con talleres reales. Cada función de Sublimifyer resuelve un problema concreto de producción.",
+    "value2Title": "Cercanía",
+    "value2Description": "Soporte en español, onboarding personalizado y precios pensados para la región. No somos una plataforma genérica traducida: estamos hechos para América Latina.",
+    "value3Title": "Automatización práctica",
+    "value3Description": "Automatizamos lo que realmente consume tiempo en un taller: el armado de hojas, la carga de datos y la disposición de piezas. Sin funciones innecesarias.",
+    "value4Title": "Acompañamiento",
+    "value4Description": "Te ayudamos a cargar tus molderías, configurar tu flujo y sacar tus primeras hojas. No te dejamos solo con un manual.",
+    "storyTitle": "Nuestra Historia",
+    "story1": "Sublimifyer nació de trabajar directamente con talleres de sublimación y ropa deportiva en Argentina. Vimos que la mayoría gestionaba todo con Excel, WhatsApp y una persona que sabía \"cómo se armaba todo\". Cuando el volumen subía, los errores se multiplicaban y escalar era imposible sin sumar más gente.",
+    "story2": "No existía ningún software que automatizara el proceso de producción específico de sublimación: la generación de hojas, el anidado de piezas, la personalización masiva de nombres y números. Así que lo construimos. Hoy, talleres en Argentina, Colombia, México y otros países de América Latina producen más rápido, con menos errores y menos desperdicio de tela usando Sublimifyer.",
+    "story3": "Seguimos construyendo funciones basadas en lo que los talleres realmente necesitan. Cada mejora viene de escuchar a nuestros usuarios y entender cómo trabajan día a día.",
+    "ctaTitle": "¿Querés ver cómo funciona?",
+    "ctaDescription": "Agendá una demo gratuita y te mostramos cómo Sublimifyer puede automatizar la producción de tu taller.",
+    "ctaButton": "Probá Sublimifyer",
+    "contactButton": "Agendá una Demo"
+  },
+  "careers": {
+    "backToHome": "Volver al Inicio",
+    "title": "Únete a Nuestro Equipo",
+    "subtitle": "Construye el futuro de la industria de la ropa personalizada con nosotros. Buscamos talentos apasionados que quieran hacer la diferencia.",
+    "whyWorkTitle": "¿Por qué trabajar con nosotros?",
+    "whyWorkSubtitle": "Ofrecemos un ambiente de trabajo dinámico y oportunidades de crecimiento excepcionales",
+    "benefit1Title": "Cultura Inclusiva",
+    "benefit1Description": "Valoramos la diversidad y creamos un ambiente donde todos pueden prosperar y contribuir con sus ideas únicas.",
+    "benefit2Title": "Tecnología de Vanguardia",
+    "benefit2Description": "Trabaja con las últimas tecnologías y herramientas en un entorno de innovación constante.",
+    "benefit3Title": "Crecimiento Profesional",
+    "benefit3Description": "Inversión continua en el desarrollo de nuestros empleados con oportunidades de aprendizaje y promoción.",
+    "benefit4Title": "Trabajo Remoto",
+    "benefit4Description": "Flexibilidad para trabajar desde cualquier lugar, con reuniones presenciales cuando sea necesario.",
+    "benefit5Title": "Proyectos Impactantes",
+    "benefit5Description": "Contribuye a soluciones que transforman industrias y ayudan a miles de empresas a crecer.",
+    "benefit6Title": "Horarios Flexibles",
+    "benefit6Description": "Equilibrio entre trabajo y vida personal con horarios adaptables a tus necesidades.",
+    "positionsTitle": "Posiciones Abiertas",
+    "positionsSubtitle": "Explora nuestras oportunidades de empleo actuales",
+    "position1Title": "Desarrollador Full Stack Senior",
+    "position1Location": "Remoto",
+    "position1Type": "Tiempo Completo",
+    "position1Description": "Buscamos un desarrollador experimentado para liderar el desarrollo de nuevas funcionalidades y mejorar nuestra plataforma.",
+    "position2Title": "Diseñador UX/UI",
+    "position2Location": "Remoto",
+    "position2Type": "Tiempo Completo",
+    "position2Description": "Únete a nuestro equipo de diseño para crear experiencias de usuario excepcionales y interfaces intuitivas.",
+    "position3Title": "Especialista en Marketing Digital",
+    "position3Location": "Remoto",
+    "position3Type": "Tiempo Completo",
+    "position3Description": "Ayúdanos a expandir nuestra presencia en el mercado y conectar con más empresas de ropa personalizada.",
+    "applyButton": "Aplicar Ahora",
+    "ctaTitle": "¿No ves la posición perfecta?",
+    "ctaDescription": "Siempre estamos buscando talentos excepcionales. Envíanos tu CV y te contactaremos cuando tengamos una oportunidad que coincida con tu perfil.",
+    "ctaButton": "Enviar CV"
+  },
+  "privacy": {
+    "backToHome": "Volver al Inicio",
+    "title": "Política de Privacidad",
+    "subtitle": "Tu privacidad es importante para nosotros. Esta política explica cómo recopilamos, usamos y protegemos tu información.",
+    "lastUpdated": "Última actualización: Septiembre 2025",
+    "introductionTitle": "1. Introducción",
+    "introductionText": "En Sublimifyer, nos comprometemos a proteger tu privacidad y datos personales. Esta Política de Privacidad describe cómo recopilamos, usamos, almacenamos y protegemos tu información cuando utilizas nuestro servicio de automatización para empresas de ropa personalizada.",
+    "introductionText2": "Al utilizar nuestros servicios, aceptas las prácticas descritas en esta política. Si no estás de acuerdo con alguna parte de esta política, por favor no utilices nuestros servicios.",
+    "dataCollectionTitle": "2. Información que Recopilamos",
+    "personalInfoTitle": "Información Personal",
+    "personalInfo1": "Nombre completo y datos de contacto (email, teléfono, dirección)",
+    "personalInfo2": "Información de la empresa (nombre, dirección, datos fiscales)",
+    "personalInfo3": "Información de facturación y pago",
+    "personalInfo4": "Datos de registro y perfil de usuario",
+    "usageInfoTitle": "Información de Uso",
+    "usageInfo1": "Datos de uso de la plataforma y funcionalidades",
+    "usageInfo2": "Molderías de diseño y archivos de sublimación generados",
+    "usageInfo3": "Información de pedidos y transacciones",
+    "usageInfo4": "Datos de comunicación y soporte técnico",
+    "dataUsageTitle": "3. Cómo Utilizamos tu Información",
+    "usage1": "Proporcionar y mejorar nuestros servicios de automatización",
+    "usage2": "Procesar pedidos y gestionar tu cuenta",
+    "usage3": "Comunicarnos contigo sobre actualizaciones y soporte",
+    "usage4": "Personalizar tu experiencia en la plataforma",
+    "usage5": "Cumplir con obligaciones legales y regulatorias",
+    "usage6": "Desarrollar nuevas funcionalidades y mejoras",
+    "dataProtectionTitle": "4. Protección de Datos",
+    "dataProtectionText": "Implementamos medidas de seguridad técnicas, administrativas y físicas para proteger tu información contra acceso no autorizado, alteración, divulgación o destrucción. Esto incluye:",
+    "security1": "Cifrado de datos en tránsito y en reposo",
+    "security2": "Acceso restringido a información personal",
+    "security3": "Monitoreo regular de seguridad",
+    "security4": "Capacitación del personal en privacidad",
+    "dataSharingTitle": "5. Compartir Información",
+    "dataSharingText": "No vendemos, alquilamos ni compartimos tu información personal con terceros, excepto en las siguientes circunstancias:",
+    "sharing1": "Con tu consentimiento explícito",
+    "sharing2": "Para cumplir con obligaciones legales",
+    "sharing3": "Con proveedores de servicios que nos ayudan a operar (bajo acuerdos de confidencialidad)",
+    "sharing4": "En caso de fusión, adquisición o venta de activos",
+    "rightsTitle": "6. Tus Derechos",
+    "rightsText": "Tienes derecho a:",
+    "right1": "Acceder a tu información personal",
+    "right2": "Corregir datos inexactos",
+    "right3": "Solicitar la eliminación de tus datos",
+    "right4": "Limitar el procesamiento de tu información",
+    "right5": "Portabilidad de datos",
+    "right6": "Retirar tu consentimiento en cualquier momento",
+    "contactTitle": "7. Contacto",
+    "contactText": "Si tienes preguntas sobre esta Política de Privacidad o deseas ejercer tus derechos, contáctanos:"
+  },
+  "terms": {
+    "backToHome": "Volver al Inicio",
+    "title": "Términos de Servicio",
+    "subtitle": "Estos términos rigen el uso de nuestra plataforma de automatización para empresas de ropa personalizada.",
+    "lastUpdated": "Última actualización: Septiembre 2025",
+    "introductionTitle": "1. Aceptación de los Términos",
+    "introductionText": "Al acceder y utilizar Sublimifyer, aceptas estar sujeto a estos Términos de Servicio y todas las leyes y regulaciones aplicables. Si no estás de acuerdo con alguno de estos términos, no debes utilizar nuestro servicio.",
+    "introductionText2": "Nos reservamos el derecho de actualizar estos términos en cualquier momento. Los cambios entrarán en vigor inmediatamente después de su publicación en nuestro sitio web.",
+    "serviceTitle": "2. Descripción del Servicio",
+    "serviceText": "Sublimifyer es una plataforma SaaS que proporciona herramientas de automatización para empresas de ropa personalizada, incluyendo:",
+    "service1": "Catálogos de molderías, diseños y fuentes",
+    "service2": "Generación automática de archivos de sublimación",
+    "service3": "Optimización de anidamiento 2D con IA",
+    "service4": "Seguimiento y gestión de pedidos",
+    "service5": "Herramientas de personalización",
+    "serviceUptime": "Nos esforzamos por mantener el servicio disponible de forma continua, con un tiempo de actividad (up-time) del 98%. No obstante, el servicio puede experimentar interrupciones ocasionales por mantenimiento programado, actualizaciones o circunstancias fuera de nuestro control.",
+    "subscriptionTitle": "3. Planes de Suscripción",
+    "billingTitle": "Facturación y Pagos",
+    "billing1": "Los pagos se procesan mensualmente o anualmente según el plan seleccionado",
+    "billing2": "Los precios están sujetos a cambios con 30 días de notificación previa",
+    "billing3": "Los pagos no reembolsables excepto según nuestra política de reembolso",
+    "billing4": "El incumplimiento del pago puede resultar en la suspensión del servicio",
+    "limitsTitle": "Límites de Uso",
+    "limits1": "Cada plan tiene límites específicos de productos por mes",
+    "limits2": "El uso excesivo puede resultar en cargos adicionales",
+    "limits3": "Los límites se restablecen cada mes de facturación",
+    "responsibilitiesTitle": "4. Responsabilidades del Usuario",
+    "accountTitle": "Cuenta de Usuario",
+    "account1": "Mantener la confidencialidad de tus credenciales de acceso",
+    "account2": "Proporcionar información precisa y actualizada",
+    "account3": "Notificar inmediatamente cualquier uso no autorizado",
+    "account4": "Ser responsable de todas las actividades en tu cuenta",
+    "contentTitle": "Contenido y Uso Aceptable",
+    "content1": "No utilizar el servicio para actividades ilegales o no autorizadas",
+    "content2": "Respetar los derechos de propiedad intelectual de terceros",
+    "content3": "No subir contenido malicioso o que viole derechos de terceros",
+    "content4": "Cumplir con todas las leyes y regulaciones aplicables",
+    "ipTitle": "5. Propiedad Intelectual",
+    "ipText": "Sublimifyer y su contenido original, características y funcionalidades son propiedad de Sublimifyer y están protegidos por leyes de derechos de autor, marcas registradas y otras leyes de propiedad intelectual.",
+    "ipText2": "Los usuarios conservan los derechos sobre su contenido, pero otorgan a Sublimifyer una licencia no exclusiva para usar, procesar y almacenar dicho contenido para proporcionar el servicio.",
+    "terminationTitle": "6. Terminación",
+    "terminationText": "Cualquiera de las partes puede terminar este acuerdo en cualquier momento. Los usuarios pueden cancelar su suscripción desde su panel de control.",
+    "terminationText2": "Nos reservamos el derecho de suspender o terminar cuentas que violen estos términos o que representen un riesgo para la seguridad del servicio.",
+    "liabilityTitle": "7. Limitación de Responsabilidad",
+    "liabilityText": "En la máxima medida permitida por la ley, Sublimifyer no será responsable por daños indirectos, incidentales, especiales, consecuenciales o punitivos, incluyendo pero no limitado a pérdida de beneficios, datos o uso.",
+    "liabilityText2": "Nuestra responsabilidad total no excederá el monto pagado por el usuario en los 12 meses anteriores al evento que dio lugar al reclamo.",
+    "liabilityText3": "Nos comprometemos a mantener un alto nivel de disponibilidad del servicio, con un objetivo de tiempo de actividad (up-time) del 98%, y trabajamos para minimizar cualquier interrupción. Cuando se produzcan interrupciones por mantenimiento programado, actualizaciones o circunstancias ajenas a nuestro control, haremos todo lo posible por restablecer el servicio a la mayor brevedad, sin que ello genere responsabilidad por daños indirectos derivados de dichas interrupciones.",
+    "contactTitle": "8. Contacto",
+    "contactText": "Si tienes preguntas sobre estos Términos de Servicio, contáctanos:"
+  },
+  "cookies": {
+    "backToHome": "Volver al Inicio",
+    "title": "Política de Cookies",
+    "subtitle": "Información sobre cómo utilizamos las cookies para mejorar tu experiencia en nuestro sitio web",
+    "lastUpdated": "Última actualización: Enero 2025",
+    "introductionTitle": "1. ¿Qué son las Cookies?",
+    "introductionText": "Las cookies son pequeños archivos de texto que se almacenan en tu dispositivo cuando visitas un sitio web. Estas cookies nos ayudan a recordar información sobre tu visita, como tu idioma preferido y otras configuraciones, lo que puede hacer tu próxima visita más fácil y el sitio más útil para ti.",
+    "introductionText2": "Sublimifyer utiliza cookies para mejorar tu experiencia de navegación, analizar el uso del sitio web y personalizar el contenido según tus preferencias.",
+    "typesTitle": "2. Tipos de Cookies que Utilizamos",
+    "essentialTitle": "Cookies Esenciales",
+    "essentialText": "Estas cookies son necesarias para el funcionamiento básico del sitio web y no se pueden desactivar.",
+    "essential1": "Cookies de sesión para mantener tu sesión activa",
+    "essential2": "Cookies de seguridad para proteger contra ataques",
+    "essential3": "Cookies de preferencias de idioma",
+    "essential4": "Cookies de configuración del tema (claro/oscuro)",
+    "analyticsTitle": "Cookies de Análisis",
+    "analyticsText": "Estas cookies nos ayudan a entender cómo los visitantes interactúan con nuestro sitio web.",
+    "analytics1": "Google Analytics para análisis de tráfico web",
+    "analytics2": "Métricas de rendimiento y velocidad del sitio",
+    "analytics3": "Datos de uso de funciones específicas",
+    "analytics4": "Información sobre dispositivos y navegadores",
+    "functionalTitle": "Cookies Funcionales",
+    "functionalText": "Estas cookies mejoran la funcionalidad del sitio web y proporcionan características personalizadas.",
+    "functional1": "Recordar configuraciones de usuario",
+    "functional2": "Personalización de contenido",
+    "functional3": "Integración con redes sociales",
+    "functional4": "Funciones de chat y soporte",
+    "managementTitle": "3. Gestión de Cookies",
+    "managementText": "Puedes controlar y gestionar las cookies de varias maneras:",
+    "management1": "Configuración del navegador: La mayoría de los navegadores te permiten ver, eliminar y bloquear cookies",
+    "management2": "Herramientas de terceros: Puedes usar herramientas como Ghostery o uBlock Origin",
+    "management3": "Configuración de Google Analytics: Puedes optar por no participar en Google Analytics",
+    "management4": "Eliminación manual: Puedes eliminar cookies almacenadas en tu dispositivo",
+    "thirdPartyTitle": "4. Cookies de Terceros",
+    "thirdPartyText": "Nuestro sitio web puede contener cookies de terceros. Estas cookies son establecidas por servicios que aparecen en nuestras páginas:",
+    "thirdParty1": "Google Analytics - Para análisis de tráfico web",
+    "thirdParty2": "Vercel Analytics - Para métricas de rendimiento",
+    "thirdParty3": "WhatsApp - Para funcionalidad de chat",
+    "thirdParty4": "Calendly - Para programación de citas",
+    "thirdPartyNote": "No tenemos control sobre estas cookies de terceros. Te recomendamos revisar las políticas de privacidad de estos servicios para obtener más información.",
+    "rightsTitle": "5. Tus Derechos",
+    "rightsText": "Tienes derecho a:",
+    "right1": "Saber qué cookies utilizamos y por qué",
+    "right2": "Elegir si aceptas o rechazas cookies no esenciales",
+    "right3": "Eliminar cookies existentes de tu dispositivo",
+    "right4": "Configurar tu navegador para rechazar cookies",
+    "right5": "Contactarnos con preguntas sobre nuestras cookies",
+    "updatesTitle": "6. Actualizaciones de esta Política",
+    "updatesText": "Podemos actualizar esta Política de Cookies ocasionalmente para reflejar cambios en nuestras prácticas o por otras razones operativas, legales o regulatorias. Te recomendamos revisar esta página periódicamente para mantenerte informado sobre nuestro uso de cookies.",
+    "updatesNote": "Los cambios significativos en esta política serán notificados a través de nuestro sitio web o por otros medios apropiados.",
+    "contactTitle": "7. Contacto",
+    "contactText": "Si tienes preguntas sobre esta Política de Cookies o deseas ejercer tus derechos, contáctanos:"
+  },
+  "shirtShowcase": {
+    "mode3d": "3D interactivo",
+    "modeVideo": "Video",
+    "title": "De tu pedido al archivo listo para producir.",
+    "description": "Entendé visualmente cómo Sublimifyer conecta todo el proceso."
+  },
+  "benefits": {
+    "titleLine1": "Producí más.",
+    "titleLine2": "Desperdiciá menos.",
+    "subtitle": "El mismo taller, el mismo equipo, las mismas máquinas. Lo que cambia es cuánto rinde cada hora y cada metro de tela.",
+    "items": [
+      {
+        "title": "Menos desperdicio de tela",
+        "metric": "tela",
+        "description": "El acomodado inteligente de cada pieza aprovecha mejor cada metro de tela."
+      },
+      {
+        "title": "Menos errores de producción",
+        "metric": "reprocesos",
+        "description": "Archivos estandarizados y listos para producir, siempre iguales. Sin sorpresas en la impresora."
+      },
+      {
+        "title": "Menos trabajo manual",
+        "metric": "horas",
+        "description": "Lo repetitivo se automatiza: lo que te llevaba días queda resuelto en minutos."
+      },
+      {
+        "title": "Más producción",
+        "metric": "pedidos",
+        "description": "Organizás y procesás más pedidos sin sumar horas ni gente al taller."
+      }
+    ]
+  },
+  "appMock": {
+    "title": "Todo tu proceso. Una sola plataforma.",
+    "description": "Explorá cómo funciona Sublimifyer por dentro.",
+    "live": "En vivo"
+  },
+  "designAnimation": {
+    "badge": "Diseño Automatizado",
+    "title": "Diseña una vez, replica en todos",
+    "description": "Crea tu diseño una sola vez y genera automáticamente todas las variantes con nombres y números personalizados.",
+    "designer": "Diseñador",
+    "generate": "Generar →",
+    "result": "Resultado",
+    "name": "Nombre",
+    "number": "Número",
+    "back": "Espalda"
+  },
+  "nestingAnimation": {
+    "badge": "Optimización Visual",
+    "title": "De la lista al tizado optimizado",
+    "description": "Observa cómo cada pieza de tu orden se transforma en formas optimizadas que minimizan el desperdicio de material.",
+    "size": "Talle",
+    "name": "Nombre"
+  },
+  "chaosAnimation": {
+    "badge": "Antes vs Después",
+    "title": "Dejá de perseguir pedidos por WhatsApp",
+    "description": "Tus clientes completan su pedido solos. Vos solo te dedicás a producir.",
+    "whatsappOrders": "Pedidos WhatsApp",
+    "size": "Talle",
+    "number": "Número",
+    "name": "Nombre",
+    "choose": "Elegir...",
+    "confirmOrder": "Confirmar pedido",
+    "confirmed": "Confirmado",
+    "orderConfirmed": "Pedido #1247 confirmado",
+    "orderReceived": "Pedido recibido",
+    "inProduction": "En producción",
+    "readyForDelivery": "Listo para entrega",
+    "today": "Hoy",
+    "tomorrow": "Mañana",
+    "summary": "Resumen",
+    "players": "3 jugadores",
+    "withSublimifyer": "Con Sublimifyer",
+    "chaosToControl": "De caos a control",
+    "client": "Cliente",
+    "msg1": "Hola, mi talle es M creo",
+    "msg2": "1 XL, 2S 10 Tomi, 1 L , 2 shorts sin remera XL y S",
+    "msg3": "¿Cómo viene mi pedido?",
+    "msg4": "Te mandé un cambio por audio y no está en mi diseño 🎤",
+    "msg5": "¿Llegamos para el viernes?",
+    "msg6": "Ahí te mando la foto del diseño",
+    "msg7": "Hola necesito 5 camisetas y media",
+    "msg8": "Y???",
+    "msg9": "Cambié, mejor XL",
+    "msg10": "Me contestás? 😤"
+  }
+}
