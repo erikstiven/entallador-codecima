@@ -57,7 +57,7 @@ describe("Sublimifyer Landing Assets, i18n, and Subpage Data (TASK-1)", () => {
     expect(esTranslations.hero.title).toContain("Producí más");
     expect(esTranslations.hero.titleLine1).toContain("Todo tu proceso de producción,");
     expect(esTranslations.pricing.starter.price).toBe("99k ARS");
-    expect(esTranslations.faq.question14.question).toContain("desperdicio de tela");
+    expect(esTranslations.faq.question14?.question).toContain("desperdicio de tela");
     expect(enTranslations.hero?.title).toBeTruthy();
     expect(ptTranslations.hero?.title).toBeTruthy();
     expect(translationsByLanguage.es).toBe(esTranslations);

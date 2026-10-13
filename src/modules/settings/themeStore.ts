@@ -45,9 +45,21 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
 export function applyThemeToDocument(theme: ThemeMode): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
+  if (root.classList.contains('landing-active')) {
+    root.classList.remove('light');
+    root.style.colorScheme = 'light';
+    return;
+  }
   root.classList.toggle('light', theme === 'light');
   root.style.colorScheme = theme;
 }
 
-// Aplicar el tema guardado antes del primer render para evitar el parpadeo
-applyThemeToDocument(detectInitialTheme());
+// Aplicar el tema guardado antes del primer render únicamente si estamos en /app
+if (
+  typeof window !== 'undefined' &&
+  (window.location.pathname === '/app' ||
+    window.location.pathname.startsWith('/app/') ||
+    window.location.hash.startsWith('#/app'))
+) {
+  applyThemeToDocument(detectInitialTheme());
+}

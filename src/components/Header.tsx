@@ -1,8 +1,9 @@
 import React from 'react';
-import { Sun, Moon, User, Building2, Sparkles, ShieldCheck } from 'lucide-react';
+import { Sun, Moon, Globe } from 'lucide-react';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { useThemeStore } from '@/modules/settings/themeStore';
 import { useSystemSettingsStore } from '@/modules/settings/systemSettingsStore';
+import { navigateTo } from '@/landing/router/landingRouteStore';
 
 export const Header: React.FC = () => {
   const { currentView, setCurrentView } = useNavigationStore();
@@ -56,8 +57,18 @@ export const Header: React.FC = () => {
         <p className="text-[11px] text-slate-400 hidden sm:block -mt-0.5">{info.subtitle}</p>
       </div>
 
-      {/* Derecha: Badge de Empresa, Operador y Selector de Tema */}
+      {/* Derecha: Acceso a Landing, Badge de Empresa, Operador y Selector de Tema */}
       <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => navigateTo('/landing')}
+          className="flex items-center gap-1.5 bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 rounded-full px-3 py-1.5 text-[11px] font-medium text-slate-300 hover:text-white transition-all cursor-pointer"
+          title="Ir a la página web de presentación (Landing)"
+        >
+          <Globe className="w-3.5 h-3.5 text-teal-400" />
+          <span className="hidden sm:inline">Ver Landing</span>
+        </button>
+
         {/* Badge de Empresa y Operador */}
         <button
           type="button"

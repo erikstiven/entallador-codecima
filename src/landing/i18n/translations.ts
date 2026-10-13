@@ -9,6 +9,7 @@ export type { LandingBenefitItem, LandingPlanTier, LandingTranslations };
 export { esTranslations };
 
 export type LanguageCode = 'es' | 'en' | 'pt';
+export type Language = LanguageCode;
 
 export const SUPPORTED_LANGUAGES: readonly LanguageCode[] = ['es', 'en', 'pt'] as const;
 
