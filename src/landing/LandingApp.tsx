@@ -3,13 +3,17 @@ import './styles/landing.css';
 import {
   LanguageProvider,
   useLanguage,
-  type Language,
 } from './i18n/LanguageContext';
 import { useAppRoute } from './router/landingRouteStore';
 import { SUBPAGE_PATHS } from './data/subpagesData';
+import { LandingHeader } from './components/LandingHeader';
+import { HeroSection } from './components/HeroSection';
+import { SolutionsSection } from './components/SolutionsSection';
+import { BenefitsSection } from './components/BenefitsSection';
+import { DemoSection } from './components/DemoSection';
 
 const LandingShellContent: React.FC = () => {
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const { mode, subpagePath, navigateTo } = useAppRoute();
 
   useEffect(() => {
@@ -25,116 +29,12 @@ const LandingShellContent: React.FC = () => {
     };
   }, []);
 
-  const handleLanguageChange = (nextLang: Language) => {
-    setLanguage(nextLang);
-  };
-
   return (
     <div
       data-testid="landing-root"
       className="landing-root flex min-h-[100dvh] flex-col bg-background text-foreground"
     >
-      {/* Header Shell (to be expanded 1:1 in TASK-3 via LandingHeader) */}
-      <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-lg border-b border-border/40">
-        <div className="container flex h-20 items-center justify-between px-4 md:px-6">
-          <a
-            href="/"
-            onClick={(e) => {
-              e.preventDefault();
-              navigateTo('/');
-            }}
-            className="flex items-center gap-2 font-bold"
-          >
-            <img
-              src="/subly-mark-teal.svg"
-              alt="Sublimifyer"
-              className="h-8 w-auto"
-            />
-          </a>
-
-          <nav className="hidden md:flex items-center gap-6">
-            <a
-              href="#soluciones"
-              onClick={(e) => {
-                e.preventDefault();
-                navigateTo('/#soluciones');
-              }}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t.nav.solutions}
-            </a>
-            <a
-              href="#beneficios"
-              onClick={(e) => {
-                e.preventDefault();
-                navigateTo('/#beneficios');
-              }}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t.nav.benefits}
-            </a>
-            <a
-              href="#demo"
-              onClick={(e) => {
-                e.preventDefault();
-                navigateTo('/#demo');
-              }}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t.nav.demo}
-            </a>
-            <a
-              href="#pricing"
-              onClick={(e) => {
-                e.preventDefault();
-                navigateTo('/#pricing');
-              }}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t.nav.pricing}
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <div
-              role="group"
-              aria-label={t.language.select}
-              className="flex items-center gap-1 rounded-full border border-border px-2 py-1 text-xs"
-            >
-              {(['es', 'en', 'pt'] as const).map((lang) => (
-                <button
-                  key={lang}
-                  type="button"
-                  onClick={() => handleLanguageChange(lang)}
-                  className={`rounded-full px-2 py-0.5 uppercase font-medium transition-colors ${
-                    language === lang
-                      ? 'bg-[#00857a] text-white'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {lang}
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => navigateTo('/app')}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t.nav.login}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigateTo('/app')}
-              className="inline-flex h-9 items-center justify-center rounded-full bg-[#00857a] hover:bg-[#00655d] px-4 py-2 text-sm font-medium text-white transition-colors"
-            >
-              {t.nav.getStarted}
-            </button>
-          </div>
-        </div>
-      </header>
+      <LandingHeader />
 
       {mode === 'landing-subpage' && subpagePath ? (
         <main
@@ -155,38 +55,10 @@ const LandingShellContent: React.FC = () => {
         </main>
       ) : (
         <main data-testid="landing-home-view" className="flex-1">
-          <section className="py-16 md:py-24 container px-4 md:px-6 text-center">
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
-              <span>{t.hero.titleLine1}</span>{' '}
-              <span className="text-[#00857a]">{t.hero.titleLine2}</span>
-            </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-              {t.hero.subtitle}
-            </p>
-            <div className="flex items-center justify-center gap-4">
-              <button
-                type="button"
-                onClick={() => navigateTo('/app')}
-                className="inline-flex h-12 items-center justify-center rounded-full bg-[#00857a] hover:bg-[#00655d] px-8 text-base font-medium text-white shadow-lg transition-all"
-              >
-                {t.hero.getStarted}
-              </button>
-            </div>
-          </section>
-
-          <section id="soluciones" className="py-12 container px-4 md:px-6">
-            <h2 className="text-2xl font-bold">{t.shirtShowcase.title}</h2>
-          </section>
-
-          <section id="beneficios" className="py-12 container px-4 md:px-6">
-            <h2 className="text-2xl font-bold">
-              {t.benefits.titleLine1} {t.benefits.titleLine2}
-            </h2>
-          </section>
-
-          <section id="demo" className="py-12 container px-4 md:px-6">
-            <h2 className="text-2xl font-bold">{t.appMock.title}</h2>
-          </section>
+          <HeroSection />
+          <SolutionsSection />
+          <BenefitsSection />
+          <DemoSection />
 
           <section id="pricing" className="py-12 container px-4 md:px-6">
             <h2 className="text-2xl font-bold">{t.pricing.title}</h2>
