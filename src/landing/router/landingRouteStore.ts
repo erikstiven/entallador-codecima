@@ -219,11 +219,14 @@ export function useAppRoute(): AppRouteState & {
     };
   }, [syncFromLocation]);
 
+  const snapshot =
+    typeof window === 'undefined' ? useLandingRouteStore.getState() : null;
+
   return {
-    mode,
-    pathname,
-    hash,
-    subpagePath,
+    mode: snapshot ? snapshot.mode : mode,
+    pathname: snapshot ? snapshot.pathname : pathname,
+    hash: snapshot ? snapshot.hash : hash,
+    subpagePath: snapshot ? snapshot.subpagePath : subpagePath,
     navigateTo,
   };
 }

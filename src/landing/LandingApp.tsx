@@ -1,20 +1,20 @@
 import React, { useEffect } from 'react';
 import './styles/landing.css';
-import {
-  LanguageProvider,
-  useLanguage,
-} from './i18n/LanguageContext';
+import { LanguageProvider } from './i18n/LanguageContext';
 import { useAppRoute } from './router/landingRouteStore';
-import { SUBPAGE_PATHS } from './data/subpagesData';
 import { LandingHeader } from './components/LandingHeader';
 import { HeroSection } from './components/HeroSection';
 import { SolutionsSection } from './components/SolutionsSection';
 import { BenefitsSection } from './components/BenefitsSection';
 import { DemoSection } from './components/DemoSection';
+import { PricingSection } from './components/PricingSection';
+import { CtaSection } from './components/CtaSection';
+import { LandingFooter } from './components/LandingFooter';
+import { WhatsAppFloatingButton } from './components/WhatsAppFloatingButton';
+import { SubpageView } from './pages/SubpageView';
 
 const LandingShellContent: React.FC = () => {
-  const { t } = useLanguage();
-  const { mode, subpagePath, navigateTo } = useAppRoute();
+  const { mode, subpagePath } = useAppRoute();
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -34,69 +34,35 @@ const LandingShellContent: React.FC = () => {
       data-testid="landing-root"
       className="landing-root flex min-h-[100dvh] flex-col bg-background text-foreground"
     >
-      <LandingHeader />
-
       {mode === 'landing-subpage' && subpagePath ? (
-        <main
-          data-testid="landing-subpage-view"
-          data-subpage={subpagePath}
-          className="flex-1 container py-12 px-4 md:px-6"
-        >
-          <button
-            type="button"
-            onClick={() => navigateTo('/')}
-            className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-[#00857a] hover:underline"
-          >
-            ← {t.about.backToHome}
-          </button>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {subpagePath}
-          </h1>
-        </main>
+        <SubpageView subpagePath={subpagePath} />
       ) : (
-        <main data-testid="landing-home-view" className="flex-1">
-          <HeroSection />
-          <SolutionsSection />
-          <BenefitsSection />
-          <DemoSection />
+        <>
+          <LandingHeader />
+          <main data-testid="landing-home-view" className="flex-1">
+            <HeroSection />
+            <SolutionsSection />
+            <BenefitsSection />
+            <DemoSection />
 
-          <section id="pricing" className="py-12 container px-4 md:px-6">
-            <h2 className="text-2xl font-bold">{t.pricing.title}</h2>
-          </section>
-
-          <section id="cta" className="py-12 container px-4 md:px-6">
-            <h2 className="text-2xl font-bold">{t.cta.title1}</h2>
-            <button
-              type="button"
-              onClick={() => navigateTo('/app')}
-              className="mt-4 inline-flex h-12 items-center justify-center rounded-full bg-[#00857a] hover:bg-[#00655d] px-8 text-base font-medium text-white"
+            {/* Unified Bottom Block (#pricing -> #cta -> Footer) with screen-blended white dot overlay */}
+            <div
+              data-testid="landing-unified-bottom-block"
+              className="relative isolate"
             >
-              {t.cta.getStarted}
-            </button>
-          </section>
-        </main>
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 z-[1] mix-blend-screen bg-[size:22px_22px] bg-[radial-gradient(rgba(255,255,255,0.14)_1px,transparent_1px)]"
+              />
+              <PricingSection />
+              <CtaSection />
+              <LandingFooter />
+            </div>
+          </main>
+        </>
       )}
 
-      <footer className="w-full border-t bg-[#020c0c] text-white/80 py-10">
-        <div className="container px-4 md:px-6 flex flex-wrap gap-4 justify-between items-center text-xs">
-          <span>© 2026 Sublimifyer. {t.footer.copyright}</span>
-          <div className="flex flex-wrap gap-3">
-            {SUBPAGE_PATHS.map((path) => (
-              <a
-                key={path}
-                href={path}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateTo(path);
-                }}
-                className="text-white/60 hover:text-white transition-colors"
-              >
-                {path}
-              </a>
-            ))}
-          </div>
-        </div>
-      </footer>
+      <WhatsAppFloatingButton />
     </div>
   );
 };
