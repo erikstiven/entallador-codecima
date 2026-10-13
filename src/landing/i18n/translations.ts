@@ -78,12 +78,12 @@ export const enTranslations: LandingTranslations = {
   },
   logos: {
     trustedBy: "From design to print",
-    workflowTitle: "Your workflow in Sublimifyer"
+    workflowTitle: "Your workflow in CimaTex"
   },
   features: {
     badge: "Features",
     title: "Fewer errors. Less waste. More production.",
-    subtitle: "Sublimifyer eliminates repetitive manual tasks in pattern assembly, sublimation sheets and garment customization, reducing errors and downtime in production.",
+    subtitle: "CimaTex eliminates repetitive manual tasks in pattern assembly, sublimation sheets and garment customization, reducing errors and downtime in production.",
     feature1: {
       title: "Catalogs of Patterns, Designs & Fonts",
       description: "Access professional patterns ready to use and avoid recreating them from scratch on every order. Save hours of assembly and keep consistency across all your garments."
@@ -211,7 +211,7 @@ export const enTranslations: LandingTranslations = {
       role: "Sublimation and embroidery"
     },
     testimonial4: {
-      quote: "We were redoing orders all the time because of layout or personalization errors. With Sublimifyer we review before printing and the reprints dropped a lot.",
+      quote: "We were redoing orders all the time because of layout or personalization errors. With CimaTex we review before printing and the reprints dropped a lot.",
       author: "Clothing manufacturer",
       role: "Bulk customization"
     },
@@ -229,9 +229,9 @@ export const enTranslations: LandingTranslations = {
   pricing: {
     badge: "Pricing",
     title: "Choose based on how much you produce.",
-    subtitle: "Every plan includes full access to Sublimifyer. The price depends on your monthly production volume.",
+    subtitle: "Every plan includes full access to CimaTex. The price depends on your monthly production volume.",
     logicIntro: "You pay based on how much you produce. The higher your volume, the greater the system's impact on your operation.",
-    roiPhrase: "A single production error can cost more than a month of Sublimifyer.",
+    roiPhrase: "A single production error can cost more than a month of CimaTex.",
     roiReminderTitle: "Strategic ROI Reminder",
     roiReminderLine1: "A single production error can cost more than an entire month of the system.",
     roiReminderLine2: "When you reduce manual work, prevent reprints, and optimize fabric usage, the platform often pays for itself in avoided mistakes alone.",
@@ -239,7 +239,7 @@ export const enTranslations: LandingTranslations = {
     founderPriceLabel: "Founder Price",
     mostPopular: "Most chosen",
     sharedFeaturesTitle: "Every plan includes full access",
-    accessNote: "Full access to Sublimifyer",
+    accessNote: "Full access to CimaTex",
     currencyLabel: "Currency",
     currencyArs: "Pesos (ARS)",
     currencyUsd: "Dollars (USD)",
@@ -325,10 +325,10 @@ export const enTranslations: LandingTranslations = {
     subtitle: "Find answers to common questions about our platform.",
     question1: {
       question: "Can I upload my own patterns, fonts, and designs?",
-      answer: "Yes! Sublimifyer allows you to upload your own clothing patterns, fonts, and graphic designs. You can combine them with our curated library of patterns and templates, giving you full flexibility to create unique, customized apparel."
+      answer: "Yes! CimaTex allows you to upload your own clothing patterns, fonts, and graphic designs. You can combine them with our curated library of patterns and templates, giving you full flexibility to create unique, customized apparel."
     },
     question2: {
-      question: "How does Sublimifyer help reduce fabric waste?",
+      question: "How does CimaTex help reduce fabric waste?",
       answer: "Our platform includes AI-powered 2D nesting optimization, which automatically arranges pattern pieces on the fabric to minimize unused space. This not only reduces material waste but also lowers production costs and improves efficiency."
     },
     question3: {
@@ -336,8 +336,8 @@ export const enTranslations: LandingTranslations = {
       answer: "Our onboarding and assistance support gives you full access to all features of your selected plan."
     },
     question4: {
-      question: "Is Sublimifyer suitable for small clothing businesses?",
-      answer: "Absolutely. Sublimifyer is designed to scale with your business. Small and medium-sized clothing brands can take advantage of professional design tools, production-ready file generation, and workflow management without needing a large design or technical team."
+      question: "Is CimaTex suitable for small clothing businesses?",
+      answer: "Absolutely. CimaTex is designed to scale with your business. Small and medium-sized clothing brands can take advantage of professional design tools, production-ready file generation, and workflow management without needing a large design or technical team."
     },
     question5: {
       question: "Can I change plans later?",
@@ -385,10 +385,10 @@ export const enTranslations: LandingTranslations = {
   },
   about: {
     backToHome: "Back to Home",
-    title: "About Sublimifyer",
+    title: "About CimaTex",
     subtitle: "Revolutionizing the custom apparel industry with cutting-edge technology and intelligent automation.",
     missionTitle: "Our Mission",
-    missionDescription: "At Sublimifyer, we believe that every custom apparel company deserves access to professional tools that allow them to grow and compete in today's market. Our mission is to democratize design and production technology, making complex processes simple and accessible to everyone.",
+    missionDescription: "At CimaTex, we believe that every custom apparel company deserves access to professional tools that allow them to grow and compete in today's market. Our mission is to democratize design and production technology, making complex processes simple and accessible to everyone.",
     valuesTitle: "Our Values",
     valuesSubtitle: "The principles that guide everything we do",
     value1Title: "Collaboration",
@@ -400,11 +400,11 @@ export const enTranslations: LandingTranslations = {
     value4Title: "Passion",
     value4Description: "We love what we do and are passionate about helping our clients achieve their goals.",
     storyTitle: "Our Story",
-    story1: "Sublimifyer was born from the need to simplify complex processes in the custom apparel industry. Our team, composed of technology experts and textile industry professionals, identified the main barriers companies face to grow and compete effectively.",
+    story1: "CimaTex was born from the need to simplify complex processes in the custom apparel industry. Our team, composed of technology experts and textile industry professionals, identified the main barriers companies face to grow and compete effectively.",
     story2: "After years of research and development, we created a comprehensive platform that combines artificial intelligence, automation, and professional design tools. Today, we help hundreds of companies optimize their processes, reduce costs, and increase their productivity.",
     story3: "Our commitment is to continue innovating and adapting to the changing needs of the market, always with the goal of empowering our clients to reach their full potential.",
     ctaTitle: "Ready to join us?",
-    ctaDescription: "Discover how Sublimifyer can transform your business and take it to the next level.",
+    ctaDescription: "Discover how CimaTex can transform your business and take it to the next level.",
     ctaButton: "Get Started Now",
     contactButton: "Contact"
   },
@@ -451,7 +451,7 @@ export const enTranslations: LandingTranslations = {
     subtitle: "Your privacy is important to us. This policy explains how we collect, use, and protect your information.",
     lastUpdated: "Last updated: December 2024",
     introductionTitle: "1. Introduction",
-    introductionText: "At Sublimifyer, we are committed to protecting your privacy and personal data. This Privacy Policy describes how we collect, use, store, and protect your information when you use our automation service for custom apparel companies.",
+    introductionText: "At CimaTex, we are committed to protecting your privacy and personal data. This Privacy Policy describes how we collect, use, store, and protect your information when you use our automation service for custom apparel companies.",
     introductionText2: "By using our services, you agree to the practices described in this policy. If you disagree with any part of this policy, please do not use our services.",
     dataCollectionTitle: "2. Information We Collect",
     personalInfoTitle: "Personal Information",
@@ -500,10 +500,10 @@ export const enTranslations: LandingTranslations = {
     subtitle: "These terms govern the use of our automation platform for custom apparel companies.",
     lastUpdated: "Last updated: December 2024",
     introductionTitle: "1. Acceptance of Terms",
-    introductionText: "By accessing and using Sublimifyer, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you disagree with any of these terms, you must not use our service.",
+    introductionText: "By accessing and using CimaTex, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you disagree with any of these terms, you must not use our service.",
     introductionText2: "We reserve the right to update these terms at any time. Changes will take effect immediately after their publication on our website.",
     serviceTitle: "2. Service Description",
-    serviceText: "Sublimifyer is a SaaS platform that provides automation tools for custom apparel companies, including:",
+    serviceText: "CimaTex is a SaaS platform that provides automation tools for custom apparel companies, including:",
     service1: "Pattern, design, and font catalogs",
     service2: "Automatic sublimation file generation",
     service3: "AI-powered 2D nesting optimization",
@@ -532,13 +532,13 @@ export const enTranslations: LandingTranslations = {
     content3: "Do not upload malicious content or content that violates third-party rights",
     content4: "Comply with all applicable laws and regulations",
     ipTitle: "5. Intellectual Property",
-    ipText: "Sublimifyer and its original content, features, and functionality are owned by Sublimifyer and are protected by copyright, trademark, and other intellectual property laws.",
-    ipText2: "Users retain rights to their content but grant Sublimifyer a non-exclusive license to use, process, and store such content to provide the service.",
+    ipText: "CimaTex and its original content, features, and functionality are owned by CimaTex and are protected by copyright, trademark, and other intellectual property laws.",
+    ipText2: "Users retain rights to their content but grant CimaTex a non-exclusive license to use, process, and store such content to provide the service.",
     terminationTitle: "6. Termination",
     terminationText: "Either party may terminate this agreement at any time. Users can cancel their subscription from their control panel.",
     terminationText2: "We reserve the right to suspend or terminate accounts that violate these terms or represent a risk to service security.",
     liabilityTitle: "7. Limitation of Liability",
-    liabilityText: "To the maximum extent permitted by law, Sublimifyer shall not be liable for indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or use.",
+    liabilityText: "To the maximum extent permitted by law, CimaTex shall not be liable for indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or use.",
     liabilityText2: "Our total liability shall not exceed the amount paid by the user in the 12 months prior to the event giving rise to the claim.",
     liabilityText3: "We are committed to maintaining a high level of service availability, with a target up-time of 98%, and we work to minimize any interruptions. Should interruptions occur due to scheduled maintenance, updates, or circumstances beyond our control, we will make every effort to restore the service as quickly as possible, without this giving rise to liability for indirect damages arising from such interruptions.",
     contactTitle: "8. Contact",
@@ -548,7 +548,7 @@ export const enTranslations: LandingTranslations = {
     mode3d: "Interactive 3D",
     modeVideo: "Video",
     title: "From your order to a production-ready file.",
-    description: "See visually how Sublimifyer connects your whole process."
+    description: "See visually how CimaTex connects your whole process."
   },
   benefits: {
     titleLine1: "Produce more.",
@@ -579,7 +579,7 @@ export const enTranslations: LandingTranslations = {
   },
   appMock: {
     title: "Your entire process. One single platform.",
-    description: "Explore how Sublimifyer works from the inside.",
+    description: "Explore how CimaTex works from the inside.",
     live: "Live"
   },
   designAnimation: {
@@ -619,7 +619,7 @@ export const enTranslations: LandingTranslations = {
     tomorrow: "Tomorrow",
     summary: "Summary",
     players: "3 players",
-    withSublimifyer: "With Sublimifyer",
+    withSublimifyer: "With CimaTex",
     chaosToControl: "From chaos to control",
     client: "Client",
     msg1: "Hi, my size is M I think",
@@ -700,12 +700,12 @@ export const ptTranslations: LandingTranslations = {
   },
   logos: {
     trustedBy: "Do design à impressão",
-    workflowTitle: "Seu fluxo de trabalho no Sublimifyer"
+    workflowTitle: "Seu fluxo de trabalho no CimaTex"
   },
   features: {
     badge: "Recursos",
     title: "Menos erros. Menos desperdício. Mais produção.",
-    subtitle: "Sublimifyer elimina tarefas manuais repetitivas na montagem de moldes, folhas de sublimação e personalização de peças, reduzindo erros e tempos mortos na produção.",
+    subtitle: "CimaTex elimina tarefas manuais repetitivas na montagem de moldes, folhas de sublimação e personalização de peças, reduzindo erros e tempos mortos na produção.",
     feature1: {
       title: "Catálogos de Padrões, Designs e Fontes",
       description: "Acesse padrões profissionais prontos para usar e evite recriá-los do zero a cada pedido. Economize horas de montagem e mantenha consistência em todas as suas peças."
@@ -833,7 +833,7 @@ export const ptTranslations: LandingTranslations = {
       role: "Sublimação e bordado"
     },
     testimonial4: {
-      quote: "Refazíamos pedidos o tempo todo por erros de layout ou personalização. Com o Sublimifyer revisamos antes de imprimir e as reimpressões caíram bastante.",
+      quote: "Refazíamos pedidos o tempo todo por erros de layout ou personalização. Com o CimaTex revisamos antes de imprimir e as reimpressões caíram bastante.",
       author: "Fabricante de roupas",
       role: "Personalização em volume"
     },
@@ -851,9 +851,9 @@ export const ptTranslations: LandingTranslations = {
   pricing: {
     badge: "Preços",
     title: "Escolha de acordo com quanto você produz.",
-    subtitle: "Todos os planos incluem acesso completo ao Sublimifyer. O preço depende do seu volume mensal de produção.",
+    subtitle: "Todos os planos incluem acesso completo ao CimaTex. O preço depende do seu volume mensal de produção.",
     logicIntro: "Você paga conforme o que produz. Quanto maior seu volume, maior o impacto do sistema na sua operação.",
-    roiPhrase: "Um único erro de produção pode custar mais que um mês de Sublimifyer.",
+    roiPhrase: "Um único erro de produção pode custar mais que um mês de CimaTex.",
     roiReminderTitle: "Lembrete de ROI estratégico",
     roiReminderLine1: "Um único erro de produção pode custar mais que um mês inteiro do sistema.",
     roiReminderLine2: "Quando você reduz trabalho manual, evita reimpressões e otimiza o uso de tecido, a plataforma muitas vezes se paga apenas com os erros evitados.",
@@ -861,7 +861,7 @@ export const ptTranslations: LandingTranslations = {
     founderPriceLabel: "Preço Founder",
     mostPopular: "Mais escolhido",
     sharedFeaturesTitle: "Todos os planos incluem acesso total",
-    accessNote: "Acesso completo ao Sublimifyer",
+    accessNote: "Acesso completo ao CimaTex",
     currencyLabel: "Moeda",
     currencyArs: "Pesos (ARS)",
     currencyUsd: "Dólares (USD)",
@@ -947,10 +947,10 @@ export const ptTranslations: LandingTranslations = {
     subtitle: "Encontre respostas para perguntas comuns sobre nossa plataforma.",
     question1: {
       question: "Posso fazer upload dos meus próprios padrões, fontes e designs?",
-      answer: "Sim! O Sublimifyer permite que você faça upload dos seus próprios padrões de roupas, fontes e designs gráficos. Você pode combiná-los com nossa biblioteca curada de padrões e modelos, dando-lhe total flexibilidade para criar roupas únicas e personalizadas."
+      answer: "Sim! O CimaTex permite que você faça upload dos seus próprios padrões de roupas, fontes e designs gráficos. Você pode combiná-los com nossa biblioteca curada de padrões e modelos, dando-lhe total flexibilidade para criar roupas únicas e personalizadas."
     },
     question2: {
-      question: "Como o Sublimifyer ajuda a reduzir o desperdício de tecido?",
+      question: "Como o CimaTex ajuda a reduzir o desperdício de tecido?",
       answer: "Nossa plataforma inclui otimização de aninhamento 2D com IA, que automaticamente organiza as peças do padrão no tecido para minimizar o espaço não utilizado. Isso não apenas reduz o desperdício de material, mas também reduz os custos de produção e melhora a eficiência."
     },
     question3: {
@@ -958,8 +958,8 @@ export const ptTranslations: LandingTranslations = {
       answer: "Nosso suporte de integração e assistência oferece acesso completo a todos os recursos do seu plano selecionado."
     },
     question4: {
-      question: "O Sublimifyer é adequado para pequenas empresas de roupas?",
-      answer: "Absolutamente. O Sublimifyer é projetado para escalar com seu negócio. Pequenas e médias marcas de roupas podem aproveitar ferramentas de design profissionais, geração de arquivos prontos para produção e gerenciamento de fluxo de trabalho sem precisar de uma grande equipe de design ou técnica."
+      question: "O CimaTex é adequado para pequenas empresas de roupas?",
+      answer: "Absolutamente. O CimaTex é projetado para escalar com seu negócio. Pequenas e médias marcas de roupas podem aproveitar ferramentas de design profissionais, geração de arquivos prontos para produção e gerenciamento de fluxo de trabalho sem precisar de uma grande equipe de design ou técnica."
     },
     question5: {
       question: "Posso mudar de plano depois?",
@@ -1007,10 +1007,10 @@ export const ptTranslations: LandingTranslations = {
   },
   about: {
     backToHome: "Voltar ao Início",
-    title: "Sobre o Sublimifyer",
+    title: "Sobre o CimaTex",
     subtitle: "Revolucionando a indústria de roupas personalizadas com tecnologia de ponta e automação inteligente.",
     missionTitle: "Nossa Missão",
-    missionDescription: "No Sublimifyer, acreditamos que toda empresa de roupas personalizadas merece ter acesso a ferramentas profissionais que lhes permitam crescer e competir no mercado atual. Nossa missão é democratizar a tecnologia de design e produção, tornando processos complexos simples e acessíveis para todos.",
+    missionDescription: "No CimaTex, acreditamos que toda empresa de roupas personalizadas merece ter acesso a ferramentas profissionais que lhes permitam crescer e competir no mercado atual. Nossa missão é democratizar a tecnologia de design e produção, tornando processos complexos simples e acessíveis para todos.",
     valuesTitle: "Nossos Valores",
     valuesSubtitle: "Os princípios que guiam tudo o que fazemos",
     value1Title: "Colaboração",
@@ -1022,11 +1022,11 @@ export const ptTranslations: LandingTranslations = {
     value4Title: "Paixão",
     value4Description: "Amamos o que fazemos e somos apaixonados por ajudar nossos clientes a alcançar seus objetivos.",
     storyTitle: "Nossa História",
-    story1: "O Sublimifyer nasceu da necessidade de simplificar processos complexos na indústria de roupas personalizadas. Nossa equipe, composta por especialistas em tecnologia e profissionais da indústria têxtil, identificou as principais barreiras que as empresas enfrentam para crescer e competir efetivamente.",
+    story1: "O CimaTex nasceu da necessidade de simplificar processos complexos na indústria de roupas personalizadas. Nossa equipe, composta por especialistas em tecnologia e profissionais da indústria têxtil, identificou as principais barreiras que as empresas enfrentam para crescer e competir efetivamente.",
     story2: "Após anos de pesquisa e desenvolvimento, criamos uma plataforma abrangente que combina inteligência artificial, automação e ferramentas de design profissional. Hoje, ajudamos centenas de empresas a otimizar seus processos, reduzir custos e aumentar sua produtividade.",
     story3: "Nosso compromisso é continuar inovando e nos adaptando às necessidades em constante mudança do mercado, sempre com o objetivo de capacitar nossos clientes para alcançar seu máximo potencial.",
     ctaTitle: "Pronto para se juntar a nós?",
-    ctaDescription: "Descubra como o Sublimifyer pode transformar seu negócio e levá-lo ao próximo nível.",
+    ctaDescription: "Descubra como o CimaTex pode transformar seu negócio e levá-lo ao próximo nível.",
     ctaButton: "Começar Agora",
     contactButton: "Contatar"
   },
@@ -1073,7 +1073,7 @@ export const ptTranslations: LandingTranslations = {
     subtitle: "Sua privacidade é importante para nós. Esta política explica como coletamos, usamos e protegemos suas informações.",
     lastUpdated: "Última atualização: Dezembro 2024",
     introductionTitle: "1. Introdução",
-    introductionText: "No Sublimifyer, estamos comprometidos em proteger sua privacidade e dados pessoais. Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e protegemos suas informações quando você usa nosso serviço de automação para empresas de roupas personalizadas.",
+    introductionText: "No CimaTex, estamos comprometidos em proteger sua privacidade e dados pessoais. Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e protegemos suas informações quando você usa nosso serviço de automação para empresas de roupas personalizadas.",
     introductionText2: "Ao usar nossos serviços, você concorda com as práticas descritas nesta política. Se você não concordar com alguma parte desta política, por favor não use nossos serviços.",
     dataCollectionTitle: "2. Informações que Coletamos",
     personalInfoTitle: "Informações Pessoais",
@@ -1122,10 +1122,10 @@ export const ptTranslations: LandingTranslations = {
     subtitle: "Estes termos regem o uso de nossa plataforma de automação para empresas de roupas personalizadas.",
     lastUpdated: "Última atualização: Dezembro 2024",
     introductionTitle: "1. Aceitação dos Termos",
-    introductionText: "Ao acessar e usar o Sublimifyer, você concorda em estar sujeito a estes Termos de Serviço e todas as leis e regulamentos aplicáveis. Se você não concordar com algum destes termos, não deve usar nosso serviço.",
+    introductionText: "Ao acessar e usar o CimaTex, você concorda em estar sujeito a estes Termos de Serviço e todas as leis e regulamentos aplicáveis. Se você não concordar com algum destes termos, não deve usar nosso serviço.",
     introductionText2: "Reservamo-nos o direito de atualizar estes termos a qualquer momento. As alterações entrarão em vigor imediatamente após sua publicação em nosso site.",
     serviceTitle: "2. Descrição do Serviço",
-    serviceText: "O Sublimifyer é uma plataforma SaaS que fornece ferramentas de automação para empresas de roupas personalizadas, incluindo:",
+    serviceText: "O CimaTex é uma plataforma SaaS que fornece ferramentas de automação para empresas de roupas personalizadas, incluindo:",
     service1: "Catálogos de padrões, designs e fontes",
     service2: "Geração automática de arquivos de sublimação",
     service3: "Otimização de aninhamento 2D com IA",
@@ -1154,13 +1154,13 @@ export const ptTranslations: LandingTranslations = {
     content3: "Não fazer upload de conteúdo malicioso ou que viole direitos de terceiros",
     content4: "Cumprir todas as leis e regulamentos aplicáveis",
     ipTitle: "5. Propriedade Intelectual",
-    ipText: "O Sublimifyer e seu conteúdo original, características e funcionalidades são propriedade do Sublimifyer e estão protegidos por leis de direitos autorais, marcas registradas e outras leis de propriedade intelectual.",
-    ipText2: "Os usuários mantêm os direitos sobre seu conteúdo, mas concedem ao Sublimifyer uma licença não exclusiva para usar, processar e armazenar tal conteúdo para fornecer o serviço.",
+    ipText: "O CimaTex e seu conteúdo original, características e funcionalidades são propriedade do CimaTex e estão protegidos por leis de direitos autorais, marcas registradas e outras leis de propriedade intelectual.",
+    ipText2: "Os usuários mantêm os direitos sobre seu conteúdo, mas concedem ao CimaTex uma licença não exclusiva para usar, processar e armazenar tal conteúdo para fornecer o serviço.",
     terminationTitle: "6. Rescisão",
     terminationText: "Qualquer uma das partes pode rescindir este acordo a qualquer momento. Os usuários podem cancelar sua assinatura em seu painel de controle.",
     terminationText2: "Reservamo-nos o direito de suspender ou encerrar contas que violem estes termos ou representem um risco para a segurança do serviço.",
     liabilityTitle: "7. Limitação de Responsabilidade",
-    liabilityText: "Na máxima extensão permitida por lei, o Sublimifyer não será responsável por danos indiretos, incidentais, especiais, consequenciais ou punitivos, incluindo, mas não limitado a, perda de lucros, dados ou uso.",
+    liabilityText: "Na máxima extensão permitida por lei, o CimaTex não será responsável por danos indiretos, incidentais, especiais, consequenciais ou punitivos, incluindo, mas não limitado a, perda de lucros, dados ou uso.",
     liabilityText2: "Nossa responsabilidade total não excederá o valor pago pelo usuário nos 12 meses anteriores ao evento que deu origem ao reclamo.",
     liabilityText3: "Comprometemo-nos a manter um alto nível de disponibilidade do serviço, com um objetivo de tempo de atividade (up-time) de 98%, e trabalhamos para minimizar quaisquer interrupções. Caso ocorram interrupções devido a manutenção programada, atualizações ou circunstâncias fora do nosso controle, faremos todo o possível para restabelecer o serviço o mais rápido possível, sem que isso gere responsabilidade por danos indiretos decorrentes de tais interrupções.",
     contactTitle: "8. Contato",
@@ -1173,7 +1173,7 @@ export const ptTranslations: LandingTranslations = {
     lastUpdated: "Última atualização: Janeiro 2025",
     introductionTitle: "1. O que são Cookies?",
     introductionText: "Cookies são pequenos arquivos de texto que são armazenados em seu dispositivo quando você visita um site. Esses cookies nos ajudam a lembrar informações sobre sua visita, como seu idioma preferido e outras configurações, o que pode tornar sua próxima visita mais fácil e o site mais útil para você.",
-    introductionText2: "O Sublimifyer usa cookies para melhorar sua experiência de navegação, analisar o uso do site e personalizar o conteúdo de acordo com suas preferências.",
+    introductionText2: "O CimaTex usa cookies para melhorar sua experiência de navegação, analisar o uso do site e personalizar o conteúdo de acordo com suas preferências.",
     typesTitle: "2. Tipos de Cookies que Usamos",
     essentialTitle: "Cookies Essenciais",
     essentialText: "Estes cookies são necessários para o funcionamento básico do site e não podem ser desativados.",
@@ -1223,7 +1223,7 @@ export const ptTranslations: LandingTranslations = {
     mode3d: "3D interativo",
     modeVideo: "Vídeo",
     title: "Do seu pedido ao arquivo pronto para produzir.",
-    description: "Entenda visualmente como o Sublimifyer conecta todo o processo."
+    description: "Entenda visualmente como o CimaTex conecta todo o processo."
   },
   benefits: {
     titleLine1: "Produza mais.",
@@ -1254,7 +1254,7 @@ export const ptTranslations: LandingTranslations = {
   },
   appMock: {
     title: "Todo o seu processo. Uma única plataforma.",
-    description: "Explore como o Sublimifyer funciona por dentro.",
+    description: "Explore como o CimaTex funciona por dentro.",
     live: "Ao vivo"
   },
   designAnimation: {
@@ -1294,7 +1294,7 @@ export const ptTranslations: LandingTranslations = {
     tomorrow: "Amanhã",
     summary: "Resumo",
     players: "3 jogadores",
-    withSublimifyer: "Com Sublimifyer",
+    withSublimifyer: "Com CimaTex",
     chaosToControl: "Do caos ao controle",
     client: "Cliente",
     msg1: "Oi, meu tamanho é M acho",

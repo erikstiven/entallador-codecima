@@ -80,7 +80,7 @@ describe('TASK-4: 1:1 Unified Bottom Block (#pricing, #cta, Footer), WhatsApp Fl
     expect(htmlArs).toContain('id="pricing"');
     expect(htmlArs).toContain('-mt-11');
     expect(PRICING_BG_GRADIENT).toContain('#fbfbfc 0%');
-    expect(PRICING_BG_GRADIENT).toContain('#06423e calc(100% - 20px)');
+    expect(PRICING_BG_GRADIENT).toContain('#180d33 calc(100% - 20px)');
     expect(htmlArs).toContain('Elegí según cuánto producís.');
     expect(htmlArs).toContain('Onboarding');
     expect(htmlArs).toContain('Soporte');
@@ -96,7 +96,7 @@ describe('TASK-4: 1:1 Unified Bottom Block (#pricing, #cta, Footer), WhatsApp Fl
     expect(htmlArs).toContain('299k ARS');
     expect(htmlArs).toContain('* +49 ARS por prenda adicional');
     expect(htmlArs).toContain(
-      'Un solo error de producción puede costar más que un mes de Sublimifyer.'
+      'Un solo error de producción puede costar más que un mes de CimaTex.'
     );
     expect(htmlArs).toContain('¿Necesitás un plan a medida?');
     expect(htmlArs).toContain('Contactanos');
@@ -115,7 +115,7 @@ describe('TASK-4: 1:1 Unified Bottom Block (#pricing, #cta, Footer), WhatsApp Fl
     expect(htmlUsd).toContain('* +0,03 USD por prenda adicional');
   });
 
-  it('renders CtaSection (#cta) with #06423e background, 14-stop bottom fade gradient to #020c0c, and white rounded-full CTA button', () => {
+  it('renders CtaSection (#cta) with #180d33 background, 14-stop bottom fade gradient to #090414, and white rounded-full CTA button', () => {
     const html = renderToStaticMarkup(
       React.createElement(
         LanguageProvider,
@@ -125,8 +125,8 @@ describe('TASK-4: 1:1 Unified Bottom Block (#pricing, #cta, Footer), WhatsApp Fl
     );
 
     expect(html).toContain('id="cta"');
-    expect(html).toContain('bg-[#06423e]');
-    expect(CTA_BOTTOM_FADE_GRADIENT).toContain('#020c0c calc(100% - 12px)');
+    expect(html).toContain('bg-[#180d33]');
+    expect(CTA_BOTTOM_FADE_GRADIENT).toContain('#090414 calc(100% - 12px)');
     expect(html).toContain('Empezá hoy. Sin tarjeta.');
     expect(html).toContain(
       'Configurá tu taller y sublimá tu primer pedido en minutos'
@@ -134,7 +134,7 @@ describe('TASK-4: 1:1 Unified Bottom Block (#pricing, #cta, Footer), WhatsApp Fl
     expect(html).toContain('Comenzar prueba gratuita');
   });
 
-  it('renders LandingFooter with #020c0c background, 4 columns, social links, and all 11 subpage links', () => {
+  it('renders LandingFooter with #090414 background, 4 columns, social links, and all 11 subpage links', () => {
     const html = renderToStaticMarkup(
       React.createElement(
         LanguageProvider,
@@ -143,12 +143,10 @@ describe('TASK-4: 1:1 Unified Bottom Block (#pricing, #cta, Footer), WhatsApp Fl
       )
     );
 
-    expect(html).toContain('bg-[#020c0c]');
-    expect(FOOTER_OVERLAY_GRADIENT).toContain('#020c0c 100%');
-    expect(html).toContain('https://www.instagram.com/sublimifyer/');
-    expect(html).toContain(
-      'https://www.facebook.com/profile.php?id=61574392834740'
-    );
+    expect(html).toContain('bg-[#090414]');
+    expect(FOOTER_OVERLAY_GRADIENT).toContain('#090414 100%');
+    expect(html).toContain('https://www.instagram.com/codecimaec');
+    expect(html).toContain('https://www.facebook.com/codecimaec');
     for (const path of SUBPAGE_PATHS) {
       expect(html).toContain(`href="${path}"`);
     }
@@ -173,10 +171,10 @@ describe('TASK-4: 1:1 Unified Bottom Block (#pricing, #cta, Footer), WhatsApp Fl
       '/documentation': 'Documentación',
       '/guides': 'Guías',
       '/blog': 'Recursos para talleres de sublimación',
-      '/casos-de-uso': 'Casos de Uso de Sublimifyer',
+      '/casos-de-uso': 'Casos de Uso de CimaTex',
       '/glosario': 'Glosario de produccion para talleres de sublimacion',
       '/support': 'Centro de Soporte',
-      '/about': 'Acerca de Sublimifyer',
+      '/about': 'Acerca de CimaTex',
       '/careers': 'Únete a Nuestro Equipo',
       '/privacy-policy': 'Política de Privacidad',
       '/terms-of-service': 'Términos de Servicio',
@@ -196,7 +194,7 @@ describe('TASK-4: 1:1 Unified Bottom Block (#pricing, #cta, Footer), WhatsApp Fl
       expect(html).toContain(`data-subpage="${path}"`);
       expect(html).toContain(expectedHeadings[path]);
       expect(html).toContain('Volver al Inicio');
-      expect(html).toContain('Sublimifyer');
+      expect(html).toContain('CimaTex');
     }
   });
 
@@ -212,7 +210,7 @@ describe('TASK-4: 1:1 Unified Bottom Block (#pricing, #cta, Footer), WhatsApp Fl
     const subpageHtml = renderToStaticMarkup(React.createElement(LandingApp));
     expect(subpageHtml).toContain('data-testid="landing-subpage-view"');
     expect(subpageHtml).toContain('data-subpage="/casos-de-uso"');
-    expect(subpageHtml).toContain('Casos de Uso de Sublimifyer');
+    expect(subpageHtml).toContain('Casos de Uso de CimaTex');
 
     navigateTo('/');
   });

@@ -1,0 +1,108 @@
+# ==============================================================================
+# CimaTex - Docker Compose para Servidor VPS Hostinger (CodeCima)
+# Servicios: Base de Datos PostgreSQL 16 + API Node.js + Frontend Nginx
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Base de Datos Relacional PostgreSQL 16
+  # ----------------------------------------------------------------------------
+  cimatex_postgres:
+    image: postgres:16-alpine
+    container_name: cimatex_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cimatex_db}
+      POSTGRES_USER: ${POSTGRES_USER:-cimatex_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cimatex_secure_pass}
+      TZ: UTC
+    volumes:
+      - cimatex_pgdata:/var/lib/postgresql/data
+      - ./server/db/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    ports:
+      # Expuesto localmente en el host (127.0.0.1) para mantenimiento / backups
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cimatex_user} -d ${POSTGRES_DB:-cimatex_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cimatex_net
+
+  # ----------------------------------------------------------------------------
+  # 2. Backend API CimaTex (Node.js Express + Google OAuth + Sincronización)
+  # ----------------------------------------------------------------------------
+  cimatex_api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: cimatex_api
+    restart: unless-stopped
+    depends_on:
+      cimatex_postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      HOST: 0.0.0.0
+      DB_HOST: cimatex_postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-cimatex_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-cimatex_secure_pass}
+      DB_NAME: ${POSTGRES_DB:-cimatex_db}
+      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_cimatex_change_in_production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-30d}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    ports:
+      # Expuesto en localhost para inspección o reverse proxy del host
+      - "127.0.0.1:${API_PORT:-4000}:4000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - cimatex_net
+
+  # ----------------------------------------------------------------------------
+  # 3. Frontend Web CimaTex (React 18 + Vite + Nginx Alpine)
+  # ----------------------------------------------------------------------------
+  cimatex_web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cimatex_web
+    restart: unless-stopped
+    depends_on:
+      cimatex_api:
+        condition: service_healthy
+    ports:
+      # Puerto público configurable (por defecto 8080 en el host para convivir con Cimafact / Traefik)
+      - "${WEB_PORT:-8080}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cimatex_net
+
+# ------------------------------------------------------------------------------
+# Volúmenes Persistentes
+# ------------------------------------------------------------------------------
+volumes:
+  cimatex_pgdata:
+    driver: local
+
+# ------------------------------------------------------------------------------
+# Redes Aisladas
+# ------------------------------------------------------------------------------
+networks:
+  cimatex_net:
+    driver: bridge
+    name: cimatex_net

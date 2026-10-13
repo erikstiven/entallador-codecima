@@ -837,7 +837,7 @@ export const DesignsView: React.FC = () => {
                           </optgroup>
                         )}
 
-                        <optgroup label="Fuentes incluidas en CimaPattern">
+                        <optgroup label="Fuentes incluidas en CimaTex">
                           {POPULAR_SPORTS_FONTS.map((f) => (
                             <option key={f.family} value={f.family}>
                               {f.family} ({f.category})

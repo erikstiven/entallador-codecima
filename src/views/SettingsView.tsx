@@ -70,6 +70,7 @@ export const SettingsView: React.FC = () => {
   const selectTheme = (optionId: ThemeSelection) => {
     if (optionId === 'system') {
       try {
+        localStorage.removeItem('cimatex_theme');
         localStorage.removeItem('hmb_theme');
       } catch {
         // Sin persistencia disponible
@@ -98,25 +99,25 @@ export const SettingsView: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div className="flex items-center gap-4">
           <img 
-            src="/cimapattern-icon.png" 
-            alt="CimaPattern" 
+            src="/cimatex-icon.png" 
+            alt="CimaTex" 
             className="w-12 h-12 object-contain filter drop-shadow-md"
           />
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded bg-violet-500/20 text-purple-400 font-mono text-xs font-bold uppercase">
+              <span className="px-2 py-0.5 rounded bg-violet-500/20 text-violet-400 font-mono text-xs font-bold uppercase">
                 Configuración General
               </span>
               <span
                 className={`text-xs font-semibold flex items-center gap-1 transition-opacity duration-300 ${
-                  savedFlash ? 'text-purple-400 opacity-100' : 'opacity-0'
+                  savedFlash ? 'text-violet-400 opacity-100' : 'opacity-0'
                 }`}
               >
                 <CheckCircle2 className="w-3.5 h-3.5" /> Cambios guardados automáticamente
               </span>
             </div>
             <h2 className="text-2xl font-black text-white mt-1 tracking-tight flex items-center gap-2">
-              CimaPattern <span className="text-purple-400 font-medium">PRO</span>
+              <span>Cima<span className="text-violet-400">Tex</span></span> <span className="text-violet-400 font-medium text-lg bg-violet-950/80 px-2 py-0.5 rounded-lg border border-violet-800/50">PRO</span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
               Personaliza la empresa, temas, unidades de medida, parámetros de bobina y tolerancias de corte 1:1

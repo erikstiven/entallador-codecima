@@ -103,7 +103,7 @@ interface SubpageHeaderBarProps {
 
 const SubpageHeaderBar: React.FC<SubpageHeaderBarProps> = ({
   backLabel,
-  logoAlt = 'Sublimifyer',
+  logoAlt = 'CimaTex',
 }) => {
   const { navigateTo } = useAppRoute();
 
@@ -119,11 +119,11 @@ const SubpageHeaderBar: React.FC<SubpageHeaderBarProps> = ({
           className="flex items-center gap-2 font-bold"
         >
           <img
-            src="/sublimifyer-logo.png"
+            src="/cimatex-logo.webp"
             alt={logoAlt}
             width={120}
             height={40}
-            className="h-8 w-auto"
+            className="h-8 w-auto object-contain"
           />
         </a>
         <a

@@ -181,9 +181,9 @@ describe('TASK-5: End-to-End Integration Test Suite for 1:1 Sublimifyer Landing 
     const gradientStopMatches = PRICING_BG_GRADIENT.match(/#[0-9a-fA-F]{6}/g) ?? [];
     expect(gradientStopMatches).toHaveLength(24);
     expect(PRICING_BG_GRADIENT).toContain('#fbfbfc 0%');
-    expect(PRICING_BG_GRADIENT).toContain('#06423e calc(100% - 20px)');
-    expect(CTA_BOTTOM_FADE_GRADIENT).toContain('#020c0c calc(100% - 12px)');
-    expect(FOOTER_OVERLAY_GRADIENT).toContain('#020c0c 100%');
+    expect(PRICING_BG_GRADIENT).toContain('#180d33 calc(100% - 20px)');
+    expect(CTA_BOTTOM_FADE_GRADIENT).toContain('#090414 calc(100% - 12px)');
+    expect(FOOTER_OVERLAY_GRADIENT).toContain('#090414 100%');
 
     const html = getEsArsHomeHtml();
 
@@ -276,10 +276,10 @@ describe('TASK-5: End-to-End Integration Test Suite for 1:1 Sublimifyer Landing 
       '/documentation': 'Documentación',
       '/guides': 'Guías',
       '/blog': 'Recursos para talleres de sublimación',
-      '/casos-de-uso': 'Casos de Uso de Sublimifyer',
+      '/casos-de-uso': 'Casos de Uso de CimaTex',
       '/glosario': 'Glosario de produccion para talleres de sublimacion',
       '/support': 'Centro de Soporte',
-      '/about': 'Acerca de Sublimifyer',
+      '/about': 'Acerca de CimaTex',
       '/careers': 'Únete a Nuestro Equipo',
       '/privacy-policy': 'Política de Privacidad',
       '/terms-of-service': 'Términos de Servicio',

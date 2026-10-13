@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { CimaTexAppMockV2 } from './CimaTexAppMockV2';
 
 export const DemoSection: React.FC = () => {
   const { t } = useLanguage();
@@ -51,7 +52,7 @@ export const DemoSection: React.FC = () => {
         className="pointer-events-none absolute inset-0 bg-[size:22px_22px] mix-blend-multiply"
         style={{
           backgroundImage:
-            'radial-gradient(rgba(6,66,62,0.13) 1px, transparent 1px)',
+            'radial-gradient(rgba(124,58,237,0.12) 1px, transparent 1px)',
           backgroundPosition: 'bottom left',
           maskImage:
             'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.5) 70%, #000)',
@@ -90,12 +91,15 @@ export const DemoSection: React.FC = () => {
           )}
         </div>
 
-        <div className="aspect-[1280/800] w-full border-t border-black/10 bg-background">
+        <div className="w-full border-t border-black/10 bg-background">
+          <CimaTexAppMockV2 />
           <iframe
             ref={iframeRef}
             src="/app-mock.html#designer"
-            title="Sublimifyer"
-            className="h-full w-full border-0"
+            title="CimaTex"
+            className="hidden"
+            aria-hidden="true"
+            tabIndex={-1}
             loading="lazy"
           />
         </div>

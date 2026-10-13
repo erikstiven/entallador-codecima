@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useLanguage, type Language } from '../i18n/LanguageContext';
 import { useAppRoute } from '../router/landingRouteStore';
+import { useAuthStore } from '../auth/authStore';
 
 const LanguageSwitcher: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
@@ -80,6 +81,7 @@ const LanguageSwitcher: React.FC = () => {
 export const LandingHeader: React.FC = () => {
   const { t } = useLanguage();
   const { navigateTo } = useAppRoute();
+  const { openAuthModal } = useAuthStore();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -117,19 +119,22 @@ export const LandingHeader: React.FC = () => {
             e.preventDefault();
             navigateTo('/');
           }}
-          className="flex items-center gap-2 font-bold"
+          className="flex shrink-0 items-center gap-2.5 font-bold transition-opacity hover:opacity-90"
         >
           <img
-            src="/subly-mark-teal.svg"
-            alt="Sublimifyer Logo"
-            width={32}
-            height={32}
-            className="size-8"
+            src="/cimatex-icon.png"
+            alt="CimaTex Logo"
+            width={36}
+            height={36}
+            className="size-9 object-contain"
           />
-          <span>Sublimifyer</span>
+          <span className="text-xl font-black tracking-tight select-none">
+            <span className="text-foreground">Cima</span>
+            <span className="text-primary">Tex</span>
+          </span>
         </a>
 
-        <nav className="hidden md:flex gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        <nav className="hidden lg:flex gap-6 xl:gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {navItems.map((item) => (
             <a
               key={item.href}
@@ -138,40 +143,38 @@ export const LandingHeader: React.FC = () => {
                 e.preventDefault();
                 navigateTo(item.target);
               }}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap"
             >
               {item.label}
             </a>
           ))}
         </nav>
 
-        <div className="hidden md:flex gap-4 items-center">
+        <div className="hidden lg:flex gap-3 xl:gap-4 items-center shrink-0">
           <LanguageSwitcher />
-          <a
-            href="/app"
-            onClick={(e) => {
-              e.preventDefault();
-              navigateTo('/app');
-            }}
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {signInLabel}
-          </a>
           <button
             type="button"
-            onClick={() => navigateTo('/app')}
-            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 text-sm font-medium inline-flex items-center justify-center transition-colors"
+            onClick={openAuthModal}
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap cursor-pointer"
+          >
+            {signInLabel}
+          </button>
+          <button
+            type="button"
+            onClick={openAuthModal}
+            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 text-sm font-medium inline-flex items-center justify-center transition-colors whitespace-nowrap shadow-sm cursor-pointer"
           >
             {t.nav.getStarted}
             <ChevronRight className="ml-1 size-4" />
           </button>
         </div>
 
-        <div className="flex items-center md:hidden">
+        <div className="flex items-center lg:hidden">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground h-10 w-10"
+            aria-label="Abrir menú"
           >
             {mobileMenuOpen ? (
               <X className="size-5" />
@@ -184,7 +187,7 @@ export const LandingHeader: React.FC = () => {
       </div>
 
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-16 inset-x-0 bg-background border-b shadow-[0_10px_15px_-3px_rgba(9,14,13,0.12),0_20px_40px_-24px_rgba(9,14,13,0.45)]">
+        <div className="lg:hidden absolute top-16 inset-x-0 bg-background border-b shadow-[0_10px_15px_-3px_rgba(9,14,13,0.12),0_20px_40px_-24px_rgba(9,14,13,0.45)]">
           <div className="container py-4 flex flex-col gap-4">
             {navItems.map((item) => (
               <a
@@ -204,25 +207,24 @@ export const LandingHeader: React.FC = () => {
               <div className="self-start">
                 <LanguageSwitcher />
               </div>
-              <a
-                href="/app"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMobileMenuOpen(false);
-                  navigateTo('/app');
-                }}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-full border-[1.5px] border-primary text-[15px] font-semibold text-primary transition-colors hover:bg-primary/5"
-              >
-                <LogIn className="size-4" />
-                {signInLabel}
-              </a>
               <button
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  navigateTo('/app');
+                  openAuthModal();
                 }}
-                className="h-11 w-full rounded-full text-[15px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center transition-colors"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full border-[1.5px] border-primary text-[15px] font-semibold text-primary transition-colors hover:bg-primary/5 cursor-pointer"
+              >
+                <LogIn className="size-4" />
+                {signInLabel}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openAuthModal();
+                }}
+                className="h-11 w-full rounded-full text-[15px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center transition-colors cursor-pointer"
               >
                 {t.nav.getStarted}
               </button>

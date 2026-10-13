@@ -8,12 +8,13 @@ interface ThemeState {
   toggleTheme: () => void;
 }
 
-const STORAGE_KEY = 'hmb_theme';
+const STORAGE_KEY = 'cimatex_theme';
+const LEGACY_STORAGE_KEY = 'hmb_theme';
 
 function detectInitialTheme(): ThemeMode {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'light' || stored === 'dark') return stored;
+    const stored = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (stored === 'light' || stored === 'dark') return stored as ThemeMode;
   } catch {
     // localStorage puede no estar disponible (modo privado); usar preferencia del sistema
   }

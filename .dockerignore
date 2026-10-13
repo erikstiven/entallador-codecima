@@ -1,0 +1,16 @@
+node_modules
+dist
+dist-electron
+server/node_modules
+server/dist
+.git
+.github
+.vscode
+.idea
+*.log
+npm-debug.log*
+.env
+.env.*
+!.env.example
+PEDIDO_EJEMPLO_SIN_FALLAS.xlsx
+tests

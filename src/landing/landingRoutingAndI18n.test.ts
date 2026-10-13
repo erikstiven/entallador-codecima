@@ -90,9 +90,9 @@ describe('TASK-2: Architectural Separation, Routing (/ & /landing vs /app), i18n
       'src/landing/styles/landing.css'
     );
     const css = fs.readFileSync(cssPath, 'utf-8');
-    expect(css).toContain('--primary: 175 100% 26%');
-    expect(css).toContain('--hero-accent: #00857a');
-    expect(css).toContain('--primary-dark: #00655d');
+    expect(css).toContain('--primary: 262 83% 58%');
+    expect(css).toContain('--hero-accent: #7c3aed');
+    expect(css).toContain('--primary-dark: #5b21b6');
     expect(css).toContain('--radius: 1rem');
     expect(css).toContain('.landing-root');
     expect(css).toContain('html.landing-active');

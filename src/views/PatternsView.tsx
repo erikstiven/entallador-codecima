@@ -142,16 +142,16 @@ export const PatternsView: React.FC = () => {
 
   const handleDownloadScript = () => {
     const scriptContent = `/**
- * HMB ENTALLADOR — SCRIPT PARA ADOBE ILLUSTRATOR
+ * CIMATEX — SCRIPT PARA ADOBE ILLUSTRATOR
  */
 #target illustrator
-function exportMoldesParaHmb() {
+function exportMoldesParaCimatex() {
   if (app.documents.length === 0) {
     alert("Abre un archivo de moldes en Illustrator primero.");
     return;
   }
   var doc = app.activeDocument;
-  var exportFile = File.saveDialog("Guardar SVG para HMB Entallador:", "*.svg");
+  var exportFile = File.saveDialog("Guardar SVG para CimaTex:", "*.svg");
   if (!exportFile) return;
 
   var svgOptions = new ExportOptionsSVG();
@@ -163,13 +163,13 @@ function exportMoldesParaHmb() {
   doc.exportFile(exportFile, ExportType.SVG, svgOptions);
   alert("¡Molde exportado con éxito a escala 1:1!");
 }
-exportMoldesParaHmb();`;
+exportMoldesParaCimatex();`;
 
     const blob = new Blob([scriptContent], { type: 'text/javascript;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'hmb_export_helper.jsx';
+    link.download = 'cimatex_export_helper.jsx';
     link.click();
     URL.revokeObjectURL(url);
   };

@@ -11,6 +11,7 @@ import { PricingSection, type PricingCurrency } from './components/PricingSectio
 import { CtaSection } from './components/CtaSection';
 import { LandingFooter } from './components/LandingFooter';
 import { WhatsAppFloatingButton } from './components/WhatsAppFloatingButton';
+import { GoogleAuthModal } from './components/GoogleAuthModal';
 import { SubpageView } from './pages/SubpageView';
 
 export interface LandingAppProps {
@@ -72,6 +73,7 @@ const LandingShellContent: React.FC<{
       )}
 
       <WhatsAppFloatingButton forceVisible={forceWhatsAppVisible} />
+      <GoogleAuthModal />
     </div>
   );
 };

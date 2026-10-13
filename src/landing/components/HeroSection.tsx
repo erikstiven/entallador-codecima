@@ -1,9 +1,12 @@
 import React from 'react';
+import { ChevronRight } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { HeroCardMarquee, type HeroMarqueeLabels } from './HeroCardMarquee';
+import { useAuthStore } from '../auth/authStore';
 
 export const HeroSection: React.FC = () => {
   const { t } = useLanguage();
+  const { openAuthModal } = useAuthStore();
   const heroRecord = t.hero as unknown as Record<string, unknown>;
   const nestedCards = (heroRecord.cards ?? {}) as Record<string, string | undefined>;
 
@@ -73,7 +76,10 @@ export const HeroSection: React.FC = () => {
   return (
     <section className="w-full overflow-hidden">
       <div className="relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900 bg-[radial-gradient(#00000010_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff12_1px,transparent_1px)] bg-[size:14px_14px]">
-        <HeroCardMarquee labels={labels} />
+        {/* Physics card marquee hidden as requested */}
+        <div className="hidden" aria-hidden="true">
+          <HeroCardMarquee labels={labels} />
+        </div>
 
         <svg
           aria-hidden="true"
@@ -87,7 +93,7 @@ export const HeroSection: React.FC = () => {
           />
         </svg>
 
-        <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-5xl mx-auto min-h-[calc(100svh-7rem)] px-4 pt-16 pb-60 md:pb-72">
+        <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-5xl mx-auto min-h-[calc(85svh-7rem)] px-4 pt-16 pb-24 md:pb-32">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
             <span className="block text-foreground">
               {t.hero.titleLine1 ?? t.hero.title}
@@ -101,6 +107,23 @@ export const HeroSection: React.FC = () => {
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
             {heroDescription}
           </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={openAuthModal}
+              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-7 text-sm sm:text-base font-semibold inline-flex items-center justify-center transition-all shadow-lg hover:shadow-primary/30 active:scale-95 cursor-pointer"
+            >
+              <span>Comenzar gratis con Google</span>
+              <ChevronRight className="ml-1 size-5" />
+            </button>
+            <a
+              href="#demo"
+              className="rounded-full bg-background/80 hover:bg-background border border-border/60 text-foreground h-12 px-6 text-sm font-medium inline-flex items-center justify-center transition-colors shadow-xs"
+            >
+              <span>Ver cómo funciona</span>
+            </a>
+          </div>
         </div>
       </div>
     </section>

@@ -65,7 +65,7 @@ export const Header: React.FC = () => {
           className="flex items-center gap-1.5 bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 rounded-full px-3 py-1.5 text-[11px] font-medium text-slate-300 hover:text-white transition-all cursor-pointer"
           title="Ir a la página web de presentación (Landing)"
         >
-          <Globe className="w-3.5 h-3.5 text-teal-400" />
+          <Globe className="w-3.5 h-3.5 text-violet-400" />
           <span className="hidden sm:inline">Ver Landing</span>
         </button>
 
@@ -80,7 +80,7 @@ export const Header: React.FC = () => {
             {settings.companyName.substring(0, 2).toUpperCase() || 'CD'}
           </div>
           <div className="text-left hidden md:block">
-            <div className="text-white font-bold text-[11px] leading-tight group-hover:text-purple-300 transition-colors">
+            <div className="text-white font-bold text-[11px] leading-tight group-hover:text-violet-300 transition-colors">
               {settings.companyName || 'Codecima'}
             </div>
             <div className="text-[9px] text-slate-400 font-mono leading-none">
@@ -98,7 +98,7 @@ export const Header: React.FC = () => {
           {theme === 'dark' ? (
             <Sun className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" />
           ) : (
-            <Moon className="w-4 h-4 text-purple-400 transition-transform hover:-rotate-12" />
+            <Moon className="w-4 h-4 text-violet-400 transition-transform hover:-rotate-12" />
           )}
         </button>
       </div>

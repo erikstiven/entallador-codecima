@@ -1,0 +1,56 @@
+name: CI/CD Auto-Deploy CimaTex to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    name: Compilar y Desplegar en Servidor Hostinger
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 1. Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: ⚙️ 2. Configurar entorno Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 3. Instalar dependencias
+        run: npm ci
+
+      - name: 🧪 4. Ejecutar pruebas unitarias
+        run: npx vitest run
+
+      - name: 🔨 5. Compilar bundle de producción web
+        run: npm run build:web
+
+      - name: 🚀 6. Transferir archivos al servidor Hostinger (SCP)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_HOST || '46.202.183.53' }}
+          port: ${{ secrets.HOSTINGER_PORT || 65002 }}
+          username: ${{ secrets.HOSTINGER_USER || 'u836650900' }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          source: 'dist/*'
+          target: '/home/u836650900/domains/codecima.com/public_html/cimatex/'
+          strip_components: 1
+          overwrite: true
+
+      - name: 🔒 7. Ajustar permisos de lectura y ejecución en el servidor
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOSTINGER_HOST || '46.202.183.53' }}
+          port: ${{ secrets.HOSTINGER_PORT || 65002 }}
+          username: ${{ secrets.HOSTINGER_USER || 'u836650900' }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          script: |
+            chmod -R 755 /home/u836650900/domains/codecima.com/public_html/cimatex
+            echo "✅ CimaTex actualizado exitosamente en https://cimatex.codecima.com"

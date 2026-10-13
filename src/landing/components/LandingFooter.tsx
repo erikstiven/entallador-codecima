@@ -3,7 +3,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { useAppRoute } from '../router/landingRouteStore';
 
 export const FOOTER_OVERLAY_GRADIENT =
-  'linear-gradient(to bottom,\n  transparent 0%, transparent 55%, rgba(2,12,12,.25) 72%, rgba(2,12,12,.65) 86%, #020c0c 100%)';
+  'linear-gradient(to bottom,\n  transparent 0%, transparent 55%, rgba(9,4,20,.25) 72%, rgba(9,4,20,.65) 86%, #090414 100%)';
 
 export const LandingFooter: React.FC = () => {
   const { t } = useLanguage();
@@ -22,7 +22,7 @@ export const LandingFooter: React.FC = () => {
   };
 
   return (
-    <footer className="w-full -mt-px pt-px bg-[#020c0c] text-white relative">
+    <footer className="w-full -mt-px pt-px bg-[#090414] text-white relative">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-[2]"
@@ -37,24 +37,28 @@ export const LandingFooter: React.FC = () => {
             <a
               href="/"
               onClick={(e) => handleLinkClick(e, '/')}
-              className="flex items-center gap-2 font-bold"
+              className="flex items-center gap-2.5 font-bold transition-opacity hover:opacity-90"
             >
               <img
-                src="/subly-mark-teal.svg"
-                alt="Sublimifyer Logo"
-                width={32}
-                height={32}
-                className="size-8"
+                src="/cimatex-icon.png"
+                alt="CimaTex"
+                width={36}
+                height={36}
+                className="size-9 object-contain"
               />
-              <span>Sublimifyer</span>
+              <span className="text-xl font-black tracking-tight select-none">
+                <span className="text-white">Cima</span>
+                <span className="text-[#a78bfa]">Tex</span>
+              </span>
             </a>
             <p className="text-sm text-white/65">{t.footer.description}</p>
             <div className="flex gap-4">
               <a
-                href="https://www.instagram.com/sublimifyer/"
+                href="https://www.instagram.com/codecimaec"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-white/70 hover:text-white transition-colors"
+                title="Instagram @codecimaec"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -72,13 +76,14 @@ export const LandingFooter: React.FC = () => {
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                 </svg>
-                <span className="sr-only">Instagram</span>
+                <span className="sr-only">Instagram @codecimaec</span>
               </a>
               <a
-                href="https://www.facebook.com/profile.php?id=61574392834740"
+                href="https://www.facebook.com/codecimaec"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-white/70 hover:text-white transition-colors"
+                title="Facebook @codecimaec"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -94,7 +99,7 @@ export const LandingFooter: React.FC = () => {
                 >
                   <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
                 </svg>
-                <span className="sr-only">Facebook</span>
+                <span className="sr-only">Facebook @codecimaec</span>
               </a>
             </div>
           </div>
@@ -230,7 +235,7 @@ export const LandingFooter: React.FC = () => {
 
         <div className="flex flex-col gap-4 sm:flex-row justify-between items-center border-t border-white/10 pt-8">
           <p className="text-xs text-white/60">
-            © {new Date().getFullYear()} Sublimifyer. {t.footer.copyright}
+            © {new Date().getFullYear()} CimaTex por Codecima. {t.footer.copyright}
           </p>
           <div className="flex gap-4">
             <a

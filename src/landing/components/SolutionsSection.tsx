@@ -12,7 +12,7 @@ export const SolutionsSection: React.FC = () => {
   const subtitle = showcaseRecord.subtitle ?? t.shirtShowcase?.description;
 
   return (
-    <div id="soluciones" className="scroll-mt-16">
+    <div id="soluciones" className="scroll-mt-16 hidden" aria-hidden="true">
       <section className="w-full py-20 md:py-32">
         <div className="container px-4 md:px-6">
           {t.shirtShowcase?.title && (

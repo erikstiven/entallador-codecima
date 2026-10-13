@@ -108,7 +108,7 @@ export const NewOrderView: React.FC = () => {
       try {
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(
-            'hmb_saved_order_roster_v1',
+            'cimatex_saved_order_roster_v1',
             JSON.stringify({
               items,
               fileName,

@@ -19,12 +19,12 @@ export function openWhatsApp(phone: string, message: string): void {
       gtag?: (
         command: string,
         eventName: string,
-        params: Record<string, string>
+        params?: Record<string, string>
       ) => void;
     };
     if (typeof winWithGtag.gtag === 'function') {
-      winWithGtag.gtag('event', 'conversion', {
-        send_to: 'AW-18172091437/pZ--CLr9qa8cEK24kNlD',
+      winWithGtag.gtag('event', 'whatsapp_click', {
+        channel: 'whatsapp',
       });
     }
     if (typeof window.open === 'function') {

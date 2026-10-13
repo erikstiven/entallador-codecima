@@ -82,8 +82,8 @@ describe("Sublimifyer Landing Assets, i18n, and Subpage Data (TASK-1)", () => {
     expect(supportPageData.resources).toHaveLength(4);
     expect(aboutPageData.valueIcons).toEqual(["Target", "Users", "Zap", "Heart"]);
     expect(careersPageData.benefitIcons).toHaveLength(6);
-    expect(privacyPolicyPageData.contact.email).toBe("soporte@sublimifyer.com");
-    expect(termsOfServicePageData.contact.email).toBe("soporte@sublimifyer.com");
-    expect(cookiePolicyPageData.contact.email).toBe("soporte@sublimifyer.com");
+    expect(privacyPolicyPageData.contact.email).toBe("ventas@codecima.com");
+    expect(termsOfServicePageData.contact.email).toBe("ventas@codecima.com");
+    expect(cookiePolicyPageData.contact.email).toBe("ventas@codecima.com");
   });
 });

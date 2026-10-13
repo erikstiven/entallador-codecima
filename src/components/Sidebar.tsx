@@ -35,17 +35,24 @@ export const Sidebar: React.FC = () => {
       <div>
         <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-800/60 border border-slate-700/60 p-1.5 flex items-center justify-center overflow-hidden shadow-md shadow-purple-950/30">
+            <div className="w-10 h-10 rounded-xl bg-slate-800/60 border border-slate-700/60 p-1.5 flex items-center justify-center overflow-hidden shadow-md shadow-violet-950/40">
               <img 
-                src="/cimapattern-icon.png" 
-                alt="CimaPattern" 
+                src="/cimatex-icon.png" 
+                alt="CimaTex" 
                 className="w-full h-full object-contain"
               />
             </div>
             <div>
-              <h1 className="text-sm font-extrabold tracking-wide text-white">
-                CimaPattern
+              <h1 className="text-sm font-extrabold tracking-wide text-white flex items-center gap-1">
+                <span>Cima</span>
+                <span className="text-violet-400">Tex</span>
+                <span className="text-[9px] font-mono font-bold text-violet-300 bg-violet-950/80 px-1 py-0.2 rounded border border-violet-800/50">
+                  v2.5
+                </span>
               </h1>
+              <div className="text-[10px] text-slate-400 font-medium">
+                Entallador Textil
+              </div>
             </div>
           </div>
         </div>
@@ -98,8 +105,8 @@ export const Sidebar: React.FC = () => {
       {/* Clean Minimal Sidebar Footer */}
       <div className="p-3 border-t border-slate-800 bg-slate-950/40">
         <div className="flex items-center justify-between px-2 py-1 text-[11px] text-slate-400 font-mono">
-          <span>v2.5 Sublimación</span>
-          <span className="text-purple-400 font-semibold">1:1 mm</span>
+          <span>CimaTex v2.5</span>
+          <span className="text-violet-400 font-semibold">1:1 mm</span>
         </div>
       </div>
     </aside>

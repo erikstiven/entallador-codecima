@@ -18,8 +18,8 @@ describe('TASK-3: 1:1 Header, Hero Physics Marquee, Solutions Video, Benefits Ca
       )
     );
 
-    expect(html).toContain('/subly-mark-teal.svg');
-    expect(html).toContain('Sublimifyer');
+    expect(html).toContain('/cimatex-icon.png');
+    expect(html).toContain('CimaTex');
     expect(html).toContain('#soluciones');
     expect(html).toContain('#beneficios');
     expect(html).toContain('#demo');
@@ -83,7 +83,7 @@ describe('TASK-3: 1:1 Header, Hero Physics Marquee, Solutions Video, Benefits Ca
     );
 
     expect(html).toContain('id="beneficios"');
-    expect(html).toContain('bg-[#06423e]');
+    expect(html).toContain('bg-[#180d33]');
     expect(html).toContain('Producí más.');
     expect(html).toContain('Desperdiciá menos.');
     expect(html).toContain('Menos desperdicio de tela');

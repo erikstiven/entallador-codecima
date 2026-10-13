@@ -25,24 +25,32 @@ export const SUBPAGE_PATHS: readonly SubpagePath[] = [
   "/cookie-policy"
 ] as const;
 
-export const SUBLIMIFYER_WHATSAPP_PHONE = "+5492216911176";
-export const SUBLIMIFYER_WHATSAPP_DEFAULT_MESSAGE =
-  "Hola! Me interesa conocer más sobre Sublimifyer";
-export const SUBLIMIFYER_CALENDLY_URL =
-  "https://calendly.com/sublimifyer-ocrw/30min";
-export const SUBLIMIFYER_SIGNUP_URL =
-  "https://app.sublimifyer.com/auth/signup";
-export const SUBLIMIFYER_LOGIN_URL =
-  "https://app.sublimifyer.com/auth/login";
+export const CIMATEX_WHATSAPP_PHONE = "+593995921171";
+export const CIMATEX_WHATSAPP_DEFAULT_MESSAGE =
+  "Hola! Me interesa conocer más sobre CimaTex";
+export const CIMATEX_CALENDLY_URL =
+  "https://wa.me/593995921171?text=Hola!%20Me%20interesa%20agendar%20una%20demostracion%20de%20CimaTex";
+export const CIMATEX_SIGNUP_URL = "/app";
+export const CIMATEX_LOGIN_URL = "/app";
 
-export const SUBLIMIFYER_LEGAL_CONTACT = {
+export const CIMATEX_LEGAL_CONTACT = {
   emailLabel: "Email:",
-  email: "soporte@sublimifyer.com",
+  email: "ventas@codecima.com",
   addressLabel: "Dirección:",
-  address: "La Plata, Buenos Aires, Argentina",
+  address: "Machala, El Oro, Ecuador",
   phoneLabel: "Teléfono:",
-  phone: "+54 9 221 691 1176"
+  phone: "+593 99 592 1171"
 } as const;
+
+// Backward compatibility aliases
+export const SUBLIMIFYER_WHATSAPP_PHONE = CIMATEX_WHATSAPP_PHONE;
+export const SUBLIMIFYER_WHATSAPP_DEFAULT_MESSAGE =
+  CIMATEX_WHATSAPP_DEFAULT_MESSAGE;
+export const SUBLIMIFYER_CALENDLY_URL = CIMATEX_CALENDLY_URL;
+export const SUBLIMIFYER_SIGNUP_URL = CIMATEX_SIGNUP_URL;
+export const SUBLIMIFYER_LOGIN_URL = CIMATEX_LOGIN_URL;
+export const SUBLIMIFYER_LEGAL_CONTACT = CIMATEX_LEGAL_CONTACT;
+
 
 // ---------------------------------------------------------------------------
 // 1. /documentation
@@ -73,7 +81,7 @@ export const documentationPageData = {
   defaultBackToHome: "Volver al Inicio",
   defaultTitle: "Documentación",
   defaultSubtitle:
-    "Todo lo que necesitas saber para aprovechar al máximo Sublimifyer",
+    "Todo lo que necesitas saber para aprovechar al máximo CimaTex",
   defaultSearchPlaceholder: "Buscar en la documentación...",
   quickLinksTitle: "Enlaces Rápidos",
   quickLinksSubtitle: "Accede rápidamente a los recursos más populares",
@@ -114,7 +122,7 @@ export const documentationPageData = {
       descKey: "gettingStartedDesc",
       defaultTitle: "Comenzar",
       defaultDescription:
-        "Configura tu cuenta y da tus primeros pasos con Sublimifyer",
+        "Configura tu cuenta y da tus primeros pasos con CimaTex",
       articleKeys: ["setupAccount", "firstProject", "basicConfig"],
       defaultArticles: [
         "Configurar tu cuenta",
@@ -128,7 +136,7 @@ export const documentationPageData = {
       descKey: "configurationDesc",
       defaultTitle: "Configuración",
       defaultDescription:
-        "Personaliza Sublimifyer según las necesidades de tu negocio",
+        "Personaliza CimaTex según las necesidades de tu negocio",
       articleKeys: ["userSettings", "teamManagement", "integrations"],
       defaultArticles: [
         "Configuración de usuario",
@@ -141,7 +149,7 @@ export const documentationPageData = {
       titleKey: "apiDevelopment",
       descKey: "apiDevelopmentDesc",
       defaultTitle: "API y Desarrollo",
-      defaultDescription: "Integra Sublimifyer con tus sistemas existentes",
+      defaultDescription: "Integra CimaTex con tus sistemas existentes",
       articleKeys: ["apiReference", "webhooks", "sdks"],
       defaultArticles: ["Referencia de API", "Webhooks", "SDKs y Librerías"]
     },
@@ -228,7 +236,7 @@ export const guidesPageData = {
   defaultBackToHome: "Volver al Inicio",
   defaultTitle: "Guías",
   defaultSubtitle:
-    "Aprende a dominar Sublimifyer con nuestras guías paso a paso",
+    "Aprende a dominar CimaTex con nuestras guías paso a paso",
   featuredTitle: "Guías Destacadas",
   featuredSubtitle: "Las guías más populares y útiles para comenzar",
   featuredBadge: "Destacado",
@@ -241,12 +249,12 @@ export const guidesPageData = {
       difficultyKey: "beginner",
       defaultTitle: "Guía Completa de Configuración Inicial",
       defaultDescription:
-        "Aprende a configurar Sublimifyer desde cero y optimizar tu flujo de trabajo",
+        "Aprende a configurar CimaTex desde cero y optimizar tu flujo de trabajo",
       duration: "15 min",
       defaultDifficulty: "Principiante",
       defaultCategory: "Configuración",
       rating: 4.9,
-      author: "Equipo Sublimifyer",
+      author: "Equipo CimaTex",
       featured: true,
       link: "#"
     },
@@ -294,7 +302,7 @@ export const guidesPageData = {
       titleKey: "glossary",
       descKey: "glossaryDesc",
       defaultTitle: "Glosario de Términos",
-      defaultDescription: "Conoce la terminología de Sublimifyer",
+      defaultDescription: "Conoce la terminología de CimaTex",
       type: "Referencia",
       duration: "10 min"
     }
@@ -368,7 +376,7 @@ export const guidesPageData = {
       titleKey: "categoryTips",
       descKey: "categoryTipsDesc",
       defaultTitle: "Consejos y Trucos",
-      defaultDescription: "Optimiza tu experiencia con Sublimifyer",
+      defaultDescription: "Optimiza tu experiencia con CimaTex",
       guides: [
         {
           titleKey: "productivity",
@@ -428,7 +436,7 @@ export interface BlogPostEntry {
 export const blogPageData = {
   path: "/blog" as const,
   logoAlt:
-    "Sublimifyer - Software de automatización para talleres de sublimación",
+    "CimaTex - Software de automatización para talleres de sublimación",
   backToHome: "Volver al Inicio",
   title: "Recursos para talleres de sublimación",
   subtitle:
@@ -442,7 +450,7 @@ export const blogPageData = {
       "¿Qué es un software de gestión para talleres de sublimación y por qué lo necesitás?",
     description:
       "Definimos la categoría: qué es un software de automatización de producción para talleres de sublimación, por qué las herramientas de diseño no alcanzan y qué problemas resuelve.",
-    author: "Equipo Sublimifyer",
+    author: "Equipo CimaTex",
     date: "Marzo 2026",
     readTime: "10 min",
     link: "/blog/software-gestion-taller-sublimacion",
@@ -463,18 +471,18 @@ export const blogPageData = {
   ],
   usefulPagesTitle: "Páginas útiles",
   usefulPages: [
-    { label: "Casos de uso de Sublimifyer", href: "/casos-de-uso" },
+    { label: "Casos de uso de CimaTex", href: "/casos-de-uso" },
     { label: "Glosario de producción textil", href: "/glosario" },
-    { label: "Acerca de Sublimifyer", href: "/about" }
+    { label: "Acerca de CimaTex", href: "/about" }
   ],
   readArticleLabel: "Leer artículo",
   posts: [
     {
       title:
-        "Sublimifyer vs. AI Nest-Pro (Aimari Nest Pro): sistema completo vs. plug-in de anidado",
+        "CimaTex vs. AI Nest-Pro (Aimari Nest Pro): sistema completo vs. plug-in de anidado",
       excerpt:
-        "AI Nest-Pro solo anida dentro de Adobe Illustrator. Sublimifyer gestiona el taller entero y, con un anidado más inteligente, te ahorra más tela. Comparativa agresiva y honesta.",
-      author: "Equipo Sublimifyer",
+        "AI Nest-Pro solo anida dentro de Adobe Illustrator. CimaTex gestiona el taller entero y, con un anidado más inteligente, te ahorra más tela. Comparativa agresiva y honesta.",
+      author: "Equipo CimaTex",
       date: "Junio 2026",
       readTime: "11 min",
       category: "Comparativa",
@@ -486,7 +494,7 @@ export const blogPageData = {
         "Por qué Excel y WhatsApp ya no alcanzan para gestionar tu taller de sublimación",
       excerpt:
         "Escenarios concretos donde Excel falla: errores en nombres, desperdicio de tela, pedidos perdidos en WhatsApp y cómo la automatización resuelve cada uno.",
-      author: "Equipo Sublimifyer",
+      author: "Equipo CimaTex",
       date: "Marzo 2026",
       readTime: "9 min",
       category: "Productividad",
@@ -498,7 +506,7 @@ export const blogPageData = {
         "Cómo el anidado automático de piezas reduce el desperdicio de tela en tu taller",
       excerpt:
         "Qué es el anidado (tizado), por qué el armado manual desperdicia tela, y cómo el anidado automático puede reducir la merma entre un 30% y un 40%.",
-      author: "Equipo Sublimifyer",
+      author: "Equipo CimaTex",
       date: "Marzo 2026",
       readTime: "8 min",
       category: "Producción",
@@ -507,10 +515,10 @@ export const blogPageData = {
     },
     {
       title:
-        "Sublimifyer vs. otras opciones: qué elegir para tu taller de ropa deportiva",
+        "CimaTex vs. otras opciones: qué elegir para tu taller de ropa deportiva",
       excerpt:
-        "Comparativa honesta entre Sublimifyer, Excel+WhatsApp, Printavo, DecoNetwork y ERPs genéricos. Quién gana en cada escenario.",
-      author: "Equipo Sublimifyer",
+        "Comparativa honesta entre CimaTex, Excel+WhatsApp, Printavo, DecoNetwork y ERPs genéricos. Quién gana en cada escenario.",
+      author: "Equipo CimaTex",
       date: "Marzo 2026",
       readTime: "10 min",
       category: "Comparativa",
@@ -522,7 +530,7 @@ export const blogPageData = {
         "Software para talleres de sublimación en Argentina, Colombia y México: guía 2026",
       excerpt:
         "El panorama de la automatización para talleres de sublimación en los principales mercados de América Latina. Qué herramientas usan, qué necesitan y qué opciones hay.",
-      author: "Equipo Sublimifyer",
+      author: "Equipo CimaTex",
       date: "Marzo 2026",
       readTime: "11 min",
       category: "Mercado",
@@ -533,8 +541,8 @@ export const blogPageData = {
       title:
         "Cómo automatizar la personalización de nombres y números en pedidos de uniformes deportivos",
       excerpt:
-        "El paso a paso para dejar de cargar nombres uno por uno. Desde el proceso manual actual hasta la automatización completa con Sublimifyer.",
-      author: "Equipo Sublimifyer",
+        "El paso a paso para dejar de cargar nombres uno por uno. Desde el proceso manual actual hasta la automatización completa con CimaTex.",
+      author: "Equipo CimaTex",
       date: "Marzo 2026",
       readTime: "8 min",
       category: "Tutorial",
@@ -546,7 +554,7 @@ export const blogPageData = {
         "Software para talleres de sublimación en México: cómo automatizar la producción de playeras y jerseys",
       excerpt:
         "Guía para talleres en México: cómo producir playeras personalizadas, jerseys deportivos y uniformes escolares a escala, con personalización masiva y anidado automático.",
-      author: "Equipo Sublimifyer",
+      author: "Equipo CimaTex",
       date: "Junio 2026",
       readTime: "11 min",
       category: "Mercado",
@@ -558,7 +566,7 @@ export const blogPageData = {
         "Software para talleres de sublimación en Chile: cómo automatizar la producción de poleras y ropa corporativa",
       excerpt:
         "Guía para talleres en Chile: cómo producir poleras personalizadas, polerones y ropa corporativa sin errores y a mayor volumen.",
-      author: "Equipo Sublimifyer",
+      author: "Equipo CimaTex",
       date: "Junio 2026",
       readTime: "10 min",
       category: "Mercado",
@@ -570,7 +578,7 @@ export const blogPageData = {
         "Software para talleres de sublimación en Perú: cómo producir polos personalizados a escala",
       excerpt:
         "Guía para talleres en Perú: cómo producir polos personalizados, polos deportivos y uniformes a gran volumen, desde Gamarra hasta todo el país.",
-      author: "Equipo Sublimifyer",
+      author: "Equipo CimaTex",
       date: "Junio 2026",
       readTime: "10 min",
       category: "Mercado",
@@ -582,7 +590,7 @@ export const blogPageData = {
         "Software para talleres de sublimación en Colombia: cómo automatizar la producción de camisetas y uniformes",
       excerpt:
         "Guía para talleres en Colombia: cómo producir camisetas personalizadas, uniformes deportivos y ropa corporativa sin errores y a mayor escala.",
-      author: "Equipo Sublimifyer",
+      author: "Equipo CimaTex",
       date: "Junio 2026",
       readTime: "10 min",
       category: "Mercado",
@@ -593,8 +601,8 @@ export const blogPageData = {
   cta: {
     title: "¿Querés automatizar tu taller?",
     description:
-      "Probá Sublimifyer gratis o agendá una demo para ver cómo funciona con tus pedidos reales.",
-    primaryButton: "Probá Sublimifyer",
+      "Probá CimaTex gratis o agendá una demo para ver cómo funciona con tus pedidos reales.",
+    primaryButton: "Probá CimaTex",
     primaryUrl: SUBLIMIFYER_SIGNUP_URL,
     secondaryButton: "Agendá una Demo",
     secondaryUrl: SUBLIMIFYER_CALENDLY_URL
@@ -619,11 +627,11 @@ export const casosDeUsoPageData = {
   path: "/casos-de-uso" as const,
   backToHome: "Volver al Inicio",
   badge: "Casos de uso reales",
-  title: "Casos de Uso de Sublimifyer",
+  title: "Casos de Uso de CimaTex",
   subtitle:
-    "Descubri como talleres de sublimacion y productores de indumentaria deportiva en Latinoamerica usan Sublimifyer para resolver problemas concretos de produccion.",
+    "Descubri como talleres de sublimacion y productores de indumentaria deportiva en Latinoamerica usan CimaTex para resolver problemas concretos de produccion.",
   problemHeading: "El problema",
-  solutionHeading: "Con Sublimifyer",
+  solutionHeading: "Con CimaTex",
   learnMoreLabel: "Aprende mas:",
   cases: [
     {
@@ -729,7 +737,7 @@ export const casosDeUsoPageData = {
   summary: {
     title: "Todos estos problemas tienen algo en comun",
     description:
-      "Son tareas manuales y repetitivas que consumen tiempo, generan errores y limitan el crecimiento de tu taller. Sublimifyer las automatiza para que puedas producir mas, con menos errores y sin sumar personal.",
+      "Son tareas manuales y repetitivas que consumen tiempo, generan errores y limitan el crecimiento de tu taller. CimaTex las automatiza para que puedas producir mas, con menos errores y sin sumar personal.",
     links: [
       { label: "Glosario de produccion", href: "/glosario" },
       { label: "Leer el blog", href: "/blog" }
@@ -738,11 +746,11 @@ export const casosDeUsoPageData = {
   cta: {
     title: "Tu taller se parece a alguno de estos casos?",
     description:
-      "Contanos como es tu produccion y te mostramos como Sublimifyer puede ayudarte. Sin compromiso.",
+      "Contanos como es tu produccion y te mostramos como CimaTex puede ayudarte. Sin compromiso.",
     primaryButton: "Hablar por WhatsApp",
     whatsappPhone: SUBLIMIFYER_WHATSAPP_PHONE,
     whatsappMessage:
-      "Hola! Vi los casos de uso en la web y me gustaria saber como Sublimifyer puede ayudarme en mi taller.",
+      "Hola! Vi los casos de uso en la web y me gustaria saber como CimaTex puede ayudarme en mi taller.",
     secondaryButton: "Ver todas las funcionalidades",
     secondaryHref: "/"
   }
@@ -780,7 +788,7 @@ const rawGlossaryTerms: Array<{
   {
     term: "Flujo de produccion textil (en sublimacion)",
     definition:
-      "La secuencia completa desde que se recibe un pedido hasta que se entrega el producto terminado: recepcion del pedido, diseno o seleccion de molderia, personalizacion, generacion de hojas de sublimacion, impresion, transferencia, corte, confeccion y entrega. Sublimifyer automatiza las etapas intermedias: personalizacion, generacion de hojas y anidado.",
+      "La secuencia completa desde que se recibe un pedido hasta que se entrega el producto terminado: recepcion del pedido, diseno o seleccion de molderia, personalizacion, generacion de hojas de sublimacion, impresion, transferencia, corte, confeccion y entrega. CimaTex automatiza las etapas intermedias: personalizacion, generacion de hojas y anidado.",
     relatedLinks: [
       { label: "Caso de uso: Escalar sin contratar", href: "/casos-de-uso" }
     ]
@@ -788,7 +796,7 @@ const rawGlossaryTerms: Array<{
   {
     term: "Hoja de sublimacion",
     definition:
-      "El archivo o plancha que contiene todas las piezas de un pedido dispuestas para ser impresas por sublimacion. Cada hoja se envia a la impresora y luego se transfiere al tejido mediante calor y presion. La generacion manual de hojas de sublimacion es uno de los procesos mas lentos en un taller; Sublimifyer las genera automaticamente a partir del pedido y las molderias.",
+      "El archivo o plancha que contiene todas las piezas de un pedido dispuestas para ser impresas por sublimacion. Cada hoja se envia a la impresora y luego se transfiere al tejido mediante calor y presion. La generacion manual de hojas de sublimacion es uno de los procesos mas lentos en un taller; CimaTex las genera automaticamente a partir del pedido y las molderias.",
     relatedLinks: [
       {
         label: "Caso de uso: Disenador que gestiona produccion",
@@ -811,7 +819,7 @@ const rawGlossaryTerms: Array<{
   {
     term: "Molderia / Patron",
     definition:
-      "Las piezas que componen una prenda (frente, espalda, mangas, etc.) en formato digital. En Sublimifyer, las molderias son archivos reutilizables que se combinan con datos de personalizacion para generar los archivos listos para impresion.",
+      "Las piezas que componen una prenda (frente, espalda, mangas, etc.) en formato digital. En CimaTex, las molderias son archivos reutilizables que se combinan con datos de personalizacion para generar los archivos listos para impresion.",
     relatedLinks: [
       { label: "Caso de uso: Uniformes deportivos", href: "/casos-de-uso" }
     ]
@@ -829,9 +837,9 @@ const rawGlossaryTerms: Array<{
     ]
   },
   {
-    term: "Software RIP (y por que no es lo mismo que Sublimifyer)",
+    term: "Software RIP (y por que no es lo mismo que CimaTex)",
     definition:
-      "Un software RIP (Raster Image Processor) como Wasatch SoftRIP o SAi Flexi controla la impresora de sublimacion: gestiona colores, resolucion y el envio del archivo a la maquina. Sublimifyer no es un software RIP. Trabaja antes: prepara los archivos (hojas con piezas anidadas y personalizadas) que despues se envian al RIP para imprimir. Son herramientas complementarias.",
+      "Un software RIP (Raster Image Processor) como Wasatch SoftRIP o SAi Flexi controla la impresora de sublimacion: gestiona colores, resolucion y el envio del archivo a la maquina. CimaTex no es un software RIP. Trabaja antes: prepara los archivos (hojas con piezas anidadas y personalizadas) que despues se envian al RIP para imprimir. Son herramientas complementarias.",
     relatedLinks: [
       {
         label: "Blog: Software de gestion para talleres",
@@ -842,7 +850,7 @@ const rawGlossaryTerms: Array<{
   {
     term: "Como se dice prenda personalizada en cada pais (equivalencias regionales)",
     definition:
-      "La misma prenda recibe nombres distintos segun el pais de Latinoamerica, y eso cambia como cada taller busca software y proveedores. Equivalencias mas comunes: en Mexico y Guatemala se dice playera (y jersey para las camisetas deportivas); en Peru, polo; en Chile y Bolivia, polera; en Argentina y Uruguay, remera; en Venezuela, franela; en Colombia y gran parte de la region, camiseta. Lo mismo ocurre con la categoria general: indumentaria personalizada, ropa personalizada, ropa deportiva personalizada, uniformes personalizados, uniformes deportivos, ropa corporativa y merchandising empresarial describen el mismo tipo de produccion. Y hay terminos tecnicos que funcionan en todos los paises: sublimacion, DTF, estampado textil, bordado computarizado y confeccion deportiva. Sublimifyer sirve a talleres que producen cualquiera de estas prendas, sin importar como las llamen localmente.",
+      "La misma prenda recibe nombres distintos segun el pais de Latinoamerica, y eso cambia como cada taller busca software y proveedores. Equivalencias mas comunes: en Mexico y Guatemala se dice playera (y jersey para las camisetas deportivas); en Peru, polo; en Chile y Bolivia, polera; en Argentina y Uruguay, remera; en Venezuela, franela; en Colombia y gran parte de la region, camiseta. Lo mismo ocurre con la categoria general: indumentaria personalizada, ropa personalizada, ropa deportiva personalizada, uniformes personalizados, uniformes deportivos, ropa corporativa y merchandising empresarial describen el mismo tipo de produccion. Y hay terminos tecnicos que funcionan en todos los paises: sublimacion, DTF, estampado textil, bordado computarizado y confeccion deportiva. CimaTex sirve a talleres que producen cualquiera de estas prendas, sin importar como las llamen localmente.",
     relatedLinks: [
       {
         label: "Blog: Software para talleres en LATAM",
@@ -869,7 +877,7 @@ export const glosarioPageData = {
   summary: {
     title: "Queres ver estos conceptos en accion?",
     description:
-      "Mira como talleres reales aplican estos conceptos con Sublimifyer para resolver sus problemas de produccion.",
+      "Mira como talleres reales aplican estos conceptos con CimaTex para resolver sus problemas de produccion.",
     links: [
       { label: "Ver casos de uso", href: "/casos-de-uso" },
       { label: "Leer el blog", href: "/blog" }
@@ -878,12 +886,12 @@ export const glosarioPageData = {
   cta: {
     title: "Tenes dudas sobre como aplicar esto en tu taller?",
     description:
-      "Escribinos y te explicamos como Sublimifyer puede integrarse en tu flujo de produccion actual. Sin compromiso.",
+      "Escribinos y te explicamos como CimaTex puede integrarse en tu flujo de produccion actual. Sin compromiso.",
     primaryButton: "Hablar por WhatsApp",
     whatsappPhone: SUBLIMIFYER_WHATSAPP_PHONE,
     whatsappMessage:
-      "Hola! Estuve leyendo el glosario en la web y tengo algunas dudas sobre como Sublimifyer puede ayudarme.",
-    secondaryButton: "Conocer Sublimifyer",
+      "Hola! Estuve leyendo el glosario en la web y tengo algunas dudas sobre como CimaTex puede ayudarme.",
+    secondaryButton: "Conocer CimaTex",
     secondaryHref: "/"
   }
 };
@@ -1023,7 +1031,7 @@ export const supportPageData = {
           questionKey: "faq5Q",
           answerKey: "faq5A",
           defaultQuestion:
-            "¿Puedo integrar Sublimifyer con mi tienda online?",
+            "¿Puedo integrar CimaTex con mi tienda online?",
           defaultAnswer:
             "Sí, ofrecemos integraciones con las principales plataformas de e-commerce."
         },

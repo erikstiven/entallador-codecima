@@ -27,14 +27,14 @@ export const BenefitsSection: React.FC = () => {
   return (
     <section
       id="beneficios"
-      className="relative mx-4 scroll-mt-16 overflow-hidden rounded-[2rem] bg-[#06423e] bg-[radial-gradient(#295d59_1px,transparent_1px)] bg-[size:22px_22px] py-20 text-white shadow-[0_30px_60px_-34px_rgba(6,66,62,0.75)] md:mx-6 md:rounded-[2.5rem] md:py-32"
+      className="relative mx-4 scroll-mt-16 overflow-hidden rounded-[2rem] bg-[#180d33] bg-[radial-gradient(#351d66_1px,transparent_1px)] bg-[size:22px_22px] py-20 text-white shadow-[0_30px_60px_-34px_rgba(24,13,51,0.75)] md:mx-6 md:rounded-[2.5rem] md:py-32"
     >
       <div className="container relative px-4 md:px-6">
         <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-20">
           <div className="lg:self-center">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
               <span className="block text-white">{benefits.titleLine1}</span>
-              <span className="block text-[#5fd9c8]">{benefits.titleLine2}</span>
+              <span className="block text-[#a78bfa]">{benefits.titleLine2}</span>
             </h2>
             {benefits.subtitle && (
               <p className="mt-6 max-w-md text-base md:text-lg text-white/70">
@@ -57,8 +57,8 @@ export const BenefitsSection: React.FC = () => {
                   <div
                     className={`flex size-11 shrink-0 items-center justify-center rounded-2xl border shadow-sm transition-all duration-300 group-hover:-translate-y-0.5 ${
                       isUp
-                        ? 'border-[#5fd9c8] bg-[#5fd9c8] text-[#06423e] shadow-[#5fd9c8]/20'
-                        : 'border-white/15 bg-white/5 text-[#5fd9c8] group-hover:border-[#5fd9c8]/50'
+                        ? 'border-[#a78bfa] bg-[#a78bfa] text-[#180d33] shadow-[#a78bfa]/20'
+                        : 'border-white/15 bg-white/5 text-[#a78bfa] group-hover:border-[#a78bfa]/50'
                     }`}
                   >
                     <Icon className="size-5" strokeWidth={1.75} />
@@ -70,7 +70,7 @@ export const BenefitsSection: React.FC = () => {
                         {item.title}
                       </h3>
                       {item.metric && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[#5fd9c8]/15 px-2.5 py-0.5 text-xs font-medium text-[#8fe8db]">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#a78bfa]/15 px-2.5 py-0.5 text-xs font-medium text-[#c4b5fd]">
                           {isUp ? (
                             <ArrowUp className="size-3" strokeWidth={2.5} />
                           ) : (

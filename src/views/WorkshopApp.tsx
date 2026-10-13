@@ -29,10 +29,15 @@ const SettingsView = lazy(() =>
 );
 
 const ViewFallback: React.FC = () => (
-  <div className="h-full w-full flex items-center justify-center bg-slate-950">
-    <div className="flex items-center gap-3 text-sm text-slate-400">
-      <span className="h-5 w-5 rounded-full border-2 border-violet-500/30 border-t-violet-500 animate-spin" />
-      Preparando módulo…
+  <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 gap-3">
+    <img
+      src="/cimatex-icon.png"
+      alt="CimaTex"
+      className="size-10 object-contain animate-pulse"
+    />
+    <div className="flex items-center gap-2.5 text-xs text-slate-400 font-mono">
+      <span className="size-3.5 rounded-full border-2 border-violet-500/30 border-t-violet-500 animate-spin" />
+      <span>Cargando módulo de CimaTex…</span>
     </div>
   </div>
 );
