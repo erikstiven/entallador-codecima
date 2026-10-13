@@ -270,7 +270,7 @@ const MixCard: React.FC<{ l: HeroMarqueeLabels }> = ({ l }) => {
   );
 };
 
-interface CardDefinition {
+export interface CardDefinition {
   kind: 'image' | 'node';
   src?: string;
   tag: (l: HeroMarqueeLabels) => string;
@@ -279,7 +279,7 @@ interface CardDefinition {
   lift?: number;
 }
 
-const HERO_CARDS: CardDefinition[] = [
+export const HERO_CARDS: CardDefinition[] = [
   {
     kind: 'image',
     src: '/hero/hero-sublimacion.webp',

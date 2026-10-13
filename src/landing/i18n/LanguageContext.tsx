@@ -56,11 +56,19 @@ export function resolveInitialLanguage(): Language {
   return detectBrowserLanguage();
 }
 
-export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
+export interface LanguageProviderProps {
+  children: React.ReactNode;
+  initialLanguage?: Language;
+}
+
+export const LanguageProvider: React.FC<LanguageProviderProps> = ({
   children,
+  initialLanguage,
 }) => {
   const [language, setLanguageState] = useState<Language>(() =>
-    resolveInitialLanguage()
+    initialLanguage && isSupportedLanguage(initialLanguage)
+      ? initialLanguage
+      : resolveInitialLanguage()
   );
   const [t, setT] = useState<LandingTranslations>(
     () => translationsByLanguage[language] ?? esTranslations

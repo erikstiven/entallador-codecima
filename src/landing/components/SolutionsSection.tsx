@@ -1,6 +1,8 @@
 import React from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 
+export const SOLUTIONS_VIDEO_PLAYBACK_RATE = 1.5;
+
 export const SolutionsSection: React.FC = () => {
   const { t } = useLanguage();
   const showcaseRecord = (t.shirtShowcase ?? {}) as Record<
@@ -29,6 +31,7 @@ export const SolutionsSection: React.FC = () => {
           <div className="mx-auto max-w-5xl overflow-hidden rounded-xl border border-border/40 shadow-2xl">
             <video
               src="/shirt-scroll/sublimifyer-scroll.mp4"
+              data-playback-rate={SOLUTIONS_VIDEO_PLAYBACK_RATE}
               className="pointer-events-none block w-full"
               autoPlay
               muted
@@ -38,11 +41,11 @@ export const SolutionsSection: React.FC = () => {
               controlsList="nodownload noplaybackrate noremoteplayback"
               ref={(el) => {
                 if (el) {
-                  el.playbackRate = 1.5;
+                  el.playbackRate = SOLUTIONS_VIDEO_PLAYBACK_RATE;
                 }
               }}
               onLoadedMetadata={(e) => {
-                e.currentTarget.playbackRate = 1.5;
+                e.currentTarget.playbackRate = SOLUTIONS_VIDEO_PLAYBACK_RATE;
               }}
             />
           </div>
