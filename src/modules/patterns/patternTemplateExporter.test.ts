@@ -6,12 +6,18 @@ describe('patternTemplateExporter', () => {
   const mockPatternSet: PatternSet = {
     id: 'pat-1',
     name: 'Camiseta Fútbol 2026',
+    garmentType: 'FUTBOL',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     sizes: [
       {
+        id: 'sz-1',
         sizeName: 'M',
+        sortOrder: 1,
         pieces: [
           {
             id: 'p-1',
+            sizeName: 'M',
             pieceName: 'DELANTERO',
             pieceType: 'DELANTERO',
             cutPolygon: [
@@ -27,7 +33,12 @@ describe('patternTemplateExporter', () => {
               { x: 10, y: 590 },
             ],
             bbox: { minX: 0, minY: 0, maxX: 400, maxY: 600, width: 400, height: 600 },
-            rotationAllowed: [0],
+            allowedRotationsDeg: [0],
+            areaMm2: 240000,
+            svgPathData: 'M0,0 L400,0 L400,600 L0,600 Z',
+            originalElementId: 'elem_1',
+            placeholders: [],
+            isAssigned: true,
           },
         ],
       },

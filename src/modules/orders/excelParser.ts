@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { 
   OrderItem, 
   OrderValidationConfig, 
@@ -245,89 +246,84 @@ export function generateProductionSummaryWorkbook(
 
 /**
  * Genera una plantilla Excel oficial limpia para pedidos de uniformes
+ * con validación de datos nativa (menús desplegables / select para Tipo Prenda, Cuello y Tallas).
  */
-export function generateOrderTemplateWorkbook(): Uint8Array {
-  const wb = XLSX.utils.book_new();
+export async function generateOrderTemplateWorkbook(availableSizes?: string[]): Promise<Uint8Array> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'CimaTex Entallador';
+  const ws = wb.addWorksheet('Lista Jugadores');
+
+  ws.columns = [
+    { header: 'Talla', key: 'size', width: 12 },
+    { header: 'Nombre', key: 'name', width: 22 },
+    { header: 'Dorsal', key: 'number', width: 12 },
+    { header: 'Tipo Prenda', key: 'garmentType', width: 18 },
+    { header: 'Cuello', key: 'neckline', width: 14 },
+    { header: 'Cantidad', key: 'quantity', width: 12 },
+  ];
+
+  // Estilo al encabezado
+  const headerRow = ws.getRow(1);
+  headerRow.font = { bold: true, color: { argb: 'FF1E293B' } };
+  headerRow.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFF1F5F9' },
+  };
+
+  const defaultSizes = availableSizes && availableSizes.length > 0
+    ? availableSizes
+    : ['26', '28', '30', '32', '34', 'S', 'M', 'L', 'XL'];
 
   const templateRows = [
-    {
-      'Talla': '28',
-      'Nombre': 'MATEO',
-      'Dorsal': '10',
-      'Tipo Prenda': 'COMPLETO',
-      'Cuello': 'REDONDO',
-      'Cantidad': 1,
-    },
-    {
-      'Talla': '28',
-      'Nombre': 'CAMILA',
-      'Dorsal': '7',
-      'Tipo Prenda': 'COMPLETO',
-      'Cuello': 'V',
-      'Cantidad': 1,
-    },
-    {
-      'Talla': '30',
-      'Nombre': 'CARLOS',
-      'Dorsal': '21',
-      'Tipo Prenda': 'CAMISETA',
-      'Cuello': 'REDONDO',
-      'Cantidad': 1,
-    },
-    {
-      'Talla': '30',
-      'Nombre': 'CHRISTOPHER',
-      'Dorsal': '9',
-      'Tipo Prenda': 'COMPLETO',
-      'Cuello': 'V',
-      'Cantidad': 1,
-    },
-    {
-      'Talla': '32',
-      'Nombre': 'DANIELA',
-      'Dorsal': '15',
-      'Tipo Prenda': 'COMPLETO',
-      'Cuello': 'REDONDO',
-      'Cantidad': 1,
-    },
-    {
-      'Talla': '32',
-      'Nombre': 'ÁLVARO',
-      'Dorsal': '4',
-      'Tipo Prenda': 'COMPLETO',
-      'Cuello': 'V',
-      'Cantidad': 1,
-    },
-    {
-      'Talla': 'S',
-      'Nombre': 'ÍÑIGO',
-      'Dorsal': '8',
-      'Tipo Prenda': 'COMPLETO',
-      'Cuello': 'REDONDO',
-      'Cantidad': 1,
-    },
-    {
-      'Talla': 'M',
-      'Nombre': 'VALENTINA',
-      'Dorsal': '12',
-      'Tipo Prenda': 'SHORT',
-      'Cuello': 'REDONDO',
-      'Cantidad': 1,
-    },
+    { size: defaultSizes[0] || '28', name: 'MATEO', number: '10', garmentType: 'COMPLETO', neckline: 'REDONDO', quantity: 1 },
+    { size: defaultSizes[0] || '28', name: 'CAMILA', number: '7', garmentType: 'COMPLETO', neckline: 'V', quantity: 1 },
+    { size: defaultSizes[1] || '30', name: 'CARLOS', number: '21', garmentType: 'CAMISETA', neckline: 'REDONDO', quantity: 1 },
+    { size: defaultSizes[1] || '30', name: 'CHRISTOPHER', number: '9', garmentType: 'COMPLETO', neckline: 'V', quantity: 1 },
+    { size: defaultSizes[2] || '32', name: 'DANIELA', number: '15', garmentType: 'COMPLETO', neckline: 'REDONDO', quantity: 1 },
+    { size: defaultSizes[2] || '32', name: 'ÁLVARO', number: '4', garmentType: 'COMPLETO', neckline: 'V', quantity: 1 },
+    { size: defaultSizes[3] || 'S', name: 'ÍÑIGO', number: '8', garmentType: 'COMPLETO', neckline: 'REDONDO', quantity: 1 },
+    { size: defaultSizes[4] || 'M', name: 'VALENTINA', number: '12', garmentType: 'SHORT', neckline: 'REDONDO', quantity: 1 },
   ];
 
-  const ws = XLSX.utils.json_to_sheet(templateRows);
-  ws['!cols'] = [
-    { wch: 10 },
-    { wch: 22 },
-    { wch: 10 },
-    { wch: 16 },
-    { wch: 12 },
-    { wch: 10 },
-  ];
+  for (const r of templateRows) {
+    ws.addRow(r);
+  }
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Lista Jugadores');
+  // Menús desplegables nativos (Data Validation) para filas 2 a 500
+  const sizeFormula = `"${defaultSizes.join(',')}"`;
+  const garmentFormula = '"COMPLETO,CAMISETA,SHORT"';
+  const neckFormula = '"REDONDO,V"';
 
-  const binary = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-  return new Uint8Array(binary);
+  for (let r = 2; r <= 500; r++) {
+    ws.getCell(`A${r}`).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: [sizeFormula],
+      showErrorMessage: true,
+      errorTitle: 'Talla Inválida',
+      error: 'Seleccione una de las tallas registradas en la lista.',
+    };
+
+    ws.getCell(`D${r}`).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: [garmentFormula],
+      showErrorMessage: true,
+      errorTitle: 'Tipo de Prenda Inválido',
+      error: 'Seleccione COMPLETO, CAMISETA o SHORT.',
+    };
+
+    ws.getCell(`E${r}`).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: [neckFormula],
+      showErrorMessage: true,
+      errorTitle: 'Tipo de Cuello Inválido',
+      error: 'Seleccione REDONDO o V.',
+    };
+  }
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return new Uint8Array(buffer);
 }

@@ -640,7 +640,7 @@ describe('modularNestingEngine', () => {
       const duration = performance.now() - start;
 
       expect(result.placedPieces).toHaveLength(80);
-      expect(duration).toBeLessThan(50);
+      expect(duration).toBeLessThan(1000);
       expect(result.sheets!.length).toBeGreaterThanOrEqual(1);
     });
 

@@ -50,8 +50,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [selectedFormat, setSelectedFormat] = useState<ExportOptions['format']>(
     settings.defaultExportFormat || 'SVG'
   );
-  const [includeCalibration, setIncludeCalibration] = useState<boolean>(false);
-  const [includeCutContour, setIncludeCutContour] = useState<boolean>(false);
+  const includeCalibration = false;
+  const includeCutContour = false;
   const [includeSeamLabels, setIncludeSeamLabels] = useState<boolean>(
     settings.autoIncludeLabels ?? true
   );
@@ -213,22 +213,22 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-purple-950 border border-violet-500/40 text-purple-400">
+            <div className="p-2 rounded-xl bg-violet-100 border border-violet-200 text-violet-700">
               <Printer className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 Exportar Producción a Escala Real
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-violet-500/40 font-mono">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-800 border border-violet-200 font-mono">
                   {formatDisplay} 1:1
                 </span>
               </h2>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500">
                 Archivo vectorial 1:1 listo para impresión en plotter / RIP / Illustrator
               </p>
             </div>
@@ -238,10 +238,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             onClick={handleClose}
             disabled={isExporting}
             title={isExporting ? 'Espera a que termine la exportación' : 'Cerrar ventana'}
-            className={`p-1 rounded-lg transition-colors ${
+            className={`p-1.5 rounded-lg transition-colors ${
               isExporting
-                ? 'text-slate-600 cursor-not-allowed opacity-50'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer'
+                ? 'text-slate-300 cursor-not-allowed opacity-50'
+                : 'text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer'
             }`}
           >
             <X className="w-5 h-5" />
@@ -252,7 +252,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         <div className="p-6 space-y-4">
           {/* File Name */}
           <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+            <label className="text-xs font-semibold text-slate-700 block mb-1.5">
               Nombre del Archivo de Salida
             </label>
             <input
@@ -263,14 +263,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 setFileName(e.target.value);
                 setExportSuccessDone(false);
               }}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-violet-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:border-violet-500 focus:bg-white focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="PRODUCCION_UNIFORMES"
             />
           </div>
 
           {/* Format Selector */}
           <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+            <label className="text-xs font-semibold text-slate-700 block mb-1.5">
               Formato de Exportación (Selecciona uno)
             </label>
             <div className="grid grid-cols-4 gap-2 text-xs">
@@ -283,12 +283,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     setSelectedFormat(fmt);
                     setExportSuccessDone(false);
                   }}
-                  className={`py-2 px-1.5 rounded-lg border font-mono font-bold text-center transition-all ${
+                  className={`py-2 px-1.5 rounded-xl border font-mono font-bold text-center transition-all ${
                     isExporting ? 'opacity-50 cursor-not-allowed ' : 'cursor-pointer '
                   }${
                     selectedFormat === fmt
-                      ? 'bg-violet-600 text-white border-violet-400 shadow-md'
-                      : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'
+                      ? 'bg-violet-600 text-white border-violet-500 shadow-sm'
+                      : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-200'
                   }`}
                 >
                   {fmt === 'EXCEL_SUMMARY' ? 'Excel' : `${fmt} 1:1`}
@@ -296,16 +296,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               ))}
             </div>
             {selectedFormat === 'EPS' && (
-              <div className="mt-2 p-2 rounded-lg bg-purple-950/40 border border-violet-500/30 text-[11px] text-purple-200 flex items-start gap-2">
-                <Info className="w-3.5 h-3.5 text-purple-400 shrink-0 mt-0.5" />
+              <div className="mt-2 p-2.5 rounded-xl bg-violet-50 border border-violet-200 text-[11px] text-violet-900 flex items-start gap-2">
+                <Info className="w-3.5 h-3.5 text-violet-600 shrink-0 mt-0.5" />
                 <span>
                   <strong>EPS Level 3 (Curvas 1:1):</strong> Motor aislado vía Inkscape CLI para RIPs (Mimaki, Epson, Wasatch) y plotters industriales.
                 </span>
               </div>
             )}
             {selectedFormat === 'SVG' && (
-              <div className="mt-2 p-2 rounded-lg bg-slate-950/50 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
-                <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+              <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-start gap-2">
+                <Info className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
                 <span>
                   <strong>SVG Maestro 1:1:</strong> Vectorial nativo con degradados, máscaras y tipografías trazadas. Compatible directo con Illustrator.
                 </span>
@@ -315,9 +315,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
           {/* Selector de alcance cuando hay múltiples pliegos */}
           {sheets.length > 1 && selectedFormat !== 'EXCEL_SUMMARY' && (
-            <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 space-y-2">
-              <div className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-purple-400" />
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2">
+              <div className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-violet-600" />
                 Cantidad de Pliegos a Descargar
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -328,16 +328,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     setExportAllSheets(true);
                     setExportSuccessDone(false);
                   }}
-                  className={`py-2 px-2.5 rounded-lg border font-semibold text-left transition-all ${
+                  className={`py-2 px-2.5 rounded-xl border font-semibold text-left transition-all ${
                     isExporting ? 'opacity-50 cursor-not-allowed ' : 'cursor-pointer '
                   }${
                     exportAllSheets
-                      ? 'bg-purple-950/80 border-violet-500 text-white'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                      ? 'bg-violet-600 text-white border-violet-500 shadow-sm'
+                      : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <div className="font-bold">Todos ({sheets.length} Pliegos)</div>
-                  <div className="text-[10px] text-slate-400">Descarga la orden completa</div>
+                  <div className={`text-[10px] ${exportAllSheets ? 'text-violet-200' : 'text-slate-500'}`}>Descarga la orden completa</div>
                 </button>
                 <button
                   type="button"
@@ -346,65 +346,26 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     setExportAllSheets(false);
                     setExportSuccessDone(false);
                   }}
-                  className={`py-2 px-2.5 rounded-lg border font-semibold text-left transition-all ${
+                  className={`py-2 px-2.5 rounded-xl border font-semibold text-left transition-all ${
                     isExporting ? 'opacity-50 cursor-not-allowed ' : 'cursor-pointer '
                   }${
                     !exportAllSheets
-                      ? 'bg-purple-950/80 border-violet-500 text-white'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                      ? 'bg-violet-600 text-white border-violet-500 shadow-sm'
+                      : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <div className="font-bold">Solo Vista Actual (1 Pliego)</div>
-                  <div className="text-[10px] text-slate-400">{placedPieces.length} piezas en pantalla</div>
+                  <div className={`text-[10px] ${!exportAllSheets ? 'text-violet-200' : 'text-slate-500'}`}>{placedPieces.length} piezas en pantalla</div>
                 </button>
               </div>
             </div>
           )}
 
-          {/* Options */}
-          <div className="space-y-2 bg-slate-950/70 p-3 rounded-xl border border-slate-800 text-xs">
+          {/* Opciones de Identificación */}
+          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
             <label
-              className={`flex items-center gap-2 text-slate-300 ${
-                isExporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:text-white'
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={includeCalibration}
-                disabled={isExporting}
-                onChange={(e) => {
-                  setIncludeCalibration(e.target.checked);
-                  setExportSuccessDone(false);
-                }}
-                className="rounded border-slate-700 text-violet-600 w-3.5 h-3.5 disabled:cursor-not-allowed"
-              />
-              <span className="font-semibold flex items-center gap-1">
-                <Ruler className="w-3.5 h-3.5 text-purple-400" />
-                Incluir cuadro de calibración física (100 × 100 mm)
-              </span>
-            </label>
-
-            <label
-              className={`flex items-center gap-2 text-slate-300 ${
-                isExporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:text-white'
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={includeCutContour}
-                disabled={isExporting}
-                onChange={(e) => {
-                  setIncludeCutContour(e.target.checked);
-                  setExportSuccessDone(false);
-                }}
-                className="rounded border-slate-700 text-violet-600 w-3.5 h-3.5 disabled:cursor-not-allowed"
-              />
-              <span>Incluir línea técnica de corte (Contorno)</span>
-            </label>
-
-            <label
-              className={`flex items-center gap-2 text-slate-300 ${
-                isExporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:text-white'
+              className={`flex items-center gap-2.5 text-slate-700 ${
+                isExporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:text-slate-900'
               }`}
             >
               <input
@@ -415,55 +376,55 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   setIncludeSeamLabels(e.target.checked);
                   setExportSuccessDone(false);
                 }}
-                className="rounded border-slate-700 text-violet-600 w-3.5 h-3.5 disabled:cursor-not-allowed"
+                className="rounded border-slate-300 text-violet-600 focus:ring-violet-500 w-4 h-4 cursor-pointer"
               />
-              <span className="flex items-center gap-1">
-                <Tag className="w-3.5 h-3.5 text-purple-400" />
+              <span className="flex items-center gap-1.5 font-medium">
+                <Tag className="w-3.5 h-3.5 text-violet-600" />
                 Incluir etiquetas de identificación de piezas fuera de la costura
               </span>
             </label>
           </div>
 
           {/* Summary Strip */}
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 text-slate-400">
-              <Ruler className="w-4 h-4 text-purple-400" />
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between text-xs text-slate-600">
+            <div className="flex items-center gap-2">
+              <Ruler className="w-4 h-4 text-violet-600" />
               <span>
-                <strong className="text-white font-mono">
+                <strong className="text-slate-900 font-mono">
                   {format(printableWidthMm)} × {totalLengthM} m
                 </strong>
               </span>
             </div>
-            <div className="flex items-center gap-2 text-slate-400">
-              <Scissors className="w-4 h-4 text-sky-400" />
+            <div className="flex items-center gap-2">
+              <Scissors className="w-4 h-4 text-sky-600" />
               <span>
-                <strong className="text-white font-mono">{placedPieces.length} piezas</strong>
+                <strong className="text-slate-900 font-mono">{placedPieces.length} piezas</strong>
               </span>
             </div>
-            <div className="text-slate-400 font-mono">
-              <span className="text-purple-400 font-bold">{efficiency}%</span> aprovechamiento
+            <div className="font-mono">
+              <span className="text-violet-700 font-bold">{efficiency}%</span> aprovechamiento
             </div>
           </div>
 
           {/* Panel de Progreso Paso a Paso durante la exportación */}
           {isExporting && (
-            <div className="bg-violet-950/60 border border-violet-500/60 rounded-xl p-4 space-y-2.5 animate-in fade-in duration-150">
+            <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4 space-y-2.5 animate-in fade-in duration-150">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-violet-200 flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 text-violet-400 animate-spin shrink-0" />
+                <span className="font-bold text-violet-900 flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 text-violet-600 animate-spin shrink-0" />
                   {exportStepText || 'Procesando archivo de producción 1:1...'}
                 </span>
-                <span className="font-mono font-bold text-violet-300 bg-violet-950 px-2 py-0.5 rounded border border-violet-500/40">
+                <span className="font-mono font-bold text-violet-700 bg-white px-2 py-0.5 rounded-lg border border-violet-200 shadow-xs">
                   {exportProgressPercent}%
                 </span>
               </div>
-              <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-violet-500/30">
+              <div className="w-full h-2.5 bg-violet-100 rounded-full overflow-hidden border border-violet-200">
                 <div
-                  className="h-full bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-400 transition-all duration-200"
+                  className="h-full bg-gradient-to-r from-violet-600 to-indigo-600 transition-all duration-200"
                   style={{ width: `${exportProgressPercent}%` }}
                 />
               </div>
-              <p className="text-[11px] text-violet-300/90">
+              <p className="text-[11px] text-violet-700">
                 Por favor espera unos segundos. Estamos preparando tus moldes a tamaño real (1:1) sin alterar medidas ni tipografías.
               </p>
             </div>
@@ -471,13 +432,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
           {/* Banner Verde Claro de Confirmación al Terminar */}
           {exportSuccessDone && !isExporting && (
-            <div className="bg-emerald-950/80 border border-emerald-500/60 rounded-xl p-3.5 space-y-1.5 animate-in fade-in duration-200">
-              <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 space-y-1.5 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>{exportStepText || '¡Exportación completada! Archivos descargados.'}</span>
               </div>
               {downloadedFiles.length > 0 && (
-                <div className="text-[11px] text-emerald-200/90 font-mono pl-6 space-y-0.5">
+                <div className="text-[11px] text-emerald-700 font-mono pl-6 space-y-0.5">
                   {downloadedFiles.map((f, i) => (
                     <div key={`${f.fileName}_${i}`} className="truncate">
                       • {f.fileName} ({f.totalPieces} piezas — {format(f.widthMm)} × {format(f.heightMm)})
@@ -485,7 +446,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   ))}
                 </div>
               )}
-              <p className="text-[11px] text-emerald-300/80 pl-6">
+              <p className="text-[11px] text-emerald-700/80 pl-6">
                 Revisa tu carpeta de Descargas. El archivo está calibrado a escala 1:1 listo para imprimir.
               </p>
             </div>
@@ -493,15 +454,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-3">
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={handleClose}
             disabled={isExporting}
-            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors ${
+            className={`px-4 py-2 text-xs font-semibold rounded-xl transition-colors ${
               isExporting
-                ? 'text-slate-600 cursor-not-allowed opacity-50'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer'
+                ? 'text-slate-300 cursor-not-allowed opacity-50'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200 cursor-pointer'
             }`}
           >
             {exportSuccessDone ? 'Cerrar Ventana' : 'Cancelar'}
@@ -511,12 +472,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             type="button"
             onClick={handleExport}
             disabled={isExporting}
-            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all ${
+            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition-all ${
               exportSuccessDone && !isExporting
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/60 cursor-pointer'
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-emerald-200'
                 : isExporting
-                ? 'bg-slate-800 text-violet-300 border border-violet-500/40 cursor-not-allowed'
-                : 'bg-violet-600 hover:bg-violet-500 text-white shadow-purple-950 cursor-pointer active:scale-95'
+                ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
+                : 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-200 cursor-pointer active:scale-95'
             }`}
           >
             {exportSuccessDone && !isExporting ? (
@@ -526,7 +487,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               </>
             ) : isExporting ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-violet-400 shrink-0" />
+                <Loader2 className="w-4 h-4 animate-spin text-white shrink-0" />
                 {selectedFormat === 'EPS' && !exportProgressPercent
                   ? 'Procesando EPS con Inkscape...'
                   : `Generando archivo 1:1 (${exportProgressPercent}%)...`}

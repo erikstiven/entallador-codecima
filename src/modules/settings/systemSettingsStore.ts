@@ -49,9 +49,11 @@ const DEFAULT_SETTINGS: SystemSettings = {
 
 function loadStoredSettings(): SystemSettings {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+      }
     }
   } catch (err) {
     console.warn('Error al leer settings de localStorage:', err);

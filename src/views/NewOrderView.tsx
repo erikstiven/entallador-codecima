@@ -204,19 +204,26 @@ export const NewOrderView: React.FC = () => {
     reader.readAsArrayBuffer(file);
   };
 
-  const handleDownloadTemplate = () => {
-    const uint8 = generateOrderTemplateWorkbook();
-    const blob = new Blob([uint8.buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'plantilla_pedido_uniformes.xlsx';
-    link.click();
-    URL.revokeObjectURL(url);
+  const handleDownloadTemplate = async () => {
+    try {
+      const uint8 = await generateOrderTemplateWorkbook(availableSizes);
+      const blob = new Blob([uint8.buffer as ArrayBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'plantilla_pedido_uniformes.xlsx';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error generando plantilla:', err);
+      showAlert.error('Error', 'No se pudo generar la plantilla Excel.');
+    }
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6 text-slate-200">
+    <div className="p-8 max-w-7xl mx-auto space-y-6 text-slate-800">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -228,41 +235,61 @@ export const NewOrderView: React.FC = () => {
 
       {/* Import Card (Single unified zone when no items loaded) */}
       {items.length === 0 ? (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 shadow-xl space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800/80">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
                 Cargar Nómina del Pedido
               </h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Sube la planilla con nombres, números y tallas para procesar el pedido
+              <p className="text-xs text-slate-500 mt-1">
+                Sube la planilla con nombres, números y tallas o crea la nómina manualmente
               </p>
             </div>
 
-            <button
-              onClick={handleDownloadTemplate}
-              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold border border-slate-700/80 transition-all flex items-center gap-2 cursor-pointer active:scale-95 shrink-0"
-              title="Descargar archivo Excel con formato de ejemplo"
-            >
-              <Download className="w-4 h-4 text-purple-400" />
-              <span>Descargar Plantilla (.xlsx)</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() =>
+                  addItem({
+                    playerName: 'JUGADOR 1',
+                    playerNumber: '1',
+                    sizeName: availableSizes[0] || '28',
+                    garmentType: 'COMPLETO',
+                    necklineType: 'REDONDO',
+                    quantity: 1,
+                  })
+                }
+                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                title="Agregar jugadores directamente a la lista sin archivo Excel"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Crear Nómina Manualmente</span>
+              </button>
+
+              <button
+                onClick={handleDownloadTemplate}
+                className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-semibold border border-slate-300 transition-all flex items-center gap-2 cursor-pointer active:scale-95 shrink-0 shadow-sm"
+                title="Descargar archivo Excel con menús desplegables (select) y tallas sincronizadas"
+              >
+                <Download className="w-4 h-4 text-violet-600" />
+                <span>Descargar Plantilla (.xlsx)</span>
+              </button>
+            </div>
           </div>
 
           <div
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-700/70 hover:border-violet-500/70 bg-slate-950/40 hover:bg-slate-950/70 transition-all duration-200 rounded-2xl p-12 text-center flex flex-col items-center justify-center cursor-pointer group"
+            className="border-2 border-dashed border-slate-200 hover:border-violet-500 bg-slate-50/70 hover:bg-violet-50/30 transition-all duration-200 rounded-2xl p-12 text-center flex flex-col items-center justify-center cursor-pointer group"
           >
-            <div className="w-16 h-16 rounded-2xl bg-violet-600/10 border border-violet-500/20 text-purple-400 flex items-center justify-center mb-4 group-hover:scale-105 group-hover:bg-violet-600/20 transition-all">
+            <div className="w-16 h-16 rounded-2xl bg-violet-100 border border-violet-200 text-violet-600 flex items-center justify-center mb-4 group-hover:scale-105 group-hover:bg-violet-200 transition-all">
               <UploadCloud className="w-8 h-8" />
             </div>
-            <h4 className="text-base font-semibold text-white group-hover:text-purple-300 transition-colors">
+            <h4 className="text-base font-semibold text-slate-800 group-hover:text-violet-700 transition-colors">
               Arrastra tu archivo Excel aquí o haz clic para seleccionarlo
             </h4>
-            <p className="text-xs text-slate-400 mt-1.5 font-mono">
-              Formatos compatibles: .xlsx, .xls, .csv
+            <p className="text-xs text-slate-500 mt-1.5 font-mono">
+              Formatos compatibles: .xlsx, .xls, .csv • Con selectores desplegables
             </p>
           </div>
         </div>
@@ -271,29 +298,29 @@ export const NewOrderView: React.FC = () => {
         <div className="space-y-4">
           {/* Summary Metric Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg backdrop-blur-md">
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Jugadores</div>
-              <div className="text-2xl font-black font-mono text-white mt-1">{summary.totalItems}</div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Jugadores</div>
+              <div className="text-2xl font-black font-mono text-slate-900 mt-1">{summary.totalItems}</div>
               <div className="text-[10px] text-slate-400 mt-0.5">En la nómina activa</div>
             </div>
 
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg backdrop-blur-md">
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Piezas a Producir</div>
-              <div className="text-2xl font-black font-mono text-sky-400 mt-1">
-                {summary.totalPiecesCount} <span className="text-xs font-semibold text-slate-400">piezas</span>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Piezas a Producir</div>
+              <div className="text-2xl font-black font-mono text-sky-600 mt-1">
+                {summary.totalPiecesCount} <span className="text-xs font-semibold text-slate-500">piezas</span>
               </div>
               <div className="text-[10px] text-slate-400 mt-0.5">Frente, espalda, mangas y shorts</div>
             </div>
 
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg backdrop-blur-md">
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Validación de Nómina</div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Validación de Nómina</div>
               {summary.invalidCount > 0 ? (
-                <div className="text-2xl font-black font-mono text-red-400 mt-1 flex items-center gap-1.5">
+                <div className="text-2xl font-black font-mono text-red-600 mt-1 flex items-center gap-1.5">
                   <AlertCircle className="w-5 h-5" />
                   {summary.invalidCount} Error(es)
                 </div>
               ) : (
-                <div className="text-2xl font-black font-mono text-purple-400 mt-1 flex items-center gap-1.5">
+                <div className="text-2xl font-black font-mono text-emerald-600 mt-1 flex items-center gap-1.5">
                   <CheckCircle2 className="w-5 h-5" />
                   100% Correcto
                 </div>
@@ -301,16 +328,16 @@ export const NewOrderView: React.FC = () => {
               <div className="text-[10px] text-slate-400 mt-0.5">{summary.validCount} de {summary.totalItems} listos</div>
             </div>
 
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg backdrop-blur-md flex flex-col justify-between">
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Archivo Excel</div>
-                <div className="text-xs text-white font-mono font-bold truncate mt-1" title={fileName || ''}>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Archivo Excel</div>
+                <div className="text-xs text-slate-800 font-mono font-bold truncate mt-1" title={fileName || ''}>
                   {fileName || 'pedido.xlsx'}
                 </div>
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[11px] text-purple-400 hover:text-purple-300 font-bold text-left mt-2 flex items-center gap-1 cursor-pointer"
+                className="text-[11px] text-violet-600 hover:text-violet-800 font-bold text-left mt-2 flex items-center gap-1 cursor-pointer"
               >
                 <RefreshCw className="w-3 h-3" /> Reemplazar Excel
               </button>
@@ -318,15 +345,15 @@ export const NewOrderView: React.FC = () => {
           </div>
 
           {/* Table Container */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl space-y-0">
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm space-y-0">
             {/* Sección Visible "Aplicar a Todos" */}
-            <div className="p-4 bg-slate-950/90 border-b border-slate-800 space-y-3">
+            <div className="p-4 bg-slate-50/80 border-b border-slate-200 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <Settings2 className="w-4 h-4 text-purple-400" />
-                  <span className="text-xs font-black uppercase tracking-wider text-white">Edición Masiva — Aplicar a Todos</span>
+                  <Settings2 className="w-4 h-4 text-violet-600" />
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-900">Edición Masiva — Aplicar a Todos</span>
                   {bulkSuccessMsg && (
-                    <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-700/60 px-2.5 py-0.5 rounded-lg flex items-center gap-1 animate-pulse">
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-lg flex items-center gap-1 animate-pulse">
                       <Check className="w-3.5 h-3.5" />
                       {bulkSuccessMsg}
                     </span>
@@ -366,7 +393,7 @@ export const NewOrderView: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleClearOrder}
-                      className="px-3 py-1 bg-slate-900 hover:bg-red-950 text-slate-400 hover:text-red-300 rounded-lg text-xs font-semibold border border-slate-700 hover:border-red-800 transition-all flex items-center gap-1.5 cursor-pointer"
+                      className="px-3 py-1 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg text-xs font-semibold border border-slate-200 hover:border-red-300 transition-all flex items-center gap-1.5 cursor-pointer"
                       title="Limpiar únicamente el pedido actual"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -374,8 +401,8 @@ export const NewOrderView: React.FC = () => {
                     </button>
                   )}
                   <button
-                    onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: '28', garmentType: 'CAMISETA' })}
-                    className="px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold shadow-md shadow-purple-950 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: availableSizes[0] || '28', garmentType: 'CAMISETA', necklineType: 'REDONDO', quantity: 1 })}
+                    className="px-3 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Agregar Jugador
@@ -384,14 +411,14 @@ export const NewOrderView: React.FC = () => {
               </div>
 
               {/* Mass Edit Controls Toolbar */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 bg-white p-3 rounded-xl border border-slate-200">
                 {/* Prenda */}
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono text-slate-400 font-bold">Tipo Prenda:</label>
+                  <label className="text-[10px] uppercase font-mono text-slate-500 font-bold">Tipo Prenda:</label>
                   <select
                     value={bulkGarmentType}
                     onChange={(e) => setBulkGarmentType(e.target.value as GarmentType)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-500 font-medium"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-violet-500 font-medium cursor-pointer"
                   >
                     <option value="COMPLETO">COMPLETO (6 pzs)</option>
                     <option value="CAMISETA">CAMISETA (4 pzs)</option>
@@ -401,14 +428,14 @@ export const NewOrderView: React.FC = () => {
 
                 {/* Cuello (Deshabilitado para shorts) */}
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono text-slate-400 font-bold">
+                  <label className="text-[10px] uppercase font-mono text-slate-500 font-bold">
                     Cuello {bulkGarmentType === 'SHORT' ? '(N/A)' : ''}:
                   </label>
                   <select
                     value={bulkNecklineType}
                     disabled={bulkGarmentType === 'SHORT'}
                     onChange={(e) => setBulkNecklineType(e.target.value as NecklineType)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-500 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-violet-500 font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <option value="REDONDO">REDONDO</option>
                     <option value="V">CUELLO V</option>
@@ -417,38 +444,38 @@ export const NewOrderView: React.FC = () => {
 
                 {/* Talla */}
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono text-slate-400 font-bold">Talla (Opcional):</label>
+                  <label className="text-[10px] uppercase font-mono text-slate-500 font-bold">Talla (Opcional):</label>
                   <input
                     type="text"
                     placeholder="Mantener individual"
                     value={bulkSizeName}
                     onChange={(e) => setBulkSizeName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white uppercase placeholder:text-slate-600 focus:outline-none focus:border-purple-500 font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 uppercase placeholder:text-slate-400 focus:outline-none focus:border-violet-500 font-mono"
                   />
                 </div>
 
                 {/* Cantidad */}
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono text-slate-400 font-bold">Cantidad:</label>
+                  <label className="text-[10px] uppercase font-mono text-slate-500 font-bold">Cantidad:</label>
                   <input
                     type="number"
                     min="1"
                     value={bulkQuantity}
                     onChange={(e) => setBulkQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white text-center focus:outline-none focus:border-purple-500 font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 text-center focus:outline-none focus:border-violet-500 font-mono"
                   />
                 </div>
 
                 {/* Modelo Asignado */}
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono text-slate-400 font-bold">Modelo Asignado:</label>
+                  <label className="text-[10px] uppercase font-mono text-slate-500 font-bold">Modelo Asignado:</label>
                   <select
                     value={activeDesign?.id || ''}
                     onChange={(e) => {
                       const selected = designs.find((d) => d.id === e.target.value);
                       if (selected) setActiveDesign(selected);
                     }}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-purple-300 font-semibold focus:outline-none focus:border-purple-500 truncate"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs text-violet-700 font-semibold focus:outline-none focus:border-violet-500 truncate cursor-pointer"
                   >
                     {designs.map((d) => (
                       <option key={d.id} value={d.id}>
@@ -463,7 +490,7 @@ export const NewOrderView: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleExecuteMassEdit}
-                    className="w-full py-1.5 px-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-lg text-xs font-black shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-1.5 px-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-lg text-xs font-black shadow-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <Check className="w-3.5 h-3.5" />
                     Aplicar a Todos
@@ -474,7 +501,7 @@ export const NewOrderView: React.FC = () => {
 
             <div className="overflow-x-auto max-h-96">
               <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-slate-950 text-slate-400 sticky top-0 border-b border-slate-800 z-10 text-[11px] uppercase tracking-wider">
+                <thead className="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200 z-10 text-[11px] uppercase tracking-wider">
                   <tr>
                     <th className="py-3 px-3 w-12 text-center">#</th>
                     <th className="py-3 px-3 w-28">Talla</th>
@@ -486,12 +513,12 @@ export const NewOrderView: React.FC = () => {
                     <th className="py-3 px-3 w-12 text-center"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/80 text-slate-300">
+                <tbody className="divide-y divide-slate-100 text-slate-700">
                   {items.map((item, idx) => (
                     <tr 
                       key={item.id} 
-                      className={`hover:bg-slate-800/40 transition-colors ${
-                        !item.isValid ? 'bg-red-950/20' : ''
+                      className={`hover:bg-slate-50/80 transition-colors ${
+                        !item.isValid ? 'bg-red-50/50' : ''
                       }`}
                     >
                       <td className="py-2.5 px-3 text-center text-slate-400 font-bold" title={`Fila Excel: ${item.rowNumber}`}>{idx + 1}</td>
@@ -502,10 +529,10 @@ export const NewOrderView: React.FC = () => {
                           type="text"
                           value={item.sizeName}
                           onChange={(e) => updateItem(item.id, { sizeName: e.target.value })}
-                          className={`w-16 bg-slate-950 border rounded-lg px-2 py-1 text-center font-bold font-mono focus:outline-none focus:border-purple-500 ${
+                          className={`w-16 bg-white border rounded-lg px-2 py-1 text-center font-bold font-mono focus:outline-none focus:border-violet-500 ${
                             item.errors.some((e) => e.field === 'sizeName')
-                              ? 'border-red-500 text-red-400'
-                              : 'border-slate-700 text-white'
+                              ? 'border-red-500 text-red-600 bg-red-50'
+                              : 'border-slate-300 text-slate-900'
                           }`}
                         />
                       </td>
@@ -516,10 +543,10 @@ export const NewOrderView: React.FC = () => {
                           type="text"
                           value={item.playerName}
                           onChange={(e) => updateItem(item.id, { playerName: e.target.value })}
-                          className={`w-full bg-slate-950 border rounded-lg px-2.5 py-1 uppercase font-bold focus:outline-none focus:border-purple-500 ${
+                          className={`w-full bg-white border rounded-lg px-2.5 py-1 uppercase font-bold focus:outline-none focus:border-violet-500 ${
                             item.errors.some((e) => e.field === 'playerName')
-                              ? 'border-red-500 text-red-400'
-                              : 'border-slate-700 text-white'
+                              ? 'border-red-500 text-red-600 bg-red-50'
+                              : 'border-slate-300 text-slate-900'
                           }`}
                         />
                       </td>
@@ -530,10 +557,10 @@ export const NewOrderView: React.FC = () => {
                           type="text"
                           value={item.playerNumber}
                           onChange={(e) => updateItem(item.id, { playerNumber: e.target.value })}
-                          className={`w-16 bg-slate-950 border rounded-lg px-2 py-1 text-center font-black focus:outline-none focus:border-purple-500 ${
+                          className={`w-16 bg-white border rounded-lg px-2 py-1 text-center font-black focus:outline-none focus:border-violet-500 ${
                             item.errors.some((e) => e.field === 'playerNumber')
-                              ? 'border-red-500 text-red-400'
-                              : 'border-slate-700 text-purple-400 font-bold'
+                              ? 'border-red-500 text-red-600 bg-red-50'
+                              : 'border-slate-300 text-violet-700 font-bold'
                           }`}
                         />
                       </td>
@@ -543,7 +570,7 @@ export const NewOrderView: React.FC = () => {
                         <select
                           value={item.garmentType}
                           onChange={(e) => updateItem(item.id, { garmentType: e.target.value as GarmentType })}
-                          className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-purple-500 text-[11px] font-sans"
+                          className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-slate-800 focus:outline-none focus:border-violet-500 text-[11px] font-sans cursor-pointer"
                         >
                           <option value="COMPLETO">COMPLETO (6 pzs)</option>
                           <option value="CAMISETA">CAMISETA (4 pzs)</option>
@@ -557,7 +584,7 @@ export const NewOrderView: React.FC = () => {
                           value={item.necklineType || 'REDONDO'}
                           disabled={item.garmentType === 'SHORT'}
                           onChange={(e) => updateItem(item.id, { necklineType: e.target.value as NecklineType })}
-                          className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-purple-500 text-[11px] font-sans disabled:opacity-40"
+                          className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-slate-800 focus:outline-none focus:border-violet-500 text-[11px] font-sans disabled:opacity-40 cursor-pointer"
                         >
                           <option value="REDONDO">REDONDO</option>
                           <option value="V">CUELLO V</option>
@@ -613,39 +640,39 @@ export const NewOrderView: React.FC = () => {
       )}
 
       {/* Bottom Generation CTA Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
         <div className="space-y-1">
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-slate-600">
             {items.length === 0 ? (
-              <span className="text-slate-300 font-semibold flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 text-amber-400" />
+              <span className="text-slate-600 font-semibold flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-amber-500" />
                 Carga un archivo Excel o agrega jugadores para habilitar la generación de prendas.
               </span>
             ) : summary.hasErrors ? (
-              <span className="text-red-400 font-semibold flex items-center gap-1.5">
+              <span className="text-red-600 font-semibold flex items-center gap-1.5">
                 <AlertCircle className="w-4 h-4" />
                 Corrige los {summary.invalidCount} errores en la tabla antes de proceder a la generación.
               </span>
             ) : missingProductionSetup.length > 0 ? (
-              <span className="text-amber-400 font-semibold flex items-center gap-1.5">
+              <span className="text-amber-600 font-semibold flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4" />
                 La nómina es válida, pero falta {missingProductionSetup.join(' y ')} para poder generar las prendas.
               </span>
             ) : (
-              <span className="text-purple-400 font-bold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" />
+              <span className="text-emerald-700 font-bold flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 Todos los {summary.validCount} registros son válidos y listos para producción.
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+          <div className="flex items-center gap-3 text-[11px] text-slate-500 font-mono">
             <span>
               Molde:{' '}
               {currentPatternSet ? (
-                <span className="text-purple-400 font-bold">{currentPatternSet.name}</span>
+                <span className="text-violet-700 font-bold">{currentPatternSet.name}</span>
               ) : (
-                <span className="text-amber-400 font-semibold inline-flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3 text-amber-400" />
+                <span className="text-amber-600 font-semibold inline-flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 text-amber-500" />
                   Sin Molde (ve a 'Moldes')
                 </span>
               )}
@@ -654,10 +681,10 @@ export const NewOrderView: React.FC = () => {
             <span>
               Diseño:{' '}
               {currentDesign ? (
-                <span className="text-purple-400 font-bold">{currentDesign.name}</span>
+                <span className="text-violet-700 font-bold">{currentDesign.name}</span>
               ) : (
-                <span className="text-amber-400 font-semibold inline-flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3 text-amber-400" />
+                <span className="text-amber-600 font-semibold inline-flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 text-amber-500" />
                   Sin Diseño (ve a 'Diseños')
                 </span>
               )}
@@ -716,12 +743,12 @@ export const NewOrderView: React.FC = () => {
                 ? (disabledReasonMessage || 'Completa la nómina para generar prendas')
                 : 'Genera las piezas vectoriales 1:1 y conduce a la Inspección y Calibración de Prendas antes de acomodar en el rollo'
             }
-            className={`px-7 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-xl transition-all active:scale-95 ${
+            className={`px-7 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-sm transition-all active:scale-95 ${
               !canProceedToNesting || isGeneratingAction
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                 : !isProductionReady
-                  ? 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/40 cursor-pointer'
-                  : 'bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-purple-950/70 cursor-pointer ring-1 ring-purple-400/40'
+                  ? 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300 cursor-pointer'
+                  : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white cursor-pointer shadow-md shadow-violet-200'
             }`}
           >
             {isGeneratingAction ? (

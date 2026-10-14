@@ -8,6 +8,7 @@ export interface PatternPiece {
   pieceType: PieceType;
   pieceName: string; // ej: "T28_DELANTERO"
   cutPolygon: Polygon2D; // Polígono cerrado en milímetros (mm)
+  seamPolygon?: Polygon2D; // Polígono opcional de margen de costura interior
   bbox: BoundingBox; // Medidas exactas en mm
   areaMm2: number; // Área física en mm²
   allowedRotationsDeg: number[]; // [0], [0, 180], etc.

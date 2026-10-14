@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { 
   OrderItem, 
   OrderSummary, 
@@ -48,7 +49,9 @@ interface OrderState {
 
 const DEFAULT_AVAILABLE_SIZES = ['26', '28', '30', '32', '34', 'S', 'M', 'L', 'XL', 'XXL'];
 
-export const useOrderStore = create<OrderState>((set, get) => ({
+export const useOrderStore = create<OrderState>()(
+  persist(
+    (set, get) => ({
   items: [],
   summary: calculateOrderSummary([]),
   clientName: '',
@@ -176,4 +179,28 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       teamName: '',
     });
   },
-}));
+    }),
+    {
+      name: 'codecima_order_store_v1',
+      storage: createJSONStorage(() =>
+        typeof window !== 'undefined'
+          ? window.localStorage
+          : {
+              getItem: () => null,
+              setItem: () => {},
+              removeItem: () => {},
+            }
+      ),
+      partialize: (state) => ({
+        items: state.items,
+        summary: state.summary,
+        clientName: state.clientName,
+        teamName: state.teamName,
+        sport: state.sport,
+        fileName: state.fileName,
+        availableSizes: state.availableSizes,
+        strictNumberUniqueness: state.strictNumberUniqueness,
+      }),
+    }
+  )
+);

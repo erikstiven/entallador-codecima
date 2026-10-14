@@ -4,7 +4,8 @@ import path from 'node:path';
 import { 
   parseExcelBuffer, 
   exportOrderToCsvBySize, 
-  generateProductionSummaryWorkbook 
+  generateProductionSummaryWorkbook,
+  generateOrderTemplateWorkbook
 } from './excelParser';
 
 const FIXTURES_DIR = path.resolve(process.cwd(), 'tests/fixtures/excel');
@@ -132,13 +133,37 @@ describe('Excel & CSV Parser Module (Pruebas sobre Archivos Reales)', () => {
     expect(csvOutput).not.toContain('CARLOS');
   });
 
-  it('debe generar el libro Excel de resumen consolidado de producción', () => {
-    const filePath = path.join(FIXTURES_DIR, 'pedido_valido.xlsx');
-    const buffer = fs.readFileSync(filePath);
-    const { items } = parseExcelBuffer(buffer);
+  it('debe generar la plantilla Excel de pedido con validación de datos (dropdowns para Prenda, Cuello y Tallas)', async () => {
+    const customSizes = ['28', '30', '32', '34', 'S', 'M', 'L'];
+    const templateBytes = await generateOrderTemplateWorkbook(customSizes);
 
-    const summaryWorkbook = generateProductionSummaryWorkbook(items, 'Colegio Francia', 'Sub-15');
-    expect(summaryWorkbook).toBeInstanceOf(Uint8Array);
-    expect(summaryWorkbook.length).toBeGreaterThan(1000); // Archivo binario Excel generado
+    expect(templateBytes).toBeInstanceOf(Uint8Array);
+    expect(templateBytes.length).toBeGreaterThan(2000);
+
+    // Parse back with ExcelJS to verify dataValidation rules
+    const ExcelJS = await import('exceljs');
+    const wb = new ExcelJS.default.Workbook();
+    await wb.xlsx.load(Buffer.from(templateBytes) as any);
+
+    const ws = wb.getWorksheet('Lista Jugadores');
+    expect(ws).toBeDefined();
+
+    // Check header
+    expect(ws?.getCell('A1').value).toBe('Talla');
+    expect(ws?.getCell('D1').value).toBe('Tipo Prenda');
+    expect(ws?.getCell('E1').value).toBe('Cuello');
+
+    // Check data validation on row 2
+    const sizeValidation = ws?.getCell('A2').dataValidation;
+    expect(sizeValidation?.type).toBe('list');
+    expect(sizeValidation?.formulae?.[0]).toContain('28,30,32');
+
+    const garmentValidation = ws?.getCell('D2').dataValidation;
+    expect(garmentValidation?.type).toBe('list');
+    expect(garmentValidation?.formulae?.[0]).toContain('COMPLETO,CAMISETA,SHORT');
+
+    const neckValidation = ws?.getCell('E2').dataValidation;
+    expect(neckValidation?.type).toBe('list');
+    expect(neckValidation?.formulae?.[0]).toContain('REDONDO,V');
   });
 });

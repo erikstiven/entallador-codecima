@@ -23,6 +23,7 @@ import { PieceType } from '@/core/geometry/types';
 import { POPULAR_SPORTS_FONTS, loadGoogleFont, loadCustomFontFromFile } from '@/core/fonts/googleFonts';
 import { cmykToHex, hexToCmyk, CMYK } from '@/core/color/cmykColor';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
+import { useNestingStore } from '@/core/nesting/nestingStore';
 import { SvgTextilePreview, TextilePieceCarousel } from '@/components/textile';
 import { showAlert } from '@/core/ui/alerts';
 import { DorsalConfigModal } from './DorsalConfigModal';
@@ -798,6 +799,8 @@ export const DesignsView: React.FC = () => {
                         <span>Subir bloques del modelo (SVG)</span>
                       </>
                     )}
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setIsDorsalModalOpen(true)}
