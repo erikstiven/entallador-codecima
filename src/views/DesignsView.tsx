@@ -380,7 +380,7 @@ export const DesignsView: React.FC = () => {
       type="button"
       onClick={handleExplicitSaveDesign}
       disabled={!activeDesign || saveStatus === 'SAVING' || isUploading}
-      className={`text-xs px-3.5 py-1.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs ${
+      className={`h-8 text-xs px-3 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs ${
         saveStatus === 'SAVING'
           ? 'bg-emerald-500 text-white cursor-wait'
           : 'bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95'
@@ -389,17 +389,17 @@ export const DesignsView: React.FC = () => {
     >
       {saveStatus === 'SAVING' ? (
         <>
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Guardando diseño...</span>
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+          <span>Guardando...</span>
         </>
       ) : saveStatus === 'SAVED' ? (
         <>
-          <CheckCircle2 className="w-4 h-4" />
-          <span>¡Diseño Guardado!</span>
+          <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+          <span>Guardado</span>
         </>
       ) : (
         <>
-          <Save className="w-4 h-4" />
+          <Save className="w-3.5 h-3.5 text-white" />
           <span>Guardar Diseño</span>
         </>
       )}
@@ -421,8 +421,8 @@ export const DesignsView: React.FC = () => {
       {/* Grilla Principal con Scroll Independiente en ambas columnas */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5">
         {/* Columna Izquierda: Modelos con scroll independiente */}
-        <div className="w-full lg:w-80 shrink-0 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col h-full min-h-0 overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+        <div className="w-full lg:w-56 shrink-0 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col h-full min-h-0 overflow-hidden">
+          <div className="p-3 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Modelos ({designs.length})
             </h3>
@@ -437,7 +437,7 @@ export const DesignsView: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
+          <div className="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-1.5">
             {designs.map((d) => {
               const isSelected = activeDesign?.id === d.id;
               const hasFrente = Boolean(
@@ -448,28 +448,21 @@ export const DesignsView: React.FC = () => {
               const hasEspalda = Boolean(d.pieceArtworks['ESPALDA']);
               const hasMangaIzq = Boolean(d.pieceArtworks['MANGA_IZQ']);
               const hasMangaDer = Boolean(d.pieceArtworks['MANGA_DER']);
-              const hasShortFrente = Boolean(
-                d.pieceArtworks['PANTALONETA_IZQ'] || d.pieceArtworks['SHORT_FRENTE']
-              );
-              const hasShortEspalda = Boolean(
-                d.pieceArtworks['PANTALONETA_DER'] || d.pieceArtworks['SHORT_ESPALDA']
-              );
               const blocksReady = [hasFrente, hasEspalda, hasMangaIzq, hasMangaDer].filter(Boolean).length;
-              const shortBlocksReady = [hasShortFrente, hasShortEspalda].filter(Boolean).length;
               return (
                 <div
                   key={d.id}
                   onClick={() => setActiveDesign(d)}
-                  className={`border rounded-xl p-3.5 cursor-pointer transition-all duration-200 ${
+                  className={`border rounded-lg px-2.5 py-2 cursor-pointer transition-all duration-150 ${
                     isSelected
-                      ? 'border-violet-500 bg-violet-50/50 shadow-xs ring-1 ring-violet-500/30'
-                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
+                      ? 'border-violet-500 bg-violet-50/60 shadow-2xs ring-1 ring-violet-500/20'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-800 truncate">{d.name}</span>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="font-semibold text-xs text-slate-800 truncate">{d.name}</span>
                     {blocksReady >= 4 && (
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Modelo completo" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Modelo completo" />
                     )}
                   </div>
                 </div>
@@ -478,7 +471,7 @@ export const DesignsView: React.FC = () => {
           </div>
 
           {designs.length > 0 && (
-            <div className="p-3 border-t border-slate-100 bg-slate-50/50 shrink-0">
+            <div className="p-2.5 border-t border-slate-100 bg-slate-50/50 shrink-0">
               <button
                 disabled={isUploading || saveStatus === 'SAVING'}
                 onClick={async () => {
@@ -491,7 +484,7 @@ export const DesignsView: React.FC = () => {
                     showAlert.toast('info', 'Modelos limpiados');
                   }
                 }}
-                className="w-full py-1.5 px-3 bg-white hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
+                className="w-full py-1.5 px-2.5 bg-white hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Limpiar todos
@@ -503,109 +496,108 @@ export const DesignsView: React.FC = () => {
         {/* Columna Derecha: Configuración y Ranuras de Bloques con scroll independiente */}
         {activeDesign ? (
           <div className="flex-1 min-h-0 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col h-full overflow-hidden">
-            {/* Header fijo del Editor */}
-            <div className="p-5 border-b border-slate-200 shrink-0 bg-white">
-              {/* Título editable del modelo + Insignias de estado + Acciones principales */}
-              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-slate-200 pb-3.5">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-violet-600 flex-shrink-0" />
-                  {isEditingName ? (
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="text"
-                        value={editedName}
-                        onChange={(e) => setEditedName(e.target.value.toUpperCase())}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            updateDesignName(activeDesign.id, editedName);
-                            setIsEditingName(false);
-                          } else if (e.key === 'Escape') {
-                            setIsEditingName(false);
-                          }
-                        }}
-                        className="bg-white border border-violet-500 rounded-lg px-2.5 py-1 text-sm font-bold text-slate-900 focus:outline-none shadow-2xs"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => {
+            {/* Header fijo del Editor - Fila única y compacta */}
+            <div className="h-12 px-4 border-b border-slate-200 shrink-0 bg-white flex items-center justify-between gap-3">
+              {/* Título editable del modelo */}
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-violet-600 shrink-0" />
+                {isEditingName ? (
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="text"
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
                           updateDesignName(activeDesign.id, editedName);
                           setIsEditingName(false);
-                        }}
-                        className="p-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors cursor-pointer"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setIsEditingName(false)}
-                        className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors cursor-pointer"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                        } else if (e.key === 'Escape') {
+                          setIsEditingName(false);
+                        }
+                      }}
+                      className="bg-white border border-violet-500 rounded-md px-2 py-0.5 text-xs font-bold text-slate-900 focus:outline-none shadow-2xs"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => {
+                        updateDesignName(activeDesign.id, editedName);
+                        setIsEditingName(false);
+                      }}
+                      className="p-1 bg-violet-600 hover:bg-violet-700 text-white rounded-md transition-colors cursor-pointer"
+                    >
+                      <Check className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => setIsEditingName(false)}
+                      className="p-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md transition-colors cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <h3 className="text-sm font-bold text-slate-900 truncate">{activeDesign.name}</h3>
+                    <button
+                      onClick={() => {
+                        setEditedName(activeDesign.name);
+                        setIsEditingName(true);
+                      }}
+                      disabled={isUploading || saveStatus === 'SAVING'}
+                      className="p-1 hover:bg-slate-100 text-slate-400 hover:text-violet-600 rounded-md transition-colors disabled:opacity-50 cursor-pointer shrink-0"
+                      title="Renombrar este modelo"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+
+                <span className="text-[11px] font-medium text-slate-400 shrink-0">
+                  ({activeMainBlocksCount}/4)
+                </span>
+              </div>
+
+              {/* Acciones principales en una sola fila compacta */}
+              <div className="flex items-center gap-2 shrink-0">
+                {renderSaveDesignButton()}
+
+                <button
+                  type="button"
+                  onClick={() => multiInputRef.current?.click()}
+                  disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
+                  className="h-8 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs px-3 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs active:scale-95"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                      <span>Cargando SVG...</span>
+                    </>
                   ) : (
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="text-base font-bold text-slate-900">{activeDesign.name}</h3>
-                      <button
-                        onClick={() => {
-                          setEditedName(activeDesign.name);
-                          setIsEditingName(true);
-                        }}
-                        disabled={isUploading || saveStatus === 'SAVING'}
-                        className="p-1 hover:bg-slate-100 text-slate-400 hover:text-violet-600 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-                        title="Renombrar este modelo"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    <>
+                      <UploadCloud className="w-3.5 h-3.5 text-white" />
+                      <span>Subir bloques (SVG)</span>
+                    </>
                   )}
+                </button>
 
-                  <span className="text-xs text-slate-500 font-medium">
-                    {activeMainBlocksCount}/4 piezas
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDorsalModalOpen(true)}
+                  disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
+                  className="h-8 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs active:scale-95"
+                  title="Configurar tipografía y colores del dorsal"
+                >
+                  <Type className="w-3.5 h-3.5 text-violet-600" />
+                  <span>Dorsal ({activeFontFamily})</span>
+                </button>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  {renderSaveDesignButton()}
-
-                  <button
-                    type="button"
-                    onClick={() => multiInputRef.current?.click()}
-                    disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs px-3 py-1.5 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs active:scale-95"
-                  >
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Cargando SVG...</span>
-                      </>
-                    ) : (
-                      <>
-                        <UploadCloud className="w-3.5 h-3.5" />
-                        <span>Subir bloques (SVG)</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsDorsalModalOpen(true)}
-                    disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs active:scale-95"
-                    title="Configurar tipografía y colores del dorsal"
-                  >
-                    <Type className="w-3.5 h-3.5 text-violet-600" />
-                    <span>Configurar Dorsal ({activeFontFamily})</span>
-                  </button>
-
-                  <button
-                    onClick={() => deleteDesign(activeDesign.id)}
-                    disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 hover:border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
-                    title="Eliminar este modelo"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => deleteDesign(activeDesign.id)}
+                  disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
+                  className="h-8 w-8 flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 hover:border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                  title="Eliminar este modelo"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
 
@@ -635,7 +627,7 @@ export const DesignsView: React.FC = () => {
             />
 
             {/* CUERPO DEL EDITOR CON SCROLL INDEPENDIENTE */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
               <TextilePieceCarousel
                   title="Piezas de Camiseta (Frente, Espalda, Mangas)"
                   subtitle="Carga de arte para frente, espalda y mangas para entallado 1:1"
