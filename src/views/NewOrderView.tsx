@@ -25,6 +25,7 @@ import { useDesignStore } from '@/modules/designs/designStore';
 import { useNestingStore } from '@/core/nesting/nestingStore';
 import { showAlert } from '@/core/ui/alerts';
 import { dbService } from '@/core/database/db';
+import { Select } from '@/components/ui';
 
 export const NewOrderView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -233,7 +234,7 @@ export const NewOrderView: React.FC = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6 text-slate-800">
+    <div className="p-5 sm:p-6 max-w-[1600px] w-full mx-auto space-y-4 text-slate-800">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -243,13 +244,14 @@ export const NewOrderView: React.FC = () => {
         onChange={handleFileUpload}
       />
 
-      {/* 1. ENCABEZADO SUPERIOR (Igual a PatternsView) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/90">
+      {/* 1. ENCABEZADO SUPERIOR (Estandarizado y alineado con Nesting) */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl px-5 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
         <div>
-          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-            Gestión de Pedidos
+          <h2 className="text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            <span>Gestión de Pedidos</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-600 shrink-0" />
           </h2>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
+          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
             Nómina de jugadores, números, prendas y tallas
           </p>
         </div>
@@ -473,15 +475,15 @@ export const NewOrderView: React.FC = () => {
                     <label className="text-[10px] uppercase font-mono text-slate-500 font-bold block">
                       Tipo Prenda:
                     </label>
-                    <select
+                    <Select
+                      sizeVariant="sm"
                       value={bulkGarmentType}
                       onChange={(e) => setBulkGarmentType(e.target.value as GarmentType)}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-medium focus:outline-none focus:border-violet-500 cursor-pointer shadow-2xs"
                     >
                       <option value="COMPLETO">COMPLETO (6 pzs)</option>
                       <option value="CAMISETA">CAMISETA (4 pzs)</option>
                       <option value="SHORT">SHORT (2 pzs)</option>
-                    </select>
+                    </Select>
                   </div>
 
                   {/* Cuello */}
@@ -489,15 +491,15 @@ export const NewOrderView: React.FC = () => {
                     <label className="text-[10px] uppercase font-mono text-slate-500 font-bold block">
                       Cuello {bulkGarmentType === 'SHORT' ? '(N/A)' : ''}:
                     </label>
-                    <select
+                    <Select
+                      sizeVariant="sm"
                       value={bulkNecklineType}
                       disabled={bulkGarmentType === 'SHORT'}
                       onChange={(e) => setBulkNecklineType(e.target.value as NecklineType)}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-medium focus:outline-none focus:border-violet-500 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
                     >
                       <option value="REDONDO">REDONDO</option>
                       <option value="V">CUELLO V</option>
-                    </select>
+                    </Select>
                   </div>
 
                   {/* Talla (Desplegable) */}
@@ -505,10 +507,10 @@ export const NewOrderView: React.FC = () => {
                     <label className="text-[10px] uppercase font-mono text-slate-500 font-bold block">
                       Talla (Opcional):
                     </label>
-                    <select
+                    <Select
+                      sizeVariant="sm"
                       value={bulkSizeName}
                       onChange={(e) => setBulkSizeName(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-medium focus:outline-none focus:border-violet-500 cursor-pointer shadow-2xs"
                     >
                       <option value="">Mantener individual</option>
                       {availableSizes.map((sz) => (
@@ -516,7 +518,7 @@ export const NewOrderView: React.FC = () => {
                           {sz}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
 
                   {/* Cantidad */}
@@ -581,14 +583,12 @@ export const NewOrderView: React.FC = () => {
 
                       {/* Talla */}
                       <td className="py-1 px-3">
-                        <select
+                        <Select
+                          sizeVariant="sm"
                           value={item.sizeName}
+                          hasError={item.errors.some((e) => e.field === 'sizeName')}
                           onChange={(e) => updateItem(item.id, { sizeName: e.target.value })}
-                          className={`w-full bg-white border rounded-lg px-2 py-1 font-bold font-mono text-xs focus:outline-none focus:border-violet-500 shadow-2xs cursor-pointer ${
-                            item.errors.some((e) => e.field === 'sizeName')
-                              ? 'border-red-400 text-red-600 bg-red-50/50'
-                              : 'border-slate-200 text-slate-800'
-                          }`}
+                          className="font-bold font-mono text-xs"
                         >
                           {(!item.sizeName || !availableSizes.some((s) => s.toUpperCase() === item.sizeName.toUpperCase())) && (
                             <option value={item.sizeName || ''}>
@@ -600,7 +600,7 @@ export const NewOrderView: React.FC = () => {
                               {sz}
                             </option>
                           ))}
-                        </select>
+                        </Select>
                       </td>
 
                       {/* Cantidad */}
@@ -650,28 +650,30 @@ export const NewOrderView: React.FC = () => {
 
                       {/* Tipo Prenda */}
                       <td className="py-1 px-3">
-                        <select
+                        <Select
+                          sizeVariant="sm"
                           value={item.garmentType}
                           onChange={(e) => updateItem(item.id, { garmentType: e.target.value as GarmentType })}
-                          className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-violet-500 shadow-2xs cursor-pointer font-medium"
+                          className="text-xs font-medium"
                         >
                           <option value="COMPLETO">COMPLETO (6 pzs)</option>
                           <option value="CAMISETA">CAMISETA (4 pzs)</option>
                           <option value="SHORT">SHORT (2 pzs)</option>
-                        </select>
+                        </Select>
                       </td>
 
                       {/* Cuello */}
                       <td className="py-1 px-3">
-                        <select
+                        <Select
+                          sizeVariant="sm"
                           value={item.necklineType || 'REDONDO'}
                           disabled={item.garmentType === 'SHORT'}
                           onChange={(e) => updateItem(item.id, { necklineType: e.target.value as NecklineType })}
-                          className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 disabled:opacity-40 focus:outline-none focus:border-violet-500 shadow-2xs cursor-pointer font-medium"
+                          className="text-xs font-medium"
                         >
                           <option value="REDONDO">REDONDO</option>
                           <option value="V">CUELLO V</option>
-                        </select>
+                        </Select>
                       </td>
 
                       {/* Validación / Estado */}
