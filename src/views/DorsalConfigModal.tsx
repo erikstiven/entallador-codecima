@@ -75,13 +75,9 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
   const filteredLocalFonts = localFonts.filter((f) =>
     f.toLowerCase().includes(fontSearch.toLowerCase())
   );
-  const filteredPopularFonts = POPULAR_SPORTS_FONTS.filter(
-    (f) =>
-      f.family.toLowerCase().includes(fontSearch.toLowerCase()) ||
-      f.category.toLowerCase().includes(fontSearch.toLowerCase())
+  const filteredPopularFonts = POPULAR_SPORTS_FONTS.filter((f) =>
+    f.family.toLowerCase().includes(fontSearch.toLowerCase())
   );
-
-  const activeFontObj = POPULAR_SPORTS_FONTS.find((f) => f.family === activeFontFamily);
 
   // Cambio bidireccional en canal CMYK -> recalcula HEX
   const handleCmykChannelChange = (channel: keyof CMYK, val: number) => {
@@ -165,11 +161,6 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
                   >
                     {activeFontFamily}
                   </span>
-                  {activeFontObj && (
-                    <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium border border-slate-200/80">
-                      {activeFontObj.category}
-                    </span>
-                  )}
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-transform ${
@@ -244,15 +235,27 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
                           }}
                           className={`w-full px-3 py-2 rounded-lg text-left flex items-center justify-between text-xs transition-colors cursor-pointer ${
                             activeFontFamily === f
-                              ? 'bg-violet-50 text-violet-900 font-bold'
+                              ? 'bg-violet-600 text-white font-bold'
                               : 'hover:bg-slate-50 text-slate-800'
                           }`}
                         >
-                          <span className="font-bold text-xs" style={{ fontFamily: f }}>
-                            {f}
-                          </span>
-                          <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded">
-                            Local
+                          <div className="flex items-center gap-2 truncate">
+                            {activeFontFamily === f && <Check className="w-3.5 h-3.5 text-white shrink-0" />}
+                            <span
+                              className={`text-sm font-bold tracking-wide ${
+                                activeFontFamily === f ? 'text-white' : 'text-slate-900'
+                              }`}
+                              style={{ fontFamily: f }}
+                            >
+                              {f}
+                            </span>
+                          </div>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded border shrink-0 ${
+                            activeFontFamily === f
+                              ? 'bg-violet-700/50 text-violet-100 border-violet-500'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          }`}>
+                            Subida
                           </span>
                         </button>
                       ))}
@@ -289,15 +292,6 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
                               {font.family}
                             </span>
                           </div>
-                          <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded border shrink-0 ${
-                              isSelected
-                                ? 'bg-violet-700/50 text-violet-100 border-violet-500'
-                                : 'bg-slate-100 text-slate-500 border-slate-200'
-                            }`}
-                          >
-                            {font.category}
-                          </span>
                         </button>
                       );
                     })}
