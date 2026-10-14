@@ -110,7 +110,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = (props) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
       <div
         className="relative w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-2xl p-6 sm:p-8 text-slate-800 overflow-hidden"
         onClick={(e) => e.stopPropagation()}

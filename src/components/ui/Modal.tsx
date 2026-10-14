@@ -96,7 +96,7 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <div
       onClick={handleBackdropClick}
-      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150 ${className}`}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-150 ${className}`}
       role="dialog"
       aria-modal="true"
     >

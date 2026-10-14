@@ -80,7 +80,7 @@ export const GlobalAlertHost: React.FC = () => {
               closeModal(false);
             }
           }}
-          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] transition-opacity"
           role="dialog"
           aria-modal="true"
         >
