@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileSpreadsheet, 
   Palette, 
@@ -6,6 +6,8 @@ import {
   LayoutGrid, 
   Clock, 
   Settings,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { useNavigationStore, AppView } from '@/modules/navigation/navigationStore';
 
@@ -26,76 +28,135 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'SETTINGS', label: 'Configuración', icon: Settings, description: 'Ajustes del sistema', stepNumber: '06' },
 ];
 
+const STORAGE_COLLAPSED_KEY = 'cimatex_sidebar_collapsed';
+
 export const Sidebar: React.FC = () => {
   const { currentView, setCurrentView } = useNavigationStore();
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(STORAGE_COLLAPSED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCollapsed = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(STORAGE_COLLAPSED_KEY, String(next));
+      } catch {
+        // Ignorar
+      }
+      return next;
+    });
+  };
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between h-screen flex-shrink-0 select-none z-20">
+    <aside
+      className={`bg-white border-r border-slate-200/90 flex flex-col justify-between h-screen flex-shrink-0 select-none z-20 transition-all duration-300 ease-in-out shadow-xs ${
+        isCollapsed ? 'w-16' : 'w-60'
+      }`}
+    >
       {/* Brand Header */}
       <div>
-        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-800/60 border border-slate-700/60 p-1.5 flex items-center justify-center overflow-hidden shadow-md shadow-violet-950/40">
+        <div className="p-3 border-b border-slate-100 flex items-center justify-between min-h-[58px]">
+          <div className="flex items-center space-x-2.5 overflow-hidden">
+            <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200/80 p-1 flex items-center justify-center overflow-hidden shadow-xs flex-shrink-0">
               <img 
                 src="/cimatex-icon.png" 
                 alt="CimaTex" 
                 className="w-full h-full object-contain"
               />
             </div>
-            <div>
-              <h1 className="text-sm font-extrabold tracking-wide text-white flex items-center gap-1">
-                <span>Cima</span>
-                <span className="text-violet-400">Tex</span>
-                <span className="text-[9px] font-mono font-bold text-violet-300 bg-violet-950/80 px-1 py-0.2 rounded border border-violet-800/50">
-                  v2.5
-                </span>
-              </h1>
-              <div className="text-[10px] text-slate-400 font-medium">
-                Entallador Textil
+            {!isCollapsed && (
+              <div className="truncate">
+                <h1 className="text-sm font-extrabold tracking-tight text-slate-900 flex items-center gap-1">
+                  <span>Cima</span>
+                  <span className="text-violet-600">Tex</span>
+                  <span className="text-[9px] font-mono font-bold text-violet-700 bg-violet-50 px-1 py-0.2 rounded border border-violet-200">
+                    v2.5
+                  </span>
+                </h1>
+                <div className="text-[10px] text-slate-500 font-medium truncate">
+                  Entallador Textil
+                </div>
               </div>
-            </div>
+            )}
           </div>
+
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            title={isCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+          >
+            {isCollapsed ? (
+              <PanelLeftOpen className="w-4 h-4" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
+          </button>
         </div>
 
         {/* Navigation Items */}
-        <nav className="p-3 space-y-1.5">
-          <div className="px-3 pt-2 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-            Flujo de Producción
-          </div>
+        <nav className="p-2 space-y-1">
+          {!isCollapsed && (
+            <div className="px-3 pt-2 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+              Flujo de Producción
+            </div>
+          )}
+
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
+
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => setCurrentView(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all duration-200 text-xs font-medium cursor-pointer group ${
+                title={isCollapsed ? `${item.label} — ${item.description}` : undefined}
+                className={`w-full flex items-center rounded-xl transition-all duration-150 text-xs font-medium cursor-pointer group ${
+                  isCollapsed
+                    ? 'justify-center p-2.5'
+                    : 'justify-between px-3 py-2.5'
+                } ${
                   isActive
-                    ? 'bg-violet-600 text-white shadow-lg shadow-purple-950/60 font-semibold ring-1 ring-violet-400/40'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/70'
+                    ? 'bg-violet-600 text-white shadow-xs font-semibold ring-1 ring-violet-500/20'
+                    : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100/80'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <div className={`p-1.5 rounded-lg transition-colors ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-slate-950 text-slate-400 group-hover:text-purple-400 group-hover:bg-slate-900'
+                <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 min-w-0'}`}>
+                  <div className={`p-1 rounded-lg transition-colors flex-shrink-0 ${
+                    isActive
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-100 text-slate-500 group-hover:text-violet-600 group-hover:bg-violet-50'
                   }`}>
                     <Icon className="w-4 h-4" />
                   </div>
-                  <div>
-                    <div className="leading-tight">{item.label}</div>
-                    <div className={`text-[10px] font-normal truncate mt-0.5 ${isActive ? 'text-violet-100' : 'text-slate-400'}`}>
-                      {item.description}
+
+                  {!isCollapsed && (
+                    <div className="text-left min-w-0">
+                      <div className="leading-tight truncate">{item.label}</div>
+                      <div className={`text-[10px] font-normal truncate mt-0.5 ${
+                        isActive ? 'text-violet-100' : 'text-slate-400'
+                      }`}>
+                        {item.description}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                <div className="flex items-center">
-                  <span className={`text-[9px] font-mono font-bold px-1 py-0.5 rounded ${
-                    isActive ? 'bg-black/20 text-white' : 'text-slate-400 group-hover:text-slate-200'
-                  }`}>
-                    {item.stepNumber}
-                  </span>
-                </div>
+                {!isCollapsed && (
+                  <div className="flex items-center ml-2 flex-shrink-0">
+                    <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                      isActive ? 'bg-black/20 text-white' : 'text-slate-400 group-hover:text-slate-600'
+                    }`}>
+                      {item.stepNumber}
+                    </span>
+                  </div>
+                )}
               </button>
             );
           })}
@@ -103,10 +164,12 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Clean Minimal Sidebar Footer */}
-      <div className="p-3 border-t border-slate-800 bg-slate-950/40">
-        <div className="flex items-center justify-between px-2 py-1 text-[11px] text-slate-400 font-mono">
-          <span>CimaTex v2.5</span>
-          <span className="text-violet-400 font-semibold">1:1 mm</span>
+      <div className="p-2.5 border-t border-slate-100 bg-slate-50/70">
+        <div className={`flex items-center text-[10px] text-slate-400 font-mono ${
+          isCollapsed ? 'justify-center' : 'justify-between px-2'
+        }`}>
+          <span>v2.5</span>
+          {!isCollapsed && <span className="text-violet-600 font-semibold">1:1 mm</span>}
         </div>
       </div>
     </aside>

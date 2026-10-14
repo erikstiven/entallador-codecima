@@ -12,35 +12,25 @@ const STORAGE_KEY = 'cimatex_theme';
 const LEGACY_STORAGE_KEY = 'hmb_theme';
 
 function detectInitialTheme(): ThemeMode {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
-    if (stored === 'light' || stored === 'dark') return stored as ThemeMode;
-  } catch {
-    // localStorage puede no estar disponible (modo privado); usar preferencia del sistema
-  }
-  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: light)').matches) {
-    return 'light';
-  }
-  return 'dark';
+  return 'light';
 }
 
 /**
- * Tema de la aplicación. El modo claro se implementa remapeando la paleta de
- * Tailwind bajo la clase `html.light` (ver src/styles/globals.css), de modo que
- * todas las vistas existentes cambian de piel sin tocar su marcado.
+ * Tema de la aplicación. Estandarizado en modo claro (Light Mode)
+ * para garantizar visualización y calibración textil fiel.
  */
 export const useThemeStore = create<ThemeState>((set, get) => ({
-  theme: detectInitialTheme(),
+  theme: 'light',
   setTheme: (theme) => {
-    set({ theme });
-    applyThemeToDocument(theme);
+    set({ theme: 'light' });
+    applyThemeToDocument('light');
     try {
-      localStorage.setItem(STORAGE_KEY, theme);
+      localStorage.setItem(STORAGE_KEY, 'light');
     } catch {
-      // Persistencia no disponible: el tema vive solo en la sesión
+      // Ignorar error de almacenamiento
     }
   },
-  toggleTheme: () => get().setTheme(get().theme === 'dark' ? 'light' : 'dark'),
+  toggleTheme: () => get().setTheme('light'),
 }));
 
 export function applyThemeToDocument(theme: ThemeMode): void {
@@ -51,8 +41,8 @@ export function applyThemeToDocument(theme: ThemeMode): void {
     root.style.colorScheme = 'light';
     return;
   }
-  root.classList.toggle('light', theme === 'light');
-  root.style.colorScheme = theme;
+  root.classList.add('light');
+  root.style.colorScheme = 'light';
 }
 
 // Aplicar el tema guardado antes del primer render únicamente si estamos en /app

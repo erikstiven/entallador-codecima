@@ -48,24 +48,24 @@ export const Header: React.FC = () => {
   const info = getTitle();
 
   return (
-    <header className="h-16 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-6 flex items-center justify-between select-none z-10 transition-colors">
+    <header className="h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-5 flex items-center justify-between select-none z-10 transition-colors shadow-2xs">
       {/* Título y Subtítulo de Vista Activa */}
       <div>
-        <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
+        <h2 className="text-sm font-bold text-slate-900 tracking-tight">
           {info.title}
         </h2>
-        <p className="text-[11px] text-slate-400 hidden sm:block -mt-0.5">{info.subtitle}</p>
+        <p className="text-[11px] text-slate-500 hidden sm:block -mt-0.5">{info.subtitle}</p>
       </div>
 
-      {/* Derecha: Acceso a Landing, Badge de Empresa, Operador y Selector de Tema */}
-      <div className="flex items-center gap-3">
+      {/* Derecha: Acceso a Landing, Badge de Empresa y Operador */}
+      <div className="flex items-center gap-2.5">
         <button
           type="button"
           onClick={() => navigateTo('/landing')}
-          className="flex items-center gap-1.5 bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 rounded-full px-3 py-1.5 text-[11px] font-medium text-slate-300 hover:text-white transition-all cursor-pointer"
+          className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-full px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-2xs"
           title="Ir a la página web de presentación (Landing)"
         >
-          <Globe className="w-3.5 h-3.5 text-violet-400" />
+          <Globe className="w-3.5 h-3.5 text-violet-600" />
           <span className="hidden sm:inline">Ver Landing</span>
         </button>
 
@@ -73,33 +73,20 @@ export const Header: React.FC = () => {
         <button
           type="button"
           onClick={() => setCurrentView('SETTINGS')}
-          className="flex items-center gap-2.5 bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 rounded-full px-3 py-1 text-xs transition-all cursor-pointer group"
+          className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-full px-3 py-1 text-xs transition-all cursor-pointer group shadow-2xs"
           title="Ver perfil de empresa y ajustes de usuario"
         >
-          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-violet-700 via-purple-600 to-indigo-500 flex items-center justify-center text-white text-[10px] font-black shadow-sm">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-violet-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white text-[10px] font-black shadow-xs">
             {settings.companyName.substring(0, 2).toUpperCase() || 'CD'}
           </div>
           <div className="text-left hidden md:block">
-            <div className="text-white font-bold text-[11px] leading-tight group-hover:text-violet-300 transition-colors">
+            <div className="text-slate-900 font-bold text-[11px] leading-tight group-hover:text-violet-600 transition-colors">
               {settings.companyName || 'Codecima'}
             </div>
-            <div className="text-[9px] text-slate-400 font-mono leading-none">
+            <div className="text-[9px] text-slate-500 font-mono leading-none">
               {settings.operatorName || 'Operador'}
             </div>
           </div>
-        </button>
-
-        {/* Switcher de Tema */}
-        <button
-          onClick={toggleTheme}
-          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-          className="p-2 rounded-full bg-slate-950/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-all cursor-pointer shadow-sm active:scale-95"
-        >
-          {theme === 'dark' ? (
-            <Sun className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" />
-          ) : (
-            <Moon className="w-4 h-4 text-violet-400 transition-transform hover:-rotate-12" />
-          )}
         </button>
       </div>
     </header>

@@ -9,14 +9,14 @@
    ============================================================ */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Paleta taller (oscura) — referencias para utilidades con opacidad */
-  --hmb-bg: #020617;
-  --hmb-surface: #0f172a;
-  --hmb-raised: #1e293b;
-  --hmb-line: #334155;
-  --hmb-text: #f1f5f9;
+  /* Paleta taller estándar minimalista (clara) */
+  --hmb-bg: #f8fafc;
+  --hmb-surface: #ffffff;
+  --hmb-raised: #f1f5f9;
+  --hmb-line: #e2e8f0;
+  --hmb-text: #0f172a;
 }
 
 html.light {

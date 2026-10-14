@@ -29,13 +29,13 @@ const SettingsView = lazy(() =>
 );
 
 const ViewFallback: React.FC = () => (
-  <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 gap-3">
+  <div className="h-full w-full flex flex-col items-center justify-center bg-slate-50 gap-3">
     <img
       src="/cimatex-icon.png"
       alt="CimaTex"
       className="size-10 object-contain animate-pulse"
     />
-    <div className="flex items-center gap-2.5 text-xs text-slate-400 font-mono">
+    <div className="flex items-center gap-2.5 text-xs text-slate-500 font-mono">
       <span className="size-3.5 rounded-full border-2 border-violet-500/30 border-t-violet-500 animate-spin" />
       <span>Cargando módulo de CimaTex…</span>
     </div>
@@ -89,7 +89,7 @@ export const WorkshopApp: React.FC = () => {
   return (
     <div
       data-testid="workshop-app-shell"
-      className="flex h-screen w-screen overflow-hidden select-none bg-slate-950 text-slate-100"
+      className="flex h-screen w-screen overflow-hidden select-none bg-slate-50 text-slate-900"
     >
       {/* Primary Sidebar Navigation */}
       {!isFocusedNesting && <Sidebar />}
