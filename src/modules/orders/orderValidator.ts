@@ -108,14 +108,8 @@ export function validateOrderItem(
     }
   }
 
-  // 2. Validación del Número
-  if (!item.playerNumber) {
-    warnings.push({
-      field: 'playerNumber',
-      message: 'Sin número dorsal asignado (la camiseta se generará únicamente con el nombre).',
-      code: 'EMPTY_NUMBER',
-    });
-  } else {
+  // 2. Validación del Número (los ítems sin dorsal son normales y no generan advertencia)
+  if (item.playerNumber) {
     // Si se activa unicidad estricta de dorsal en el mismo equipo/pedido
     if (config.strictNumberUniqueness) {
       const isDuplicate = numberFrequencyMap

@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { 
   UploadCloud, 
-  FileSpreadsheet, 
   CheckCircle2, 
   AlertCircle, 
   AlertTriangle, 
@@ -9,15 +8,8 @@ import {
   Plus, 
   Download, 
   ArrowRight,
-  RefreshCw,
-  Sparkles,
-  ShieldCheck,
-  Zap,
-  Layers,
-  FileCheck,
-  Shirt,
-  Scissors,
-  Settings2,
+  Sliders,
+  ChevronDown,
   Check,
   Save,
   Loader2
@@ -45,10 +37,11 @@ export const NewOrderView: React.FC = () => {
   const [bulkNecklineType, setBulkNecklineType] = useState<NecklineType>('REDONDO');
   const [bulkSizeName, setBulkSizeName] = useState<string>('');
   const [bulkQuantity, setBulkQuantity] = useState<number>(1);
-  const [bulkSuccessMsg, setBulkSuccessMsg] = useState<string | null>(null);
+  const [isMassEditOpen, setIsMassEditOpen] = useState<boolean>(false);
   const [isGeneratingAction, setIsGeneratingAction] = useState<boolean>(false);
   const [isSavingRoster, setIsSavingRoster] = useState<boolean>(false);
   const [isRosterSaved, setIsRosterSaved] = useState<boolean>(false);
+  const [fileTimestamp, setFileTimestamp] = useState<string | null>(null);
 
   useEffect(() => {
     if (patternSets.length === 0) loadFromDatabase();
@@ -57,19 +50,6 @@ export const NewOrderView: React.FC = () => {
 
   const currentPatternSet = activePatternSet || patternSets[0] || null;
   const currentDesign = activeDesign || designs[0] || null;
-
-  const handleClearOrder = async () => {
-    const confirmed = await showAlert.confirm(
-      '¿Limpiar la nómina actual?',
-      'Se limpiará la nómina, las prendas generadas y el acomodo del rollo. Esta acción no elimina diseños ni moldes.'
-    );
-    if (!confirmed) return;
-    clearOrder();
-    useGeneratorStore.getState().clearGenerated();
-    useNestingStore.getState().clearNesting();
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    showAlert.toast('info', 'Pedido limpiado');
-  };
 
   const {
     items,
@@ -80,16 +60,11 @@ export const NewOrderView: React.FC = () => {
     sport,
     availableSizes,
     setAvailableSizes,
-    setClientName,
-    setTeamName,
-    setSport,
     loadFromBuffer,
     updateItem,
     removeItem,
     addItem,
     clearOrder,
-    setAllGarmentTypes,
-    setAllNecklineTypes,
     applyMassEdit,
   } = useOrderStore();
 
@@ -99,6 +74,21 @@ export const NewOrderView: React.FC = () => {
       setAvailableSizes(patternSizes);
     }
   }, [currentPatternSet]);
+
+  const handleClearOrder = async () => {
+    if (items.length === 0) return;
+    const confirmed = await showAlert.confirm(
+      '¿Limpiar la nómina actual?',
+      'Se limpiará la nómina, las prendas generadas y el acomodo del rollo. Esta acción no elimina diseños ni moldes.'
+    );
+    if (!confirmed) return;
+    clearOrder();
+    useGeneratorStore.getState().clearGenerated();
+    useNestingStore.getState().clearNesting();
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setFileTimestamp(null);
+    showAlert.toast('info', 'Pedido limpiado');
+  };
 
   const handleSaveRoster = async () => {
     if (items.length === 0 || isSavingRoster) return;
@@ -141,13 +131,13 @@ export const NewOrderView: React.FC = () => {
     let willOverwriteDifferent = false;
     if (items.some((i) => i.garmentType !== bulkGarmentType)) willOverwriteDifferent = true;
     if (bulkGarmentType !== 'SHORT' && items.some((i) => i.garmentType !== 'SHORT' && (i.necklineType || 'REDONDO') !== bulkNecklineType)) willOverwriteDifferent = true;
-    if (bulkSizeName.trim() && items.some((i) => i.sizeName !== bulkSizeName.trim().toUpperCase())) willOverwriteDifferent = true;
+    if (bulkSizeName && items.some((i) => i.sizeName !== bulkSizeName)) willOverwriteDifferent = true;
     if (bulkQuantity > 0 && items.some((i) => (i.quantity || 1) !== bulkQuantity)) willOverwriteDifferent = true;
 
     if (willOverwriteDifferent) {
       const confirmed = await showAlert.confirm(
         '¿Aplicar a TODOS los registros?',
-        'Se sobreescribirán las tallas, prendas o cuellos existentes en la nómina.'
+        'Se sobreescribirán las prendas, cuellos, tallas o cantidades en la nómina activa.'
       );
       if (!confirmed) return;
     }
@@ -155,11 +145,22 @@ export const NewOrderView: React.FC = () => {
     applyMassEdit({
       garmentType: bulkGarmentType,
       necklineType: bulkGarmentType === 'SHORT' ? undefined : bulkNecklineType,
-      sizeName: bulkSizeName.trim() ? bulkSizeName.trim().toUpperCase() : undefined,
+      sizeName: bulkSizeName ? bulkSizeName : undefined,
       quantity: bulkQuantity > 0 ? bulkQuantity : undefined,
     });
 
     showAlert.toast('success', '¡Edición masiva aplicada a todo el pedido!');
+  };
+
+  const handleAddPlayer = () => {
+    addItem({
+      playerName: `JUGADOR ${items.length + 1}`,
+      playerNumber: '',
+      sizeName: availableSizes[0] || 'S',
+      garmentType: 'COMPLETO',
+      necklineType: 'REDONDO',
+      quantity: 1,
+    });
   };
 
   const missingProductionSetup = [
@@ -167,7 +168,6 @@ export const NewOrderView: React.FC = () => {
     !currentDesign ? 'diseño' : null,
   ].filter((value): value is string => Boolean(value));
   const canProceedToNesting = items.length > 0 && !summary.hasErrors && summary.validCount > 0;
-  const isProductionReady = canProceedToNesting && missingProductionSetup.length === 0;
   const disabledReasonMessage =
     items.length === 0 || summary.validCount === 0
       ? 'Agrega al menos 1 jugador válido para continuar'
@@ -184,6 +184,11 @@ export const NewOrderView: React.FC = () => {
       const buffer = event.target?.result as ArrayBuffer;
       if (buffer) {
         loadFromBuffer(buffer, file.name);
+        setFileTimestamp(
+          new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) +
+            ', ' +
+            new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+        );
       }
     };
     reader.readAsArrayBuffer(file);
@@ -199,6 +204,11 @@ export const NewOrderView: React.FC = () => {
       const buffer = event.target?.result as ArrayBuffer;
       if (buffer) {
         loadFromBuffer(buffer, file.name);
+        setFileTimestamp(
+          new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) +
+            ', ' +
+            new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+        );
       }
     };
     reader.readAsArrayBuffer(file);
@@ -233,302 +243,351 @@ export const NewOrderView: React.FC = () => {
         onChange={handleFileUpload}
       />
 
-      {/* Import Card (Single unified zone when no items loaded) */}
-      {items.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                Cargar Nómina del Pedido
-              </h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Sube la planilla con nombres, números y tallas o crea la nómina manualmente
-              </p>
-            </div>
+      {/* 1. ENCABEZADO SUPERIOR (Igual a PatternsView) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/90">
+        <div>
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+            Gestión de Pedidos
+          </h2>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Nómina de jugadores, números, prendas y tallas
+          </p>
+        </div>
 
-            <div className="flex items-center gap-2.5">
-              <button
-                onClick={() =>
-                  addItem({
-                    playerName: 'JUGADOR 1',
-                    playerNumber: '1',
-                    sizeName: availableSizes[0] || 'S',
-                    garmentType: 'COMPLETO',
-                    necklineType: 'REDONDO',
-                    quantity: 1,
-                  })
-                }
-                className="px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
-                title="Agregar jugadores directamente a la lista sin archivo Excel"
-              >
-                <Plus className="w-3.5 h-3.5 text-white" />
-                <span>Crear Nómina Manualmente</span>
-              </button>
-
-              <button
-                onClick={handleDownloadTemplate}
-                className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-semibold border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0 shadow-2xs"
-                title="Descargar archivo Excel con menús desplegables (select) y tallas sincronizadas"
-              >
-                <Download className="w-3.5 h-3.5 text-violet-600" />
-                <span>Descargar Plantilla (.xlsx)</span>
-              </button>
-            </div>
-          </div>
-
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-300 hover:border-violet-400 bg-slate-50/50 hover:bg-violet-50/20 transition-all duration-200 rounded-xl p-12 text-center flex flex-col items-center justify-center cursor-pointer group shadow-2xs"
+        {/* Grupo de botones a la derecha alineados */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* + Agregar Jugador (Primario violeta) */}
+          <button
+            type="button"
+            onClick={handleAddPlayer}
+            className="rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer"
+            title="Agregar un jugador a la nómina"
           >
-            <div className="w-12 h-12 rounded-lg bg-white border border-slate-200 text-slate-500 group-hover:text-violet-600 group-hover:border-violet-300 flex items-center justify-center mb-3 group-hover:scale-105 transition-all shadow-xs">
-              <UploadCloud className="w-6 h-6" />
-            </div>
-            <h4 className="text-sm font-semibold text-slate-800 group-hover:text-violet-700 transition-colors">
-              Arrastra tu archivo Excel aquí o haz clic para seleccionarlo
-            </h4>
-            <p className="text-xs text-slate-500 mt-1 font-mono">
-              Formatos compatibles: .xlsx, .xls, .csv • Con selectores desplegables
-            </p>
+            <Plus className="w-3.5 h-3.5 text-white" />
+            <span>Agregar Jugador</span>
+          </button>
+
+          {/* Cargar Excel (Secundario blanco) */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
+            title="Cargar archivo Excel (.xlsx, .xls o .csv)"
+          >
+            <UploadCloud className="w-3.5 h-3.5 text-violet-600" />
+            <span>Cargar Excel</span>
+          </button>
+
+          {/* Descargar Plantilla (SIEMPRE visible) */}
+          <button
+            type="button"
+            onClick={handleDownloadTemplate}
+            className="rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
+            title="Descargar plantilla Excel oficial con listas desplegables"
+          >
+            <Download className="w-3.5 h-3.5 text-violet-600" />
+            <span className="hidden sm:inline">Descargar Plantilla</span>
+          </button>
+
+          {/* Guardar Nómina */}
+          <button
+            type="button"
+            onClick={handleSaveRoster}
+            disabled={items.length === 0 || isSavingRoster}
+            className={`rounded-lg border text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+              isRosterSaved
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:text-slate-900'
+            }`}
+            title="Guardar nómina activa"
+          >
+            {isSavingRoster ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-500" />
+                <span>Guardando...</span>
+              </>
+            ) : isRosterSaved ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span>¡Guardado!</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5 text-slate-500" />
+                <span>Guardar Nómina</span>
+              </>
+            )}
+          </button>
+
+          {/* Limpiar Pedido */}
+          <button
+            type="button"
+            onClick={handleClearOrder}
+            disabled={items.length === 0}
+            className="rounded-lg bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-600 text-xs px-3 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Limpiar la nómina actual"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Limpiar pedido</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. TARJETAS KPI (4 tarjetas compactas, limpias y conectadas) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+        {/* KPI 1: Total Jugadores */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+            Total Jugadores
+          </div>
+          <div className="text-2xl font-black font-mono text-slate-900 mt-1">
+            {summary.totalItems}
+          </div>
+          <div className="text-[11px] text-slate-400 font-medium mt-0.5">
+            {summary.totalItems === 1 ? '1 jugador en nómina' : `${summary.totalItems} jugadores en nómina`}
+          </div>
+        </div>
+
+        {/* KPI 2: Piezas a Producir */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+            Piezas a Producir
+          </div>
+          <div className="text-2xl font-black font-mono text-sky-600 mt-1">
+            {summary.totalPiecesCount} <span className="text-xs font-semibold text-slate-500">piezas</span>
+          </div>
+          <div className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+            {(summary.byGarmentType?.COMPLETO || 0) + (summary.byGarmentType?.CAMISETA || 0)} camisetas • {(summary.byGarmentType?.COMPLETO || 0) + (summary.byGarmentType?.SHORT || 0)} shorts
+          </div>
+        </div>
+
+        {/* KPI 3: Validación de Nómina */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+            Validación de Nómina
+          </div>
+          <div className="mt-1 flex items-center gap-1.5">
+            {items.length === 0 ? (
+              <span className="text-sm font-bold text-slate-400 font-mono">
+                Sin datos
+              </span>
+            ) : summary.invalidCount > 0 ? (
+              <div className="text-xl font-black font-mono text-red-600 flex items-center gap-1.5">
+                <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
+                <span>{summary.invalidCount} Error{summary.invalidCount > 1 ? 'es' : ''}</span>
+              </div>
+            ) : (
+              <div className="text-xl font-black font-mono text-emerald-600 flex items-center gap-1.5">
+                <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-500" />
+                <span>100% Válida</span>
+              </div>
+            )}
+          </div>
+          <div className="text-[11px] text-slate-400 font-medium mt-0.5">
+            {items.length === 0
+              ? 'Nómina vacía'
+              : summary.invalidCount > 0
+                ? `${summary.validCount} de ${summary.totalItems} válidos`
+                : `${summary.validCount} listos para producción`}
+          </div>
+        </div>
+
+        {/* KPI 4: Archivo Excel */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+            Archivo Excel
+          </div>
+          <div className="text-xs font-bold font-mono text-slate-800 truncate mt-1.5" title={fileName || 'Sin archivo'}>
+            {fileName || 'Carga manual / Sin archivo'}
+          </div>
+          <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+            {fileTimestamp || (fileName ? 'Reciente' : 'Listo para importar')}
+          </div>
+        </div>
+      </div>
+
+      {items.length === 0 ? (
+        /* Empty State Dropzone */
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className="border-2 border-dashed border-slate-200 hover:border-violet-400 bg-slate-50/60 hover:bg-violet-50/20 transition-all duration-200 rounded-2xl p-12 text-center flex flex-col items-center justify-center cursor-pointer group shadow-2xs"
+        >
+          <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 text-slate-400 group-hover:text-violet-600 group-hover:border-violet-300 flex items-center justify-center mb-3 group-hover:scale-105 transition-all shadow-2xs">
+            <UploadCloud className="w-6 h-6" />
+          </div>
+          <h4 className="text-sm font-bold text-slate-800 group-hover:text-violet-700 transition-colors">
+            Arrastra tu archivo Excel aquí o haz clic para seleccionarlo
+          </h4>
+          <p className="text-xs text-slate-400 mt-1 font-medium">
+            Formatos compatibles: .xlsx, .xls, .csv • Con selectores desplegables de tallas
+          </p>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-[11px] text-slate-400">¿No tienes planilla?</span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddPlayer();
+              }}
+              className="text-xs text-violet-600 hover:text-violet-700 font-bold underline cursor-pointer"
+            >
+              Crear nómina manualmente
+            </button>
           </div>
         </div>
       ) : (
-        /* Order Items Table & Real-time Validation */
+        /* Table & Mass Edit Panel */
         <div className="space-y-4">
-          {/* Summary Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Jugadores</div>
-              <div className="text-2xl font-black font-mono text-slate-900 mt-1">{summary.totalItems}</div>
-              <div className="text-[10px] text-slate-400 mt-0.5">En la nómina activa</div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Piezas a Producir</div>
-              <div className="text-2xl font-black font-mono text-sky-600 mt-1">
-                {summary.totalPiecesCount} <span className="text-xs font-semibold text-slate-500">piezas</span>
+          {/* 3. BARRA DE EDICIÓN MASIVA COMPACTA Y PLEGABLE */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
+            <div
+              onClick={() => setIsMassEditOpen((prev) => !prev)}
+              className="px-4 py-2.5 bg-slate-50/70 hover:bg-slate-50 flex items-center justify-between cursor-pointer select-none transition-colors border-b border-slate-200/70"
+            >
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-violet-600" />
+                <span className="text-xs font-bold text-slate-800">
+                  Edición Masiva — Aplicar a Todos
+                </span>
+                <span className="hidden sm:inline text-[11px] text-slate-400 font-medium">
+                  (Prendas, cuellos, tallas y cantidades)
+                </span>
               </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Frente, espalda, mangas y shorts</div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Validación de Nómina</div>
-              {summary.invalidCount > 0 ? (
-                <div className="text-2xl font-black font-mono text-red-600 mt-1 flex items-center gap-1.5">
-                  <AlertCircle className="w-5 h-5" />
-                  {summary.invalidCount} Error(es)
-                </div>
-              ) : (
-                <div className="text-2xl font-black font-mono text-emerald-600 mt-1 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-5 h-5" />
-                  100% Correcto
-                </div>
-              )}
-              <div className="text-[10px] text-slate-400 mt-0.5">{summary.validCount} de {summary.totalItems} listos</div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Archivo Excel</div>
-                <div className="text-xs text-slate-800 font-mono font-bold truncate mt-1" title={fileName || ''}>
-                  {fileName || 'pedido.xlsx'}
-                </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <span>{isMassEditOpen ? 'Ocultar' : 'Configurar'}</span>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    isMassEditOpen ? 'rotate-180 text-violet-600' : 'text-slate-400'
+                  }`}
+                />
               </div>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="text-[11px] text-violet-600 hover:text-violet-800 font-bold text-left mt-2 flex items-center gap-1 cursor-pointer"
-              >
-                <RefreshCw className="w-3 h-3" /> Reemplazar Excel
-              </button>
             </div>
-          </div>
 
-          {/* Table Container */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs space-y-0">
-            {/* Sección Visible "Aplicar a Todos" */}
-            <div className="p-4 bg-slate-50/80 border-b border-slate-200 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Settings2 className="w-4 h-4 text-violet-600" />
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-900">Edición Masiva — Aplicar a Todos</span>
-                  {bulkSuccessMsg && (
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-lg flex items-center gap-1 animate-pulse">
-                      <Check className="w-3.5 h-3.5" />
-                      {bulkSuccessMsg}
-                    </span>
-                  )}
-                </div>
+            {isMassEditOpen && (
+              <div className="p-3.5 bg-white border-t border-slate-100">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 items-end">
+                  {/* Tipo Prenda */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-mono text-slate-500 font-bold block">
+                      Tipo Prenda:
+                    </label>
+                    <select
+                      value={bulkGarmentType}
+                      onChange={(e) => setBulkGarmentType(e.target.value as GarmentType)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-medium focus:outline-none focus:border-violet-500 cursor-pointer shadow-2xs"
+                    >
+                      <option value="COMPLETO">COMPLETO (6 pzs)</option>
+                      <option value="CAMISETA">CAMISETA (4 pzs)</option>
+                      <option value="SHORT">SHORT (2 pzs)</option>
+                    </select>
+                  </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={handleSaveRoster}
-                    disabled={items.length === 0 || isSavingRoster}
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-600 hover:bg-emerald-700 text-white"
-                    title="Guardar cambios de la nómina actual"
-                  >
-                    {isSavingRoster ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                        Guardando nómina...
-                      </>
-                    ) : isRosterSaved ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-white" />
-                        ¡Nómina Guardada!
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-3.5 h-3.5 text-white" />
-                        Guardar Nómina
-                      </>
-                    )}
-                  </button>
-                  {items.length > 0 && (
+                  {/* Cuello */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-mono text-slate-500 font-bold block">
+                      Cuello {bulkGarmentType === 'SHORT' ? '(N/A)' : ''}:
+                    </label>
+                    <select
+                      value={bulkNecklineType}
+                      disabled={bulkGarmentType === 'SHORT'}
+                      onChange={(e) => setBulkNecklineType(e.target.value as NecklineType)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-medium focus:outline-none focus:border-violet-500 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                    >
+                      <option value="REDONDO">REDONDO</option>
+                      <option value="V">CUELLO V</option>
+                    </select>
+                  </div>
+
+                  {/* Talla (Desplegable) */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-mono text-slate-500 font-bold block">
+                      Talla (Opcional):
+                    </label>
+                    <select
+                      value={bulkSizeName}
+                      onChange={(e) => setBulkSizeName(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-medium focus:outline-none focus:border-violet-500 cursor-pointer shadow-2xs"
+                    >
+                      <option value="">Mantener individual</option>
+                      {availableSizes.map((sz) => (
+                        <option key={sz} value={sz}>
+                          {sz}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Cantidad */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-mono text-slate-500 font-bold block">
+                      Cantidad:
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={bulkQuantity}
+                      onChange={(e) => setBulkQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 text-center font-mono focus:outline-none focus:border-violet-500 shadow-2xs"
+                    />
+                  </div>
+
+                  {/* Botón Aplicar a Todos */}
+                  <div>
                     <button
                       type="button"
-                      onClick={handleClearOrder}
-                      className="px-3 py-1.5 bg-white hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg text-xs font-semibold border border-slate-200 hover:border-red-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                      title="Limpiar únicamente el pedido actual"
+                      onClick={handleExecuteMassEdit}
+                      className="w-full py-1.5 px-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold shadow-2xs transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 h-[34px]"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Limpiar pedido
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Aplicar a Todos</span>
                     </button>
-                  )}
-                  <button
-                    onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: availableSizes[0] || 'S', garmentType: 'CAMISETA', necklineType: 'REDONDO', quantity: 1 })}
-                    className="px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                  >
-                    <Plus className="w-3.5 h-3.5 text-white" />
-                    Agregar Jugador
-                  </button>
+                  </div>
                 </div>
               </div>
+            )}
+          </div>
 
-              {/* Mass Edit Controls Toolbar */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 bg-white p-3 rounded-xl border border-slate-200">
-                {/* Prenda */}
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono text-slate-500 font-bold">Tipo Prenda:</label>
-                  <select
-                    value={bulkGarmentType}
-                    onChange={(e) => setBulkGarmentType(e.target.value as GarmentType)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-violet-500 font-medium cursor-pointer"
-                  >
-                    <option value="COMPLETO">COMPLETO (6 pzs)</option>
-                    <option value="CAMISETA">CAMISETA (4 pzs)</option>
-                    <option value="SHORT">SHORT (2 pzs)</option>
-                  </select>
-                </div>
-
-                {/* Cuello (Deshabilitado para shorts) */}
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono text-slate-500 font-bold">
-                    Cuello {bulkGarmentType === 'SHORT' ? '(N/A)' : ''}:
-                  </label>
-                  <select
-                    value={bulkNecklineType}
-                    disabled={bulkGarmentType === 'SHORT'}
-                    onChange={(e) => setBulkNecklineType(e.target.value as NecklineType)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-violet-500 font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <option value="REDONDO">REDONDO</option>
-                    <option value="V">CUELLO V</option>
-                  </select>
-                </div>
-
-                {/* Talla */}
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono text-slate-500 font-bold">Talla (Opcional):</label>
-                  <input
-                    type="text"
-                    placeholder="Mantener individual"
-                    value={bulkSizeName}
-                    onChange={(e) => setBulkSizeName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 uppercase placeholder:text-slate-400 focus:outline-none focus:border-violet-500 font-mono"
-                  />
-                </div>
-
-                {/* Cantidad */}
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono text-slate-500 font-bold">Cantidad:</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={bulkQuantity}
-                    onChange={(e) => setBulkQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 text-center focus:outline-none focus:border-violet-500 font-mono"
-                  />
-                </div>
-
-                {/* Modelo Asignado */}
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono text-slate-500 font-bold">Modelo Asignado:</label>
-                  <select
-                    value={activeDesign?.id || ''}
-                    onChange={(e) => {
-                      const selected = designs.find((d) => d.id === e.target.value);
-                      if (selected) setActiveDesign(selected);
-                    }}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs text-violet-700 font-semibold focus:outline-none focus:border-violet-500 truncate cursor-pointer"
-                  >
-                    {designs.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Botón Aplicar */}
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={handleExecuteMassEdit}
-                    className="w-full py-1.5 px-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-lg text-xs font-black shadow-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    Aplicar a Todos
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto max-h-96">
-              <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200 z-10 text-[11px] uppercase tracking-wider">
+          {/* 4. TABLA DE NÓMINA */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
+            <div className="overflow-x-auto max-h-[480px]">
+              <table className="w-full text-left text-xs font-sans">
+                <thead className="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200 z-10 text-[11px] uppercase tracking-wider font-mono">
                   <tr>
-                    <th className="py-3 px-3 w-12 text-center">#</th>
-                    <th className="py-3 px-3 w-32">Talla</th>
-                    <th className="py-3 px-3 w-20 text-center">Cant.</th>
-                    <th className="py-3 px-3">Nombre Dorsal</th>
-                    <th className="py-3 px-3 w-24">Número</th>
-                    <th className="py-3 px-3 w-36">Tipo Prenda</th>
-                    <th className="py-3 px-3 w-28">Cuello</th>
-                    <th className="py-3 px-3">Validación / Estado</th>
-                    <th className="py-3 px-3 w-12 text-center"></th>
+                    <th className="py-2.5 px-3 w-12 text-center">#</th>
+                    <th className="py-2.5 px-3 w-28">Talla</th>
+                    <th className="py-2.5 px-3 w-16 text-center">Cant.</th>
+                    <th className="py-2.5 px-3 min-w-[140px]">Nombre Dorsal</th>
+                    <th className="py-2.5 px-3 w-20 text-center">Número</th>
+                    <th className="py-2.5 px-3 w-36">Tipo Prenda</th>
+                    <th className="py-2.5 px-3 w-28">Cuello</th>
+                    <th className="py-2.5 px-3 min-w-[170px]">Validación / Estado</th>
+                    <th className="py-2.5 px-3 w-12 text-center"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {items.map((item, idx) => (
-                    <tr 
-                      key={item.id} 
-                      className={`hover:bg-slate-50/80 transition-colors ${
-                        !item.isValid ? 'bg-red-50/50' : ''
+                    <tr
+                      key={item.id}
+                      className={`h-[38px] hover:bg-slate-50/80 transition-colors ${
+                        !item.isValid ? 'bg-red-50/30' : ''
                       }`}
                     >
-                      <td className="py-2.5 px-3 text-center text-slate-400 font-bold" title={`Fila Excel: ${item.rowNumber}`}>{idx + 1}</td>
-                      
-                      {/* Editable Size */}
-                      <td className="py-2 px-3">
+                      {/* # */}
+                      <td className="py-1 px-3 text-center text-slate-400 font-mono text-[11px] font-bold">
+                        {idx + 1}
+                      </td>
+
+                      {/* Talla */}
+                      <td className="py-1 px-3">
                         <select
                           value={item.sizeName}
                           onChange={(e) => updateItem(item.id, { sizeName: e.target.value })}
-                          className={`w-full bg-white border rounded-lg px-2 py-1 font-bold font-mono text-xs focus:outline-none focus:border-violet-500 cursor-pointer ${
+                          className={`w-full bg-white border rounded-lg px-2 py-1 font-bold font-mono text-xs focus:outline-none focus:border-violet-500 shadow-2xs cursor-pointer ${
                             item.errors.some((e) => e.field === 'sizeName')
-                              ? 'border-red-500 text-red-600 bg-red-50'
-                              : 'border-slate-300 text-slate-900'
+                              ? 'border-red-400 text-red-600 bg-red-50/50'
+                              : 'border-slate-200 text-slate-800'
                           }`}
                         >
                           {(!item.sizeName || !availableSizes.some((s) => s.toUpperCase() === item.sizeName.toUpperCase())) && (
@@ -544,52 +603,57 @@ export const NewOrderView: React.FC = () => {
                         </select>
                       </td>
 
-                      {/* Editable Quantity */}
-                      <td className="py-2 px-3 text-center">
+                      {/* Cantidad */}
+                      <td className="py-1 px-3 text-center">
                         <input
                           type="number"
                           min="1"
                           max="999"
                           value={item.quantity || 1}
-                          onChange={(e) => updateItem(item.id, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-                          className="w-16 px-2 py-1 text-center border border-slate-200 rounded-md text-sm"
+                          onChange={(e) =>
+                            updateItem(item.id, {
+                              quantity: Math.max(1, parseInt(e.target.value) || 1),
+                            })
+                          }
+                          className="w-14 bg-white border border-slate-200 rounded-lg px-1.5 py-1 text-center font-mono text-xs text-slate-800 focus:outline-none focus:border-violet-500 shadow-2xs"
                         />
                       </td>
 
-                      {/* Editable Player Name */}
-                      <td className="py-2 px-3">
+                      {/* Nombre Dorsal */}
+                      <td className="py-1 px-3">
                         <input
                           type="text"
                           value={item.playerName}
                           onChange={(e) => updateItem(item.id, { playerName: e.target.value })}
-                          className={`w-full bg-white border rounded-lg px-2.5 py-1 uppercase font-bold focus:outline-none focus:border-violet-500 ${
+                          className={`w-full bg-white border rounded-lg px-2.5 py-1 uppercase font-semibold text-xs focus:outline-none focus:border-violet-500 shadow-2xs ${
                             item.errors.some((e) => e.field === 'playerName')
-                              ? 'border-red-500 text-red-600 bg-red-50'
-                              : 'border-slate-300 text-slate-900'
+                              ? 'border-red-400 text-red-600 bg-red-50/50'
+                              : 'border-slate-200 text-slate-900'
                           }`}
                         />
                       </td>
 
-                      {/* Editable Number */}
-                      <td className="py-2 px-3">
+                      {/* Número Dorsal */}
+                      <td className="py-1 px-3 text-center">
                         <input
                           type="text"
+                          placeholder="—"
                           value={item.playerNumber}
                           onChange={(e) => updateItem(item.id, { playerNumber: e.target.value })}
-                          className={`w-16 bg-white border rounded-lg px-2 py-1 text-center font-black focus:outline-none focus:border-violet-500 ${
+                          className={`w-16 mx-auto block bg-white border rounded-lg px-2 py-1 text-center font-mono font-bold text-xs focus:outline-none focus:border-violet-500 shadow-2xs ${
                             item.errors.some((e) => e.field === 'playerNumber')
-                              ? 'border-red-500 text-red-600 bg-red-50'
-                              : 'border-slate-300 text-violet-700 font-bold'
+                              ? 'border-red-400 text-red-600 bg-red-50/50'
+                              : 'border-slate-200 text-violet-700 placeholder:text-slate-300'
                           }`}
                         />
                       </td>
 
-                      {/* Editable Garment Type */}
-                      <td className="py-2 px-3">
+                      {/* Tipo Prenda */}
+                      <td className="py-1 px-3">
                         <select
                           value={item.garmentType}
                           onChange={(e) => updateItem(item.id, { garmentType: e.target.value as GarmentType })}
-                          className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-slate-800 focus:outline-none focus:border-violet-500 text-[11px] font-sans cursor-pointer"
+                          className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-violet-500 shadow-2xs cursor-pointer font-medium"
                         >
                           <option value="COMPLETO">COMPLETO (6 pzs)</option>
                           <option value="CAMISETA">CAMISETA (4 pzs)</option>
@@ -597,55 +661,67 @@ export const NewOrderView: React.FC = () => {
                         </select>
                       </td>
 
-                      {/* Tipo de cuello explícito para seleccionar el molde correcto */}
-                      <td className="py-2 px-3">
+                      {/* Cuello */}
+                      <td className="py-1 px-3">
                         <select
                           value={item.necklineType || 'REDONDO'}
                           disabled={item.garmentType === 'SHORT'}
                           onChange={(e) => updateItem(item.id, { necklineType: e.target.value as NecklineType })}
-                          className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-slate-800 focus:outline-none focus:border-violet-500 text-[11px] font-sans disabled:opacity-40 cursor-pointer"
+                          className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 disabled:opacity-40 focus:outline-none focus:border-violet-500 shadow-2xs cursor-pointer font-medium"
                         >
                           <option value="REDONDO">REDONDO</option>
                           <option value="V">CUELLO V</option>
                         </select>
                       </td>
 
-                      {/* Errors / Warnings Badges */}
-                      <td className="py-2 px-3 text-[11px]">
+                      {/* Validación / Estado */}
+                      <td className="py-1 px-3 text-[11px]">
                         {item.errors.length > 0 ? (
-                          <div className="flex flex-col gap-0.5 text-red-400 font-sans">
+                          <div className="flex flex-col gap-1">
                             {item.errors.map((err, i) => (
-                              <span key={i} className="flex items-center gap-1 font-semibold">
-                                <AlertCircle className="w-3 h-3 flex-shrink-0" />
-                                {err.message}
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200"
+                                title={err.message}
+                              >
+                                <AlertCircle className="w-3 h-3 shrink-0 text-red-500" />
+                                <span className="truncate max-w-[200px]">{err.message}</span>
                               </span>
                             ))}
                           </div>
                         ) : item.warnings.length > 0 ? (
-                          <div className="flex flex-col gap-0.5 text-amber-400 font-sans">
+                          <div className="flex flex-col gap-1">
                             {item.warnings.map((warn, i) => (
-                              <span key={i} className="flex items-center gap-1 font-semibold">
-                                <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-                                {warn.message}
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200"
+                                title={warn.message}
+                              >
+                                <AlertTriangle className="w-3 h-3 shrink-0 text-amber-500" />
+                                <span className="truncate max-w-[180px]">{warn.message}</span>
                               </span>
                             ))}
                           </div>
+                        ) : item.playerNumber ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-violet-50 text-violet-700 border border-violet-200/70">
+                            Dorsal #{item.playerNumber}
+                          </span>
                         ) : (
-                          <span className="text-purple-400 flex items-center gap-1 font-sans font-semibold">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Correcto 1:1
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
+                            Solo nombre
                           </span>
                         )}
                       </td>
 
-                      {/* Remove Button */}
-                      <td className="py-2 px-3 text-center">
+                      {/* Acciones */}
+                      <td className="py-1 px-3 text-center">
                         <button
+                          type="button"
                           onClick={() => removeItem(item.id)}
-                          className="text-slate-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                           title="Eliminar jugador"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
                     </tr>
@@ -654,32 +730,31 @@ export const NewOrderView: React.FC = () => {
               </table>
             </div>
           </div>
-
         </div>
       )}
 
-      {/* Bottom Generation CTA Bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+      {/* 5. BARRA INFERIOR DE ACCIÓN (CTA) */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs">
         <div className="space-y-1">
           <div className="text-xs text-slate-600">
             {items.length === 0 ? (
               <span className="text-slate-600 font-semibold flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 text-amber-500" />
-                Carga un archivo Excel o agrega jugadores para habilitar la generación de prendas.
+                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                Carga un archivo Excel o agrega jugadores para habilitar la generación de producción.
               </span>
             ) : summary.hasErrors ? (
               <span className="text-red-600 font-semibold flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4" />
-                Corrige los {summary.invalidCount} errores en la tabla antes de proceder a la generación.
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                Corrige los {summary.invalidCount} errores en la nómina antes de proceder a la generación.
               </span>
             ) : missingProductionSetup.length > 0 ? (
               <span className="text-amber-600 font-semibold flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4" />
+                <AlertTriangle className="w-4 h-4 shrink-0" />
                 La nómina es válida, pero falta {missingProductionSetup.join(' y ')} para poder generar las prendas.
               </span>
             ) : (
               <span className="text-emerald-700 font-bold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 Todos los {summary.validCount} registros son válidos y listos para producción.
               </span>
             )}
@@ -727,6 +802,7 @@ export const NewOrderView: React.FC = () => {
 
         <div className="flex flex-col items-stretch md:items-end gap-2">
           <button
+            type="button"
             disabled={!canProceedToNesting || isGeneratingAction}
             onClick={async () => {
               if (!canProceedToNesting || isGeneratingAction) return;
@@ -765,7 +841,10 @@ export const NewOrderView: React.FC = () => {
                 }
                 useNestingStore.getState().clearNesting();
                 const generatedPieces = useGeneratorStore.getState().generatedPieces;
-                showAlert.toast('success', `¡${generatedPieces.length} piezas vectoriales generadas! Revisa los dorsales y ajustes en la pestaña de inspección.`);
+                showAlert.toast(
+                  'success',
+                  `¡${generatedPieces.length} piezas vectoriales generadas! Revisa los dorsales y ajustes en la pestaña de inspección.`
+                );
                 setCurrentView('NESTING');
               } finally {
                 setIsGeneratingAction(false);
@@ -774,7 +853,7 @@ export const NewOrderView: React.FC = () => {
             title={
               !canProceedToNesting
                 ? (disabledReasonMessage || 'Completa la nómina para generar prendas')
-                : 'Genera las piezas vectoriales 1:1 y conduce a la Inspección y Calibración de Prendas antes de acomodar en el rollo'
+                : 'Genera la producción completa de piezas vectoriales 1:1 y avanza al entallado y acomodo en rollo'
             }
             className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed ${
               !canProceedToNesting || isGeneratingAction
@@ -789,7 +868,7 @@ export const NewOrderView: React.FC = () => {
               </>
             ) : (
               <>
-                <span>Generar Prendas y Avanzar al Entallado</span>
+                <span>Generar Producción Completa</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

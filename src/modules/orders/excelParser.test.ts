@@ -86,7 +86,7 @@ describe('Excel & CSV Parser Module (Pruebas sobre Archivos Reales)', () => {
     // Fila 4: Número vacío y caracteres ilegales (#)
     const carlos = result.items[3];
     expect(carlos.isValid).toBe(false);
-    expect(carlos.warnings.some((w) => w.code === 'EMPTY_NUMBER')).toBe(true);
+    expect(carlos.playerNumber).toBe('');
     expect(carlos.errors.some((e) => e.code === 'INVALID_CHARACTERS')).toBe(true);
 
     // Fila 5: Número 10 duplicado con MATEO (con strictNumberUniqueness: true)

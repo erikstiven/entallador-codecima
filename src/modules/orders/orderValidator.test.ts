@@ -140,4 +140,24 @@ describe('Order Validator Unit Tests', () => {
     expect(summary.validCount).toBe(3);
     expect(summary.invalidCount).toBe(0);
   });
+
+  it('no debe generar advertencia EMPTY_NUMBER cuando un jugador no tiene número asignado', () => {
+    const itemWithoutNumber: OrderItem = {
+      id: 'no-num-1',
+      rowNumber: 1,
+      playerName: 'ANDRÉS',
+      playerNumber: '',
+      sizeName: '28',
+      garmentType: 'CAMISETA',
+      quantity: 1,
+      isValid: true,
+      errors: [],
+      warnings: [],
+    };
+
+    const validated = validateOrderItem(itemWithoutNumber, { availableSizes: ['28'] });
+    expect(validated.isValid).toBe(true);
+    expect(validated.warnings.some((w) => w.code === 'EMPTY_NUMBER')).toBe(false);
+    expect(validated.errors.length).toBe(0);
+  });
 });
