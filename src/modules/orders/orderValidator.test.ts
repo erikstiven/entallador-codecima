@@ -160,4 +160,76 @@ describe('Order Validator Unit Tests', () => {
     expect(validated.warnings.some((w) => w.code === 'EMPTY_NUMBER')).toBe(false);
     expect(validated.errors.length).toBe(0);
   });
+
+  it('debe detectar error MISSING_DESIGN_ARTWORK si el diseño solo tiene camiseta pero el pedido pide SHORT o COMPLETO', () => {
+    const itemCompleto: OrderItem = {
+      id: 'c1',
+      rowNumber: 1,
+      playerName: 'CARLOS',
+      playerNumber: '10',
+      sizeName: 'M',
+      garmentType: 'COMPLETO',
+      quantity: 1,
+      isValid: true,
+      errors: [],
+      warnings: [],
+    };
+
+    const designOnlyCamiseta = {
+      id: 'des_test',
+      name: 'TEST CAMISETA',
+      pieceArtworks: {
+        DELANTERO: { pieceType: 'DELANTERO', svgArtContent: '<svg></svg>', placeholders: [] },
+        ESPALDA: { pieceType: 'ESPALDA', svgArtContent: '<svg></svg>', placeholders: [] },
+        MANGA_IZQ: { pieceType: 'MANGA_IZQ', svgArtContent: '<svg></svg>', placeholders: [] },
+      },
+    };
+
+    const validated = validateOrderItem(itemCompleto, {
+      availableSizes: ['M'],
+      activeDesign: designOnlyCamiseta,
+    });
+
+    expect(validated.isValid).toBe(false);
+    expect(validated.errors.some((e) => e.code === 'MISSING_DESIGN_ARTWORK')).toBe(true);
+    expect(validated.errors[0].message).toContain('no incluye arte para pantaloneta/short');
+  });
+
+  it('debe detectar error MISSING_PATTERN_PIECES si el molde activo carece de moldería de short en la talla requerida', () => {
+    const itemShort: OrderItem = {
+      id: 's1',
+      rowNumber: 1,
+      playerName: 'LUCAS',
+      playerNumber: '7',
+      sizeName: 'M',
+      garmentType: 'SHORT',
+      quantity: 1,
+      isValid: true,
+      errors: [],
+      warnings: [],
+    };
+
+    const patternSetWithoutShort = {
+      id: 'pat_1',
+      name: 'MOLDE SIN SHORT',
+      sizes: [
+        {
+          id: 'sz_m',
+          sizeName: 'M',
+          pieces: [
+            { id: 'p1', pieceType: 'DELANTERO' },
+            { id: 'p2', pieceType: 'ESPALDA' },
+          ],
+        },
+      ],
+    };
+
+    const validated = validateOrderItem(itemShort, {
+      availableSizes: ['M'],
+      activePatternSet: patternSetWithoutShort,
+    });
+
+    expect(validated.isValid).toBe(false);
+    expect(validated.errors.some((e) => e.code === 'MISSING_PATTERN_PIECES')).toBe(true);
+  });
 });

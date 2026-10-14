@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { 
   UploadCloud, 
   CheckCircle2, 
@@ -12,7 +12,10 @@ import {
   ChevronDown,
   Check,
   Save,
-  Loader2
+  Loader2,
+  Layers,
+  Palette,
+  ExternalLink
 } from 'lucide-react';
 import { useOrderStore } from '@/modules/orders/orderStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
@@ -61,6 +64,7 @@ export const NewOrderView: React.FC = () => {
     sport,
     availableSizes,
     setAvailableSizes,
+    setValidationContext,
     loadFromBuffer,
     updateItem,
     removeItem,
@@ -69,12 +73,86 @@ export const NewOrderView: React.FC = () => {
     applyMassEdit,
   } = useOrderStore();
 
+  // Sincronizar contexto de validación en tiempo real cuando cambia el molde o diseño activo
   useEffect(() => {
-    if (currentPatternSet && currentPatternSet.sizes.length > 0) {
-      const patternSizes = currentPatternSet.sizes.map((s) => s.sizeName);
-      setAvailableSizes(patternSizes);
-    }
+    setValidationContext({
+      activePatternSet: currentPatternSet,
+      activeDesign: currentDesign,
+    });
+  }, [currentPatternSet, currentDesign]);
+
+  // Cobertura del Molde Maestro
+  const hasCamisetaPattern = useMemo(() => {
+    if (!currentPatternSet || !currentPatternSet.sizes || currentPatternSet.sizes.length === 0) return false;
+    return currentPatternSet.sizes.some((sz) =>
+      sz.pieces &&
+      sz.pieces.some((p) => p.pieceType && p.pieceType.startsWith('DELANTERO')) &&
+      sz.pieces.some((p) => p.pieceType === 'ESPALDA')
+    );
   }, [currentPatternSet]);
+
+  const hasShortPattern = useMemo(() => {
+    if (!currentPatternSet || !currentPatternSet.sizes || currentPatternSet.sizes.length === 0) return false;
+    return currentPatternSet.sizes.some((sz) =>
+      sz.pieces &&
+      sz.pieces.some((p) => p.pieceType && (p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT')))
+    );
+  }, [currentPatternSet]);
+
+  // Cobertura del Diseño Gráfico
+  const hasCamisetaDesign = useMemo(() => {
+    if (!currentDesign) return false;
+    const arts = currentDesign.pieceArtworks || {};
+    const hasFront = Boolean(arts['DELANTERO'] || arts['DELANTERO_REDONDO'] || arts['DELANTERO_V']);
+    const hasBack = Boolean(arts['ESPALDA']);
+    const hasSleeves = Boolean(arts['MANGA_IZQ'] || arts['MANGA_DER'] || (arts as any)['MANGA']);
+    return hasFront && hasBack && hasSleeves;
+  }, [currentDesign]);
+
+  const hasShortDesign = useMemo(() => {
+    if (!currentDesign) return false;
+    const arts = currentDesign.pieceArtworks || {};
+    return Boolean(
+      arts['SHORT_FRENTE'] ||
+      arts['SHORT_ESPALDA'] ||
+      arts['PANTALONETA_IZQ'] ||
+      arts['PANTALONETA_DER'] ||
+      (arts as any)['SHORT']
+    );
+  }, [currentDesign]);
+
+  // Detección de incompatibilidades globales con la nómina activa
+  const incompatibilityBanner = useMemo(() => {
+    if (items.length === 0) return null;
+    const shortItems = items.filter((it) => it.garmentType === 'SHORT' || it.garmentType === 'COMPLETO');
+    const camisetaItems = items.filter((it) => it.garmentType === 'CAMISETA' || it.garmentType === 'COMPLETO');
+
+    if (currentDesign && shortItems.length > 0 && !hasShortDesign) {
+      return {
+        type: 'danger' as const,
+        title: 'Diseño Incompatible con Short / Pantaloneta',
+        message: `El pedido contiene ${shortItems.length} registro(s) con Short, pero el diseño activo ("${currentDesign.name}") solo contiene artes de Camiseta. Se han marcado en rojo las filas afectadas. Puedes cambiar el tipo de prenda a CAMISETA en Edición Masiva o seleccionar un diseño que contenga piezas de short.`,
+      };
+    }
+
+    if (currentDesign && camisetaItems.length > 0 && !hasCamisetaDesign) {
+      return {
+        type: 'danger' as const,
+        title: 'Diseño Incompleto para Camiseta',
+        message: `El diseño "${currentDesign.name}" no contiene todas las piezas requeridas para camiseta (delantero, espalda y mangas).`,
+      };
+    }
+
+    if (currentPatternSet && shortItems.length > 0 && !hasShortPattern) {
+      return {
+        type: 'warning' as const,
+        title: 'Molde sin Moldería de Short',
+        message: `El molde activo ("${currentPatternSet.name}") no incluye piezas de Short / Pantaloneta en sus tallas.`,
+      };
+    }
+
+    return null;
+  }, [items, currentDesign, currentPatternSet, hasShortDesign, hasCamisetaDesign, hasShortPattern]);
 
   const handleClearOrder = async () => {
     if (items.length === 0) return;
@@ -173,8 +251,12 @@ export const NewOrderView: React.FC = () => {
     items.length === 0 || summary.validCount === 0
       ? 'Agrega al menos 1 jugador válido para continuar'
       : summary.hasErrors
-        ? 'Corrige las filas marcadas en rojo antes de continuar'
-        : null;
+        ? `Corrige los ${summary.invalidCount} errores en la nómina (incompatibilidad de molde o diseño) antes de continuar`
+        : !currentPatternSet
+          ? 'Selecciona un molde maestro activo para continuar'
+          : !currentDesign
+            ? 'Selecciona un diseño gráfico activo para continuar'
+            : null;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -335,7 +417,157 @@ export const NewOrderView: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. TARJETAS KPI (4 tarjetas compactas, limpias y conectadas) */}
+      {/* 2. VINCULACIÓN INTELIGENTE DE PRODUCCIÓN: MOLDE Y DISEÑO */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-violet-600 animate-pulse" />
+            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800 font-mono">
+              Vinculación de Producción — Molde y Diseño Activos
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-500 font-medium">
+            La nómina se valida en tiempo real contra las piezas y tallas del molde y los artes vectoriales del diseño.
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Selector de Molde Maestro */}
+          <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-700 uppercase font-mono flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-violet-600" />
+                <span>Molde Maestro Activo:</span>
+                {currentPatternSet && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 font-semibold font-sans">
+                    {currentPatternSet.sizes.length} tallas
+                  </span>
+                )}
+              </label>
+              <button
+                type="button"
+                onClick={() => setCurrentView('PATTERNS')}
+                className="text-[11px] text-violet-600 hover:text-violet-700 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                title="Ir a Molderías para cargar o editar patrones"
+              >
+                <span>Molderías</span>
+                <ExternalLink className="w-3 h-3" />
+              </button>
+            </div>
+
+            <Select
+              sizeVariant="sm"
+              value={currentPatternSet?.id || ''}
+              onChange={(e) => {
+                const selected = patternSets.find((p) => p.id === e.target.value);
+                if (selected) {
+                  setActivePatternSet(selected);
+                }
+              }}
+            >
+              {patternSets.length === 0 ? (
+                <option value="">No hay moldes guardados</option>
+              ) : (
+                patternSets.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.sizes.length} tallas: {p.sizes.map((s) => s.sizeName).slice(0, 6).join(', ')}{p.sizes.length > 6 ? '...' : ''})
+                  </option>
+                ))
+              )}
+            </Select>
+
+            {/* Badges de Cobertura del Molde */}
+            {currentPatternSet && (
+              <div className="flex flex-wrap items-center gap-2 pt-0.5 text-[11px]">
+                <span className="text-slate-400 font-medium">Piezas en molde:</span>
+                <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${hasCamisetaPattern ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                  Camiseta: {hasCamisetaPattern ? '✓ Disponible' : '✗ Falta'}
+                </span>
+                <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${hasShortPattern ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                  Short: {hasShortPattern ? '✓ Disponible' : '✗ No contiene short'}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Selector de Diseño Gráfico */}
+          <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-700 uppercase font-mono flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5 text-violet-600" />
+                <span>Diseño Gráfico (Artes SVG):</span>
+                {currentDesign && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 font-semibold font-sans">
+                    {currentDesign.sport || 'FUTBOL'}
+                  </span>
+                )}
+              </label>
+              <button
+                type="button"
+                onClick={() => setCurrentView('DESIGNS')}
+                className="text-[11px] text-violet-600 hover:text-violet-700 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                title="Ir a Diseños para cargar o editar artes SVG"
+              >
+                <span>Diseños</span>
+                <ExternalLink className="w-3 h-3" />
+              </button>
+            </div>
+
+            <Select
+              sizeVariant="sm"
+              value={currentDesign?.id || ''}
+              onChange={(e) => {
+                const selected = designs.find((d) => d.id === e.target.value);
+                if (selected) {
+                  setActiveDesign(selected);
+                }
+              }}
+            >
+              {designs.length === 0 ? (
+                <option value="">No hay diseños guardados</option>
+              ) : (
+                designs.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name} ({d.sport || 'FUTBOL'})
+                  </option>
+                ))
+              )}
+            </Select>
+
+            {/* Badges de Cobertura del Diseño */}
+            {currentDesign && (
+              <div className="flex flex-wrap items-center gap-2 pt-0.5 text-[11px]">
+                <span className="text-slate-400 font-medium">Artes cargados:</span>
+                <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${hasCamisetaDesign ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                  Camiseta: {hasCamisetaDesign ? '✓ Frente, Espalda, Mangas' : '✗ Incompleto'}
+                </span>
+                <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${hasShortDesign ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                  Short: {hasShortDesign ? '✓ Piernas cargadas' : '✗ Sin arte de short'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Banner de Incompatibilidad Rápida si existe conflicto */}
+        {incompatibilityBanner && (
+          <div className={`flex items-start gap-2.5 p-3 rounded-xl border text-xs ${
+            incompatibilityBanner.type === 'danger'
+              ? 'bg-red-50/90 border-red-200 text-red-800'
+              : 'bg-amber-50/90 border-amber-200 text-amber-800'
+          }`}>
+            <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${
+              incompatibilityBanner.type === 'danger' ? 'text-red-600' : 'text-amber-600'
+            }`} />
+            <div className="flex-1">
+              <div className="font-bold">{incompatibilityBanner.title}</div>
+              <div className="mt-0.5 text-[11px] leading-relaxed">{incompatibilityBanner.message}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 3. TARJETAS KPI (4 tarjetas compactas, limpias y conectadas) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
         {/* KPI 1: Total Jugadores */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
@@ -378,6 +610,11 @@ export const NewOrderView: React.FC = () => {
                 <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
                 <span>{summary.invalidCount} Error{summary.invalidCount > 1 ? 'es' : ''}</span>
               </div>
+            ) : (summary.warningCount || 0) > 0 ? (
+              <div className="text-xl font-black font-mono text-amber-600 flex items-center gap-1.5">
+                <AlertTriangle className="w-5 h-5 shrink-0 text-amber-500" />
+                <span>{summary.validCount} Válidos</span>
+              </div>
             ) : (
               <div className="text-xl font-black font-mono text-emerald-600 flex items-center gap-1.5">
                 <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-500" />
@@ -385,12 +622,14 @@ export const NewOrderView: React.FC = () => {
               </div>
             )}
           </div>
-          <div className="text-[11px] text-slate-400 font-medium mt-0.5">
+          <div className="text-[11px] text-slate-400 font-medium mt-0.5 truncate">
             {items.length === 0
               ? 'Nómina vacía'
               : summary.invalidCount > 0
-                ? `${summary.validCount} de ${summary.totalItems} válidos`
-                : `${summary.validCount} listos para producción`}
+                ? `${summary.invalidCount} fila(s) con errores a corregir`
+                : (summary.warningCount || 0) > 0
+                  ? `${summary.warningCount} registro(s) con ajuste horizontal`
+                  : `${summary.validCount} listos para producción`}
           </div>
         </div>
 
@@ -746,13 +985,18 @@ export const NewOrderView: React.FC = () => {
               </span>
             ) : summary.hasErrors ? (
               <span className="text-red-600 font-semibold flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                Corrige los {summary.invalidCount} errores en la nómina antes de proceder a la generación.
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                Corrige los {summary.invalidCount} errores en la nómina (incompatibilidad de molde o diseño) antes de proceder a la generación.
               </span>
             ) : missingProductionSetup.length > 0 ? (
               <span className="text-amber-600 font-semibold flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
                 La nómina es válida, pero falta {missingProductionSetup.join(' y ')} para poder generar las prendas.
+              </span>
+            ) : (summary.warningCount || 0) > 0 ? (
+              <span className="text-emerald-700 font-bold flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                Todos los {summary.validCount} registros son válidos ({summary.warningCount} con ajuste de texto largo).
               </span>
             ) : (
               <span className="text-emerald-700 font-bold flex items-center gap-1.5">

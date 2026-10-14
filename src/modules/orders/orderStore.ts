@@ -24,6 +24,8 @@ interface OrderState {
   fileName: string | null;
   availableSizes: string[];
   strictNumberUniqueness: boolean;
+  activePatternSet: any | null;
+  activeDesign: any | null;
 
   // Actions
   setClientName: (name: string) => void;
@@ -31,6 +33,7 @@ interface OrderState {
   setSport: (sport: string) => void;
   setAvailableSizes: (sizes: string[]) => void;
   setStrictNumberUniqueness: (strict: boolean) => void;
+  setValidationContext: (context: { activePatternSet?: any; activeDesign?: any }) => void;
   setAllGarmentTypes: (garmentType: GarmentType) => void;
   setAllNecklineTypes: (necklineType: NecklineType) => void;
   applyMassEdit: (options: {
@@ -60,43 +63,88 @@ export const useOrderStore = create<OrderState>()(
   fileName: null,
   availableSizes: DEFAULT_AVAILABLE_SIZES,
   strictNumberUniqueness: false,
+  activePatternSet: null,
+  activeDesign: null,
 
   setClientName: (clientName) => set({ clientName }),
   setTeamName: (teamName) => set({ teamName }),
   setSport: (sport) => set({ sport }),
   
+  setValidationContext: ({ activePatternSet, activeDesign }) => {
+    const nextPattern = activePatternSet !== undefined ? activePatternSet : get().activePatternSet;
+    const nextDesign = activeDesign !== undefined ? activeDesign : get().activeDesign;
+    let nextSizes = get().availableSizes;
+    if (nextPattern && nextPattern.sizes && nextPattern.sizes.length > 0) {
+      nextSizes = nextPattern.sizes.map((s: any) => s.sizeName);
+    }
+    const { items, strictNumberUniqueness } = get();
+    const validated = validateOrderList(items, {
+      availableSizes: nextSizes,
+      strictNumberUniqueness,
+      activePatternSet: nextPattern,
+      activeDesign: nextDesign,
+    });
+    set({
+      activePatternSet: nextPattern,
+      activeDesign: nextDesign,
+      availableSizes: nextSizes,
+      items: validated,
+      summary: calculateOrderSummary(validated),
+    });
+  },
+
   setAvailableSizes: (sizes) => {
     set({ availableSizes: sizes });
-    const { items, strictNumberUniqueness } = get();
-    const validated = validateOrderList(items, { availableSizes: sizes, strictNumberUniqueness });
+    const { items, strictNumberUniqueness, activePatternSet, activeDesign } = get();
+    const validated = validateOrderList(items, {
+      availableSizes: sizes,
+      strictNumberUniqueness,
+      activePatternSet,
+      activeDesign,
+    });
     set({ items: validated, summary: calculateOrderSummary(validated) });
   },
 
   setStrictNumberUniqueness: (strict) => {
     set({ strictNumberUniqueness: strict });
-    const { items, availableSizes } = get();
-    const validated = validateOrderList(items, { availableSizes, strictNumberUniqueness: strict });
+    const { items, availableSizes, activePatternSet, activeDesign } = get();
+    const validated = validateOrderList(items, {
+      availableSizes,
+      strictNumberUniqueness: strict,
+      activePatternSet,
+      activeDesign,
+    });
     set({ items: validated, summary: calculateOrderSummary(validated) });
   },
 
   setAllGarmentTypes: (garmentType) => {
-    const { items, availableSizes, strictNumberUniqueness } = get();
+    const { items, availableSizes, strictNumberUniqueness, activePatternSet, activeDesign } = get();
     const updated = items.map((it) => ({ ...it, garmentType }));
-    const validated = validateOrderList(updated, { availableSizes, strictNumberUniqueness });
+    const validated = validateOrderList(updated, {
+      availableSizes,
+      strictNumberUniqueness,
+      activePatternSet,
+      activeDesign,
+    });
     set({ items: validated, summary: calculateOrderSummary(validated) });
   },
 
   setAllNecklineTypes: (necklineType) => {
-    const { items, availableSizes, strictNumberUniqueness } = get();
+    const { items, availableSizes, strictNumberUniqueness, activePatternSet, activeDesign } = get();
     const updated = items.map((item) => (
       item.garmentType === 'SHORT' ? item : { ...item, necklineType }
     ));
-    const validated = validateOrderList(updated, { availableSizes, strictNumberUniqueness });
+    const validated = validateOrderList(updated, {
+      availableSizes,
+      strictNumberUniqueness,
+      activePatternSet,
+      activeDesign,
+    });
     set({ items: validated, summary: calculateOrderSummary(validated) });
   },
 
   applyMassEdit: ({ garmentType, necklineType, sizeName, quantity }) => {
-    const { items, availableSizes, strictNumberUniqueness } = get();
+    const { items, availableSizes, strictNumberUniqueness, activePatternSet, activeDesign } = get();
     const updated = items.map((item) => {
       const next = { ...item };
       if (garmentType !== undefined) {
@@ -113,41 +161,62 @@ export const useOrderStore = create<OrderState>()(
       }
       return next;
     });
-    const validated = validateOrderList(updated, { availableSizes, strictNumberUniqueness });
+    const validated = validateOrderList(updated, {
+      availableSizes,
+      strictNumberUniqueness,
+      activePatternSet,
+      activeDesign,
+    });
     set({ items: validated, summary: calculateOrderSummary(validated) });
   },
 
   loadFromBuffer: (buffer, fileName) => {
-    const { availableSizes, strictNumberUniqueness } = get();
+    const { availableSizes, strictNumberUniqueness, activePatternSet, activeDesign } = get();
     const result = parseExcelBuffer(buffer, {
       availableSizes,
       strictNumberUniqueness,
     });
+    const validated = validateOrderList(result.items, {
+      availableSizes,
+      strictNumberUniqueness,
+      activePatternSet,
+      activeDesign,
+    });
 
     set({
-      items: result.items,
-      summary: result.summary,
+      items: validated,
+      summary: calculateOrderSummary(validated),
       fileName,
     });
   },
 
   updateItem: (id, updates) => {
-    const { items, availableSizes, strictNumberUniqueness } = get();
+    const { items, availableSizes, strictNumberUniqueness, activePatternSet, activeDesign } = get();
     const updatedRaw = items.map((it) => (it.id === id ? { ...it, ...updates } : it));
-    const validated = validateOrderList(updatedRaw, { availableSizes, strictNumberUniqueness });
+    const validated = validateOrderList(updatedRaw, {
+      availableSizes,
+      strictNumberUniqueness,
+      activePatternSet,
+      activeDesign,
+    });
     set({ items: validated, summary: calculateOrderSummary(validated) });
   },
 
   removeItem: (id) => {
-    const { items, availableSizes, strictNumberUniqueness } = get();
+    const { items, availableSizes, strictNumberUniqueness, activePatternSet, activeDesign } = get();
     const filtered = items.filter((it) => it.id !== id);
     const renumbered = filtered.map((it, idx) => ({ ...it, rowNumber: idx + 1 }));
-    const validated = validateOrderList(renumbered, { availableSizes, strictNumberUniqueness });
+    const validated = validateOrderList(renumbered, {
+      availableSizes,
+      strictNumberUniqueness,
+      activePatternSet,
+      activeDesign,
+    });
     set({ items: validated, summary: calculateOrderSummary(validated) });
   },
 
   addItem: (item) => {
-    const { items, availableSizes, strictNumberUniqueness } = get();
+    const { items, availableSizes, strictNumberUniqueness, activePatternSet, activeDesign } = get();
     const newItem: OrderItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       rowNumber: items.length + 1,
@@ -166,7 +235,12 @@ export const useOrderStore = create<OrderState>()(
     };
 
     const newItems = [...items, newItem];
-    const validated = validateOrderList(newItems, { availableSizes, strictNumberUniqueness });
+    const validated = validateOrderList(newItems, {
+      availableSizes,
+      strictNumberUniqueness,
+      activePatternSet,
+      activeDesign,
+    });
     set({ items: validated, summary: calculateOrderSummary(validated) });
   },
 

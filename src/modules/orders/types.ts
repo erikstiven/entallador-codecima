@@ -6,7 +6,7 @@ export type GarmentType = 'COMPLETO' | 'CAMISETA' | 'SHORT';
 export type NecklineType = 'REDONDO' | 'V';
 
 export interface ValidationError {
-  field: 'playerName' | 'playerNumber' | 'sizeName' | 'garmentType' | 'general';
+  field: 'playerName' | 'playerNumber' | 'sizeName' | 'garmentType' | 'necklineType' | 'general';
   message: string;
   code: 
     | 'EMPTY_NAME'
@@ -15,7 +15,9 @@ export interface ValidationError {
     | 'SIZE_NOT_FOUND'
     | 'INVALID_GARMENT_TYPE'
     | 'DUPLICATE_NUMBER'
-    | 'DUPLICATE_ROW';
+    | 'DUPLICATE_ROW'
+    | 'MISSING_DESIGN_ARTWORK'
+    | 'MISSING_PATTERN_PIECES';
 }
 
 export interface ValidationWarning {
@@ -52,6 +54,8 @@ export interface OrderValidationConfig {
   strictNumberUniqueness?: boolean;
   maxNameLengthWarn?: number; // Por defecto 14 caracteres
   allowSpecialCharacters?: boolean;
+  activePatternSet?: any;
+  activeDesign?: any;
 }
 
 export interface OrderSummary {
@@ -62,6 +66,7 @@ export interface OrderSummary {
   totalPiecesCount: number; // Ej: Completo = 6 piezas, Camiseta = 4 piezas, Short = 2 piezas
   bySize: Record<string, number>;
   byGarmentType: Record<GarmentType, number>;
+  warningCount: number;
 }
 
 export interface CsvExportOptions {

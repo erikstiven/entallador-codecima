@@ -152,6 +152,103 @@ export function validateOrderItem(
     }
   }
 
+  // 4. Validación Inteligente de Compatibilidad con el Diseño Gráfico Activo
+  if (config.activeDesign) {
+    const design = config.activeDesign;
+    const artworks = design.pieceArtworks || {};
+
+    if (item.garmentType === 'CAMISETA' || item.garmentType === 'COMPLETO') {
+      const hasFront = Boolean(
+        artworks['DELANTERO'] ||
+        artworks['DELANTERO_REDONDO'] ||
+        artworks['DELANTERO_V']
+      );
+      const hasBack = Boolean(artworks['ESPALDA']);
+      const hasSleeves = Boolean(
+        artworks['MANGA_IZQ'] ||
+        artworks['MANGA_DER'] ||
+        artworks['MANGA']
+      );
+
+      const missingCamiseta: string[] = [];
+      if (!hasFront) missingCamiseta.push('delantero');
+      if (!hasBack) missingCamiseta.push('espalda');
+      if (!hasSleeves) missingCamiseta.push('mangas');
+
+      if (missingCamiseta.length > 0) {
+        errors.push({
+          field: 'garmentType',
+          code: 'MISSING_DESIGN_ARTWORK',
+          message: `El diseño "${design.name}" no tiene arte para: ${missingCamiseta.join(', ')}.`,
+        });
+      }
+    }
+
+    if (item.garmentType === 'SHORT' || item.garmentType === 'COMPLETO') {
+      const hasShort = Boolean(
+        artworks['SHORT_FRENTE'] ||
+        artworks['SHORT_ESPALDA'] ||
+        artworks['PANTALONETA_IZQ'] ||
+        artworks['PANTALONETA_DER'] ||
+        artworks['SHORT']
+      );
+
+      if (!hasShort) {
+        errors.push({
+          field: 'garmentType',
+          code: 'MISSING_DESIGN_ARTWORK',
+          message: `El diseño "${design.name}" no incluye arte para pantaloneta/short.`,
+        });
+      }
+    }
+  }
+
+  // 5. Validación Inteligente de Compatibilidad con Piezas del Molde Activo
+  if (config.activePatternSet && item.sizeName && config.activePatternSet.sizes) {
+    const pattern = config.activePatternSet;
+    const sizeUpper = item.sizeName.toUpperCase();
+    const patternSize = pattern.sizes.find(
+      (s: any) => s.sizeName.toUpperCase() === sizeUpper || normalizeSizeName(s.sizeName) === normalizeSizeName(item.sizeName)
+    );
+
+    if (patternSize && Array.isArray(patternSize.pieces)) {
+      const pieces = patternSize.pieces;
+
+      if (item.garmentType === 'CAMISETA' || item.garmentType === 'COMPLETO') {
+        const hasFront = pieces.some((p: any) => p.pieceType && p.pieceType.startsWith('DELANTERO'));
+        const hasBack = pieces.some((p: any) => p.pieceType === 'ESPALDA');
+        const hasManga = pieces.some((p: any) => p.pieceType && p.pieceType.startsWith('MANGA'));
+
+        const missingPattern: string[] = [];
+        if (!hasFront) missingPattern.push('delantero');
+        if (!hasBack) missingPattern.push('espalda');
+        if (!hasManga) missingPattern.push('mangas');
+
+        if (missingPattern.length > 0) {
+          errors.push({
+            field: 'garmentType',
+            code: 'MISSING_PATTERN_PIECES',
+            message: `El molde "${pattern.name}" no incluye piezas de ${missingPattern.join(', ')} en talla ${item.sizeName}.`,
+          });
+        }
+      }
+
+      if (item.garmentType === 'SHORT' || item.garmentType === 'COMPLETO') {
+        const hasShort = pieces.some(
+          (p: any) => p.pieceType && (p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT'))
+        );
+
+        if (!hasShort) {
+          errors.push({
+            field: 'garmentType',
+            code: 'MISSING_PATTERN_PIECES',
+            message: `El molde "${pattern.name}" no incluye moldería de short/pantaloneta en talla ${item.sizeName}.`,
+          });
+        }
+      }
+    }
+  }
+
   return {
     ...item,
     isValid: errors.length === 0,
@@ -195,10 +292,15 @@ export function calculateOrderSummary(items: OrderItem[]): OrderSummary {
 
   let validCount = 0;
   let totalPiecesCount = 0;
+  let warningCount = 0;
 
   for (const item of items) {
     if (item.isValid) {
       validCount++;
+    }
+
+    if (item.warnings && item.warnings.length > 0) {
+      warningCount++;
     }
 
     // Conteo por talla
@@ -229,5 +331,6 @@ export function calculateOrderSummary(items: OrderItem[]): OrderSummary {
     totalPiecesCount,
     bySize,
     byGarmentType,
+    warningCount,
   };
 }
