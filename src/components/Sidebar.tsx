@@ -107,9 +107,6 @@ export const Sidebar: React.FC = () => {
                 <h1 className="text-sm font-extrabold tracking-tight text-slate-900 flex items-center gap-1">
                   <span>Cima</span>
                   <span className="text-violet-600">Tex</span>
-                  <span className="text-[9px] font-mono font-bold text-violet-700 bg-violet-50 px-1 py-0.5 rounded border border-violet-200">
-                    v2.5
-                  </span>
                 </h1>
                 <div className="text-[10px] text-slate-400 font-medium truncate">
                   Entallador Textil
@@ -122,7 +119,7 @@ export const Sidebar: React.FC = () => {
             type="button"
             onClick={toggleCollapsed}
             title={isCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+            className="p-1.5 py-0.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
           >
             {isCollapsed ? (
               <PanelLeftOpen className="w-4 h-4" />
@@ -140,16 +137,6 @@ export const Sidebar: React.FC = () => {
 
           {NAV_SECONDARY_ITEMS.map(renderNavItem)}
         </nav>
-      </div>
-
-      {/* Clean Minimal Sidebar Footer */}
-      <div className="p-2.5 border-t border-slate-100 bg-slate-50/70">
-        <div className={`flex items-center text-[10px] text-slate-400 font-mono ${
-          isCollapsed ? 'justify-center' : 'justify-between px-2'
-        }`}>
-          <span>v2.5</span>
-          {!isCollapsed && <span className="text-violet-600 font-semibold">1:1 mm</span>}
-        </div>
       </div>
     </aside>
   );
