@@ -473,6 +473,7 @@ export const DesignsView: React.FC = () => {
           {designs.length > 0 && (
             <div className="p-2.5 border-t border-slate-100 bg-slate-50/50 shrink-0">
               <button
+                type="button"
                 disabled={isUploading || saveStatus === 'SAVING'}
                 onClick={async () => {
                   const confirmed = await showAlert.confirm(
@@ -572,7 +573,17 @@ export const DesignsView: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => deleteDesign(activeDesign.id)}
+                  type="button"
+                  onClick={async () => {
+                    const confirmed = await showAlert.confirm(
+                      `¿Eliminar modelo "${activeDesign.name}"?`,
+                      'Esta acción borrará este diseño maestro.'
+                    );
+                    if (confirmed) {
+                      deleteDesign(activeDesign.id);
+                      showAlert.toast('info', 'Modelo eliminado');
+                    }
+                  }}
                   disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
                   className="h-8 w-8 flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 hover:border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
                   title="Eliminar este modelo"
