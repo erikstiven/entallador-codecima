@@ -11,15 +11,15 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'btn-brand-primary bg-brand-primary rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-md shadow-violet-500/25 active:scale-95 transition-all',
+    'btn-brand-primary bg-brand-primary bg-violet-600 hover:bg-violet-700 text-white font-semibold shadow-xs active:scale-95 transition-all rounded-lg',
   secondary:
-    'rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold shadow-xs active:scale-95 transition-all',
+    'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold shadow-2xs active:scale-95 transition-all rounded-lg',
   destructive:
-    'rounded-full bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 font-semibold active:scale-95 transition-all',
+    'bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 font-semibold active:scale-95 transition-all rounded-lg',
   ghost:
-    'rounded-full hover:bg-slate-100 text-slate-600 active:bg-slate-200/60 font-medium transition-all',
+    'hover:bg-slate-100 text-slate-600 active:bg-slate-200/60 font-medium transition-all rounded-lg',
   outline:
-    'rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium shadow-xs active:scale-95 transition-all',
+    'border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium shadow-2xs active:scale-95 transition-all rounded-lg',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -51,7 +51,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         data-brand-btn={isPrimary ? 'true' : undefined}
         disabled={disabled || isLoading}
         style={style}
-        className={`inline-flex items-center justify-center font-medium rounded-lg rounded-full select-none transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+        className={`inline-flex items-center justify-center font-medium rounded-lg select-none transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
         {...props}
       >
         {isLoading && (

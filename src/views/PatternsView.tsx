@@ -350,7 +350,7 @@ exportMoldesParaCimatex();`;
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImportingSvg}
-                className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs px-4 py-2 font-semibold inline-flex items-center gap-1.5 transition-all shadow-md shadow-violet-500/25 active:scale-95 cursor-pointer disabled:opacity-50"
+                className="rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs px-4 py-2 font-semibold inline-flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
               >
                 {isImportingSvg ? (
                   <>
@@ -369,17 +369,17 @@ exportMoldesParaCimatex();`;
                 type="button"
                 onClick={handleDownloadTemplate}
                 disabled={!activePatternSet && patternSets.length === 0}
-                className="rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-4 py-2 font-semibold inline-flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-40"
+                className="rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-4 py-2 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer disabled:opacity-40"
                 title="Descargar plantilla de Illustrator"
               >
-                <Download className="w-3.5 h-3.5 text-primary" />
+                <Download className="w-3.5 h-3.5 text-violet-600" />
                 <span className="hidden sm:inline">Descargar plantilla</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleDownloadScript}
-                className="rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-4 py-2 font-semibold inline-flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer"
+                className="rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-4 py-2 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
                 title="Descargar script JSX para Illustrator"
               >
                 <FileCode className="w-3.5 h-3.5 text-slate-500" />
@@ -612,9 +612,9 @@ exportMoldesParaCimatex();`;
             <button
               type="button"
               onClick={() => setCatalogMode('CATALOG')}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer"
             >
-              <ArrowLeft className="w-4 h-4 text-primary" />
+              <ArrowLeft className="w-4 h-4 text-violet-600" />
               <span>Volver al catálogo de molderías</span>
             </button>
 
@@ -682,7 +682,7 @@ exportMoldesParaCimatex();`;
                   <button
                     onClick={handleSavePatterns}
                     disabled={isSaving}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 shadow-md shadow-violet-500/25 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                     title="Guardar molde de forma permanente"
                   >
                     {isSaving ? (
@@ -706,16 +706,16 @@ exportMoldesParaCimatex();`;
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isImportingSvg}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-700 rounded-full text-xs font-semibold border border-slate-200 shadow-xs active:scale-95 transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 shadow-2xs active:scale-95 transition-all cursor-pointer"
                   >
                     {isImportingSvg ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 text-violet-600 animate-spin" />
                         <span>Analizando vectores...</span>
                       </>
                     ) : (
                       <>
-                        <Plus className="w-3.5 h-3.5 text-primary" />
+                        <Plus className="w-3.5 h-3.5 text-violet-600" />
                         <span>Cargar Otro Molde SVG</span>
                       </>
                     )}
@@ -724,16 +724,16 @@ exportMoldesParaCimatex();`;
                   <button
                     type="button"
                     onClick={handleDownloadTemplate}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 rounded-full text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 rounded-lg text-xs font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer"
                     title="Descargar plantilla editable con capas para Adobe Illustrator"
                   >
-                    <Download className="w-3.5 h-3.5 text-primary" />
+                    <Download className="w-3.5 h-3.5 text-violet-600" />
                     <span>Descargar Plantilla Illustrator</span>
                   </button>
 
                   <button
                     onClick={handleDownloadScript}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-full text-xs font-semibold border border-slate-200 shadow-xs active:scale-95 transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 shadow-2xs active:scale-95 transition-all cursor-pointer"
                     title="Descargar script JSX para Adobe Illustrator"
                   >
                     <FileCode className="w-3.5 h-3.5 text-slate-500" />
@@ -753,7 +753,7 @@ exportMoldesParaCimatex();`;
                         setCatalogMode('CATALOG');
                       }
                     }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-full text-xs font-semibold border border-slate-200 hover:border-red-200 shadow-xs active:scale-95 transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-lg text-xs font-semibold border border-slate-200 hover:border-red-200 shadow-2xs active:scale-95 transition-all cursor-pointer"
                     title="Eliminar este conjunto de moldes activo"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
