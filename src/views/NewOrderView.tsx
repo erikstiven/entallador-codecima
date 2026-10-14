@@ -15,7 +15,8 @@ import {
   Loader2,
   Layers,
   Palette,
-  ExternalLink
+  ExternalLink,
+  Users
 } from 'lucide-react';
 import { useOrderStore } from '@/modules/orders/orderStore';
 import { useProfileStore } from '@/modules/settings/profileStore';
@@ -462,19 +463,6 @@ export const NewOrderView: React.FC = () => {
                 ))
               )}
             </Select>
-
-            {/* Badges de Cobertura del Molde */}
-            {currentPatternSet && (
-              <div className="flex flex-wrap items-center gap-2 pt-0.5 text-[11px]">
-                <span className="text-slate-400 font-medium">Piezas en molde:</span>
-                <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${hasCamisetaPattern ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                  Camiseta: {hasCamisetaPattern ? '✓ Disponible' : '✗ Falta'}
-                </span>
-                <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${hasShortPattern ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-                  Short: {hasShortPattern ? '✓ Disponible' : '✗ No contiene short'}
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Selector de Diseño Gráfico */}
@@ -520,38 +508,8 @@ export const NewOrderView: React.FC = () => {
                 ))
               )}
             </Select>
-
-            {/* Badges de Cobertura del Diseño */}
-            {currentDesign && (
-              <div className="flex flex-wrap items-center gap-2 pt-0.5 text-[11px]">
-                <span className="text-slate-400 font-medium">Artes cargados:</span>
-                <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${hasCamisetaDesign ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                  Camiseta: {hasCamisetaDesign ? '✓ Frente, Espalda, Mangas' : '✗ Incompleto'}
-                </span>
-                <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${hasShortDesign ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-                  Short: {hasShortDesign ? '✓ Piernas cargadas' : '✗ Sin arte de short'}
-                </span>
-              </div>
-            )}
           </div>
         </div>
-
-        {/* Banner de Incompatibilidad Rápida si existe conflicto */}
-        {incompatibilityBanner && (
-          <div className={`flex items-start gap-2.5 p-3 rounded-xl border text-xs ${
-            incompatibilityBanner.type === 'danger'
-              ? 'bg-red-50/90 border-red-200 text-red-800'
-              : 'bg-amber-50/90 border-amber-200 text-amber-800'
-          }`}>
-            <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${
-              incompatibilityBanner.type === 'danger' ? 'text-red-600' : 'text-amber-600'
-            }`} />
-            <div className="flex-1">
-              <div className="font-bold">{incompatibilityBanner.title}</div>
-              <div className="mt-0.5 text-[11px] leading-relaxed">{incompatibilityBanner.message}</div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 3. TARJETAS KPI (4 tarjetas compactas, limpias y conectadas) */}
@@ -634,41 +592,9 @@ export const NewOrderView: React.FC = () => {
         </div>
       </div>
 
-      {items.length === 0 ? (
-        /* Empty State Dropzone */
-        <div
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-slate-200 hover:border-violet-400 bg-slate-50/60 hover:bg-violet-50/20 transition-all duration-200 rounded-2xl p-12 text-center flex flex-col items-center justify-center cursor-pointer group shadow-2xs"
-        >
-          <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 text-slate-400 group-hover:text-violet-600 group-hover:border-violet-300 flex items-center justify-center mb-3 group-hover:scale-105 transition-all shadow-2xs">
-            <UploadCloud className="w-6 h-6" />
-          </div>
-          <h4 className="text-sm font-bold text-slate-800 group-hover:text-violet-700 transition-colors">
-            Arrastra tu archivo Excel aquí o haz clic para seleccionarlo
-          </h4>
-          <p className="text-xs text-slate-400 mt-1 font-medium">
-            Formatos compatibles: .xlsx, .xls, .csv • Con selectores desplegables de tallas
-          </p>
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-[11px] text-slate-400">¿No tienes planilla?</span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddPlayer();
-              }}
-              className="text-xs text-violet-600 hover:text-violet-700 font-bold underline cursor-pointer"
-            >
-              Crear nómina manualmente
-            </button>
-          </div>
-        </div>
-      ) : (
-        /* Table & Mass Edit Panel */
-        <div className="space-y-4">
-          {/* 3. BARRA DE EDICIÓN MASIVA COMPACTA Y PLEGABLE */}
+      <div className="space-y-4">
+        {/* 3. BARRA DE EDICIÓN MASIVA COMPACTA Y PLEGABLE (Visible cuando hay jugadores en nómina) */}
+        {items.length > 0 && (
           <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
             <div
               onClick={() => setIsMassEditOpen((prev) => !prev)}
@@ -777,8 +703,9 @@ export const NewOrderView: React.FC = () => {
               </div>
             )}
           </div>
+        )}
 
-          {/* 4. TABLA DE NÓMINA */}
+        {/* 4. TABLA DE NÓMINA */}
           <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
             {/* Barra superior de la tabla con botón + Agregar Jugador */}
             <div className="px-4 py-2.5 bg-slate-50/70 border-b border-slate-200/70 flex items-center justify-between gap-3">
@@ -818,7 +745,33 @@ export const NewOrderView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {items.map((item, idx) => (
+                  {items.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 px-4 text-center">
+                        <div className="flex flex-col items-center justify-center max-w-sm mx-auto space-y-3">
+                          <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center border border-violet-100 shadow-2xs">
+                            <Users className="w-6 h-6" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm font-bold text-slate-700">No hay jugadores en la nómina</p>
+                            <p className="text-xs text-slate-400">
+                              Importa un archivo Excel o agrega tu primer jugador directamente en la tabla.
+                            </p>
+                          </div>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleAddPlayer}
+                            className="cursor-pointer shadow-xs"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Agregar Primer Jugador</span>
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    items.map((item, idx) => (
                     <tr
                       key={item.id}
                       className={`h-[38px] hover:bg-slate-50/80 transition-colors ${
@@ -976,8 +929,9 @@ export const NewOrderView: React.FC = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
+                  ))
+                )}
+              </tbody>
               </table>
             </div>
 
@@ -999,7 +953,6 @@ export const NewOrderView: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
 
       {/* 5. BARRA INFERIOR DE ACCIÓN (CTA) */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs">
