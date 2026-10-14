@@ -1,12 +1,89 @@
-import React from 'react';
-import { Globe } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Bell,
+  ChevronDown,
+  Calendar,
+  Search,
+  CheckCircle2,
+  Clock,
+  Sparkles,
+  Settings,
+  History,
+  LogOut,
+  User as UserIcon,
+} from 'lucide-react';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { useSystemSettingsStore } from '@/modules/settings/systemSettingsStore';
-import { navigateTo } from '@/landing/router/landingRouteStore';
+import { useAuthStore } from '@/landing/auth/authStore';
+
+interface NotificationItem {
+  id: string;
+  title: string;
+  description: string;
+  time: string;
+  unread: boolean;
+  type: 'success' | 'info' | 'warning';
+}
+
+const INITIAL_NOTIFICATIONS: NotificationItem[] = [
+  {
+    id: 'notif_1',
+    title: 'Moldería importada con éxito',
+    description: 'Camiseta de fútbol Cuello V (6 tallas, 24 piezas) lista.',
+    time: 'Hace 5 min',
+    unread: true,
+    type: 'success',
+  },
+  {
+    id: 'notif_2',
+    title: 'Nómina de pedido sincronizada',
+    description: '18 jugadores y dorsales validados sin inconsistencias.',
+    time: 'Hace 20 min',
+    unread: true,
+    type: 'info',
+  },
+  {
+    id: 'notif_3',
+    title: 'Optimización de nesting lista',
+    description: 'Eficiencia estimada del 84.5% en bobina de 1600 mm.',
+    time: 'Hace 1 hora',
+    unread: true,
+    type: 'warning',
+  },
+];
 
 export const Header: React.FC = () => {
   const { currentView, setCurrentView } = useNavigationStore();
   const { settings } = useSystemSettingsStore();
+  const authUser = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  const notifRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar popovers al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  };
 
   const getTitle = () => {
     switch (currentView) {
@@ -40,52 +117,245 @@ export const Header: React.FC = () => {
           title: 'Configuración', 
           subtitle: 'Empresa, bobinas y tolerancias',
         };
+      default:
+        return {
+          title: 'Taller Textil',
+          subtitle: 'Producción & Estampado 1:1',
+        };
     }
   };
 
   const info = getTitle();
 
+  // Nombre y Rol institucional estilo 1:1 con SIFEF
+  const displayName = authUser?.name || 'Auditor Transversal';
+  const displayRole = authUser?.role || 'ADMINISTRADOR';
+  const displayInitials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase() || 'AT';
+
   return (
-    <header className="h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-5 flex items-center justify-between select-none z-10 transition-colors shadow-2xs">
-      {/* Título y Subtítulo de Vista Activa */}
-      <div>
-        <h2 className="text-sm font-bold text-slate-900 tracking-tight">
-          {info.title}
-        </h2>
-        <p className="text-[11px] text-slate-500 hidden sm:block -mt-0.5">{info.subtitle}</p>
+    <header className="h-14 bg-white border-b border-slate-200/90 px-4 sm:px-6 flex items-center justify-between select-none z-30 transition-colors">
+      {/* Título de Vista Activa y Buscador Global */}
+      <div className="flex items-center gap-6 min-w-0">
+        <div className="min-w-0">
+          <h2 className="text-sm font-extrabold text-slate-900 tracking-tight truncate">
+            {info.title}
+          </h2>
+          <p className="text-[11px] text-slate-500 hidden sm:block -mt-0.5 truncate">
+            {info.subtitle}
+          </p>
+        </div>
+
+        {/* Buscador contextual */}
+        <div className="hidden xl:flex items-center relative w-72">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Buscar proyectos, moldes, pedidos..."
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-full focus:bg-white focus:outline-none focus:border-violet-400 text-slate-800 placeholder:text-slate-400 transition-all shadow-2xs"
+          />
+        </div>
       </div>
 
-      {/* Derecha: Acceso a Landing, Badge de Empresa y Operador */}
-      <div className="flex items-center gap-2.5">
-        <button
-          type="button"
-          onClick={() => navigateTo('/landing')}
-          className="flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-xs"
-          title="Ir a la página web de presentación (Landing)"
-        >
-          <Globe className="w-3.5 h-3.5 text-violet-600" />
-          <span className="hidden sm:inline">Ver Landing</span>
-        </button>
+      {/* Derecha: Periodo, Campana de Notificaciones, Separador y Perfil Usuario (1:1 SIFEF) */}
+      <div className="flex items-center gap-3">
+        {/* Selector de Periodo */}
+        <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200/80 px-3 py-1 rounded-full shadow-2xs">
+          <span className="text-slate-400 text-[11px] font-medium">Periodo:</span>
+          <Calendar className="w-3.5 h-3.5 text-slate-500" />
+          <span className="font-semibold text-slate-800 text-[11px]">2026 - 2027</span>
+        </div>
 
-        {/* Badge de Empresa y Operador */}
-        <button
-          type="button"
-          onClick={() => setCurrentView('SETTINGS')}
-          className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs transition-all cursor-pointer group shadow-xs"
-          title="Ver perfil de empresa y ajustes de usuario"
-        >
-          <div className="w-6 h-6 rounded-full bg-brand-primary flex items-center justify-center text-white text-[10px] font-bold shadow-xs">
-            {settings.companyName.substring(0, 2).toUpperCase() || 'CD'}
-          </div>
-          <div className="text-left hidden md:block">
-            <div className="text-slate-900 font-bold text-[11px] leading-tight group-hover:text-brand-primary transition-colors">
-              {settings.companyName || 'Codecima'}
+        {/* Campana de Notificaciones con Badge */}
+        <div className="relative" ref={notifRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsNotificationsOpen((prev) => !prev);
+              setIsUserMenuOpen(false);
+            }}
+            className="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+            title="Notificaciones"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute 1 top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center shadow-xs ring-2 ring-white">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Menú desplegable de Notificaciones */}
+          {isNotificationsOpen && (
+            <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
+              <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-900">Notificaciones</span>
+                  {unreadCount > 0 && (
+                    <span className="px-1.5 py-0.2 bg-rose-50 text-rose-600 text-[10px] font-bold rounded-full">
+                      {unreadCount} nuevas
+                    </span>
+                  )}
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={markAllAsRead}
+                    className="text-[11px] text-violet-600 hover:text-violet-800 font-medium cursor-pointer"
+                  >
+                    Marcar leídas
+                  </button>
+                )}
+              </div>
+
+              <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-slate-400 text-xs">
+                    No tienes notificaciones pendientes
+                  </div>
+                ) : (
+                  notifications.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`p-3.5 hover:bg-slate-50 transition-colors flex items-start gap-2.5 cursor-pointer ${
+                        item.unread ? 'bg-violet-50/20' : ''
+                      }`}
+                      onClick={() => {
+                        setNotifications((prev) =>
+                          prev.map((n) => (n.id === item.id ? { ...n, unread: false } : n))
+                        );
+                      }}
+                    >
+                      <div className="mt-0.5 shrink-0">
+                        {item.type === 'success' ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        ) : item.type === 'warning' ? (
+                          <Sparkles className="w-4 h-4 text-amber-500" />
+                        ) : (
+                          <Clock className="w-4 h-4 text-sky-500" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="font-semibold text-slate-800 text-xs truncate">
+                            {item.title}
+                          </p>
+                          {item.unread && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">
+                          {item.description}
+                        </p>
+                        <span className="text-[10px] text-slate-400 font-mono mt-1 block">
+                          {item.time}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-            <div className="text-[9px] text-slate-500 font-mono leading-none">
-              {settings.operatorName || 'Operador'}
+          )}
+        </div>
+
+        {/* Separador vertical */}
+        <div className="h-7 w-px bg-slate-200 mx-0.5" />
+
+        {/* Perfil de Usuario con Avatar Circular Oscuro, Nombre, Rol y Chevron */}
+        <div className="relative" ref={userMenuRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsUserMenuOpen((prev) => !prev);
+              setIsNotificationsOpen(false);
+            }}
+            className="flex items-center gap-3 py-1 px-1.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group"
+            title="Opciones de cuenta"
+          >
+            {/* Avatar Circular Oscuro (#0f172a) con Iniciales en Blanco */}
+            <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-black shadow-xs ring-2 ring-slate-100 group-hover:ring-slate-200 transition-all">
+              {displayInitials}
             </div>
-          </div>
-        </button>
+
+            {/* Nombre y Rol apilados */}
+            <div className="text-left hidden md:block">
+              <div className="text-slate-900 font-extrabold text-xs tracking-tight leading-tight group-hover:text-primary transition-colors">
+                {displayName}
+              </div>
+              <div className="text-[9px] text-slate-400 font-mono tracking-wider font-bold uppercase leading-none mt-0.5">
+                {displayRole}
+              </div>
+            </div>
+
+            {/* Flecha Chevron desplegable */}
+            <ChevronDown
+              className={`w-4 h-4 text-slate-400 group-hover:text-slate-700 transition-transform duration-150 ${
+                isUserMenuOpen ? 'rotate-180 text-slate-900' : ''
+              }`}
+            />
+          </button>
+
+          {/* Menú desplegable del Perfil */}
+          {isUserMenuOpen && (
+            <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
+              <div className="px-4 py-2.5 border-b border-slate-100">
+                <p className="font-bold text-slate-900 text-xs">{displayName}</p>
+                <p className="text-[10px] text-slate-400 font-mono truncate">
+                  {authUser?.email || `${settings.companyName.toLowerCase() || 'admin'}@taller.local`}
+                </p>
+                <span className="inline-block mt-1.5 px-2 py-0.5 bg-slate-100 text-slate-700 text-[9px] font-bold font-mono rounded uppercase">
+                  {displayRole}
+                </span>
+              </div>
+
+              <div className="py-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    setCurrentView('SETTINGS');
+                  }}
+                  className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-2.5 cursor-pointer"
+                >
+                  <Settings className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Configuración del Sistema</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    setCurrentView('HISTORY');
+                  }}
+                  className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-2.5 cursor-pointer"
+                >
+                  <History className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Historial de Producción</span>
+                </button>
+              </div>
+
+              <div className="border-t border-slate-100 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    logout();
+                  }}
+                  className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 font-medium flex items-center gap-2.5 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Cerrar Sesión</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
