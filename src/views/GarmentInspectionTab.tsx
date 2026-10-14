@@ -974,21 +974,36 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  {/* Botón de Marquilla Interna de Talla */}
-                  <button
-                    type="button"
-                    onClick={() => setShowSizeMarkConfig(!showSizeMarkConfig)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all ${
-                      generationConfig.includeSizeMark
-                        ? 'bg-emerald-950/80 border-emerald-500/60 text-emerald-300'
-                        : 'bg-slate-950 hover:bg-slate-800 border-slate-800 text-slate-300'
-                    }`}
-                  >
-                    <Tag className="w-3.5 h-3.5" />
-                    <span>
-                      🏷️ Marquilla de Talla Interna: {generationConfig.includeSizeMark ? 'SÍ' : 'NO'}
-                    </span>
-                  </button>
+                  {/* Botón de Marquilla Interna de Talla (1 solo clic) */}
+                  <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        applyCalibrationChange({ includeSizeMark: !generationConfig.includeSizeMark })
+                      }
+                      className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all ${
+                        generationConfig.includeSizeMark
+                          ? 'bg-emerald-600 text-white'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                      title="Activar o desactivar marquilla de talla interna con 1 solo clic"
+                    >
+                      <Tag className="w-3.5 h-3.5" />
+                      <span>
+                        🏷️ Marquilla de Talla: {generationConfig.includeSizeMark ? 'Activada' : 'Desactivada'}
+                      </span>
+                    </button>
+                    {generationConfig.includeSizeMark && (
+                      <button
+                        type="button"
+                        onClick={() => setShowSizeMarkConfig(!showSizeMarkConfig)}
+                        className="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white border-l border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                        title="Opciones de la marquilla (color y tamaño)"
+                      >
+                        <Sliders className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
 
                   {/* Restablecer todos los valores */}
                   <button
@@ -1022,17 +1037,17 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                         sizeMarkBottomOffsetMm: 8,
                       });
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-amber-300 text-xs font-semibold transition-colors cursor-pointer"
-                    title="Dejar todas las piezas como estaban originalmente"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 hover:text-amber-600 dark:text-slate-300 dark:hover:text-amber-300 text-xs font-semibold transition-colors cursor-pointer shadow-sm"
+                    title="Restablecer todas las piezas a sus posiciones y configuraciones predeterminadas"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Todo a Posición Original</span>
+                    <span>Restablecer posiciones predeterminadas</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setShowCalibrationPanel(false)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-xs font-semibold transition-colors cursor-pointer shadow-sm"
                   >
                     <X className="w-3.5 h-3.5" />
                     <span>Cerrar</span>

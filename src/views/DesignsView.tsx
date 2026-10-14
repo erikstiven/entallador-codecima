@@ -23,9 +23,9 @@ import { PieceType } from '@/core/geometry/types';
 import { POPULAR_SPORTS_FONTS, loadGoogleFont, loadCustomFontFromFile } from '@/core/fonts/googleFonts';
 import { cmykToHex, hexToCmyk, CMYK } from '@/core/color/cmykColor';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
-import { useNestingStore } from '@/core/nesting/nestingStore';
 import { SvgTextilePreview, TextilePieceCarousel } from '@/components/textile';
 import { showAlert } from '@/core/ui/alerts';
+import { DorsalConfigModal } from './DorsalConfigModal';
 
 // Siluetas Vectoriales Guía de Alta Definición para las Ranuras de Arte
 const SilhouetteJerseyRound: React.FC<{ className?: string }> = ({ className = 'w-16 h-16' }) => (
@@ -270,9 +270,10 @@ export const DesignsView: React.FC = () => {
     }
   };
 
-  // Tipografía seleccionada
+  // Tipografía seleccionada y modal
   const [activeFontFamily, setActiveFontFamily] = useState<string>('Bebas Neue');
   const [localFonts, setLocalFonts] = useState<string[]>([]);
+  const [isDorsalModalOpen, setIsDorsalModalOpen] = useState<boolean>(false);
 
   const handleFontFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -797,6 +798,15 @@ export const DesignsView: React.FC = () => {
                         <span>Subir bloques del modelo (SVG)</span>
                       </>
                     )}
+                  <button
+                    type="button"
+                    onClick={() => setIsDorsalModalOpen(true)}
+                    disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
+                    className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs"
+                    title="Configurar tipografía, colores y muestra del dorsal"
+                  >
+                    <Type className="w-3.5 h-3.5 text-violet-600" />
+                    <span>Configurar Dorsal ({activeFontFamily})</span>
                   </button>
                   <button
                     onClick={() => deleteDesign(activeDesign.id)}
@@ -809,292 +819,30 @@ export const DesignsView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Barra de Estilo del Dorsal (Google Fonts + CMYK + Muestra) */}
-              <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-4 text-xs">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  {/* Tipografía */}
-                  <div className="space-y-1.5">
-                    <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                      <Type className="w-3.5 h-3.5 text-purple-400" />
-                      Tipografía de Dorsal:
-                    </label>
-
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={activeFontFamily}
-                        onChange={(e) => handleSelectFont(e.target.value)}
-                        className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-medium focus:outline-none focus:border-violet-500 cursor-pointer text-xs"
-                      >
-                        {localFonts.length > 0 && (
-                          <optgroup label="Fuentes cargadas en esta sesión">
-                            {localFonts.map((f) => (
-                              <option key={`local_${f}`} value={f}>
-                                {f} (Local)
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-
-                        <optgroup label="Fuentes incluidas en CimaTex">
-                          {POPULAR_SPORTS_FONTS.map((f) => (
-                            <option key={f.family} value={f.family}>
-                              {f.family} ({f.category})
-                            </option>
-                          ))}
-                        </optgroup>
-                      </select>
-
-                      <input
-                        type="file"
-                        ref={fontFileInputRef}
-                        onChange={handleFontFileUpload}
-                        accept=".ttf,.otf,.woff,.woff2"
-                        className="hidden"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fontFileInputRef.current?.click()}
-                        disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                        className="px-2.5 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Seleccionar un archivo de fuente TTF, OTF, WOFF o WOFF2 desde tu equipo"
-                      >
-                        <UploadCloud className="w-3.5 h-3.5" />
-                        <span>Subir Fuente</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Relleno CMYK */}
-                  <div className="space-y-1.5 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-200 font-semibold flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-full border border-slate-600" style={{ backgroundColor: fillHex }} />
-                        Relleno:
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="color"
-                          value={fillHex}
-                          onChange={(e) => handleFillHexChange(e.target.value)}
-                          className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
-                        />
-                        <span className="font-mono text-[10px] text-slate-400">{fillHex}</span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-1">
-                      <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
-                        <span className="text-[9px] font-mono text-cyan-400 block font-bold">C%</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={fillCmyk.c}
-                          onChange={(e) => handleFillCmykChange('c', Number(e.target.value))}
-                          className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
-                        />
-                      </div>
-                      <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
-                        <span className="text-[9px] font-mono text-pink-400 block font-bold">M%</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={fillCmyk.m}
-                          onChange={(e) => handleFillCmykChange('m', Number(e.target.value))}
-                          className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
-                        />
-                      </div>
-                      <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
-                        <span className="text-[9px] font-mono text-yellow-400 block font-bold">Y%</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={fillCmyk.y}
-                          onChange={(e) => handleFillCmykChange('y', Number(e.target.value))}
-                          className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
-                        />
-                      </div>
-                      <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
-                        <span className="text-[9px] font-mono text-slate-300 block font-bold">K%</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={fillCmyk.k}
-                          onChange={(e) => handleFillCmykChange('k', Number(e.target.value))}
-                          className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Borde / Filete CMYK */}
-                  <div className="space-y-1.5 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
-                    <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={hasStroke}
-                          onChange={(e) => handleToggleStroke(e.target.checked)}
-                          className="rounded border-slate-700 text-violet-600 w-3 h-3"
-                        />
-                        <span className="text-slate-200 font-semibold flex items-center gap-1">
-                          {hasStroke && (
-                            <span className="w-3 h-3 rounded-full border border-slate-600" style={{ backgroundColor: strokeHex }} />
-                          )}
-                          Borde / Filete:
-                        </span>
-                      </label>
-                      {hasStroke && (
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="color"
-                            value={strokeHex}
-                            onChange={(e) => handleStrokeHexChange(e.target.value)}
-                            className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
-                          />
-                          <span className="font-mono text-[10px] text-slate-400">{strokeHex}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {hasStroke ? (
-                      <>
-                        <div className="grid grid-cols-4 gap-1">
-                          <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
-                            <span className="text-[9px] font-mono text-cyan-400 block font-bold">C%</span>
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={strokeCmyk.c}
-                              onChange={(e) => handleStrokeCmykChange('c', Number(e.target.value))}
-                              className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
-                            />
-                          </div>
-                          <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
-                            <span className="text-[9px] font-mono text-pink-400 block font-bold">M%</span>
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={strokeCmyk.m}
-                              onChange={(e) => handleStrokeCmykChange('m', Number(e.target.value))}
-                              className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
-                            />
-                          </div>
-                          <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
-                            <span className="text-[9px] font-mono text-yellow-400 block font-bold">Y%</span>
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={strokeCmyk.y}
-                              onChange={(e) => handleStrokeCmykChange('y', Number(e.target.value))}
-                              className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
-                            />
-                          </div>
-                          <div className="bg-slate-950 p-1 rounded border border-slate-800 text-center">
-                            <span className="text-[9px] font-mono text-slate-300 block font-bold">K%</span>
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={strokeCmyk.k}
-                              onChange={(e) => handleStrokeCmykChange('k', Number(e.target.value))}
-                              className="w-full bg-transparent text-center font-mono font-bold text-white text-xs focus:outline-none"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
-                          <span>Grosor:</span>
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="range"
-                              min="0.5"
-                              max="6.0"
-                              step="0.5"
-                              value={strokeWidth}
-                              onChange={(e) => handleStrokeWidthChange(Number(e.target.value))}
-                              className="w-16 accent-violet-500 cursor-pointer"
-                            />
-                            <span className="font-mono font-bold text-white">{strokeWidth.toFixed(1)} mm</span>
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-[10px] text-slate-500 italic py-2 text-center">
-                        Sin borde exterior
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Muestra en vivo del dorsal + Botón Guardar Diseño en el panel tipográfico */}
-                <div className="bg-slate-900 border border-slate-800/80 rounded-lg p-2.5 flex flex-col lg:flex-row items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-slate-400 uppercase font-mono">Muestra:</span>
-                    <input
-                      type="text"
-                      value={sampleName}
-                      onChange={(e) => setSampleName(e.target.value.toUpperCase())}
-                      className="bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-white font-mono text-xs w-28 focus:outline-none"
-                      placeholder="NOMBRE"
-                    />
-                    <input
-                      type="text"
-                      value={sampleNumber}
-                      onChange={(e) => setSampleNumber(e.target.value)}
-                      className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-purple-400 font-mono text-xs w-14 text-center focus:border-violet-500 focus:outline-none font-bold"
-                      placeholder="N°"
-                    />
-                  </div>
-
-                  {/* Banner de previsualización tipográfica grande y legible */}
-                  <div className="flex-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-center min-h-[65px] overflow-hidden">
-                    <div className="text-center flex items-center justify-center gap-4 flex-wrap">
-                      <span
-                        className="font-bold tracking-wider uppercase leading-none transition-all"
-                        style={{
-                          fontFamily: `'${activeFontFamily}', Impact, 'Arial Narrow', sans-serif`,
-                          fontSize: '28px',
-                          color: fillHex,
-                          WebkitTextStroke: hasStroke ? `${Math.max(0.8, strokeWidth * 0.5)}px ${strokeHex}` : 'none',
-                          paintOrder: 'stroke fill',
-                          textShadow: '0 2px 8px rgba(0,0,0,0.8)',
-                        }}
-                      >
-                        {sampleName || 'CHRISTOPHER'}
-                      </span>
-                      <span
-                        className="font-bold tracking-tight leading-none transition-all"
-                        style={{
-                          fontFamily: `'${activeFontFamily}', Impact, 'Arial Narrow', sans-serif`,
-                          fontSize: '44px',
-                          color: fillHex,
-                          WebkitTextStroke: hasStroke ? `${Math.max(1.2, strokeWidth * 0.7)}px ${strokeHex}` : 'none',
-                          paintOrder: 'stroke fill',
-                          textShadow: '0 3px 10px rgba(0,0,0,0.9)',
-                        }}
-                      >
-                        {sampleNumber || '9'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row lg:flex-col items-center lg:items-end gap-1.5 flex-shrink-0 w-full lg:w-auto justify-end">
-                    {renderSaveDesignButton('w-full sm:w-auto')}
-                    {lastSavedAt && (
-                      <span className="text-[10px] font-mono text-emerald-400/90">
-                        {lastSavedAt}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+              {/* Modal Desplegable de Configuración de Dorsal (Limpio y Fuera del Flujo Principal) */}
+              <DorsalConfigModal
+                isOpen={isDorsalModalOpen}
+                onClose={() => setIsDorsalModalOpen(false)}
+                activeFontFamily={activeFontFamily}
+                onSelectFont={handleSelectFont}
+                localFonts={localFonts}
+                onUploadFontFile={(file) => {
+                  loadCustomFontFromFile(file).then((name) => {
+                    setLocalFonts((prev) => Array.from(new Set([name, ...prev])));
+                    setActiveFontFamily(name);
+                    applyStyleUpdates({ fontFamily: name });
+                    showAlert.toast('success', `Fuente "${name}" cargada con éxito`);
+                  });
+                }}
+                fillHex={fillHex}
+                fillCmyk={fillCmyk}
+                onFillHexChange={handleFillHexChange}
+                onFillCmykChange={handleFillCmykChange}
+                sampleName={sampleName}
+                onSampleNameChange={setSampleName}
+                sampleNumber={sampleNumber}
+                onSampleNumberChange={setSampleNumber}
+              />
 
               {/* LAS RANURAS DE BLOQUES DE ARTE CON VISTA CUADRÍCULA Y CARRUSEL */}
               <div className="space-y-6">
