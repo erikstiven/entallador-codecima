@@ -87,11 +87,22 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
   const handleCmykChannelChange = (channel: keyof CMYK, val: number) => {
     const clamped = Math.max(0, Math.min(100, isNaN(val) ? 0 : val));
     onFillCmykChange(channel, clamped);
+    const nextCmyk = { ...fillCmyk, [channel]: clamped };
+    const calculatedHex = cmykToHex(nextCmyk);
+    onFillHexChange(calculatedHex);
   };
 
-  // Cambio directo en HEX
+  // Cambio directo en HEX -> sincroniza CMYK
   const handleHexInputChange = (hexVal: string) => {
     onFillHexChange(hexVal);
+    const normalized = hexVal.startsWith('#') ? hexVal : `#${hexVal}`;
+    if (/^#[0-9A-Fa-f]{6}$/.test(normalized)) {
+      const c = hexToCmyk(normalized);
+      onFillCmykChange('c', c.c);
+      onFillCmykChange('m', c.m);
+      onFillCmykChange('y', c.y);
+      onFillCmykChange('k', c.k);
+    }
   };
 
   return (
@@ -343,68 +354,128 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
                 </span>
               </div>
 
-              <div className="grid grid-cols-4 gap-2">
-                {/* Canal C */}
-                <div className="bg-white p-2 rounded-lg border border-cyan-200 shadow-2xs text-center">
-                  <span className="text-[10px] font-bold text-cyan-600 block mb-0.5">Cian (C)</span>
-                  <div className="flex items-center justify-center gap-0.5">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={fillCmyk.c}
-                      onChange={(e) => handleCmykChannelChange('c', Number(e.target.value))}
-                      className="w-10 text-center font-mono font-bold text-slate-900 text-xs bg-slate-50 rounded px-1 py-0.5 border border-slate-200 focus:outline-none"
-                    />
-                    <span className="text-[10px] text-slate-400 font-bold">%</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {/* Canal C: Cian */}
+                <div className="bg-white p-2.5 rounded-xl border border-cyan-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-cyan-600">C% (Cian)</span>
+                    <div className="flex items-center gap-0.5">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={fillCmyk.c}
+                        onChange={(e) => handleCmykChannelChange('c', Number(e.target.value))}
+                        className="w-10 text-right font-mono font-bold text-slate-900 text-xs bg-slate-50 rounded px-1 py-0.5 border border-slate-200 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 font-bold">%</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={fillCmyk.c}
+                    onChange={(e) => handleCmykChannelChange('c', Number(e.target.value))}
+                    className="w-full accent-cyan-500 h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+                  />
+                  <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono">
+                    <button type="button" onClick={() => handleCmykChannelChange('c', 0)} className="hover:text-cyan-600 cursor-pointer">0%</button>
+                    <button type="button" onClick={() => handleCmykChannelChange('c', 50)} className="hover:text-cyan-600 cursor-pointer">50%</button>
+                    <button type="button" onClick={() => handleCmykChannelChange('c', 100)} className="hover:text-cyan-600 cursor-pointer">100%</button>
                   </div>
                 </div>
 
-                {/* Canal M */}
-                <div className="bg-white p-2 rounded-lg border border-pink-200 shadow-2xs text-center">
-                  <span className="text-[10px] font-bold text-pink-600 block mb-0.5">Magenta (M)</span>
-                  <div className="flex items-center justify-center gap-0.5">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={fillCmyk.m}
-                      onChange={(e) => handleCmykChannelChange('m', Number(e.target.value))}
-                      className="w-10 text-center font-mono font-bold text-slate-900 text-xs bg-slate-50 rounded px-1 py-0.5 border border-slate-200 focus:outline-none"
-                    />
-                    <span className="text-[10px] text-slate-400 font-bold">%</span>
+                {/* Canal M: Magenta */}
+                <div className="bg-white p-2.5 rounded-xl border border-pink-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-pink-600">M% (Magenta)</span>
+                    <div className="flex items-center gap-0.5">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={fillCmyk.m}
+                        onChange={(e) => handleCmykChannelChange('m', Number(e.target.value))}
+                        className="w-10 text-right font-mono font-bold text-slate-900 text-xs bg-slate-50 rounded px-1 py-0.5 border border-slate-200 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 font-bold">%</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={fillCmyk.m}
+                    onChange={(e) => handleCmykChannelChange('m', Number(e.target.value))}
+                    className="w-full accent-pink-500 h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+                  />
+                  <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono">
+                    <button type="button" onClick={() => handleCmykChannelChange('m', 0)} className="hover:text-pink-600 cursor-pointer">0%</button>
+                    <button type="button" onClick={() => handleCmykChannelChange('m', 50)} className="hover:text-pink-600 cursor-pointer">50%</button>
+                    <button type="button" onClick={() => handleCmykChannelChange('m', 100)} className="hover:text-pink-600 cursor-pointer">100%</button>
                   </div>
                 </div>
 
-                {/* Canal Y */}
-                <div className="bg-white p-2 rounded-lg border border-amber-200 shadow-2xs text-center">
-                  <span className="text-[10px] font-bold text-amber-600 block mb-0.5">Amarillo (Y)</span>
-                  <div className="flex items-center justify-center gap-0.5">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={fillCmyk.y}
-                      onChange={(e) => handleCmykChannelChange('y', Number(e.target.value))}
-                      className="w-10 text-center font-mono font-bold text-slate-900 text-xs bg-slate-50 rounded px-1 py-0.5 border border-slate-200 focus:outline-none"
-                    />
-                    <span className="text-[10px] text-slate-400 font-bold">%</span>
+                {/* Canal Y: Amarillo */}
+                <div className="bg-white p-2.5 rounded-xl border border-amber-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-amber-600">Y% (Amarillo)</span>
+                    <div className="flex items-center gap-0.5">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={fillCmyk.y}
+                        onChange={(e) => handleCmykChannelChange('y', Number(e.target.value))}
+                        className="w-10 text-right font-mono font-bold text-slate-900 text-xs bg-slate-50 rounded px-1 py-0.5 border border-slate-200 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 font-bold">%</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={fillCmyk.y}
+                    onChange={(e) => handleCmykChannelChange('y', Number(e.target.value))}
+                    className="w-full accent-amber-500 h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+                  />
+                  <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono">
+                    <button type="button" onClick={() => handleCmykChannelChange('y', 0)} className="hover:text-amber-600 cursor-pointer">0%</button>
+                    <button type="button" onClick={() => handleCmykChannelChange('y', 50)} className="hover:text-amber-600 cursor-pointer">50%</button>
+                    <button type="button" onClick={() => handleCmykChannelChange('y', 100)} className="hover:text-amber-600 cursor-pointer">100%</button>
                   </div>
                 </div>
 
-                {/* Canal K */}
-                <div className="bg-white p-2 rounded-lg border border-slate-300 shadow-2xs text-center">
-                  <span className="text-[10px] font-bold text-slate-700 block mb-0.5">Negro (K)</span>
-                  <div className="flex items-center justify-center gap-0.5">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={fillCmyk.k}
-                      onChange={(e) => handleCmykChannelChange('k', Number(e.target.value))}
-                      className="w-10 text-center font-mono font-bold text-slate-900 text-xs bg-slate-50 rounded px-1 py-0.5 border border-slate-200 focus:outline-none"
-                    />
-                    <span className="text-[10px] text-slate-400 font-bold">%</span>
+                {/* Canal K: Negro */}
+                <div className="bg-white p-2.5 rounded-xl border border-slate-300 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-800">K% (Negro)</span>
+                    <div className="flex items-center gap-0.5">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={fillCmyk.k}
+                        onChange={(e) => handleCmykChannelChange('k', Number(e.target.value))}
+                        className="w-10 text-right font-mono font-bold text-slate-900 text-xs bg-slate-50 rounded px-1 py-0.5 border border-slate-200 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 font-bold">%</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={fillCmyk.k}
+                    onChange={(e) => handleCmykChannelChange('k', Number(e.target.value))}
+                    className="w-full accent-slate-800 h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+                  />
+                  <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono">
+                    <button type="button" onClick={() => handleCmykChannelChange('k', 0)} className="hover:text-slate-800 cursor-pointer">0%</button>
+                    <button type="button" onClick={() => handleCmykChannelChange('k', 50)} className="hover:text-slate-800 cursor-pointer">50%</button>
+                    <button type="button" onClick={() => handleCmykChannelChange('k', 100)} className="hover:text-slate-800 cursor-pointer">100%</button>
                   </div>
                 </div>
               </div>
