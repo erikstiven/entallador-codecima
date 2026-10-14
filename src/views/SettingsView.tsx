@@ -13,34 +13,18 @@ import {
   Eye,
   Settings as SettingsIcon,
   Factory,
-  Palette
 } from 'lucide-react';
 import { useProfileStore } from '@/modules/settings/profileStore';
-import { useSystemSettingsStore, DisplayUnit, BrandColor } from '@/modules/settings/systemSettingsStore';
+import { useSystemSettingsStore, DisplayUnit } from '@/modules/settings/systemSettingsStore';
 import { useUnits } from '@/core/units/useUnits';
 import { showAlert } from '@/core/ui/alerts';
 import { Button } from '@/components/ui/Button';
 
 type SettingsTab = 'SYSTEM' | 'PRODUCTION';
 
-interface BrandOption {
-  id: BrandColor;
-  label: string;
-  sublabel: string;
-  colorHex: string;
-}
-
-const BRAND_OPTIONS: BrandOption[] = [
-  { id: 'violet', label: 'Violeta', sublabel: 'Clásico Codecima (#7c3aed)', colorHex: '#7c3aed' },
-  { id: 'indigo', label: 'Índigo', sublabel: 'Modern Tech (#4f46e5)', colorHex: '#4f46e5' },
-  { id: 'blue', label: 'Azul', sublabel: 'Deportivo (#2563eb)', colorHex: '#2563eb' },
-  { id: 'emerald', label: 'Esmeralda', sublabel: 'Taller & Eco (#059669)', colorHex: '#059669' },
-  { id: 'amber', label: 'Ámbar', sublabel: 'Enérgico (#d97706)', colorHex: '#d97706' },
-];
-
 export const SettingsView: React.FC = () => {
   const { profiles, activeProfile, setActiveProfile, updateActiveProfile, addProfile, deleteProfile } = useProfileStore();
-  const { settings, updateSettings, resetSettings, setBrandColor } = useSystemSettingsStore();
+  const { settings, updateSettings, resetSettings } = useSystemSettingsStore();
   const { unit, unitLabel, unitStep, precision, toDisplay, toInternalMm, format } = useUnits();
   
   const [activeTab, setActiveTab] = useState<SettingsTab>('SYSTEM');
@@ -191,109 +175,7 @@ export const SettingsView: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. SECCIÓN: COLOR DE MARCA Y BOTONES */}
-          <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-xs">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                <Palette className="w-4 h-4 text-brand-primary" />
-                <h3>Color de Marca y Sistema de Botones</h3>
-              </div>
-              <span className="text-xs font-medium text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 flex items-center gap-1.5 shadow-2xs">
-                <Sun className="w-3.5 h-3.5 text-amber-500" />
-                <span>Modo Claro Calibrado (Light Mode 1:1)</span>
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 -mt-2">
-              Personaliza el color primario del taller y del software. La interfaz gráfica se mantiene estandarizada en <strong>Modo Claro</strong> para asegurar máxima fidelidad cromática textil, contraste y precisión en mesa de corte.
-            </p>
-
-            {/* Selector de Color de Marca */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-2">
-                Paleta Principal de Marca
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                {BRAND_OPTIONS.map((opt) => {
-                  const isSelected = settings.brandColor === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => {
-                        setBrandColor(opt.id);
-                        triggerSaveNotification();
-                      }}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer relative ${
-                        isSelected
-                          ? 'bg-slate-50 border-slate-400 shadow-xs ring-2 ring-offset-1'
-                          : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs hover:bg-slate-50/50'
-                      }`}
-                      style={{
-                        outlineColor: opt.colorHex,
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div
-                          className="w-5 h-5 rounded-full shadow-xs border border-white"
-                          style={{ backgroundColor: opt.colorHex }}
-                        />
-                        {isSelected && (
-                          <CheckCircle2
-                            className="w-4 h-4"
-                            style={{ color: opt.colorHex }}
-                          />
-                        )}
-                      </div>
-                      <div className="font-bold text-xs text-slate-900">{opt.label}</div>
-                      <div className="text-[10px] text-slate-500 truncate">{opt.sublabel}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Muestra Interactiva en Vivo del Sistema de Botones */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-brand-primary" />
-                  Muestra Interactiva en Vivo de Botones UI
-                </span>
-                <span className="text-[10px] font-mono text-slate-500">
-                  CSS Token: <strong className="text-slate-800">var(--brand-primary)</strong>
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500">
-                Prueba en tiempo real las variantes y estados del componente de botón con el color seleccionado:
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <Button variant="primary" size="md">
-                  Botón Primario
-                </Button>
-                <Button variant="secondary" size="md">
-                  Secundario
-                </Button>
-                <Button variant="outline" size="md">
-                  Contorno
-                </Button>
-                <Button variant="destructive" size="md">
-                  Peligro
-                </Button>
-                <Button variant="ghost" size="md">
-                  Fantasma
-                </Button>
-                <Button variant="primary" size="sm">
-                  Tamaño SM
-                </Button>
-                <Button variant="primary" size="lg">
-                  Tamaño LG
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. SECCIÓN: UNIDADES DE MEDIDA Y FORMATO */}
+          {/* 2. SECCIÓN: UNIDADES DE MEDIDA Y FORMATO */}
           <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-xs">
             <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
               <Ruler className="w-4 h-4 text-violet-600" />

@@ -15,7 +15,14 @@ import {
   Save,
   LayoutGrid,
   Table,
-  Loader2
+  Loader2,
+  Search,
+  ArrowLeft,
+  MoreVertical,
+  Shapes,
+  Clock,
+  Tag,
+  Grid
 } from 'lucide-react';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { PieceType, PatternPiece } from '@/modules/patterns/types';
@@ -50,6 +57,61 @@ export const PatternsView: React.FC = () => {
   const [isImportingSvg, setIsImportingSvg] = useState<boolean>(false);
   const [importSummaryMsg, setImportSummaryMsg] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'CARDS' | 'TABLE'>('CARDS');
+  const [catalogMode, setCatalogMode] = useState<'CATALOG' | 'DETAIL'>('CATALOG');
+  const [catalogTab, setCatalogTab] = useState<'UPLOADS' | 'LIBRARY'>('UPLOADS');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  const renderSilhouettePreview = (set: typeof patternSets[0]) => {
+    const size = set.sizes[0];
+    if (!size || size.pieces.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-slate-300">
+          <Scissors className="w-8 h-8" />
+        </div>
+      );
+    }
+
+    const pieces = size.pieces.slice(0, 4);
+    const gap = 20;
+    let currentX = 0;
+    let maxHeight = 0;
+
+    const pieceLayouts = pieces.map((p) => {
+      const w = p.bbox?.width || 100;
+      const h = p.bbox?.height || 100;
+      if (h > maxHeight) maxHeight = h;
+      const xOffset = currentX - (p.bbox?.minX || 0);
+      const yOffset = -(p.bbox?.minY || 0);
+      currentX += w + gap;
+      const pathD = polygonToSvgPath(p.cutPolygon) || p.svgPathData || '';
+      return { pathD, xOffset, yOffset, w, h };
+    });
+
+    const totalWidth = Math.max(currentX - gap, 100);
+    const totalHeight = Math.max(maxHeight, 100);
+    const pad = 25;
+
+    return (
+      <svg
+        viewBox={`-${pad} -${pad} ${totalWidth + pad * 2} ${totalHeight + pad * 2}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="w-full h-full max-h-32 drop-shadow-2xs select-none pointer-events-none"
+      >
+        {pieceLayouts.map((layout, i) => (
+          <g key={i} transform={`translate(${layout.xOffset}, ${layout.yOffset})`}>
+            <path
+              d={layout.pathD}
+              fill="#0f172a"
+              stroke="#0f172a"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          </g>
+        ))}
+      </svg>
+    );
+  };
 
   const handleSavePatterns = async () => {
     if (!activePatternSet || isSaving) return;
@@ -115,6 +177,8 @@ export const PatternsView: React.FC = () => {
           if (imported.sizes.length > 0) {
             setActiveSizeTab(imported.sizes[0].sizeName);
           }
+          setActivePatternSet(imported);
+          setCatalogMode('DETAIL');
         }
       } catch (err) {
         console.error('Error importando SVG de molde:', err);
@@ -209,6 +273,30 @@ exportMoldesParaCimatex();`;
 
   const currentSizeObj = activePatternSet?.sizes.find((s) => s.sizeName === activeSizeTab);
 
+  const filteredSets = patternSets.filter((s) =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (s.garmentType && s.garmentType.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const LIBRARY_TEMPLATES = [
+    {
+      id: 'lib_futbol_v',
+      name: 'Camiseta de fútbol Cuello V (XS - 2XL)',
+      garmentType: 'Fútbol / Sublimación',
+      pieceCount: 4,
+      sizesCount: 6,
+      date: '19 ago',
+    },
+    {
+      id: 'lib_short_masc',
+      name: 'Short deportivo masculino',
+      garmentType: 'Deportivo / Atletismo',
+      pieceCount: 2,
+      sizesCount: 5,
+      date: '25 may',
+    },
+  ];
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
       <input
@@ -219,135 +307,60 @@ exportMoldesParaCimatex();`;
         onChange={handleFileUpload}
       />
 
+      {/* VISTA 1: CATÁLOGO DE MOLDERÍAS (MODO SUBIMIFYER 1:1) */}
+      {catalogMode === 'CATALOG' ? (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Header del Catálogo */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/90 pb-4">
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                Catálogo de molderías
+              </h2>
 
-      {/* Main Pattern View or Empty State */}
-      {!activePatternSet ? (
-        <div 
-          onClick={() => {
-            if (!isImportingSvg) fileInputRef.current?.click();
-          }}
-          onDragOver={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onDrop={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (isImportingSvg) return;
-            const file = e.dataTransfer.files?.[0];
-            if (!file) return;
-            processPatternSvgFile(file);
-          }}
-          className="bg-slate-50/60 border-2 border-dashed border-slate-300 hover:border-violet-400 rounded-xl p-16 text-center flex flex-col items-center justify-center cursor-pointer transition-all group shadow-2xs"
-        >
-          <div className="w-12 h-12 rounded-lg bg-white border border-slate-200 text-slate-500 group-hover:text-violet-600 group-hover:border-violet-300 flex items-center justify-center mb-3 group-hover:scale-105 transition-all shadow-xs">
-            <Scissors className="w-6 h-6" />
-          </div>
-          <h3 className="text-sm font-semibold text-slate-800 group-hover:text-violet-700 transition-colors">
-            No hay conjunto de moldes activo
-          </h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-md">
-            Arrastra aquí tu archivo SVG de moldería graduada exportado desde Illustrator o haz clic para seleccionarlo.
-          </p>
-          <button
-            type="button"
-            disabled={isImportingSvg}
-            className="mt-5 inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            {isImportingSvg ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Analizando vectores del molde...</span>
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4" />
-                <span>Subir Mi Molde SVG</span>
-              </>
-            )}
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-5">
-          {/* Active Pattern Set Header Card */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
-              {patternSets.length > 1 && (
-                <div className="space-y-1">
-                  <label className="text-[10px] text-slate-500 font-mono uppercase font-bold block">Conjunto Activo:</label>
-                  <select
-                    value={activePatternSet.id}
-                    onChange={(e) => {
-                      const found = patternSets.find((s) => s.id === e.target.value);
-                      if (found) setActivePatternSet(found);
-                    }}
-                    className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-medium shadow-2xs"
-                  >
-                    {patternSets.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.sizes.length} tallas)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />
-                  <h3 className="text-base font-bold text-slate-900 tracking-tight">{activePatternSet.name}</h3>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {activePatternSet.sizes.length} tallas registradas •{' '}
-                  {activePatternSet.sizes.reduce((acc, s) => acc + s.pieces.length, 0)} piezas asignadas
-                  {activePatternSet.unassignedPieces.length > 0 && (
-                    <span className="text-amber-700 ml-2 font-medium">
-                      • {activePatternSet.unassignedPieces.length} pieza(s) pendientes de asignar
-                    </span>
-                  )}
-                </p>
+              {/* Segmented Control: Subidas | Biblioteca */}
+              <div className="bg-slate-100 p-0.5 rounded-lg border border-slate-200/80 flex items-center text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setCatalogTab('UPLOADS')}
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                    catalogTab === 'UPLOADS'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  Subidas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCatalogTab('LIBRARY')}
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                    catalogTab === 'LIBRARY'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  Biblioteca
+                </button>
               </div>
             </div>
 
-            {/* Action Buttons in single unified row */}
+            {/* Action buttons */}
             <div className="flex items-center gap-2 flex-wrap">
               <button
-                onClick={handleSavePatterns}
-                disabled={isSaving}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-                title="Guardar molde de forma permanente"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Guardando molde...</span>
-                  </>
-                ) : isSaved ? (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    <span>¡Molde Guardado!</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-3.5 h-3.5" />
-                    <span>Guardar Molde</span>
-                  </>
-                )}
-              </button>
-
-              <button
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImportingSvg}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-700 rounded-lg text-xs font-medium border border-slate-200 shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
               >
                 {isImportingSvg ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 text-violet-600 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     <span>Analizando vectores...</span>
                   </>
                 ) : (
                   <>
-                    <Plus className="w-3.5 h-3.5 text-violet-600" />
-                    <span>Cargar Otro Molde SVG</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Subir moldería</span>
                   </>
                 )}
               </button>
@@ -355,65 +368,423 @@ exportMoldesParaCimatex();`;
               <button
                 type="button"
                 onClick={handleDownloadTemplate}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 rounded-lg text-xs font-medium shadow-xs transition-colors cursor-pointer"
-                title="Descargar plantilla editable con capas para Adobe Illustrator"
+                disabled={!activePatternSet && patternSets.length === 0}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 disabled:opacity-40 text-slate-700 rounded-lg text-xs font-medium border border-slate-200 shadow-2xs transition-colors cursor-pointer"
+                title="Descargar plantilla de Illustrator"
               >
                 <Download className="w-3.5 h-3.5 text-violet-600" />
-                <span>Descargar Plantilla Illustrator</span>
-              </button>
-
-              <button
-                onClick={handleDownloadScript}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium border border-slate-200 shadow-xs transition-colors cursor-pointer"
-                title="Descargar script JSX para Adobe Illustrator"
-              >
-                <FileCode className="w-3.5 h-3.5 text-slate-500" />
-                <span>Script JSX</span>
+                <span className="hidden sm:inline">Descargar plantilla</span>
               </button>
 
               <button
                 type="button"
-                onClick={async () => {
-                  const confirmed = await showAlert.confirm(
-                    '¿Eliminar este molde?',
-                    `Se eliminará el conjunto "${activePatternSet.name}".`
-                  );
-                  if (confirmed) {
-                    deletePatternSet(activePatternSet.id);
-                    showAlert.toast('info', 'Conjunto de moldes eliminado');
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 shadow-xs transition-colors cursor-pointer"
-                title="Eliminar este conjunto de moldes activo"
+                onClick={handleDownloadScript}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium border border-slate-200 shadow-2xs transition-colors cursor-pointer"
+                title="Descargar script JSX para Illustrator"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Eliminar Molde</span>
+                <FileCode className="w-3.5 h-3.5 text-slate-500" />
+                <span className="hidden sm:inline">Script JSX</span>
               </button>
+            </div>
+          </div>
 
-              {patternSets.length > 0 && (
-                <div className="flex items-center pl-2 ml-1 border-l border-slate-200">
+          {/* Barra de Búsqueda y Filtros */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por nombre..."
+                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-violet-500 shadow-2xs font-medium"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-800 shadow-2xs cursor-pointer transition-colors"
+                title="Historial de recientes"
+              >
+                <Clock className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-800 shadow-2xs cursor-pointer transition-colors"
+                title="Filtrar por etiqueta"
+              >
+                <Tag className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Sección "Inicio" */}
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
+            Inicio
+          </div>
+
+          {/* Grid de Tarjetas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {catalogTab === 'UPLOADS' ? (
+              <>
+                {filteredSets.map((set) => {
+                  const totalPieces = set.sizes.reduce((acc, s) => acc + s.pieces.length, 0);
+                  const isCurrentActive = activePatternSet?.id === set.id;
+                  const isMenuOpen = activeMenuId === set.id;
+
+                  return (
+                    <div
+                      key={set.id}
+                      onClick={() => {
+                        setActivePatternSet(set);
+                        setCatalogMode('DETAIL');
+                      }}
+                      className={`bg-white rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden flex flex-col justify-between group hover:shadow-md ${
+                        isCurrentActive 
+                          ? 'border-violet-400 ring-2 ring-violet-200 shadow-xs' 
+                          : 'border-slate-200/80 hover:border-violet-300 shadow-2xs'
+                      }`}
+                    >
+                      {/* Silhouette Preview Area */}
+                      <div className="h-44 bg-slate-100/70 p-3.5 flex items-center justify-center relative border-b border-slate-100 group-hover:bg-slate-100 transition-colors">
+                        {renderSilhouettePreview(set)}
+
+                        {/* 3 dots menu button */}
+                        <div 
+                          className="absolute top-2.5 right-2.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setActiveMenuId(isMenuOpen ? null : set.id)}
+                            className="p-1 rounded-lg bg-white/90 hover:bg-white text-slate-500 hover:text-slate-900 shadow-2xs border border-slate-200/60 transition-colors cursor-pointer"
+                            title="Opciones de moldería"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+
+                          {isMenuOpen && (
+                            <div 
+                              className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-30 animate-in fade-in zoom-in-95 duration-100 text-xs"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  setActivePatternSet(set);
+                                  setCatalogMode('DETAIL');
+                                }}
+                                className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-2 cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-violet-600" />
+                                <span>Ver y editar piezas</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  setActivePatternSet(set);
+                                  handleDownloadTemplate();
+                                }}
+                                className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-2 cursor-pointer"
+                              >
+                                <Download className="w-3.5 h-3.5 text-slate-500" />
+                                <span>Descargar plantilla</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  setActiveMenuId(null);
+                                  const confirmed = await showAlert.confirm(
+                                    '¿Eliminar este molde?',
+                                    `Se eliminará el molde "${set.name}".`
+                                  );
+                                  if (confirmed) {
+                                    deletePatternSet(set.id);
+                                    showAlert.toast('info', 'Molde eliminado');
+                                  }
+                                }}
+                                className="w-full text-left px-3 py-2 text-red-600 hover:bg-red-50 font-medium flex items-center gap-2 border-t border-slate-100 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Eliminar molde</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Card Body */}
+                      <div className="p-3.5 space-y-2">
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 truncate group-hover:text-violet-700 transition-colors">
+                            {set.name}
+                          </h4>
+                          <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                            {set.garmentType || 'Sin etiquetas'}
+                          </div>
+                        </div>
+
+                        {/* Footer Stats Row: pieces, sizes, date */}
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px] text-slate-400 font-medium">
+                          <div className="flex items-center gap-2.5">
+                            <span className="flex items-center gap-1" title="Total de piezas clasificadas">
+                              <Shapes className="w-3.5 h-3.5 text-slate-400" />
+                              <strong className="text-slate-600 font-mono">{totalPieces}</strong>
+                            </span>
+                            <span className="flex items-center gap-1" title="Total de tallas">
+                              <Grid className="w-3.5 h-3.5 text-slate-400" />
+                              <strong className="text-slate-600 font-mono">{set.sizes.length}</strong>
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-400">
+                            {set.createdAt ? new Date(set.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : 'Reciente'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Card para Subir Moldería */}
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-slate-50/70 border-2 border-dashed border-slate-200 hover:border-violet-400 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all group hover:bg-violet-50/20 min-h-[220px]"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 group-hover:text-violet-600 group-hover:border-violet-300 flex items-center justify-center mb-2 shadow-2xs group-hover:scale-105 transition-all">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  <div className="text-xs font-bold text-slate-700 group-hover:text-violet-700 transition-colors">
+                    Subir moldería SVG
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1 max-w-[160px]">
+                    Arrastra un archivo exportado de Illustrator
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Biblioteca Tab */
+              LIBRARY_TEMPLATES.map((tmpl) => (
+                <div
+                  key={tmpl.id}
+                  className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs hover:border-violet-300 hover:shadow-md transition-all overflow-hidden flex flex-col justify-between"
+                >
+                  <div className="h-44 bg-slate-100/70 p-3.5 flex items-center justify-center border-b border-slate-100">
+                    <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-violet-600 shadow-2xs">
+                      <Scissors className="w-8 h-8" />
+                    </div>
+                  </div>
+                  <div className="p-3.5 space-y-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 truncate">
+                        {tmpl.name}
+                      </h4>
+                      <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                        {tmpl.garmentType}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px] text-slate-400 font-medium">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex items-center gap-1">
+                          <Shapes className="w-3.5 h-3.5 text-slate-400" />
+                          <strong className="text-slate-600 font-mono">{tmpl.pieceCount}</strong>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Grid className="w-3.5 h-3.5 text-slate-400" />
+                          <strong className="text-slate-600 font-mono">{tmpl.sizesCount}</strong>
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400">{tmpl.date}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      ) : (
+        /* VISTA 2: DETALLE E INSPECTOR DE MOLDERÍA ACTIVA */
+        <div className="space-y-5 animate-in fade-in duration-200">
+          {/* Top Breadcrumb Header para Volver al Catálogo */}
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200/90 pb-3">
+            <button
+              type="button"
+              onClick={() => setCatalogMode('CATALOG')}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4 text-violet-600" />
+              <span>Volver al catálogo de molderías</span>
+            </button>
+
+            {activePatternSet && (
+              <div className="text-xs text-slate-500 font-medium">
+                Moldería: <strong className="text-slate-900 font-bold">{activePatternSet.name}</strong>
+              </div>
+            )}
+          </div>
+
+          {!activePatternSet ? (
+            <div className="text-center py-12 text-xs text-slate-500">
+              No hay molde seleccionado.{' '}
+              <button
+                type="button"
+                onClick={() => setCatalogMode('CATALOG')}
+                className="text-violet-600 underline font-semibold ml-1 cursor-pointer"
+              >
+                Ir al catálogo
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Active Pattern Set Header Card */}
+              <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  {patternSets.length > 1 && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-500 font-mono uppercase font-bold block">Conjunto Activo:</label>
+                      <select
+                        value={activePatternSet.id}
+                        onChange={(e) => {
+                          const found = patternSets.find((s) => s.id === e.target.value);
+                          if (found) setActivePatternSet(found);
+                        }}
+                        className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-medium shadow-2xs"
+                      >
+                        {patternSets.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name} ({s.sizes.length} tallas)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />
+                      <h3 className="text-base font-bold text-slate-900 tracking-tight">{activePatternSet.name}</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {activePatternSet.sizes.length} tallas registradas •{' '}
+                      {activePatternSet.sizes.reduce((acc, s) => acc + s.pieces.length, 0)} piezas asignadas
+                      {activePatternSet.unassignedPieces.length > 0 && (
+                        <span className="text-amber-700 ml-2 font-medium">
+                          • {activePatternSet.unassignedPieces.length} pieza(s) pendientes de asignar
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons in single unified row */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={handleSavePatterns}
+                    disabled={isSaving}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                    title="Guardar molde de forma permanente"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Guardando molde...</span>
+                      </>
+                    ) : isSaved ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>¡Molde Guardado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Guardar Molde</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isImportingSvg}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-700 rounded-lg text-xs font-medium border border-slate-200 shadow-xs transition-colors cursor-pointer"
+                  >
+                    {isImportingSvg ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 text-violet-600 animate-spin" />
+                        <span>Analizando vectores...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5 text-violet-600" />
+                        <span>Cargar Otro Molde SVG</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadTemplate}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 rounded-lg text-xs font-medium shadow-xs transition-colors cursor-pointer"
+                    title="Descargar plantilla editable con capas para Adobe Illustrator"
+                  >
+                    <Download className="w-3.5 h-3.5 text-violet-600" />
+                    <span>Descargar Plantilla Illustrator</span>
+                  </button>
+
+                  <button
+                    onClick={handleDownloadScript}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium border border-slate-200 shadow-xs transition-colors cursor-pointer"
+                    title="Descargar script JSX para Adobe Illustrator"
+                  >
+                    <FileCode className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Script JSX</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={async () => {
                       const confirmed = await showAlert.confirm(
-                        '¿Limpiar TODOS los moldes de la biblioteca?',
-                        '¡ADVERTENCIA DE SEGURIDAD! Esta acción administrativa eliminará permanentemente todos los conjuntos de moldes guardados en la base de datos local. ¿Estás completamente seguro?'
+                        '¿Eliminar este molde?',
+                        `Se eliminará el conjunto "${activePatternSet.name}".`
                       );
                       if (confirmed) {
-                        clearAllPatterns();
-                        showAlert.toast('info', 'Biblioteca de moldes vaciada por completo');
+                        deletePatternSet(activePatternSet.id);
+                        showAlert.toast('info', 'Conjunto de moldes eliminado');
+                        setCatalogMode('CATALOG');
                       }
                     }}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 transition-colors cursor-pointer"
-                    title="Acción administrativa: Limpiar toda la biblioteca de moldes"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 shadow-xs transition-colors cursor-pointer"
+                    title="Eliminar este conjunto de moldes activo"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    <span>Limpiar Moldes (Todos)</span>
+                    <span>Eliminar Molde</span>
                   </button>
+
+                  {patternSets.length > 0 && (
+                    <div className="flex items-center pl-2 ml-1 border-l border-slate-200">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const confirmed = await showAlert.confirm(
+                            '¿Limpiar TODOS los moldes de la biblioteca?',
+                            '¡ADVERTENCIA DE SEGURIDAD! Esta acción administrativa eliminará permanentemente todos los conjuntos de moldes guardados en la base de datos local. ¿Estás completamente seguro?'
+                          );
+                          if (confirmed) {
+                            clearAllPatterns();
+                            showAlert.toast('info', 'Biblioteca de moldes vaciada por completo');
+                            setCatalogMode('CATALOG');
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 transition-colors cursor-pointer"
+                        title="Acción administrativa: Limpiar toda la biblioteca de moldes"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Limpiar Moldes (Todos)</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
           {/* Import Detection Summary Banner */}
           {importSummaryMsg && (
@@ -824,6 +1195,8 @@ exportMoldesParaCimatex();`;
               )}
             </div>
           </div>
+            </>
+          )}
         </div>
       )}
     </div>

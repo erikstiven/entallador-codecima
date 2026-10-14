@@ -3,68 +3,19 @@ import { create } from 'zustand';
 export type DisplayUnit = 'mm' | 'cm' | 'in';
 export type ExportFormatPref = 'SVG' | 'PDF' | 'EPS';
 export type GroupingModePref = 'PLAYER' | 'SIZE' | 'PIECE_TYPE' | 'NONE';
-export type BrandColor = 'violet' | 'indigo' | 'blue' | 'emerald' | 'amber';
 
-export interface BrandColorConfig {
-  id: BrandColor;
-  label: string;
-  primary: string;
-  hover: string;
-  light: string;
-  text: string;
-}
+export const BRAND_PRIMARY_COLOR = '#7c3aed';
+export const BRAND_PRIMARY_HOVER = '#6d28d9';
+export const BRAND_PRIMARY_LIGHT = '#f5f3ff';
+export const BRAND_PRIMARY_TEXT = '#ffffff';
 
-export const BRAND_COLORS: Record<BrandColor, BrandColorConfig> = {
-  violet: {
-    id: 'violet',
-    label: 'Violeta',
-    primary: '#7c3aed',
-    hover: '#6d28d9',
-    light: '#f5f3ff',
-    text: '#ffffff',
-  },
-  indigo: {
-    id: 'indigo',
-    label: 'Índigo',
-    primary: '#4f46e5',
-    hover: '#4338ca',
-    light: '#eef2ff',
-    text: '#ffffff',
-  },
-  blue: {
-    id: 'blue',
-    label: 'Azul',
-    primary: '#2563eb',
-    hover: '#1d4ed8',
-    light: '#eff6ff',
-    text: '#ffffff',
-  },
-  emerald: {
-    id: 'emerald',
-    label: 'Esmeralda',
-    primary: '#059669',
-    hover: '#047857',
-    light: '#ecfdf5',
-    text: '#ffffff',
-  },
-  amber: {
-    id: 'amber',
-    label: 'Ámbar',
-    primary: '#d97706',
-    hover: '#b45309',
-    light: '#fffbeb',
-    text: '#ffffff',
-  },
-};
-
-export function applyBrandColorToDom(color: BrandColor): void {
+export function applyBrandColorToDom(): void {
   if (typeof document === 'undefined') return;
-  const config = BRAND_COLORS[color] || BRAND_COLORS.violet;
   const root = document.documentElement;
-  root.style.setProperty('--brand-primary', config.primary);
-  root.style.setProperty('--brand-primary-hover', config.hover);
-  root.style.setProperty('--brand-primary-light', config.light);
-  root.style.setProperty('--brand-primary-text', config.text);
+  root.style.setProperty('--brand-primary', BRAND_PRIMARY_COLOR);
+  root.style.setProperty('--brand-primary-hover', BRAND_PRIMARY_HOVER);
+  root.style.setProperty('--brand-primary-light', BRAND_PRIMARY_LIGHT);
+  root.style.setProperty('--brand-primary-text', BRAND_PRIMARY_TEXT);
 }
 
 export interface SystemSettings {
@@ -86,15 +37,11 @@ export interface SystemSettings {
   // 4. Exportación
   defaultExportFormat: ExportFormatPref;
   defaultGroupingMode: GroupingModePref;
-
-  // 5. Marca y Personalización
-  brandColor: BrandColor;
 }
 
 interface SystemSettingsState {
   settings: SystemSettings;
   updateSettings: (updates: Partial<SystemSettings>) => void;
-  setBrandColor: (color: BrandColor) => void;
   resetSettings: () => void;
 }
 
@@ -112,7 +59,6 @@ const DEFAULT_SETTINGS: SystemSettings = {
   labelFontSizeMm: 5.0,
   defaultExportFormat: 'SVG',
   defaultGroupingMode: 'PLAYER',
-  brandColor: 'violet',
 };
 
 function loadStoredSettings(): SystemSettings {
@@ -131,7 +77,7 @@ function loadStoredSettings(): SystemSettings {
 
 const initialSettings = loadStoredSettings();
 if (typeof document !== 'undefined') {
-  applyBrandColorToDom(initialSettings.brandColor);
+  applyBrandColorToDom();
 }
 
 export const useSystemSettingsStore = create<SystemSettingsState>((set, get) => ({
@@ -139,28 +85,15 @@ export const useSystemSettingsStore = create<SystemSettingsState>((set, get) => 
   updateSettings: (updates) => {
     const newSettings = { ...get().settings, ...updates };
     set({ settings: newSettings });
-    if (updates.brandColor) {
-      applyBrandColorToDom(updates.brandColor);
-    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
     } catch (err) {
       console.warn('Error al guardar settings en localStorage:', err);
     }
   },
-  setBrandColor: (color) => {
-    const newSettings = { ...get().settings, brandColor: color };
-    set({ settings: newSettings });
-    applyBrandColorToDom(color);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
-    } catch (err) {
-      console.warn('Error al guardar brandColor en localStorage:', err);
-    }
-  },
   resetSettings: () => {
     set({ settings: DEFAULT_SETTINGS });
-    applyBrandColorToDom(DEFAULT_SETTINGS.brandColor);
+    applyBrandColorToDom();
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
     } catch (err) {

@@ -4,8 +4,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { Button } from '../../src/components/ui/Button';
 import {
   useSystemSettingsStore,
-  BRAND_COLORS,
-  BrandColor,
+  BRAND_PRIMARY_COLOR,
+  BRAND_PRIMARY_HOVER,
   applyBrandColorToDom,
 } from '../../src/modules/settings/systemSettingsStore';
 import fs from 'fs';
@@ -115,24 +115,13 @@ describe('TASK-1: Tokens CSS, Radio de Bordes y Sistema de Botón Configurable',
     });
   });
 
-  describe('systemSettingsStore y Selección de Color de Marca', () => {
-    it('provee 5 opciones de color de marca: violet, indigo, blue, emerald, amber', () => {
-      const availableColors: BrandColor[] = ['violet', 'indigo', 'blue', 'emerald', 'amber'];
-      availableColors.forEach((color) => {
-        expect(BRAND_COLORS[color]).toBeDefined();
-        expect(BRAND_COLORS[color].primary).toMatch(/^#[0-9a-f]{6}$/i);
-        expect(BRAND_COLORS[color].hover).toMatch(/^#[0-9a-f]{6}$/i);
-      });
+  describe('Color de Marca Fijo del SaaS (Violeta Institucional CimaTex)', () => {
+    it('define el color violeta institucional (#7c3aed y #6d28d9) coherente con la landing page', () => {
+      expect(BRAND_PRIMARY_COLOR).toBe('#7c3aed');
+      expect(BRAND_PRIMARY_HOVER).toBe('#6d28d9');
     });
 
-    it('inicia con brandColor="violet" y permite actualizar con setBrandColor', () => {
-      const store = useSystemSettingsStore.getState();
-      expect(store.settings.brandColor).toBe('violet');
-
-      store.setBrandColor('emerald');
-      expect(useSystemSettingsStore.getState().settings.brandColor).toBe('emerald');
-
-      // Verifica sincronización en DOM si document está disponible
+    it('sincroniza las variables CSS de marca en documentElement', () => {
       const styles: Record<string, string> = {};
       const fakeDoc = {
         documentElement: {
@@ -144,11 +133,10 @@ describe('TASK-1: Tokens CSS, Radio de Bordes y Sistema de Botón Configurable',
         },
       };
 
-      // Simular sincronización DOM
       (globalThis as any).document = fakeDoc;
-      applyBrandColorToDom('emerald');
-      expect(styles['--brand-primary']).toBe(BRAND_COLORS.emerald.primary);
-      expect(styles['--brand-primary-hover']).toBe(BRAND_COLORS.emerald.hover);
+      applyBrandColorToDom();
+      expect(styles['--brand-primary']).toBe('#7c3aed');
+      expect(styles['--brand-primary-hover']).toBe('#6d28d9');
       delete (globalThis as any).document;
     });
   });

@@ -7,6 +7,7 @@ import { useDesignStore } from '@/modules/designs/designStore';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { applyThemeToDocument, useThemeStore } from '@/modules/settings/themeStore';
 import { restoreAndRegisterCustomFonts } from '@/core/fonts/fontRepository';
+import { navigateTo } from '@/landing/router/landingRouteStore';
 
 const NewOrderView = lazy(() =>
   import('@/views/NewOrderView').then((module) => ({ default: module.NewOrderView }))
@@ -99,6 +100,24 @@ export const WorkshopApp: React.FC = () => {
       {/* Main Workspace Area */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {!isFocusedNesting && <Header />}
+
+        {/* Minimalist Trial Banner matching Sublimifyer */}
+        {!isFocusedNesting && (
+          <div className="bg-sky-50 border-b border-sky-100 text-sky-900 py-1.5 px-4 text-xs flex items-center justify-center gap-2 font-medium shrink-0">
+            <span className="w-4 h-4 rounded-full bg-sky-600 text-white flex items-center justify-center text-[10px] font-bold">
+              i
+            </span>
+            <span>Estás en el período de prueba. Te quedan 14 días.</span>
+            <button
+              type="button"
+              onClick={() => navigateTo('/landing#precios')}
+              className="text-sky-900 hover:text-sky-950 underline font-bold cursor-pointer"
+            >
+              Ver planes
+            </button>
+          </div>
+        )}
+
         <main className="flex-1 overflow-y-auto">
           <Suspense fallback={<ViewFallback />}>{renderCurrentView()}</Suspense>
         </main>
