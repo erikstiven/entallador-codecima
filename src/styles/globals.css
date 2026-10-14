@@ -160,7 +160,7 @@ html.light .text-slate-400 { color: #475569 !important; }
 html.light .text-slate-500 { color: #64748b !important; }
 html.light .text-slate-600 { color: #94a3b8 !important; }
 html.light .text-slate-950 { color: #0f172a !important; }
-html.light .text-white:not(.btn-brand-primary):not([data-variant="primary"]):not([class*="bg-primary"]):not([class*="text-primary-foreground"]):not([class*="bg-brand-primary"]):not([style*="--brand-primary"]) {
+html.light .text-white:not(button):not(button *):not([class*="bg-violet-"]):not([class*="bg-violet-"] *):not([class*="bg-emerald-"]):not([class*="bg-emerald-"] *):not([class*="bg-indigo-"]):not([class*="bg-indigo-"] *):not([class*="bg-blue-"]):not([class*="bg-blue-"] *):not([class*="bg-red-"]):not([class*="bg-red-"] *):not(.btn-brand-primary):not([data-variant="primary"]):not([class*="bg-primary"]):not([class*="text-primary-foreground"]):not([class*="bg-brand-primary"]):not([style*="--brand-primary"]) {
   color: #0f172a !important;
 }
 
@@ -208,6 +208,17 @@ html.light [data-variant="primary"] *,
 html.light [style*="--brand-primary"] *,
 html.light [class*="bg-brand-primary"] * {
   color: inherit;
+}
+
+html.light button.text-white,
+html.light button.text-white *,
+html.light button .text-white,
+html.light [class*="bg-violet-"] [class*="text-white"],
+html.light [class*="bg-emerald-"] [class*="text-white"],
+html.light [class*="bg-indigo-"] [class*="text-white"],
+html.light [class*="bg-blue-"] [class*="text-white"],
+html.light [class*="bg-red-"] [class*="text-white"] {
+  color: #ffffff !important;
 }
 
 /* Utilidades reactivas con variables de marca */

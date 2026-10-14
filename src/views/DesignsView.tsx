@@ -380,14 +380,12 @@ export const DesignsView: React.FC = () => {
       type="button"
       onClick={handleExplicitSaveDesign}
       disabled={!activeDesign || saveStatus === 'SAVING' || isUploading}
-      className={`text-xs px-4 py-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs ${
-        saveStatus === 'SAVED'
-          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-          : saveStatus === 'SAVING'
-            ? 'bg-violet-500 text-white cursor-wait'
-            : 'bg-violet-600 hover:bg-violet-700 text-white active:scale-95'
+      className={`text-xs px-3.5 py-1.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs ${
+        saveStatus === 'SAVING'
+          ? 'bg-emerald-500 text-white cursor-wait'
+          : 'bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95'
       } ${extraClassName}`}
-      title="Guardar y sincronizar explícitamente el diseño actual en la base de datos"
+      title="Guardar diseño"
     >
       {saveStatus === 'SAVING' ? (
         <>
@@ -469,14 +467,10 @@ export const DesignsView: React.FC = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-800">{d.name}</span>
-                    <span className={`text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-md ${
-                      blocksReady >= 3 
-                        ? 'bg-violet-100 text-violet-800 border border-violet-200' 
-                        : 'bg-slate-100 text-slate-600 border border-slate-200'
-                    }`}>
-                      Camiseta {blocksReady}/4 · Short {shortBlocksReady}/2
-                    </span>
+                    <span className="font-bold text-sm text-slate-800 truncate">{d.name}</span>
+                    {blocksReady >= 4 && (
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Modelo completo" />
+                    )}
                   </div>
                 </div>
               );
@@ -565,34 +559,8 @@ export const DesignsView: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Insignia de piezas cargadas */}
-                  {activeMainBlocksCount >= 4 ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      <CheckCircle2 className="w-3 h-3" />
-                      {activeMainBlocksCount}/4 piezas listas
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                      <AlertCircle className="w-3 h-3" />
-                      {activeMainBlocksCount}/4 piezas cargadas
-                    </span>
-                  )}
-
-                  {/* Insignia de estado de guardado y sincronización */}
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 text-slate-700 border border-slate-200">
-                    {saveStatus === 'SAVING' ? (
-                      <>
-                        <Loader2 className="w-3 h-3 animate-spin text-violet-600" />
-                        <span className="text-violet-700">Guardando diseño...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-emerald-700">✓ Guardado y sincronizado</span>
-                        {lastSavedAt && (
-                          <span className="text-slate-500 font-mono text-[10px]">· {lastSavedAt}</span>
-                        )}
-                      </>
-                    )}
+                  <span className="text-xs text-slate-500 font-medium">
+                    {activeMainBlocksCount}/4 piezas
                   </span>
                 </div>
 
@@ -603,17 +571,17 @@ export const DesignsView: React.FC = () => {
                     type="button"
                     onClick={() => multiInputRef.current?.click()}
                     disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs px-4 py-2 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs active:scale-95"
+                    className="rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs px-3 py-1.5 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs active:scale-95"
                   >
                     {isUploading ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>⏳ Cargando archivo SVG...</span>
+                        <span>Cargando SVG...</span>
                       </>
                     ) : (
                       <>
                         <UploadCloud className="w-3.5 h-3.5" />
-                        <span>Subir bloques del modelo (SVG)</span>
+                        <span>Subir bloques (SVG)</span>
                       </>
                     )}
                   </button>
@@ -622,16 +590,17 @@ export const DesignsView: React.FC = () => {
                     type="button"
                     onClick={() => setIsDorsalModalOpen(true)}
                     disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-4 py-2 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs active:scale-95"
-                    title="Configurar tipografía, colores y muestra del dorsal"
+                    className="rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs active:scale-95"
+                    title="Configurar tipografía y colores del dorsal"
                   >
                     <Type className="w-3.5 h-3.5 text-violet-600" />
                     <span>Configurar Dorsal ({activeFontFamily})</span>
                   </button>
+
                   <button
                     onClick={() => deleteDesign(activeDesign.id)}
                     disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 hover:border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 hover:border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
                     title="Eliminar este modelo"
                   >
                     <Trash2 className="w-4 h-4" />

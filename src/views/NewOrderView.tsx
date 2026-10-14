@@ -258,16 +258,16 @@ export const NewOrderView: React.FC = () => {
                     quantity: 1,
                   })
                 }
-                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
+                className="px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
                 title="Agregar jugadores directamente a la lista sin archivo Excel"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5 text-white" />
                 <span>Crear Nómina Manualmente</span>
               </button>
 
               <button
                 onClick={handleDownloadTemplate}
-                className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-semibold border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0 shadow-xs"
+                className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-semibold border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0 shadow-2xs"
                 title="Descargar archivo Excel con menús desplegables (select) y tallas sincronizadas"
               >
                 <Download className="w-3.5 h-3.5 text-violet-600" />
@@ -365,16 +365,12 @@ export const NewOrderView: React.FC = () => {
                     type="button"
                     onClick={handleSaveRoster}
                     disabled={items.length === 0 || isSavingRoster}
-                    className={`px-4 py-2 rounded-lg text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      isRosterSaved
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-violet-600 hover:bg-violet-700 text-white'
-                    }`}
-                    title="Guardar manualmente los cambios de la nómina actual"
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-600 hover:bg-emerald-700 text-white"
+                    title="Guardar cambios de la nómina actual"
                   >
                     {isSavingRoster ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
                         Guardando nómina...
                       </>
                     ) : isRosterSaved ? (
@@ -384,7 +380,7 @@ export const NewOrderView: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        <Save className="w-3.5 h-3.5" />
+                        <Save className="w-3.5 h-3.5 text-white" />
                         Guardar Nómina
                       </>
                     )}
@@ -393,7 +389,7 @@ export const NewOrderView: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleClearOrder}
-                      className="px-3.5 py-2 bg-white hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg text-xs font-semibold border border-slate-200 hover:border-red-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                      className="px-3 py-1.5 bg-white hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg text-xs font-semibold border border-slate-200 hover:border-red-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                       title="Limpiar únicamente el pedido actual"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -402,9 +398,9 @@ export const NewOrderView: React.FC = () => {
                   )}
                   <button
                     onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: availableSizes[0] || 'S', garmentType: 'CAMISETA', necklineType: 'REDONDO', quantity: 1 })}
-                    className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    className="px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3.5 h-3.5 text-white" />
                     Agregar Jugador
                   </button>
                 </div>
