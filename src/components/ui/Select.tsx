@@ -56,12 +56,24 @@ export const Select: React.FC<SelectProps> = ({
     const extracted: SelectOption[] = [];
     React.Children.forEach(children, (child) => {
       if (React.isValidElement(child) && child.type === 'option') {
-        const val = String((child.props as any).value ?? (child.props as any).children ?? '');
-        const lbl = String((child.props as any).children ?? (child.props as any).value ?? '');
+        const props = child.props as any;
+        const val = String(props.value !== undefined ? props.value : (props.children ?? ''));
+        let lbl = '';
+        if (props.children !== undefined && props.children !== null) {
+          if (Array.isArray(props.children)) {
+            lbl = props.children
+              .map((c: any) => (typeof c === 'string' || typeof c === 'number' ? String(c) : ''))
+              .join('');
+          } else {
+            lbl = String(props.children);
+          }
+        } else {
+          lbl = val;
+        }
         extracted.push({
           value: val,
           label: lbl,
-          disabled: Boolean((child.props as any).disabled),
+          disabled: Boolean(props.disabled),
         });
       }
     });

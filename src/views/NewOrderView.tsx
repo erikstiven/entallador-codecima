@@ -28,7 +28,7 @@ import { useDesignStore } from '@/modules/designs/designStore';
 import { useNestingStore } from '@/core/nesting/nestingStore';
 import { showAlert } from '@/core/ui/alerts';
 import { dbService } from '@/core/database/db';
-import { Select } from '@/components/ui';
+import { Select, Button } from '@/components/ui';
 
 export const NewOrderView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -340,49 +340,35 @@ export const NewOrderView: React.FC = () => {
 
         {/* Grupo de botones a la derecha alineados */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* + Agregar Jugador (Primario violeta) */}
-          <button
-            type="button"
-            onClick={handleAddPlayer}
-            className="rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer"
-            title="Agregar un jugador a la nómina"
-          >
-            <Plus className="w-3.5 h-3.5 text-white" />
-            <span>Agregar Jugador</span>
-          </button>
-
           {/* Cargar Excel (Secundario blanco) */}
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => fileInputRef.current?.click()}
-            className="rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
             title="Cargar archivo Excel (.xlsx, .xls o .csv)"
           >
             <UploadCloud className="w-3.5 h-3.5 text-violet-600" />
             <span>Cargar Excel</span>
-          </button>
+          </Button>
 
           {/* Descargar Plantilla (SIEMPRE visible) */}
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleDownloadTemplate}
-            className="rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
             title="Descargar plantilla Excel oficial con listas desplegables"
           >
             <Download className="w-3.5 h-3.5 text-violet-600" />
             <span className="hidden sm:inline">Descargar Plantilla</span>
-          </button>
+          </Button>
 
           {/* Guardar Nómina */}
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleSaveRoster}
             disabled={items.length === 0 || isSavingRoster}
-            className={`rounded-lg border text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-              isRosterSaved
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:text-slate-900'
-            }`}
+            className={isRosterSaved ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : ''}
             title="Guardar nómina activa"
           >
             {isSavingRoster ? (
@@ -401,19 +387,20 @@ export const NewOrderView: React.FC = () => {
                 <span>Guardar Nómina</span>
               </>
             )}
-          </button>
+          </Button>
 
           {/* Limpiar Pedido */}
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleClearOrder}
             disabled={items.length === 0}
-            className="rounded-lg bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-600 text-xs px-3 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="text-slate-600 hover:text-red-600 hover:bg-red-50 hover:border-red-200"
             title="Limpiar la nómina actual"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Limpiar pedido</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -776,14 +763,15 @@ export const NewOrderView: React.FC = () => {
 
                   {/* Botón Aplicar a Todos */}
                   <div>
-                    <button
-                      type="button"
+                    <Button
+                      variant="primary"
+                      size="sm"
                       onClick={handleExecuteMassEdit}
-                      className="w-full py-1.5 px-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold shadow-2xs transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 h-[34px]"
+                      className="w-full h-[34px]"
                     >
                       <Check className="w-3.5 h-3.5" />
                       <span>Aplicar a Todos</span>
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -792,6 +780,28 @@ export const NewOrderView: React.FC = () => {
 
           {/* 4. TABLA DE NÓMINA */}
           <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
+            {/* Barra superior de la tabla con botón + Agregar Jugador */}
+            <div className="px-4 py-2.5 bg-slate-50/70 border-b border-slate-200/70 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-800">
+                  Nómina de Jugadores ({items.length})
+                </span>
+                <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                  • Edición directa de tallas, dorsales y prendas
+                </span>
+              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleAddPlayer}
+                className="cursor-pointer shadow-xs"
+                title="Agregar un nuevo jugador a la nómina"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Agregar Jugador</span>
+              </Button>
+            </div>
+
             <div className="overflow-x-auto max-h-[480px]">
               <table className="w-full text-left text-xs font-sans">
                 <thead className="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200 z-10 text-[11px] uppercase tracking-wider font-mono">
@@ -970,6 +980,23 @@ export const NewOrderView: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Pie de tabla con botón + Agregar otra fila */}
+            <div className="px-4 py-2 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] text-slate-400 font-medium font-mono">
+                {items.length} {items.length === 1 ? 'jugador registrado' : 'jugadores registrados'}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddPlayer}
+                className="cursor-pointer text-xs"
+                title="Agregar otra fila a la nómina"
+              >
+                <Plus className="w-3.5 h-3.5 text-violet-600" />
+                <span>Agregar otra fila</span>
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -1047,9 +1074,11 @@ export const NewOrderView: React.FC = () => {
         </div>
 
         <div className="flex flex-col items-stretch md:items-end gap-2">
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="md"
             disabled={!canProceedToNesting || isGeneratingAction}
+            isLoading={isGeneratingAction}
             onClick={async () => {
               if (!canProceedToNesting || isGeneratingAction) return;
 
@@ -1101,24 +1130,17 @@ export const NewOrderView: React.FC = () => {
                 ? (disabledReasonMessage || 'Completa la nómina para generar prendas')
                 : 'Genera la producción completa de piezas vectoriales 1:1 y avanza al entallado y acomodo en rollo'
             }
-            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed ${
-              !canProceedToNesting || isGeneratingAction
-                ? 'bg-slate-100 text-slate-400 border border-slate-200 shadow-none'
-                : 'bg-violet-600 hover:bg-violet-700 text-white shadow-xs'
-            }`}
+            className="px-5 py-2.5 h-auto text-xs sm:text-sm font-semibold cursor-pointer"
           >
             {isGeneratingAction ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-white" />
-                <span>Generando uniformes 1:1...</span>
-              </>
+              <span>Generando uniformes 1:1...</span>
             ) : (
               <>
                 <span>Generar Producción Completa</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 ml-1" />
               </>
             )}
-          </button>
+          </Button>
 
           {!canProceedToNesting && disabledReasonMessage && (
             <div className="flex items-center gap-1.5 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
