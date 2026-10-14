@@ -409,7 +409,7 @@ export const DesignsView: React.FC = () => {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-5">
+    <div className="h-full min-h-0 p-5 flex flex-col overflow-hidden max-w-[1600px] w-full mx-auto">
       {/* Input de carga masiva de bloques SVG del modelo */}
       <input
         ref={multiInputRef}
@@ -420,18 +420,18 @@ export const DesignsView: React.FC = () => {
         onChange={(e) => e.target.files && handleUploadMultipleFiles(e.target.files)}
       />
 
-      {/* Grilla Principal */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-        {/* Columna Izquierda: Modelos */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
+      {/* Grilla Principal con Scroll Independiente en ambas columnas */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5">
+        {/* Columna Izquierda: Modelos con scroll independiente */}
+        <div className="w-full lg:w-80 shrink-0 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col h-full min-h-0 overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Modelos ({designs.length})
             </h3>
             <button
               onClick={() => createNewDesign()}
               disabled={isUploading || saveStatus === 'SAVING'}
-              className="text-xs text-violet-600 hover:text-violet-700 font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-xs text-primary hover:text-primary/80 font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               title="Crear nuevo modelo"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -439,7 +439,7 @@ export const DesignsView: React.FC = () => {
             </button>
           </div>
 
-          <div className="space-y-2">
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
             {designs.map((d) => {
               const isSelected = activeDesign?.id === d.id;
               const hasFrente = Boolean(
@@ -484,30 +484,33 @@ export const DesignsView: React.FC = () => {
           </div>
 
           {designs.length > 0 && (
-            <button
-              disabled={isUploading || saveStatus === 'SAVING'}
-              onClick={async () => {
-                const confirmed = await showAlert.confirm(
-                  '¿Eliminar todos los modelos?',
-                  'Esta acción borrará permanentemente todos los diseños maestros cargados.'
-                );
-                if (confirmed) {
-                  clearAllDesigns();
-                  showAlert.toast('info', 'Modelos limpiados');
-                }
-              }}
-              className="w-full mt-2 py-1.5 px-3 bg-white hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Limpiar todos
-            </button>
+            <div className="p-3 border-t border-slate-100 bg-slate-50/50 shrink-0">
+              <button
+                disabled={isUploading || saveStatus === 'SAVING'}
+                onClick={async () => {
+                  const confirmed = await showAlert.confirm(
+                    '¿Eliminar todos los modelos?',
+                    'Esta acción borrará permanentemente todos los diseños maestros cargados.'
+                  );
+                  if (confirmed) {
+                    clearAllDesigns();
+                    showAlert.toast('info', 'Modelos limpiados');
+                  }
+                }}
+                className="w-full py-1.5 px-3 bg-white hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Limpiar todos
+              </button>
+            </div>
           )}
         </div>
 
-        {/* Columna Derecha: Configuración y Ranuras de Bloques */}
+        {/* Columna Derecha: Configuración y Ranuras de Bloques con scroll independiente */}
         {activeDesign ? (
-          <div className="lg:col-span-3 space-y-5">
-            <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-5 shadow-xs">
+          <div className="flex-1 min-h-0 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col h-full overflow-hidden">
+            {/* Header fijo del Editor */}
+            <div className="p-5 border-b border-slate-200 shrink-0 bg-white">
               {/* Título editable del modelo + Insignias de estado + Acciones principales */}
               <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-slate-200 pb-3.5">
                 <div className="flex flex-wrap items-center gap-2.5">
@@ -635,35 +638,36 @@ export const DesignsView: React.FC = () => {
                   </button>
                 </div>
               </div>
+            </div>
 
-              {/* Modal Desplegable de Configuración de Dorsal (Limpio y Fuera del Flujo Principal) */}
-              <DorsalConfigModal
-                isOpen={isDorsalModalOpen}
-                onClose={() => setIsDorsalModalOpen(false)}
-                activeFontFamily={activeFontFamily}
-                onSelectFont={handleSelectFont}
-                localFonts={localFonts}
-                onUploadFontFile={(file) => {
-                  loadCustomFontFromFile(file).then((name) => {
-                    setLocalFonts((prev) => Array.from(new Set([name, ...prev])));
-                    setActiveFontFamily(name);
-                    applyStyleUpdates({ fontFamily: name });
-                    showAlert.toast('success', `Fuente "${name}" cargada con éxito`);
-                  });
-                }}
-                fillHex={fillHex}
-                fillCmyk={fillCmyk}
-                onFillHexChange={handleFillHexChange}
-                onFillCmykChange={handleFillCmykChange}
-                sampleName={sampleName}
-                onSampleNameChange={setSampleName}
-                sampleNumber={sampleNumber}
-                onSampleNumberChange={setSampleNumber}
-              />
+            {/* Modal Desplegable de Configuración de Dorsal (Limpio y Fuera del Flujo Principal) */}
+            <DorsalConfigModal
+              isOpen={isDorsalModalOpen}
+              onClose={() => setIsDorsalModalOpen(false)}
+              activeFontFamily={activeFontFamily}
+              onSelectFont={handleSelectFont}
+              localFonts={localFonts}
+              onUploadFontFile={(file) => {
+                loadCustomFontFromFile(file).then((name) => {
+                  setLocalFonts((prev) => Array.from(new Set([name, ...prev])));
+                  setActiveFontFamily(name);
+                  applyStyleUpdates({ fontFamily: name });
+                  showAlert.toast('success', `Fuente "${name}" cargada con éxito`);
+                });
+              }}
+              fillHex={fillHex}
+              fillCmyk={fillCmyk}
+              onFillHexChange={handleFillHexChange}
+              onFillCmykChange={handleFillCmykChange}
+              sampleName={sampleName}
+              onSampleNameChange={setSampleName}
+              sampleNumber={sampleNumber}
+              onSampleNumberChange={setSampleNumber}
+            />
 
-              {/* LAS RANURAS DE BLOQUES DE ARTE CON VISTA CUADRÍCULA Y CARRUSEL */}
-              <div className="space-y-6">
-                <TextilePieceCarousel
+            {/* CUERPO DEL EDITOR CON SCROLL INDEPENDIENTE */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
+              <TextilePieceCarousel
                   title="Piezas de Camiseta (Frente, Espalda, Mangas)"
                   subtitle="Carga de arte para frente, espalda y mangas para entallado 1:1"
                   pieces={[
@@ -769,14 +773,13 @@ export const DesignsView: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
         ) : (
-          <div className="lg:col-span-3 bg-white border border-slate-200 rounded-xl p-16 text-center space-y-3 shadow-xs">
+          <div className="flex-1 min-h-0 bg-white border border-slate-200 rounded-2xl p-16 text-center flex flex-col items-center justify-center space-y-3 shadow-xs">
             <Palette className="w-12 h-12 text-slate-300 mx-auto" />
             <h3 className="text-base font-bold text-slate-800">Selecciona o crea un modelo de diseño</h3>
             <button
               onClick={() => createNewDesign()}
-              className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
+              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full text-xs font-semibold shadow-md shadow-violet-500/25 cursor-pointer"
             >
               Crear Nuevo Modelo
             </button>
