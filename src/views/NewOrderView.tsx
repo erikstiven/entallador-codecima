@@ -246,7 +246,7 @@ export const NewOrderView: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <button
                 onClick={() =>
                   addItem({
@@ -258,19 +258,19 @@ export const NewOrderView: React.FC = () => {
                     quantity: 1,
                   })
                 }
-                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                className="px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
                 title="Agregar jugadores directamente a la lista sin archivo Excel"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 <span>Crear Nómina Manualmente</span>
               </button>
 
               <button
                 onClick={handleDownloadTemplate}
-                className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-semibold border border-slate-300 transition-all flex items-center gap-2 cursor-pointer active:scale-95 shrink-0 shadow-sm"
+                className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-semibold border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0 shadow-xs"
                 title="Descargar archivo Excel con menús desplegables (select) y tallas sincronizadas"
               >
-                <Download className="w-4 h-4 text-violet-600" />
+                <Download className="w-3.5 h-3.5 text-violet-600" />
                 <span>Descargar Plantilla (.xlsx)</span>
               </button>
             </div>
@@ -280,15 +280,15 @@ export const NewOrderView: React.FC = () => {
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-200 hover:border-violet-500 bg-slate-50/70 hover:bg-violet-50/30 transition-all duration-200 rounded-2xl p-12 text-center flex flex-col items-center justify-center cursor-pointer group"
+            className="border-2 border-dashed border-slate-300 hover:border-violet-400 bg-slate-50/50 hover:bg-violet-50/20 transition-all duration-200 rounded-xl p-12 text-center flex flex-col items-center justify-center cursor-pointer group shadow-2xs"
           >
-            <div className="w-16 h-16 rounded-2xl bg-violet-100 border border-violet-200 text-violet-600 flex items-center justify-center mb-4 group-hover:scale-105 group-hover:bg-violet-200 transition-all">
-              <UploadCloud className="w-8 h-8" />
+            <div className="w-12 h-12 rounded-lg bg-white border border-slate-200 text-slate-500 group-hover:text-violet-600 group-hover:border-violet-300 flex items-center justify-center mb-3 group-hover:scale-105 transition-all shadow-xs">
+              <UploadCloud className="w-6 h-6" />
             </div>
-            <h4 className="text-base font-semibold text-slate-800 group-hover:text-violet-700 transition-colors">
+            <h4 className="text-sm font-semibold text-slate-800 group-hover:text-violet-700 transition-colors">
               Arrastra tu archivo Excel aquí o haz clic para seleccionarlo
             </h4>
-            <p className="text-xs text-slate-500 mt-1.5 font-mono">
+            <p className="text-xs text-slate-500 mt-1 font-mono">
               Formatos compatibles: .xlsx, .xls, .csv • Con selectores desplegables
             </p>
           </div>
@@ -298,13 +298,13 @@ export const NewOrderView: React.FC = () => {
         <div className="space-y-4">
           {/* Summary Metric Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
               <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Jugadores</div>
               <div className="text-2xl font-black font-mono text-slate-900 mt-1">{summary.totalItems}</div>
               <div className="text-[10px] text-slate-400 mt-0.5">En la nómina activa</div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
               <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Piezas a Producir</div>
               <div className="text-2xl font-black font-mono text-sky-600 mt-1">
                 {summary.totalPiecesCount} <span className="text-xs font-semibold text-slate-500">piezas</span>
@@ -312,7 +312,7 @@ export const NewOrderView: React.FC = () => {
               <div className="text-[10px] text-slate-400 mt-0.5">Frente, espalda, mangas y shorts</div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
               <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Validación de Nómina</div>
               {summary.invalidCount > 0 ? (
                 <div className="text-2xl font-black font-mono text-red-600 mt-1 flex items-center gap-1.5">
@@ -328,7 +328,7 @@ export const NewOrderView: React.FC = () => {
               <div className="text-[10px] text-slate-400 mt-0.5">{summary.validCount} de {summary.totalItems} listos</div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Archivo Excel</div>
                 <div className="text-xs text-slate-800 font-mono font-bold truncate mt-1" title={fileName || ''}>
@@ -345,7 +345,7 @@ export const NewOrderView: React.FC = () => {
           </div>
 
           {/* Table Container */}
-          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm space-y-0">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs space-y-0">
             {/* Sección Visible "Aplicar a Todos" */}
             <div className="p-4 bg-slate-50/80 border-b border-slate-200 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -743,35 +743,28 @@ export const NewOrderView: React.FC = () => {
                 ? (disabledReasonMessage || 'Completa la nómina para generar prendas')
                 : 'Genera las piezas vectoriales 1:1 y conduce a la Inspección y Calibración de Prendas antes de acomodar en el rollo'
             }
-            className={`px-7 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-sm transition-all active:scale-95 ${
+            className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
               !canProceedToNesting || isGeneratingAction
-                ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                : !isProductionReady
-                  ? 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300 cursor-pointer'
-                  : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white cursor-pointer shadow-md shadow-violet-200'
+                ? 'bg-slate-100 text-slate-400 border border-slate-200'
+                : 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-200'
             }`}
           >
             {isGeneratingAction ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-purple-300" />
-                <span>⏳ Generando uniformes 1:1...</span>
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                <span>Generando uniformes 1:1...</span>
               </>
             ) : (
-              <div className="flex flex-col items-center gap-0.5 text-center">
-                <div className="flex items-center gap-2">
-                  <span>Generar Prendas y Avanzar al Entallado</span>
-                  <ArrowRight className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-normal normal-case tracking-normal text-purple-200/90">
-                  Genera piezas vectoriales e inicia la Inspección y Calibración antes del rollo
-                </span>
-              </div>
+              <>
+                <span>Generar Prendas y Avanzar al Entallado</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
             )}
           </button>
 
           {!canProceedToNesting && disabledReasonMessage && (
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 bg-amber-950/40 border border-amber-700/50 px-3 py-1 rounded-lg">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
               <span>{disabledReasonMessage}</span>
             </div>
           )}

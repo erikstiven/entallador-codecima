@@ -236,22 +236,26 @@ exportMoldesParaCimatex();`;
             if (!file) return;
             processPatternSvgFile(file);
           }}
-          className="bg-slate-900 border-2 border-dashed border-slate-700 hover:border-violet-500 rounded-2xl p-16 text-center flex flex-col items-center justify-center cursor-pointer transition-all group"
+          className="bg-slate-50/60 border-2 border-dashed border-slate-300 hover:border-violet-400 rounded-xl p-16 text-center flex flex-col items-center justify-center cursor-pointer transition-all group shadow-2xs"
         >
-          <Scissors className="w-12 h-12 text-slate-600 group-hover:text-purple-400 mb-3 transition-colors" />
-          <h3 className="text-base font-semibold text-white">No hay conjunto de moldes activo</h3>
-          <p className="text-xs text-slate-400 mt-1 max-w-md">
-            Arrastra aquí tu archivo SVG de moldería graduada (ej: <span className="font-mono text-purple-300">moldes 2025.svg</span>) exportado desde Illustrator o haz clic para seleccionarlo.
+          <div className="w-12 h-12 rounded-lg bg-white border border-slate-200 text-slate-500 group-hover:text-violet-600 group-hover:border-violet-300 flex items-center justify-center mb-3 group-hover:scale-105 transition-all shadow-xs">
+            <Scissors className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-semibold text-slate-800 group-hover:text-violet-700 transition-colors">
+            No hay conjunto de moldes activo
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-md">
+            Arrastra aquí tu archivo SVG de moldería graduada exportado desde Illustrator o haz clic para seleccionarlo.
           </p>
           <button
             type="button"
             disabled={isImportingSvg}
-            className="mt-5 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-70 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold shadow-lg shadow-purple-950 flex items-center gap-2"
+            className="mt-5 inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             {isImportingSvg ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>⏳ Analizando vectores del molde...</span>
+                <span>Analizando vectores del molde...</span>
               </>
             ) : (
               <>
@@ -262,20 +266,20 @@ exportMoldesParaCimatex();`;
           </button>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Active Pattern Set Header Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
             <div className="flex flex-col md:flex-row md:items-center gap-4">
               {patternSets.length > 1 && (
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-mono uppercase block">Conjunto Activo:</label>
+                  <label className="text-[10px] text-slate-500 font-mono uppercase font-bold block">Conjunto Activo:</label>
                   <select
                     value={activePatternSet.id}
                     onChange={(e) => {
                       const found = patternSets.find((s) => s.id === e.target.value);
                       if (found) setActivePatternSet(found);
                     }}
-                    className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-semibold"
+                    className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-medium shadow-2xs"
                   >
                     {patternSets.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -286,15 +290,15 @@ exportMoldesParaCimatex();`;
                 </div>
               )}
               <div>
-                <div className="flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-sm shadow-purple-400/50" />
-                  <h3 className="text-base font-bold text-white tracking-wide">{activePatternSet.name}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />
+                  <h3 className="text-base font-bold text-slate-900 tracking-tight">{activePatternSet.name}</h3>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   {activePatternSet.sizes.length} tallas registradas •{' '}
                   {activePatternSet.sizes.reduce((acc, s) => acc + s.pieces.length, 0)} piezas asignadas
                   {activePatternSet.unassignedPieces.length > 0 && (
-                    <span className="text-amber-400 ml-2 font-semibold">
+                    <span className="text-amber-700 ml-2 font-medium">
                       • {activePatternSet.unassignedPieces.length} pieza(s) pendientes de asignar
                     </span>
                   )}
@@ -307,66 +311,64 @@ exportMoldesParaCimatex();`;
               <button
                 onClick={handleSavePatterns}
                 disabled={isSaving}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${
-                  isSaved
-                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                    : isSaving
-                      ? 'bg-sky-700 text-white'
-                      : 'bg-sky-600 hover:bg-sky-500 text-white'
-                }`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                 title="Guardar molde de forma permanente"
               >
                 {isSaving ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                    Guardando molde...
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Guardando molde...</span>
                   </>
                 ) : isSaved ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-white" />
-                    ¡Molde Guardado!
+                    <Check className="w-3.5 h-3.5" />
+                    <span>¡Molde Guardado!</span>
                   </>
                 ) : (
                   <>
                     <Save className="w-3.5 h-3.5" />
-                    Guardar Molde
+                    <span>Guardar Molde</span>
                   </>
                 )}
               </button>
+
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImportingSvg}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-70 disabled:cursor-not-allowed text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 shadow-sm transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-700 rounded-lg text-xs font-medium border border-slate-200 shadow-xs transition-colors cursor-pointer"
               >
                 {isImportingSvg ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 text-purple-400 animate-spin" />
-                    <span>⏳ Analizando vectores del molde...</span>
+                    <Loader2 className="w-3.5 h-3.5 text-violet-600 animate-spin" />
+                    <span>Analizando vectores...</span>
                   </>
                 ) : (
                   <>
-                    <Plus className="w-3.5 h-3.5 text-purple-400" />
+                    <Plus className="w-3.5 h-3.5 text-violet-600" />
                     <span>Cargar Otro Molde SVG</span>
                   </>
                 )}
               </button>
+
               <button
                 type="button"
                 onClick={handleDownloadTemplate}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 rounded-lg text-xs font-medium shadow-xs transition-colors cursor-pointer"
                 title="Descargar plantilla editable con capas para Adobe Illustrator"
               >
-                <Download className="w-3.5 h-3.5" />
+                <Download className="w-3.5 h-3.5 text-violet-600" />
                 <span>Descargar Plantilla Illustrator</span>
               </button>
+
               <button
                 onClick={handleDownloadScript}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium border border-slate-200 shadow-xs transition-colors cursor-pointer"
                 title="Descargar script JSX para Adobe Illustrator"
               >
-                <FileCode className="w-3.5 h-3.5 text-purple-400" />
-                Script JSX
+                <FileCode className="w-3.5 h-3.5 text-slate-500" />
+                <span>Script JSX</span>
               </button>
+
               {patternSets.length > 0 && (
                 <button
                   onClick={async () => {
@@ -379,13 +381,14 @@ exportMoldesParaCimatex();`;
                       showAlert.toast('info', 'Moldes limpiados');
                     }
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950/30 hover:bg-red-900/50 text-red-300 rounded-lg text-xs font-medium border border-red-800/40 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200 shadow-xs transition-colors cursor-pointer"
                   title="Limpiar y borrar todos los moldes cargados"
                 >
-                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                  Limpiar Moldes
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Limpiar Moldes</span>
                 </button>
               )}
+
               <button
                 onClick={async () => {
                   const confirmed = await showAlert.confirm(
@@ -397,7 +400,7 @@ exportMoldesParaCimatex();`;
                     showAlert.toast('info', 'Conjunto de moldes eliminado');
                   }
                 }}
-                className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-red-400 rounded-lg transition-colors border border-transparent hover:border-slate-700 cursor-pointer"
+                className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors border border-transparent hover:border-red-200 cursor-pointer"
                 title="Eliminar este conjunto de moldes"
               >
                 <Trash2 className="w-4 h-4" />
@@ -407,15 +410,15 @@ exportMoldesParaCimatex();`;
 
           {/* Import Detection Summary Banner */}
           {importSummaryMsg && (
-            <div className="bg-emerald-950/30 border border-emerald-700/50 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 text-xs text-emerald-300 font-semibold">
-                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-2.5 text-xs text-emerald-800 font-semibold">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>{importSummaryMsg}</span>
               </div>
               <button
                 type="button"
                 onClick={() => setImportSummaryMsg(null)}
-                className="text-[11px] text-emerald-400/80 hover:text-emerald-200 font-mono px-2 py-0.5 rounded hover:bg-emerald-900/40 transition-colors cursor-pointer"
+                className="text-[11px] text-emerald-700 hover:text-emerald-900 font-mono px-2 py-0.5 rounded hover:bg-emerald-100 transition-colors cursor-pointer"
               >
                 Cerrar
               </button>
@@ -568,23 +571,23 @@ exportMoldesParaCimatex();`;
           )}
 
           {/* Sizes & Pieces Explorer */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
             {/* Size Tabs Header & View Mode Switcher */}
-            <div className="p-3 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div className="p-3 bg-slate-50/70 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 overflow-x-auto py-0.5">
                 {viewMode === 'CARDS' ? (
                   <>
-                    <span className="text-xs font-medium text-slate-400 mr-1 flex items-center gap-1">
-                      <Sliders className="w-3.5 h-3.5 text-slate-500" /> Tallas:
+                    <span className="text-xs font-medium text-slate-500 mr-1 flex items-center gap-1">
+                      <Sliders className="w-3.5 h-3.5 text-slate-400" /> Tallas:
                     </span>
                     {activePatternSet.sizes.map((s) => (
                       <button
                         key={s.id}
                         onClick={() => setActiveSizeTab(s.sizeName)}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
                           activeSizeTab === s.sizeName
-                            ? 'bg-violet-600 text-white shadow-sm'
-                            : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                            ? 'bg-violet-600 text-white shadow-xs'
+                            : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-100/60'
                         }`}
                       >
                         Talla {s.sizeName} ({s.pieces.length} pzs)
@@ -592,21 +595,21 @@ exportMoldesParaCimatex();`;
                     ))}
                   </>
                 ) : (
-                  <span className="text-xs font-semibold text-slate-300 flex items-center gap-2">
-                    <Table className="w-4 h-4 text-purple-400" />
+                  <span className="text-xs font-semibold text-slate-800 flex items-center gap-2">
+                    <Table className="w-4 h-4 text-violet-600" />
                     Tabla de Moldes y Graduación (Medidas en cm)
                   </span>
                 )}
               </div>
 
               {/* View Switcher: Siluetas vs Tabla de Moldes */}
-              <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-lg shrink-0">
+              <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 p-1 rounded-lg shrink-0">
                 <button
                   onClick={() => setViewMode('CARDS')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                     viewMode === 'CARDS'
-                      ? 'bg-slate-800 text-purple-400 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-white text-violet-700 shadow-2xs font-semibold'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                   title="Ver piezas gráficas con siluetas vectoriales"
                 >
@@ -615,10 +618,10 @@ exportMoldesParaCimatex();`;
                 </button>
                 <button
                   onClick={() => setViewMode('TABLE')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                     viewMode === 'TABLE'
-                      ? 'bg-slate-800 text-purple-400 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-white text-violet-700 shadow-2xs font-semibold'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                   title="Ver tabla comparativa con medidas de todas las tallas"
                 >
@@ -631,9 +634,9 @@ exportMoldesParaCimatex();`;
             {/* Pieces Grid for Selected Size OR Full Graduation Table */}
             <div className="p-6">
               {viewMode === 'TABLE' ? (
-                <div className="overflow-x-auto rounded-xl border border-slate-800">
+                <div className="overflow-x-auto rounded-lg border border-slate-200">
                   <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-950 text-slate-400 font-mono border-b border-slate-800 text-[11px] uppercase">
+                    <thead className="bg-slate-50 text-slate-500 font-mono border-b border-slate-200 text-[11px] uppercase">
                       <tr>
                         <th className="py-3 px-4">Talla</th>
                         <th className="py-3 px-4">Delantero</th>
@@ -644,7 +647,7 @@ exportMoldesParaCimatex();`;
                         <th className="py-3 px-4 text-center">Total Piezas</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 font-mono bg-slate-950/40">
+                    <tbody className="divide-y divide-slate-100 font-mono bg-white">
                       {activePatternSet.sizes.map((size) => {
                         const delantero = size.pieces.find((p) => p.pieceType.includes('DELANTERO'));
                         const espalda = size.pieces.find((p) => p.pieceType === 'ESPALDA');
@@ -653,57 +656,57 @@ exportMoldesParaCimatex();`;
                         const cuello = size.pieces.find((p) => p.pieceType === 'CUELLO');
 
                         return (
-                          <tr key={size.id} className="hover:bg-slate-800/40 transition-colors">
-                            <td className="py-3 px-4 font-bold text-purple-400 text-sm">
+                          <tr key={size.id} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="py-3 px-4 font-bold text-violet-700 text-sm">
                               Talla {size.sizeName}
                             </td>
-                            <td className="py-3 px-4 text-slate-200">
+                            <td className="py-3 px-4 text-slate-800">
                               {delantero ? (
-                                <span className="bg-slate-900 border border-slate-800 px-2 py-1 rounded">
+                                <span className="bg-slate-50 border border-slate-200 px-2 py-1 rounded-md">
                                   {(delantero.bbox.width / 10).toFixed(1)} × {(delantero.bbox.height / 10).toFixed(1)} cm
                                 </span>
                               ) : (
-                                <span className="text-slate-600">—</span>
+                                <span className="text-slate-400">—</span>
                               )}
                             </td>
-                            <td className="py-3 px-4 text-slate-200">
+                            <td className="py-3 px-4 text-slate-800">
                               {espalda ? (
-                                <span className="bg-slate-900 border border-slate-800 px-2 py-1 rounded">
+                                <span className="bg-slate-50 border border-slate-200 px-2 py-1 rounded-md">
                                   {(espalda.bbox.width / 10).toFixed(1)} × {(espalda.bbox.height / 10).toFixed(1)} cm
                                 </span>
                               ) : (
-                                <span className="text-slate-600">—</span>
+                                <span className="text-slate-400">—</span>
                               )}
                             </td>
-                            <td className="py-3 px-4 text-slate-200">
+                            <td className="py-3 px-4 text-slate-800">
                               {manga ? (
-                                <span className="bg-slate-900 border border-slate-800 px-2 py-1 rounded">
+                                <span className="bg-slate-50 border border-slate-200 px-2 py-1 rounded-md">
                                   {(manga.bbox.width / 10).toFixed(1)} × {(manga.bbox.height / 10).toFixed(1)} cm
                                 </span>
                               ) : (
-                                <span className="text-slate-600">—</span>
+                                <span className="text-slate-400">—</span>
                               )}
                             </td>
-                            <td className="py-3 px-4 text-slate-200">
+                            <td className="py-3 px-4 text-slate-800">
                               {shortP ? (
-                                <span className="bg-slate-900 border border-slate-800 px-2 py-1 rounded">
+                                <span className="bg-slate-50 border border-slate-200 px-2 py-1 rounded-md">
                                   {(shortP.bbox.width / 10).toFixed(1)} × {(shortP.bbox.height / 10).toFixed(1)} cm
                                 </span>
                               ) : (
-                                <span className="text-slate-600">—</span>
+                                <span className="text-slate-400">—</span>
                               )}
                             </td>
-                            <td className="py-3 px-4 text-slate-200">
+                            <td className="py-3 px-4 text-slate-800">
                               {cuello ? (
-                                <span className="bg-slate-900 border border-slate-800 px-2 py-1 rounded">
+                                <span className="bg-slate-50 border border-slate-200 px-2 py-1 rounded-md">
                                   {(cuello.bbox.width / 10).toFixed(1)} × {(cuello.bbox.height / 10).toFixed(1)} cm
                                 </span>
                               ) : (
-                                <span className="text-slate-600">—</span>
+                                <span className="text-slate-400">—</span>
                               )}
                             </td>
                             <td className="py-3 px-4 text-center">
-                              <span className="bg-purple-950/40 border border-purple-800/40 text-purple-400 px-2.5 py-1 rounded text-xs font-bold">
+                              <span className="bg-violet-50 border border-violet-200 text-violet-700 px-2.5 py-1 rounded-md text-xs font-bold">
                                 {size.pieces.length} pzs
                               </span>
                             </td>
@@ -718,14 +721,14 @@ exportMoldesParaCimatex();`;
                   {currentSizeObj.pieces.map((piece) => (
                     <div
                       key={piece.id}
-                      className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition-all space-y-3"
+                      className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-violet-300 hover:shadow-xs transition-all space-y-3"
                     >
                       {/* Top Header of Card: Piece Type Selector and Delete Action */}
                       <div className="flex items-center justify-between gap-2">
                         <select
                           value={piece.pieceType}
                           onChange={(e) => updatePieceType(currentSizeObj.sizeName, piece.id, e.target.value as PieceType)}
-                          className="flex-1 bg-slate-900 border border-slate-700 hover:border-violet-500 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-purple-400 focus:outline-none cursor-pointer transition-colors"
+                          className="flex-1 bg-white border border-slate-200 hover:border-violet-400 focus:border-violet-600 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-violet-900 focus:outline-none cursor-pointer transition-colors"
                           title="Cambiar tipo de pieza si fue clasificada incorrectamente"
                         >
                           <option value="DELANTERO_V">DELANTERO (CUELLO V)</option>
@@ -753,7 +756,7 @@ exportMoldesParaCimatex();`;
                               showAlert.toast('info', 'Pieza eliminada');
                             }
                           }}
-                          className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-red-400 hover:bg-red-950/80 border border-slate-800 hover:border-red-800 transition-colors shrink-0 cursor-pointer"
+                          className="p-1.5 rounded-lg bg-white text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-colors shrink-0 cursor-pointer"
                           title="Omitir o eliminar esta pieza si está de más o duplicada"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -761,7 +764,7 @@ exportMoldesParaCimatex();`;
                       </div>
 
                       {/* SVG Thumbnail Mini Preview — 100% Unobstructed & Centered */}
-                      <div className="h-40 bg-slate-900/60 rounded-lg flex items-center justify-center p-3 border border-slate-800/80 overflow-hidden">
+                      <div className="h-40 bg-slate-50 rounded-lg flex items-center justify-center p-3 border border-slate-200/80 overflow-hidden">
                         {(() => {
                           const pathD = polygonToSvgPath(piece.cutPolygon) || piece.svgPathData;
                           const pad = Math.max(piece.bbox.width, piece.bbox.height) * 0.08;
@@ -773,7 +776,7 @@ exportMoldesParaCimatex();`;
                             <svg
                               viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
                               preserveAspectRatio="xMidYMid meet"
-                              className="h-full w-full max-h-36 text-purple-400 stroke-current fill-violet-500/10"
+                              className="h-full w-full max-h-36 text-violet-600 stroke-current fill-violet-500/10"
                             >
                               <path
                                 d={pathD}
@@ -789,15 +792,15 @@ exportMoldesParaCimatex();`;
 
                       {/* Piece Metric Details in Centimeters (cm) */}
                       <div className="space-y-1 text-xs pt-1">
-                        <div className="font-semibold text-white font-mono truncate">{piece.pieceName}</div>
+                        <div className="font-semibold text-slate-900 font-mono truncate">{piece.pieceName}</div>
                         <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
-                          <div className="bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
-                            <span className="text-slate-400 text-[11px]">Ancho:</span>
-                            <span className="text-purple-400 font-bold text-xs">{(piece.bbox.width / 10).toFixed(1)} cm</span>
+                          <div className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+                            <span className="text-slate-500 text-[11px]">Ancho:</span>
+                            <span className="text-slate-900 font-bold text-xs">{(piece.bbox.width / 10).toFixed(1)} cm</span>
                           </div>
-                          <div className="bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
-                            <span className="text-slate-400 text-[11px]">Alto:</span>
-                            <span className="text-purple-400 font-bold text-xs">{(piece.bbox.height / 10).toFixed(1)} cm</span>
+                          <div className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+                            <span className="text-slate-500 text-[11px]">Alto:</span>
+                            <span className="text-slate-900 font-bold text-xs">{(piece.bbox.height / 10).toFixed(1)} cm</span>
                           </div>
                         </div>
                       </div>
