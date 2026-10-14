@@ -546,10 +546,10 @@ export const ProductionNestingView: React.FC = () => {
                   ? 'Desactivado: Espera a que finalice el cálculo del acomodo inteligente.'
                   : 'Exportar pliegos en escala real 1:1 listos para plotter de sublimación (PDF / SVG)'
               }
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold shadow-xs transition-all ${
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold shadow-md shadow-violet-500/25 transition-all ${
                 placedCount === 0 || isNesting
-                  ? 'bg-slate-100 text-slate-400 border border-slate-200 opacity-60 cursor-not-allowed'
-                  : 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-200 cursor-pointer active:scale-95'
+                  ? 'bg-slate-100 text-slate-400 border border-slate-200 opacity-60 cursor-not-allowed shadow-none'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer active:scale-95'
               }`}
             >
               <Download className="w-3.5 h-3.5" />
@@ -558,7 +558,7 @@ export const ProductionNestingView: React.FC = () => {
             <button
               type="button"
               onClick={() => setPreviewMode(true)}
-              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-xs transition-colors hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-colors cursor-pointer active:scale-95"
               title="Ocultar menús y ampliar el rollo"
             >
               <Maximize2 className="h-3.5 w-3.5 text-slate-500" />
@@ -793,10 +793,10 @@ export const ProductionNestingView: React.FC = () => {
                     ? 'Calculando acomodo inteligente en curso...'
                     : 'Calcular y ejecutar acomodo inteligente en la bobina'
                 }
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-xs transition-all ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold shadow-md shadow-violet-500/25 transition-all ${
                   totalPieces === 0 || isNesting
-                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                    : 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-200 cursor-pointer active:scale-95'
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
+                    : 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer active:scale-95'
                 }`}
               >
                 {isNesting ? (

@@ -14,7 +14,13 @@
   /* Radio de bordes estándar Tailwind (8px base) */
   --radius: 0.5rem;
 
-  /* Variables de marca y botones configurables */
+  /* Tokens idénticos al botón de la landing page */
+  --primary: 262 83% 58%;
+  --primary-foreground: 0 0% 98%;
+  --primary-dark: #5b21b6;
+  --hero-accent: #7c3aed;
+
+  /* Variables de marca institucionales */
   --brand-primary: #7c3aed;
   --brand-primary-hover: #6d28d9;
   --brand-primary-light: #f5f3ff;
@@ -121,11 +127,15 @@ html.light .text-slate-400 { color: #475569 !important; }
 html.light .text-slate-500 { color: #64748b !important; }
 html.light .text-slate-600 { color: #94a3b8 !important; }
 html.light .text-slate-950 { color: #0f172a !important; }
-html.light .text-white:not(.btn-brand-primary):not([data-variant="primary"]):not([class*="bg-brand-primary"]):not([style*="--brand-primary"]) {
+html.light .text-white:not(.btn-brand-primary):not([data-variant="primary"]):not([class*="bg-primary"]):not([class*="text-primary-foreground"]):not([class*="bg-brand-primary"]):not([style*="--brand-primary"]) {
   color: #0f172a !important;
 }
 
 /* Excepciones donde text-white DEBE seguir siendo blanco (botones con fondos oscuros/de color) */
+html.light .bg-primary,
+html.light [class*="bg-primary"],
+html.light .text-primary-foreground,
+html.light [class*="text-primary-foreground"],
 html.light .bg-violet-600,
 html.light .bg-violet-500,
 html.light .bg-purple-600,
@@ -146,6 +156,8 @@ html.light [style*="--brand-primary"],
 html.light [class*="bg-brand-primary"] {
   color: #ffffff !important;
 }
+html.light .bg-primary *,
+html.light [class*="bg-primary"] *,
 html.light .bg-violet-600 *,
 html.light .bg-violet-500 *,
 html.light .bg-purple-600 *,

@@ -380,12 +380,12 @@ export const DesignsView: React.FC = () => {
       type="button"
       onClick={handleExplicitSaveDesign}
       disabled={!activeDesign || saveStatus === 'SAVING' || isUploading}
-      className={`text-xs px-3.5 py-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs ${
+      className={`text-xs px-4 py-2 rounded-full font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-md ${
         saveStatus === 'SAVED'
-          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-100'
+          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
           : saveStatus === 'SAVING'
-            ? 'bg-violet-600/80 text-white cursor-wait'
-            : 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-100'
+            ? 'bg-primary/80 text-white cursor-wait'
+            : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-violet-500/25 active:scale-95'
       } ${extraClassName}`}
       title="Guardar y sincronizar explícitamente el diseño actual en la base de datos"
     >
@@ -600,7 +600,7 @@ export const DesignsView: React.FC = () => {
                     type="button"
                     onClick={() => multiInputRef.current?.click()}
                     disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="text-xs bg-violet-600 hover:bg-violet-700 text-white px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs"
+                    className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs px-4 py-2 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-violet-500/25 active:scale-95"
                   >
                     {isUploading ? (
                       <>
@@ -619,16 +619,16 @@ export const DesignsView: React.FC = () => {
                     type="button"
                     onClick={() => setIsDorsalModalOpen(true)}
                     disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="text-xs bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs"
+                    className="rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-4 py-2 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs active:scale-95"
                     title="Configurar tipografía, colores y muestra del dorsal"
                   >
-                    <Type className="w-3.5 h-3.5 text-violet-600" />
+                    <Type className="w-3.5 h-3.5 text-primary" />
                     <span>Configurar Dorsal ({activeFontFamily})</span>
                   </button>
                   <button
                     onClick={() => deleteDesign(activeDesign.id)}
                     disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-transparent hover:border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-full border border-transparent hover:border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     title="Eliminar este modelo"
                   >
                     <Trash2 className="w-4 h-4" />

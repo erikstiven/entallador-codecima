@@ -10,17 +10,22 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'btn-brand-primary bg-brand-primary text-white shadow-sm hover:opacity-95 active:scale-[0.99]',
-  secondary: 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm active:scale-[0.99]',
-  destructive: 'bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 active:scale-[0.99]',
-  ghost: 'hover:bg-slate-100 text-slate-600 active:bg-slate-200/60',
-  outline: 'border border-slate-300 text-slate-700 hover:bg-slate-50 active:scale-[0.99]',
+  primary:
+    'btn-brand-primary bg-brand-primary rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-md shadow-violet-500/25 active:scale-95 transition-all',
+  secondary:
+    'rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold shadow-xs active:scale-95 transition-all',
+  destructive:
+    'rounded-full bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 font-semibold active:scale-95 transition-all',
+  ghost:
+    'rounded-full hover:bg-slate-100 text-slate-600 active:bg-slate-200/60 font-medium transition-all',
+  outline:
+    'rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium shadow-xs active:scale-95 transition-all',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: 'h-8 px-3 text-xs gap-1.5',
   md: 'h-9 px-4 text-sm gap-2',
-  lg: 'h-10 px-5 text-sm gap-2',
+  lg: 'h-10 px-5 text-sm sm:text-base gap-2',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -38,14 +43,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const isPrimary = variant === 'primary';
-    const computedStyle: React.CSSProperties = isPrimary
-      ? {
-          backgroundColor: 'var(--brand-primary)',
-          color: 'var(--brand-primary-text, #ffffff)',
-          ...style,
-        }
-      : style || {};
-
     return (
       <button
         ref={ref}
@@ -53,8 +50,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         data-variant={variant}
         data-brand-btn={isPrimary ? 'true' : undefined}
         disabled={disabled || isLoading}
-        style={computedStyle}
-        className={`inline-flex items-center justify-center font-medium rounded-lg select-none transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+        style={style}
+        className={`inline-flex items-center justify-center font-medium rounded-lg rounded-full select-none transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
         {...props}
       >
         {isLoading && (
