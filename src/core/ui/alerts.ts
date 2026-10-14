@@ -1,47 +1,38 @@
 import Swal, { SweetAlertOptions, SweetAlertIcon } from 'sweetalert2';
 
-// Notificaciones SweetAlert2 dinámicas que respetan el tema Claro / Oscuro del sistema
-const getIsLight = () => typeof document !== 'undefined' && document.documentElement.classList.contains('light');
-
+/**
+ * Modern SweetAlert2 setup with sleek, professional 2026 SaaS design.
+ * - Standardized border-radius: rounded-xl for modal card, rounded-lg for buttons.
+ * - Compact, elegant icon badge (44px) instead of bloated 88px circle.
+ * - Clean neutral light palette with clear primary and destructive actions.
+ */
 const CustomSwal = Swal.mixin({
-  confirmButtonColor: '#7c3aed',
-  cancelButtonColor: '#475569',
   customClass: {
-    popup: 'swal2-cima-popup border rounded-2xl shadow-2xl backdrop-blur-md font-sans',
-    title: 'swal2-cima-title text-base font-bold tracking-wide',
-    htmlContainer: 'swal2-cima-text text-xs leading-relaxed',
-    confirmButton: 'px-5 py-2.5 rounded-xl font-semibold text-xs text-white bg-violet-600 hover:bg-violet-500 shadow-lg shadow-purple-950/50 transition-all cursor-pointer',
-    cancelButton: 'px-5 py-2.5 rounded-xl font-semibold text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-all cursor-pointer',
-    actions: 'gap-3 mt-4',
+    popup: 'swal2-modern-popup !rounded-xl !border !border-slate-200 !shadow-2xl !p-6 !font-sans !bg-white !max-w-md',
+    title: 'swal2-modern-title !text-base !font-bold !text-slate-900 !tracking-tight !m-0 !mt-2',
+    htmlContainer: 'swal2-modern-text !text-xs !text-slate-600 !leading-relaxed !m-0 !mt-1.5',
+    confirmButton: 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-white !bg-violet-600 hover:!bg-violet-700 shadow-xs cursor-pointer transition-colors disabled:opacity-50',
+    cancelButton: 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-slate-700 !bg-white hover:!bg-slate-50 !border !border-slate-200 shadow-xs cursor-pointer transition-colors',
+    actions: '!flex !items-center !justify-end !gap-2.5 !w-full !mt-5 !pt-4 !border-t !border-slate-100 !m-0',
   },
   buttonsStyling: false,
-  willOpen: (popup) => {
-    const isLight = getIsLight();
-    popup.style.backgroundColor = isLight ? '#ffffff' : '#090d16';
-    popup.style.color = isLight ? '#0f172a' : '#f1f5f9';
-    popup.style.borderColor = isLight ? '#cbd5e1' : '#1e293b';
-  },
 });
 
-// Notificaciones flotantes tipo Toast que respetan el modo Claro / Oscuro
+/**
+ * Modern, crisp Toast notification anchored at top-right with subtle shadow.
+ */
 const Toast = Swal.mixin({
   toast: true,
   position: 'top-end',
   showConfirmButton: false,
-  timer: 2500,
+  timer: 3000,
   timerProgressBar: true,
   customClass: {
-    popup: 'swal2-cima-toast border rounded-xl shadow-xl text-xs backdrop-blur-md',
-    title: 'text-xs font-semibold',
+    popup: 'swal2-modern-toast !border !border-slate-200 !rounded-lg !bg-white !shadow-lg !py-2.5 !px-3.5 !text-slate-800 !text-xs !font-medium',
+    title: '!text-xs !font-medium !text-slate-800 !m-0',
+    timerProgressBar: '!bg-violet-500/30',
   },
   buttonsStyling: false,
-  willOpen: (toast) => {
-    const isLight = getIsLight();
-    toast.style.backgroundColor = isLight ? '#ffffff' : '#090d16';
-    toast.style.color = isLight ? '#0f172a' : '#f8fafc';
-    toast.style.borderColor = isLight ? '#cbd5e1' : '#1e293b';
-    toast.style.boxShadow = isLight ? '0 10px 25px -5px rgba(0,0,0,0.1)' : '0 10px 25px -5px rgba(0,0,0,0.6)';
-  },
   didOpen: (toast) => {
     toast.addEventListener('mouseenter', Swal.stopTimer);
     toast.addEventListener('mouseleave', Swal.resumeTimer);
@@ -96,21 +87,26 @@ export const showAlert = {
       icon: 'info',
       title,
       text,
-      iconColor: '#38bdf8', // sky-400
+      iconColor: '#0284c7', // sky-600
       ...options,
     });
   },
 
   /**
-   * Muestra un modal de Confirmación (Aceptar / Cancelar)
+   * Muestra un modal de Confirmación moderno (Aceptar / Cancelar)
    */
   confirm: async (
     title: string,
     text: string,
     confirmButtonText = 'Sí, continuar',
     cancelButtonText = 'Cancelar',
-    icon: SweetAlertIcon = 'warning'
+    icon: SweetAlertIcon = 'warning',
+    isDestructive?: boolean
   ): Promise<boolean> => {
+    const isDangerous = isDestructive !== undefined 
+      ? isDestructive 
+      : /eliminar|borrar|limpiar|resetear|quitar/i.test(title + ' ' + text);
+
     const result = await CustomSwal.fire({
       title,
       text,
@@ -119,6 +115,16 @@ export const showAlert = {
       confirmButtonText,
       cancelButtonText,
       reverseButtons: true,
+      customClass: {
+        popup: 'swal2-modern-popup !rounded-xl !border !border-slate-200 !shadow-2xl !p-6 !font-sans !bg-white !max-w-md',
+        title: 'swal2-modern-title !text-base !font-bold !text-slate-900 !tracking-tight !m-0 !mt-2',
+        htmlContainer: 'swal2-modern-text !text-xs !text-slate-600 !leading-relaxed !m-0 !mt-1.5',
+        confirmButton: isDangerous
+          ? 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-white !bg-red-600 hover:!bg-red-700 shadow-xs cursor-pointer transition-colors'
+          : 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-white !bg-violet-600 hover:!bg-violet-700 shadow-xs cursor-pointer transition-colors',
+        cancelButton: 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-slate-700 !bg-white hover:!bg-slate-50 !border !border-slate-200 shadow-xs cursor-pointer transition-colors',
+        actions: '!flex !items-center !justify-end !gap-2.5 !w-full !mt-5 !pt-4 !border-t !border-slate-100 !m-0',
+      },
     });
     return result.isConfirmed;
   },
