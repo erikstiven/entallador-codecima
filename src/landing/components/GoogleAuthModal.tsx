@@ -112,14 +112,14 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = (props) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl p-6 sm:p-8 text-slate-800 overflow-hidden"
+        className="relative w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-2xl p-6 sm:p-8 text-slate-800 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           type="button"
           onClick={handleClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
           title="Cerrar ventana"
         >
           <X className="size-5" />
@@ -128,7 +128,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = (props) => {
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center space-y-3">
           <div className="relative">
-            <div className="size-16 rounded-2xl bg-violet-100 border border-violet-200 p-2.5 flex items-center justify-center shadow-md">
+            <div className="size-16 rounded-xl bg-violet-50 border border-violet-200 p-2.5 flex items-center justify-center shadow-xs">
               <img
                 src="/cimatex-icon.png"
                 alt="CimaTex"
@@ -137,7 +137,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = (props) => {
                 className="w-full h-full object-contain"
               />
             </div>
-            <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-emerald-500 text-white text-[9px] font-mono font-bold uppercase tracking-wider shadow">
+            <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-md bg-emerald-500 text-white text-[9px] font-mono font-bold uppercase tracking-wider shadow-2xs">
               Gratis
             </span>
           </div>
@@ -204,7 +204,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = (props) => {
             type="button"
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 text-slate-800 font-semibold text-sm shadow-sm transition-all duration-200 active:scale-98 disabled:opacity-70 cursor-pointer group"
+            className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 text-slate-800 font-semibold text-sm shadow-xs transition-all duration-200 active:scale-98 disabled:opacity-70 cursor-pointer group"
           >
             {isLoading ? (
               <>

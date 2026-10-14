@@ -102,22 +102,22 @@ const PieceSlotCard: React.FC<PieceSlotCardProps> = ({
   const isLoaded = Boolean(artwork?.svgArtContent);
 
   return (
-    <div className="bg-slate-950/90 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-3.5 flex flex-col justify-between space-y-2.5 transition-all duration-200 shadow-sm hover:shadow-md group">
+    <div className="bg-white border border-slate-200 hover:border-violet-300 rounded-xl p-3.5 flex flex-col justify-between space-y-2.5 transition-all duration-200 shadow-xs hover:shadow-sm group">
       {/* Encabezado con Icono, Título y Badge Shadcn */}
       <div className="flex items-center justify-between gap-1.5 min-h-[24px]">
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <span className="flex-shrink-0">{icon}</span>
-          <span className="font-bold text-[12px] text-white truncate" title={subtitle || title}>
+          <span className="font-bold text-[12px] text-slate-800 truncate" title={subtitle || title}>
             {title}
           </span>
         </div>
 
         {isLoaded ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-xs flex-shrink-0">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs flex-shrink-0">
             <CheckCircle2 className="w-2.5 h-2.5" /> Cargado
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-xs flex-shrink-0">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs flex-shrink-0">
             <AlertCircle className="w-2.5 h-2.5" /> Pendiente
           </span>
         )}
@@ -128,8 +128,8 @@ const PieceSlotCard: React.FC<PieceSlotCardProps> = ({
         onClick={() => inputRef.current?.click()}
         className={`relative w-full h-56 sm:h-64 rounded-xl border flex items-center justify-center p-2 cursor-pointer overflow-hidden transition-all duration-200 ${
           isLoaded
-            ? 'border-slate-700 bg-slate-900/90 hover:border-violet-500/80 shadow-inner'
-            : 'border-dashed border-slate-800 hover:border-violet-500/50 bg-slate-900/40 hover:bg-slate-900/70'
+            ? 'border-slate-200 bg-white hover:border-violet-400 shadow-inner'
+            : 'border-dashed border-slate-300 hover:border-violet-400 bg-slate-50/70 hover:bg-slate-50'
         }`}
       >
         {isLoaded ? (
@@ -141,11 +141,11 @@ const PieceSlotCard: React.FC<PieceSlotCardProps> = ({
         ) : (
           <div className="flex flex-col items-center justify-center text-center space-y-3 select-none relative z-10 p-2">
             {/* Silueta vectorial tenue de fondo */}
-            <div className="text-slate-700 group-hover:text-slate-600 transition-colors">
+            <div className="text-slate-300 group-hover:text-slate-400 transition-colors">
               {silhouette}
             </div>
-            <div className="bg-slate-900/90 border border-slate-800 group-hover:border-violet-500/40 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 shadow-sm group-hover:scale-105 transition-all">
-              <UploadCloud className="w-3.5 h-3.5 text-violet-400" />
+            <div className="bg-white border border-slate-200 group-hover:border-violet-400 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs group-hover:scale-105 transition-all">
+              <UploadCloud className="w-3.5 h-3.5 text-violet-600" />
               <span>{fileName}</span>
             </div>
           </div>
@@ -158,14 +158,14 @@ const PieceSlotCard: React.FC<PieceSlotCardProps> = ({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="text-slate-400 hover:text-white transition-colors cursor-pointer text-[11px] font-medium"
+            className="text-slate-500 hover:text-slate-900 transition-colors cursor-pointer text-[11px] font-medium"
           >
             Reemplazar
           </button>
           <button
             type="button"
             onClick={onRemove}
-            className="text-red-400 hover:text-red-300 transition-colors cursor-pointer text-[11px] font-medium"
+            className="text-red-600 hover:text-red-700 transition-colors cursor-pointer text-[11px] font-medium"
           >
             Quitar
           </button>
@@ -512,12 +512,12 @@ export const DesignsView: React.FC = () => {
       type="button"
       onClick={handleExplicitSaveDesign}
       disabled={!activeDesign || saveStatus === 'SAVING' || isUploading}
-      className={`text-xs px-3.5 py-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed shadow-sm ${
+      className={`text-xs px-3.5 py-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs ${
         saveStatus === 'SAVED'
-          ? 'bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400/50 shadow-emerald-950/50'
+          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-100'
           : saveStatus === 'SAVING'
-            ? 'bg-sky-600/80 text-white border border-sky-400/40 cursor-wait'
-            : 'bg-sky-600 hover:bg-sky-500 text-white border border-sky-400/40 shadow-sky-950/40'
+            ? 'bg-violet-600/80 text-white cursor-wait'
+            : 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-100'
       } ${extraClassName}`}
       title="Guardar y sincronizar explícitamente el diseño actual en la base de datos"
     >
@@ -611,13 +611,13 @@ export const DesignsView: React.FC = () => {
         {/* Columna Izquierda: Modelos */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Modelos ({designs.length})
             </h3>
             <button
               onClick={() => createNewDesign()}
               disabled={isUploading || saveStatus === 'SAVING'}
-              className="text-xs text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-xs text-violet-600 hover:text-violet-700 font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               title="Crear nuevo modelo"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -648,18 +648,18 @@ export const DesignsView: React.FC = () => {
                 <div
                   key={d.id}
                   onClick={() => setActiveDesign(d)}
-                  className={`bg-slate-900/90 border rounded-2xl p-3.5 cursor-pointer transition-all duration-200 hover:border-slate-600 ${
+                  className={`border rounded-xl p-3.5 cursor-pointer transition-all duration-200 ${
                     isSelected
-                      ? 'border-violet-500 shadow-lg shadow-purple-950/50 bg-slate-850 ring-1 ring-violet-500/40'
-                      : 'border-slate-800'
+                      ? 'border-violet-500 bg-violet-50/50 shadow-xs ring-1 ring-violet-500/30'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-white">{d.name}</span>
-                    <span className={`text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-lg ${
+                    <span className="font-bold text-sm text-slate-800">{d.name}</span>
+                    <span className={`text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-md ${
                       blocksReady >= 3 
-                        ? 'bg-purple-950 text-purple-400 border border-violet-500/30' 
-                        : 'bg-slate-800 text-slate-400'
+                        ? 'bg-violet-100 text-violet-800 border border-violet-200' 
+                        : 'bg-slate-100 text-slate-600 border border-slate-200'
                     }`}>
                       Camiseta {blocksReady}/4 · Short {shortBlocksReady}/2
                     </span>
@@ -682,7 +682,7 @@ export const DesignsView: React.FC = () => {
                   showAlert.toast('info', 'Modelos limpiados');
                 }
               }}
-              className="w-full mt-2 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-red-400 rounded-lg text-xs font-medium border border-slate-800 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-2 py-1.5 px-3 bg-white hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Limpiar todos
@@ -693,11 +693,11 @@ export const DesignsView: React.FC = () => {
         {/* Columna Derecha: Configuración y Ranuras de Bloques */}
         {activeDesign ? (
           <div className="lg:col-span-3 space-y-5">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-5">
+            <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-5 shadow-xs">
               {/* Título editable del modelo + Insignias de estado + Acciones principales */}
-              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-slate-200 pb-3.5">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400 flex-shrink-0" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-violet-600 flex-shrink-0" />
                   {isEditingName ? (
                     <div className="flex items-center gap-1.5">
                       <input
@@ -712,7 +712,7 @@ export const DesignsView: React.FC = () => {
                             setIsEditingName(false);
                           }
                         }}
-                        className="bg-slate-950 border border-violet-500 rounded px-2.5 py-1 text-sm font-bold text-white focus:outline-none"
+                        className="bg-white border border-violet-500 rounded-lg px-2.5 py-1 text-sm font-bold text-slate-900 focus:outline-none shadow-2xs"
                         autoFocus
                       />
                       <button
@@ -720,27 +720,27 @@ export const DesignsView: React.FC = () => {
                           updateDesignName(activeDesign.id, editedName);
                           setIsEditingName(false);
                         }}
-                        className="p-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded transition-colors"
+                        className="p-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors cursor-pointer"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setIsEditingName(false)}
-                        className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded transition-colors"
+                        className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors cursor-pointer"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5">
-                      <h3 className="text-base font-bold text-white">{activeDesign.name}</h3>
+                      <h3 className="text-base font-bold text-slate-900">{activeDesign.name}</h3>
                       <button
                         onClick={() => {
                           setEditedName(activeDesign.name);
                           setIsEditingName(true);
                         }}
                         disabled={isUploading || saveStatus === 'SAVING'}
-                        className="p-1 hover:bg-slate-800 text-slate-400 hover:text-purple-400 rounded transition-colors disabled:opacity-50"
+                        className="p-1 hover:bg-slate-100 text-slate-400 hover:text-violet-600 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                         title="Renombrar este modelo"
                       >
                         <Pencil className="w-3.5 h-3.5" />
@@ -750,29 +750,29 @@ export const DesignsView: React.FC = () => {
 
                   {/* Insignia de piezas cargadas */}
                   {activeMainBlocksCount >= 4 ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                       <CheckCircle2 className="w-3 h-3" />
                       {activeMainBlocksCount}/4 piezas listas
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                       <AlertCircle className="w-3 h-3" />
                       {activeMainBlocksCount}/4 piezas cargadas
                     </span>
                   )}
 
                   {/* Insignia de estado de guardado y sincronización */}
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-950/90 text-emerald-400 border border-emerald-500/25">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 text-slate-700 border border-slate-200">
                     {saveStatus === 'SAVING' ? (
                       <>
-                        <Loader2 className="w-3 h-3 animate-spin text-sky-400" />
-                        <span className="text-sky-300">Guardando diseño...</span>
+                        <Loader2 className="w-3 h-3 animate-spin text-violet-600" />
+                        <span className="text-violet-700">Guardando diseño...</span>
                       </>
                     ) : (
                       <>
-                        <span>✓ Diseño guardado y sincronizado</span>
+                        <span className="text-emerald-700">✓ Guardado y sincronizado</span>
                         {lastSavedAt && (
-                          <span className="text-slate-400 font-mono text-[10px]">· {lastSavedAt}</span>
+                          <span className="text-slate-500 font-mono text-[10px]">· {lastSavedAt}</span>
                         )}
                       </>
                     )}
@@ -786,7 +786,7 @@ export const DesignsView: React.FC = () => {
                     type="button"
                     onClick={() => multiInputRef.current?.click()}
                     disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="text-xs bg-violet-600 hover:bg-violet-500 text-white px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="text-xs bg-violet-600 hover:bg-violet-700 text-white px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs"
                   >
                     {isUploading ? (
                       <>
@@ -805,7 +805,7 @@ export const DesignsView: React.FC = () => {
                     type="button"
                     onClick={() => setIsDorsalModalOpen(true)}
                     disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs"
+                    className="text-xs bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs"
                     title="Configurar tipografía, colores y muestra del dorsal"
                   >
                     <Type className="w-3.5 h-3.5 text-violet-600" />
@@ -814,7 +814,7 @@ export const DesignsView: React.FC = () => {
                   <button
                     onClick={() => deleteDesign(activeDesign.id)}
                     disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                    className="p-2 hover:bg-slate-800 text-slate-500 hover:text-red-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-transparent hover:border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     title="Eliminar este modelo"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -913,7 +913,7 @@ export const DesignsView: React.FC = () => {
                 />
 
                 {/* BLOQUES OPCIONALES DE PANTALONETA */}
-                <div className="border-t border-slate-800 pt-5">
+                <div className="border-t border-slate-200 pt-5">
                   <TextilePieceCarousel
                     title="Pantaloneta / Short (Pierna Izquierda y Derecha)"
                     subtitle="Opcional. Se combina con los moldes de short de cada talla durante el entallado."
@@ -922,7 +922,7 @@ export const DesignsView: React.FC = () => {
                         id: 'short_izq',
                         title: 'Pantaloneta — Pierna Izquierda',
                         subtitle: 'Arte pierna izquierda',
-                        icon: <Scissors className="w-3.5 h-3.5 text-emerald-400" />,
+                        icon: <Scissors className="w-3.5 h-3.5 text-emerald-600" />,
                         silhouette: <SilhouetteShort />,
                         fileName: 'PANTALONETA_IZQ.svg',
                         svgContent: pantalonetaIzqArt?.svgArtContent,
@@ -938,7 +938,7 @@ export const DesignsView: React.FC = () => {
                         id: 'short_der',
                         title: 'Pantaloneta — Pierna Derecha',
                         subtitle: 'Arte pierna derecha',
-                        icon: <Scissors className="w-3.5 h-3.5 text-emerald-400" />,
+                        icon: <Scissors className="w-3.5 h-3.5 text-emerald-600" />,
                         silhouette: <SilhouetteShort />,
                         fileName: 'PANTALONETA_DER.svg',
                         svgContent: pantalonetaDerArt?.svgArtContent,
@@ -957,12 +957,12 @@ export const DesignsView: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-16 text-center space-y-3">
-            <Palette className="w-12 h-12 text-slate-600 mx-auto" />
-            <h3 className="text-base font-bold text-white">Selecciona o crea un modelo de diseño</h3>
+          <div className="lg:col-span-3 bg-white border border-slate-200 rounded-xl p-16 text-center space-y-3 shadow-xs">
+            <Palette className="w-12 h-12 text-slate-300 mx-auto" />
+            <h3 className="text-base font-bold text-slate-800">Selecciona o crea un modelo de diseño</h3>
             <button
               onClick={() => createNewDesign()}
-              className="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold"
+              className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
             >
               Crear Nuevo Modelo
             </button>

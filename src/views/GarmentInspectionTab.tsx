@@ -145,53 +145,53 @@ const InspectionPieceCard = React.memo<InspectionPieceCardProps>(
     const moldPathData = useMemo(() => getPieceMoldPath(piece), [piece]);
 
     const slotBg = isTechnicalGrid
-      ? 'bg-[#071322] border-blue-900/50'
-      : 'bg-slate-100 dark:bg-[#080b11] border-slate-200 dark:border-slate-800';
+      ? 'bg-slate-900 border-slate-700'
+      : 'bg-slate-50 border-slate-200';
 
     const gridOverlay = isTechnicalGrid
-      ? 'bg-[linear-gradient(to_right,#0c2d48_1px,transparent_1px),linear-gradient(to_bottom,#0c2d48_1px,transparent_1px)] [background-size:14px_14px] opacity-70'
-      : 'bg-[radial-gradient(#94a3b8_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px] opacity-35';
+      ? 'bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] [background-size:14px_14px] opacity-70'
+      : 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:12px_12px] opacity-60';
 
-    const moldStrokeColor = isHighlighted ? '#06b6d4' : '#0284c7';
+    const moldStrokeColor = isHighlighted ? '#7c3aed' : '#2563eb';
     const hemLineY = Math.max(10, piece.bbox.height - hemMarginMm);
 
     return (
       <div
         onClick={() => onSelectZone(zone)}
-        className={`bg-white dark:bg-slate-900 rounded-xl overflow-hidden flex flex-col justify-between transition-all cursor-pointer group ${
+        className={`bg-white rounded-xl overflow-hidden flex flex-col justify-between transition-all cursor-pointer group ${
           isHighlighted
-            ? 'border-2 border-cyan-400 ring-2 ring-cyan-500/80 shadow-lg shadow-cyan-500/10'
-            : 'border border-slate-200 dark:border-slate-800 hover:border-violet-500/50 shadow-xl'
+            ? 'border-2 border-violet-600 ring-2 ring-violet-500/20 shadow-md'
+            : 'border border-slate-200 hover:border-violet-500/50 shadow-xs'
         }`}
       >
         {/* Header de la tarjeta */}
-        <div className="px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between gap-2 text-xs">
+        <div className="px-3.5 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 min-w-0">
             <span
               className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                 isHighlighted
-                  ? 'bg-cyan-400 animate-pulse'
+                  ? 'bg-violet-600 animate-pulse'
                   : isEspalda
-                  ? 'bg-purple-400'
+                  ? 'bg-purple-500'
                   : isDelantero
-                  ? 'bg-sky-400'
-                  : 'bg-amber-400'
+                  ? 'bg-sky-500'
+                  : 'bg-amber-500'
               }`}
             />
-            <span className="font-bold text-slate-800 dark:text-white truncate">
+            <span className="font-bold text-slate-800 truncate">
               {getHumanPieceTitle(piece.pieceType)}
             </span>
           </div>
-          <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-800 flex-shrink-0">
+          <span className="text-[11px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200 flex-shrink-0">
             {dimensionsLabel}
           </span>
         </div>
 
         {/* Etiqueta flotante de conexión visual cuando esta zona está activa en calibración */}
         {isHighlighted && (
-          <div className="bg-cyan-950/90 border-b border-cyan-500/40 px-3 py-1 flex items-center justify-between text-[11px] font-semibold text-cyan-300">
+          <div className="bg-violet-50 border-b border-violet-200 px-3 py-1 flex items-center justify-between text-[11px] font-semibold text-violet-700">
             <span>🎯 Ajustando esta pieza en vivo</span>
-            <span className="text-[10px] text-cyan-400/90 font-normal">Cambios al instante</span>
+            <span className="text-[10px] text-violet-600 font-normal">Cambios al instante</span>
           </div>
         )}
 
@@ -203,7 +203,7 @@ const InspectionPieceCard = React.memo<InspectionPieceCardProps>(
 
           <svg
             viewBox={`0 -4 ${piece.bbox.width} ${piece.bbox.height + 16}`}
-            className="w-full h-full max-h-[390px] object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.15)] dark:drop-shadow-[0_12px_24px_rgba(0,0,0,0.7)] transition-transform duration-200 group-hover:scale-[1.01]"
+            className="w-full h-full max-h-[390px] object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-transform duration-200 group-hover:scale-[1.01]"
             preserveAspectRatio="xMidYMid meet"
           >
             {/* 1. Arte recortado con el molde */}
@@ -294,15 +294,15 @@ const InspectionPieceCard = React.memo<InspectionPieceCardProps>(
         </div>
 
         {/* Footer limpio y entendible */}
-        <div className="px-3.5 py-2 bg-slate-950 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+        <div className="px-3.5 py-2 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
           {isEspalda ? (
-            <span className="text-white font-bold">
-              {piece.playerName} <span className="text-purple-400">#{piece.playerNumber}</span>
+            <span className="text-slate-800 font-bold">
+              {piece.playerName} <span className="text-purple-600">#{piece.playerNumber}</span>
             </span>
           ) : (
-            <span className="text-slate-300 font-medium">{getHumanPieceTitle(piece.pieceType)}</span>
+            <span className="text-slate-700 font-medium">{getHumanPieceTitle(piece.pieceType)}</span>
           )}
-          <span className="text-cyan-400/90 text-[10px] font-semibold">
+          <span className="text-violet-600 text-[10px] font-semibold">
             {isHighlighted ? '🎯 Zona seleccionada' : 'Clic para ajustar'}
           </span>
         </div>
@@ -346,14 +346,14 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
   const freeBottomPercent = roundedOffset < 0 ? Math.min(45, Math.max(8, (Math.abs(roundedOffset) / 80) * 45)) : 0;
 
   return (
-    <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3.5">
+    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3.5">
       {/* Encabezado y explicación humana */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
         <div>
-          <h4 className="text-sm font-bold text-white flex items-center gap-2">
+          <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
             <span>{title}</span>
           </h4>
-          <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">{explanation}</p>
+          <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{explanation}</p>
         </div>
 
         {/* Botón rápido para volver a 0 */}
@@ -361,7 +361,7 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
           type="button"
           onClick={() => onChangeOffsetMm(0)}
           disabled={roundedOffset === 0}
-          className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 self-start md:self-auto cursor-pointer transition-all"
+          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 disabled:opacity-40 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-1.5 self-start md:self-auto cursor-pointer transition-all shadow-2xs"
         >
           <span>🔄 Volver a Posición Original (0)</span>
         </button>
@@ -371,10 +371,10 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
       <div
         className={`rounded-xl border p-3 transition-all ${
           roundedOffset < 0
-            ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
             : roundedOffset > 0
-            ? 'bg-amber-950/40 border-amber-500/50 text-amber-200'
-            : 'bg-slate-900/90 border-slate-800 text-slate-200'
+            ? 'bg-amber-50 border-amber-200 text-amber-900'
+            : 'bg-white border-slate-200 text-slate-700'
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -390,7 +390,7 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
               <span>⬇️ Dibujo bajado {formatDistance(roundedOffset)} hacia el borde inferior</span>
             )}
           </div>
-          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-950/80 border border-slate-700/80 self-start sm:self-auto">
+          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 self-start sm:self-auto shadow-2xs">
             {roundedOffset === 0
               ? 'Original (0 cm)'
               : roundedOffset < 0
@@ -400,15 +400,15 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
         </div>
 
         {/* Barra gráfica que muestra el margen de basta en la parte inferior */}
-        <div className="mt-2.5 bg-slate-950 rounded-lg border border-slate-800 p-2 flex items-center gap-3">
-          <div className="w-16 h-12 rounded border border-slate-700 bg-slate-900 relative overflow-hidden flex flex-col justify-between flex-shrink-0">
-            <div className="flex-1 bg-gradient-to-b from-cyan-500/30 to-violet-500/30 flex items-center justify-center text-[9px] font-bold text-white">
+        <div className="mt-2.5 bg-white rounded-lg border border-slate-200 p-2 flex items-center gap-3 shadow-2xs">
+          <div className="w-16 h-12 rounded border border-slate-300 bg-slate-50 relative overflow-hidden flex flex-col justify-between flex-shrink-0">
+            <div className="flex-1 bg-gradient-to-b from-violet-500/10 to-indigo-500/10 flex items-center justify-center text-[9px] font-bold text-violet-800">
               DIBUJO
             </div>
             {roundedOffset < 0 && (
               <div
                 style={{ height: `${freeBottomPercent}%` }}
-                className="w-full bg-emerald-500/30 border-t border-dashed border-emerald-400 flex items-center justify-center text-[8px] font-bold text-emerald-300"
+                className="w-full bg-emerald-500/20 border-t border-dashed border-emerald-400 flex items-center justify-center text-[8px] font-bold text-emerald-800"
               >
                 COSTURA
               </div>
@@ -416,15 +416,15 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
           </div>
           <div className="flex-1 space-y-1">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-400">Margen libre inferior para dobladillo (basta):</span>
-              <span className="font-bold text-emerald-300">
+              <span className="text-slate-500">Margen libre inferior para dobladillo (basta):</span>
+              <span className="font-bold text-emerald-700">
                 {roundedOffset < 0 ? formatDistance(Math.abs(roundedOffset)) : 'Sin margen extra (0 cm)'}
               </span>
             </div>
-            <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+            <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
               <div
                 className={`h-full transition-all duration-150 ${
-                  roundedOffset < 0 ? 'bg-gradient-to-r from-emerald-500 to-cyan-400' : 'bg-slate-700'
+                  roundedOffset < 0 ? 'bg-gradient-to-r from-emerald-500 to-cyan-500' : 'bg-slate-300'
                 }`}
                 style={{
                   width: `${roundedOffset < 0 ? Math.min(100, (Math.abs(roundedOffset) / 40) * 100) : 0}%`,
@@ -440,7 +440,7 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
         <button
           type="button"
           onClick={() => onChangeOffsetMm(clamp(roundedOffset - 5))}
-          className="px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm cursor-pointer active:scale-95 transition-all"
+          className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all"
         >
           <span>⬆️ Subir Dibujo (+5 mm)</span>
         </button>
@@ -448,7 +448,7 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
         <button
           type="button"
           onClick={() => onChangeOffsetMm(clamp(roundedOffset - 1))}
-          className="px-3 py-2.5 rounded-xl bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-200 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+          className="px-3 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
         >
           <span>⬆️ Subir un poco (+1 mm)</span>
         </button>
@@ -456,10 +456,10 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
         <button
           type="button"
           onClick={() => onChangeOffsetMm(0)}
-          className={`px-3 py-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all ${
+          className={`px-3 py-2 rounded-lg border font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all ${
             roundedOffset === 0
-              ? 'bg-cyan-500 text-slate-950 border-cyan-400'
-              : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-700'
+              ? 'bg-violet-600 text-white border-violet-500 shadow-xs'
+              : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-2xs'
           }`}
         >
           <span>🔄 Posición Original (0)</span>
@@ -468,7 +468,7 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
         <button
           type="button"
           onClick={() => onChangeOffsetMm(clamp(roundedOffset + 1))}
-          className="px-3 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+          className="px-3 py-2 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-2xs"
         >
           <span>⬇️ Bajar un poco (-1 mm)</span>
         </button>
@@ -476,18 +476,18 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
         <button
           type="button"
           onClick={() => onChangeOffsetMm(clamp(roundedOffset + 5))}
-          className="px-3 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all col-span-2 sm:col-span-1"
+          className="px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all col-span-2 sm:col-span-1"
         >
           <span>⬇️ Bajar Dibujo (-5 mm)</span>
         </button>
       </div>
 
       {/* Control Deslizante Interactivo (Slider en vivo) */}
-      <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl px-3.5 py-2.5 space-y-1.5">
-        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300">
+      <div className="bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 space-y-1.5 shadow-2xs">
+        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500">
           <span>⬅️ Bajar dibujo</span>
-          <span className="text-cyan-300">Posición Original (0)</span>
-          <span className="text-emerald-300">Subir dibujo para costura ➡️</span>
+          <span className="text-slate-800 font-bold">Posición Original (0)</span>
+          <span className="text-emerald-700">Subir dibujo para costura ➡️</span>
         </div>
         <input
           type="range"
@@ -749,17 +749,17 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
   if (playerGroups.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400 bg-slate-950">
-        <div className="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mb-4 text-slate-500">
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 bg-slate-50">
+        <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 flex items-center justify-center mb-4 text-slate-400 shadow-xs">
           <Eye className="w-8 h-8" />
         </div>
-        <h3 className="text-lg font-bold text-white mb-2">No hay prendas generadas para revisar</h3>
-        <p className="text-xs text-slate-400 max-w-md mb-6">
+        <h3 className="text-lg font-bold text-slate-900 mb-2">No hay prendas generadas para revisar</h3>
+        <p className="text-xs text-slate-500 max-w-md mb-6">
           Ve a la pestaña "Nuevo Pedido" para cargar tu lista de jugadores desde Excel y generar las piezas de entallado.
         </p>
         <button
           onClick={() => setCurrentView('NEW_ORDER')}
-          className="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-semibold shadow-lg transition-all"
+          className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer"
         >
           Ir a Nuevo Pedido
         </button>
@@ -784,19 +784,19 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
   const hemLabel = formatWithUnits(hemMarginMm);
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-200 overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-100 text-slate-800 overflow-hidden">
       {/* 1. BARRA DE CONTROL PRINCIPAL UNIFICADA */}
-      <div className="bg-slate-900 border-b border-slate-800 px-6 py-2.5 flex flex-wrap items-center justify-between gap-4 flex-shrink-0 z-20">
+      <div className="bg-white border-b border-slate-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-4 flex-shrink-0 z-20 shadow-xs">
         {/* Izquierda: Filtro de Prendas y Tallas */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 text-xs">
+          <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5 text-xs">
             <button
               type="button"
               onClick={() => setGarmentTypeFilter('CAMISETA')}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 garmentTypeFilter === 'CAMISETA'
-                  ? 'bg-violet-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-violet-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
               title="Mostrar camisetas (Frente, Espalda y Mangas)"
             >
@@ -808,8 +808,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               onClick={() => setGarmentTypeFilter('SHORT')}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 garmentTypeFilter === 'SHORT'
-                  ? 'bg-violet-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-violet-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
               title="Mostrar shorts / pantalonetas"
             >
@@ -821,8 +821,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               onClick={() => setGarmentTypeFilter('ALL')}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 garmentTypeFilter === 'ALL'
-                  ? 'bg-violet-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-violet-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
               title="Mostrar todo el uniforme"
             >
@@ -832,21 +832,21 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
           </div>
 
           {/* Filtro rápido por Talla */}
-          <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs">
-            <span className="text-[10px] text-slate-400 uppercase font-mono">Talla:</span>
+          <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs">
+            <span className="text-[10px] text-slate-500 uppercase font-mono">Talla:</span>
             <select
               value={selectedSizeFilter}
               onChange={(e) => {
                 setSelectedSizeFilter(e.target.value);
                 setSelectedPlayerIndex(0);
               }}
-              className="bg-transparent text-purple-400 font-bold font-mono focus:outline-none cursor-pointer"
+              className="bg-transparent text-violet-700 font-bold font-mono focus:outline-none cursor-pointer"
             >
-              <option value="TODAS" className="bg-slate-900 text-white">
+              <option value="TODAS" className="bg-white text-slate-800">
                 Todas ({playerGroups.length})
               </option>
               {availableSizes.map((sz) => (
-                <option key={sz} value={sz} className="bg-slate-900 text-white">
+                <option key={sz} value={sz} className="bg-white text-slate-800">
                   T{sz} ({playerGroups.filter((g) => g.sizeName === sz).length})
                 </option>
               ))}
@@ -856,26 +856,26 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
         {/* Centro: Navegación de Jugador */}
         {currentPlayer && (
-          <div className="flex items-center gap-2 text-xs bg-slate-950 border border-slate-800 rounded-lg px-3 py-1 font-mono">
+          <div className="flex items-center gap-2 text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 font-mono text-slate-800 shadow-2xs">
             <button
               onClick={handlePrevPlayer}
               disabled={selectedPlayerIndex === 0}
-              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer"
+              className="p-1 rounded-md hover:bg-slate-200 text-slate-500 hover:text-slate-900 disabled:opacity-20 cursor-pointer"
               title="Jugador anterior (Flecha Izquierda ←)"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-white font-bold px-2">
+            <span className="text-slate-900 font-bold px-2">
               {currentPlayer.playerName}{' '}
-              <span className="text-purple-400">#{currentPlayer.playerNumber}</span>
-              <span className="text-slate-400 font-normal ml-2">
+              <span className="text-violet-600">#{currentPlayer.playerNumber}</span>
+              <span className="text-slate-500 font-normal ml-2">
                 ({selectedPlayerIndex + 1} de {filteredPlayers.length})
               </span>
             </span>
             <button
               onClick={handleNextPlayer}
               disabled={selectedPlayerIndex === filteredPlayers.length - 1}
-              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer"
+              className="p-1 rounded-md hover:bg-slate-200 text-slate-500 hover:text-slate-900 disabled:opacity-20 cursor-pointer"
               title="Siguiente jugador (Flecha Derecha →)"
             >
               <ChevronRight className="w-4 h-4" />
@@ -888,51 +888,51 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
           <button
             type="button"
             onClick={() => setIsTechnicalGrid(!isTechnicalGrid)}
-            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               isTechnicalGrid
-                ? 'bg-blue-950 text-cyan-300 border-blue-500 shadow-sm'
-                : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'
+                ? 'bg-cyan-50 text-cyan-800 border-cyan-300 shadow-2xs'
+                : 'bg-white text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-50'
             }`}
             title="Activar/Desactivar fondo cuadriculado para contrastar moldes claros u oscuros"
           >
-            <Grid className="w-3.5 h-3.5 text-cyan-400" />
+            <Grid className="w-3.5 h-3.5 text-cyan-600" />
             <span>{isTechnicalGrid ? 'Cuadrícula: ON' : 'Cuadrícula'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowGuides(!showGuides)}
-            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               showGuides
-                ? 'bg-sky-950 text-sky-300 border-sky-600 shadow-sm'
-                : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'
+                ? 'bg-sky-50 text-sky-800 border-sky-300 shadow-2xs'
+                : 'bg-white text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-50'
             }`}
             title="Mostrar u ocultar guías de contorno de molde y línea de dobladillo"
           >
-            <Ruler className="w-3.5 h-3.5 text-sky-400" />
+            <Ruler className="w-3.5 h-3.5 text-sky-600" />
             <span>{showGuides ? 'Guías: ON' : 'Guías: OFF'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowCalibrationPanel(!showCalibrationPanel)}
-            className={`px-3.5 py-1.5 rounded-lg border text-xs font-bold transition-all relative flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg border text-xs font-bold transition-all relative flex items-center gap-1.5 cursor-pointer shadow-2xs ${
               showCalibrationPanel
-                ? 'bg-cyan-400 text-slate-950 border-cyan-300 shadow-md'
-                : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/50'
+                ? 'bg-violet-600 text-white border-violet-500 shadow-xs'
+                : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
             }`}
             title="Abrir o cerrar el asistente visual para subir dibujos, ajustar nombres y números"
           >
-            <Sliders className={`w-3.5 h-3.5 ${showCalibrationPanel ? 'text-slate-950' : 'text-amber-400'}`} />
+            <Sliders className={`w-3.5 h-3.5 ${showCalibrationPanel ? 'text-white' : 'text-amber-600'}`} />
             <span>{showCalibrationPanel ? 'Ocultar Ajustes' : 'Ajustar Diseño y Números'}</span>
             {hasActiveCalibration && (
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-900" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
             )}
           </button>
 
           {hasActiveCalibration && (
-            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border bg-emerald-950/60 border-emerald-500/40 text-emerald-300 text-[11px] font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 text-[11px] font-semibold">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
               <span>✓ Ajuste aplicado en vivo a todo el pedido</span>
             </div>
           )}
@@ -942,7 +942,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
             disabled={generatedPieces.length === 0}
             onClick={handleProceedToRoll}
             title="Confirmar revisión de uniformes y pasar al Rollo de Sublimación"
-            className="flex items-center gap-2 px-5 py-2 bg-violet-600 hover:bg-violet-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-purple-950 ring-1 ring-violet-400/40 transition-all cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-5 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border disabled:border-slate-200 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95"
           >
             <Printer className="w-4 h-4" />
             <span>Pasar al Rollo de Sublimación →</span>
@@ -955,27 +955,27 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* PANEL VISUAL DE CALIBRACIÓN POR ZONAS DE LA PRENDA (100% EN LENGUAJE HUMANO) */}
           {showCalibrationPanel && (
-            <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-2xl space-y-4">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-4">
               {/* Cabecera del panel: Título simple + Marquilla de talla + Restablecer + Cerrar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-300 font-bold">
+                  <div className="w-8 h-8 rounded-lg bg-violet-50 border border-violet-200 flex items-center justify-center text-violet-600 font-bold">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">
+                    <h3 className="text-sm font-bold text-slate-900">
                       Asistente Visual de Ajuste de Prendas (En Vivo)
                     </h3>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       Elige qué parte de la prenda deseas acomodar. Todo cambio se aplica al instante a los{' '}
-                      <span className="text-cyan-300 font-semibold">{playerGroups.length} uniformes</span> del pedido.
+                      <span className="text-violet-600 font-semibold">{playerGroups.length} uniformes</span> del pedido.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Botón de Marquilla Interna de Talla (1 solo clic) */}
-                  <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
+                  <div className="flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden shadow-2xs">
                     <button
                       type="button"
                       onClick={() =>
@@ -984,7 +984,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                       className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all ${
                         generationConfig.includeSizeMark
                           ? 'bg-emerald-600 text-white'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                          : 'text-slate-700 hover:bg-slate-50'
                       }`}
                       title="Activar o desactivar marquilla de talla interna con 1 solo clic"
                     >
@@ -997,7 +997,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                       <button
                         type="button"
                         onClick={() => setShowSizeMarkConfig(!showSizeMarkConfig)}
-                        className="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white border-l border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                        className="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-900 border-l border-slate-200 hover:bg-slate-50 cursor-pointer"
                         title="Opciones de la marquilla (color y tamaño)"
                       >
                         <Sliders className="w-3.5 h-3.5" />
@@ -1037,7 +1037,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                         sizeMarkBottomOffsetMm: 8,
                       });
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 hover:text-amber-600 dark:text-slate-300 dark:hover:text-amber-300 text-xs font-semibold transition-colors cursor-pointer shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-amber-600 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
                     title="Restablecer todas las piezas a sus posiciones y configuraciones predeterminadas"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -1047,7 +1047,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowCalibrationPanel(false)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-xs font-semibold transition-colors cursor-pointer shadow-sm"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-900 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
                   >
                     <X className="w-3.5 h-3.5" />
                     <span>Cerrar</span>
@@ -1057,7 +1057,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
               {/* Configuración desplegable opcional para Marquilla Interna de Talla */}
               {showSizeMarkConfig && (
-                <div className="bg-slate-950 border border-emerald-500/40 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="bg-emerald-50/50 border border-emerald-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -1066,22 +1066,22 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                       }
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
                         generationConfig.includeSizeMark
-                          ? 'bg-emerald-500 text-slate-950'
-                          : 'bg-slate-900 text-slate-300 border border-slate-700'
+                          ? 'bg-emerald-600 text-white shadow-2xs'
+                          : 'bg-white text-slate-700 border border-slate-200'
                       }`}
                     >
                       {generationConfig.includeSizeMark
                         ? '✓ Imprimiendo Talla en las Piezas'
                         : 'Activar Impresión de Talla en las Piezas'}
                     </button>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-600">
                       Imprime una pequeña letra de talla (ej. S, M, L) en el borde inferior para guiar al costurero.
                     </span>
                   </div>
 
                   {generationConfig.includeSizeMark && (
                     <div className="flex flex-wrap items-center gap-3">
-                      <label className="flex items-center gap-1.5 text-xs text-slate-300">
+                      <label className="flex items-center gap-1.5 text-xs text-slate-700">
                         <span>Color:</span>
                         <input
                           type="color"
@@ -1090,8 +1090,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                           className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
                         />
                       </label>
-                      <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-xs">
-                        <span className="text-slate-400">Tamaño:</span>
+                      <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs">
+                        <span className="text-slate-500">Tamaño:</span>
                         <button
                           type="button"
                           onClick={() =>
@@ -1102,11 +1102,11 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                               ),
                             })
                           }
-                          className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold cursor-pointer"
+                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer"
                         >
                           −
                         </button>
-                        <span className="font-mono text-emerald-300 min-w-[42px] text-center">
+                        <span className="font-mono text-emerald-700 font-bold min-w-[42px] text-center">
                           {formatDisplayMm(generationConfig.sizeMarkFontSizeMm ?? 8)}
                         </span>
                         <button
@@ -1119,13 +1119,13 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                               ),
                             })
                           }
-                          className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold cursor-pointer"
+                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer"
                         >
                           +
                         </button>
                       </div>
-                      <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-xs">
-                        <span className="text-slate-400">Altura desde abajo:</span>
+                      <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs">
+                        <span className="text-slate-500">Altura desde abajo:</span>
                         <button
                           type="button"
                           onClick={() =>
@@ -1136,11 +1136,11 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                               ),
                             })
                           }
-                          className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold cursor-pointer"
+                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer"
                         >
                           ⬇️ Bajar
                         </button>
-                        <span className="font-mono text-emerald-300 min-w-[42px] text-center">
+                        <span className="font-mono text-emerald-700 font-bold min-w-[42px] text-center">
                           {formatDisplayMm(generationConfig.sizeMarkBottomOffsetMm ?? 8)}
                         </span>
                         <button
@@ -1153,7 +1153,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                               ),
                             })
                           }
-                          className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold cursor-pointer"
+                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer"
                         >
                           ⬆️ Subir
                         </button>
@@ -1171,19 +1171,19 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   onClick={() => handleSelectZoneTab('MANGAS')}
                   className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
                     activeZone === 'MANGAS'
-                      ? 'bg-cyan-950/70 border-2 border-cyan-400 shadow-lg shadow-cyan-500/10'
-                      : 'bg-slate-950/80 hover:bg-slate-950 border-slate-800'
+                      ? 'bg-violet-50/70 border-2 border-violet-600 shadow-xs'
+                      : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">👕 Mangas (Subir / Bajar Dibujo)</span>
+                    <span className="text-sm font-bold text-slate-800">👕 Mangas (Subir / Bajar Dibujo)</span>
                     {activeZone === 'MANGAS' && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-600 text-white">
                         Activo
                       </span>
                     )}
                   </div>
-                  <p className="text-xs font-semibold text-cyan-300">
+                  <p className="text-xs font-semibold text-violet-600">
                     {formatOffsetSummary(sleeveOffsetMm, 'Posición original')}
                   </p>
                 </button>
@@ -1194,19 +1194,19 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   onClick={() => handleSelectZoneTab('ESPALDA')}
                   className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
                     activeZone === 'ESPALDA'
-                      ? 'bg-cyan-950/70 border-2 border-cyan-400 shadow-lg shadow-cyan-500/10'
-                      : 'bg-slate-950/80 hover:bg-slate-950 border-slate-800'
+                      ? 'bg-violet-50/70 border-2 border-violet-600 shadow-xs'
+                      : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">🔢 Espalda (Nombre y Número)</span>
+                    <span className="text-sm font-bold text-slate-800">🔢 Espalda (Nombre y Número)</span>
                     {activeZone === 'ESPALDA' && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-600 text-white">
                         Activo
                       </span>
                     )}
                   </div>
-                  <p className="text-xs font-semibold text-purple-300">
+                  <p className="text-xs font-semibold text-purple-600">
                     Tamaño y posición de letras y números
                   </p>
                 </button>
@@ -1217,19 +1217,19 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   onClick={() => handleSelectZoneTab('FRENTE')}
                   className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
                     activeZone === 'FRENTE'
-                      ? 'bg-cyan-950/70 border-2 border-cyan-400 shadow-lg shadow-cyan-500/10'
-                      : 'bg-slate-950/80 hover:bg-slate-950 border-slate-800'
+                      ? 'bg-violet-50/70 border-2 border-violet-600 shadow-xs'
+                      : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">🛡️ Pecho / Frente</span>
+                    <span className="text-sm font-bold text-slate-800">🛡️ Pecho / Frente</span>
                     {activeZone === 'FRENTE' && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-600 text-white">
                         Activo
                       </span>
                     )}
                   </div>
-                  <p className="text-xs font-semibold text-sky-300">
+                  <p className="text-xs font-semibold text-sky-600">
                     {frontOffsetMm !== 0
                       ? formatOffsetSummary(frontOffsetMm)
                       : 'Subir o bajar el dibujo del pecho'}
@@ -1242,19 +1242,19 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   onClick={() => handleSelectZoneTab('PANTALONETA')}
                   className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
                     activeZone === 'PANTALONETA'
-                      ? 'bg-cyan-950/70 border-2 border-cyan-400 shadow-lg shadow-cyan-500/10'
-                      : 'bg-slate-950/80 hover:bg-slate-950 border-slate-800'
+                      ? 'bg-violet-50/70 border-2 border-violet-600 shadow-xs'
+                      : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">🩳 Pantaloneta</span>
+                    <span className="text-sm font-bold text-slate-800">🩳 Pantaloneta</span>
                     {activeZone === 'PANTALONETA' && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-600 text-white">
                         Activo
                       </span>
                     )}
                   </div>
-                  <p className="text-xs font-semibold text-amber-300">
+                  <p className="text-xs font-semibold text-amber-700">
                     {orderHasShorts
                       ? generationConfig.includeShortNumber !== false
                         ? `Número en pierna ${generationConfig.shortNumberPiece === 'IZQ' ? 'izquierda' : 'derecha'}`
@@ -1278,20 +1278,20 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     {/* BLOQUE 1: 🅰️ NOMBRE DEL JUGADOR (ARRIBA) */}
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                      <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-2xs">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                         <div className="flex items-center gap-2">
-                          <Type className="w-4 h-4 text-purple-400" />
-                          <h4 className="text-sm font-bold text-white">🅰️ Nombre del Jugador (Arriba)</h4>
+                          <Type className="w-4 h-4 text-purple-600" />
+                          <h4 className="text-sm font-bold text-slate-900">🅰️ Nombre del Jugador (Arriba)</h4>
                         </div>
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-500/30">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
                           {Math.round(nameScaleX * 100)}% × {Math.round(nameScaleY * 100)}%
                         </span>
                       </div>
 
                       {/* Tamaño del Nombre */}
                       <div className="space-y-1.5">
-                        <span className="text-xs font-semibold text-slate-300 block">
+                        <span className="text-xs font-semibold text-slate-700 block">
                           Tamaño general del Nombre:
                         </span>
                         <div className="grid grid-cols-3 gap-2">
@@ -1303,17 +1303,17 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 nameScaleY: Math.max(0.3, Number((nameScaleY - 0.05).toFixed(2))),
                               })
                             }
-                            className="px-2.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-white cursor-pointer active:scale-95 transition-all"
+                            className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer active:scale-95 transition-all shadow-2xs"
                           >
                             🔍− Más Pequeño
                           </button>
                           <button
                             type="button"
                             onClick={() => applyCalibrationChange({ nameScaleX: 1.0, nameScaleY: 1.0 })}
-                            className={`px-2.5 py-2 rounded-lg border text-xs font-bold cursor-pointer active:scale-95 transition-all ${
+                            className={`px-2.5 py-2 rounded-lg border text-xs font-bold cursor-pointer active:scale-95 transition-all shadow-2xs ${
                               nameScaleX === 1 && nameScaleY === 1
-                                ? 'bg-purple-600 text-white border-purple-400'
-                                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700'
+                                ? 'bg-purple-600 text-white border-purple-600'
+                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
                             }`}
                           >
                             Normal (100%)
@@ -1326,7 +1326,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 nameScaleY: Math.min(3.0, Number((nameScaleY + 0.05).toFixed(2))),
                               })
                             }
-                            className="px-2.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white cursor-pointer active:scale-95 transition-all"
+                            className="px-2.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-xs font-bold text-white cursor-pointer active:scale-95 transition-all shadow-2xs"
                           >
                             🔍+ Más Grande
                           </button>
@@ -1335,7 +1335,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
                       {/* Forma de las Letras */}
                       <div className="space-y-1.5">
-                        <span className="text-xs font-semibold text-slate-300 block">
+                        <span className="text-xs font-semibold text-slate-700 block">
                           Forma de las Letras (Ancho y Alto):
                         </span>
                         <div className="grid grid-cols-2 gap-2">
@@ -1346,7 +1346,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 nameScaleX: Math.max(0.3, Number((nameScaleX - 0.05).toFixed(2))),
                               })
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ↔️ Más Angosto
                           </button>
@@ -1357,7 +1357,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 nameScaleX: Math.min(3.0, Number((nameScaleX + 0.05).toFixed(2))),
                               })
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ↔️ Más Ancho
                           </button>
@@ -1368,7 +1368,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 nameScaleY: Math.max(0.3, Number((nameScaleY - 0.05).toFixed(2))),
                               })
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ↕️ Más Bajo
                           </button>
@@ -1379,7 +1379,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 nameScaleY: Math.min(3.0, Number((nameScaleY + 0.05).toFixed(2))),
                               })
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ↕️ Más Alto
                           </button>
@@ -1389,10 +1389,10 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                       {/* Posición Vertical del Nombre */}
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-300">
+                          <span className="text-xs font-semibold text-slate-700">
                             Posición vertical del Nombre:
                           </span>
-                          <span className="text-[11px] text-purple-300 font-semibold">
+                          <span className="text-[11px] text-purple-700 font-semibold">
                             {nameOffsetPercent === 0
                               ? 'En su lugar original'
                               : nameOffsetPercent < 0
@@ -1408,14 +1408,14 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 nameVerticalOffsetPercent: Math.max(-35, nameOffsetPercent - 1),
                               })
                             }
-                            className="px-2.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-emerald-300 cursor-pointer active:scale-95"
+                            className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ⬆️ Subir Nombre
                           </button>
                           <button
                             type="button"
                             onClick={() => applyCalibrationChange({ nameVerticalOffsetPercent: 0 })}
-                            className="px-2 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300 cursor-pointer active:scale-95"
+                            className="px-2 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             🔄 Original
                           </button>
@@ -1426,7 +1426,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 nameVerticalOffsetPercent: Math.min(35, nameOffsetPercent + 1),
                               })
                             }
-                            className="px-2.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-amber-300 cursor-pointer active:scale-95"
+                            className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ⬇️ Bajar Nombre
                           </button>
@@ -1435,20 +1435,20 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                     </div>
 
                     {/* BLOQUE 2: 🔟 NÚMERO DEL JUGADOR (CENTRO) */}
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                      <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-2xs">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                         <div className="flex items-center gap-2">
-                          <Hash className="w-4 h-4 text-cyan-400" />
-                          <h4 className="text-sm font-bold text-white">🔟 Número del Jugador (Centro)</h4>
+                          <Hash className="w-4 h-4 text-violet-600" />
+                          <h4 className="text-sm font-bold text-slate-900">🔟 Número del Jugador (Centro)</h4>
                         </div>
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
                           {Math.round(numScaleX * 100)}% × {Math.round(numScaleY * 100)}%
                         </span>
                       </div>
 
                       {/* Tamaño del Número */}
                       <div className="space-y-1.5">
-                        <span className="text-xs font-semibold text-slate-300 block">
+                        <span className="text-xs font-semibold text-slate-700 block">
                           Tamaño general del Número:
                         </span>
                         <div className="grid grid-cols-3 gap-2">
@@ -1463,7 +1463,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 numberScaleFactor: nextY,
                               });
                             }}
-                            className="px-2.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-white cursor-pointer active:scale-95 transition-all"
+                            className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer active:scale-95 transition-all shadow-2xs"
                           >
                             🔍− Más Pequeño
                           </button>
@@ -1476,10 +1476,10 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 numberScaleFactor: 1.0,
                               })
                             }
-                            className={`px-2.5 py-2 rounded-lg border text-xs font-bold cursor-pointer active:scale-95 transition-all ${
+                            className={`px-2.5 py-2 rounded-lg border text-xs font-bold cursor-pointer active:scale-95 transition-all shadow-2xs ${
                               numScaleX === 1 && numScaleY === 1
-                                ? 'bg-cyan-500 text-slate-950 border-cyan-400'
-                                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700'
+                                ? 'bg-violet-600 text-white border-violet-600'
+                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
                             }`}
                           >
                             Normal (100%)
@@ -1495,7 +1495,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 numberScaleFactor: nextY,
                               });
                             }}
-                            className="px-2.5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-xs font-bold text-slate-950 cursor-pointer active:scale-95 transition-all"
+                            className="px-2.5 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-xs font-bold text-white cursor-pointer active:scale-95 transition-all shadow-2xs"
                           >
                             🔍+ Más Grande
                           </button>
@@ -1504,7 +1504,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
                       {/* Forma del Número */}
                       <div className="space-y-1.5">
-                        <span className="text-xs font-semibold text-slate-300 block">
+                        <span className="text-xs font-semibold text-slate-700 block">
                           Forma del Número (Ancho y Alto):
                         </span>
                         <div className="grid grid-cols-2 gap-2">
@@ -1515,7 +1515,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 numberScaleX: Math.max(0.3, Number((numScaleX - 0.05).toFixed(2))),
                               })
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ↔️ Más Delgado
                           </button>
@@ -1526,7 +1526,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 numberScaleX: Math.min(3.0, Number((numScaleX + 0.05).toFixed(2))),
                               })
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ↔️ Más Ancho
                           </button>
@@ -1536,7 +1536,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                               const nextY = Math.max(0.3, Number((numScaleY - 0.05).toFixed(2)));
                               applyCalibrationChange({ numberScaleY: nextY, numberScaleFactor: nextY });
                             }}
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ↕️ Más Corto
                           </button>
@@ -1546,7 +1546,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                               const nextY = Math.min(3.0, Number((numScaleY + 0.05).toFixed(2)));
                               applyCalibrationChange({ numberScaleY: nextY, numberScaleFactor: nextY });
                             }}
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ↕️ Más Alto
                           </button>
@@ -1556,10 +1556,10 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                       {/* Posición y Separación */}
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-300">
+                          <span className="text-xs font-semibold text-slate-700">
                             Posición y separación con el nombre:
                           </span>
-                          <span className="text-[11px] text-cyan-300 font-semibold">
+                          <span className="text-[11px] text-violet-700 font-semibold">
                             {numOffsetPercent === 0
                               ? 'Centrado original'
                               : numOffsetPercent < 0
@@ -1575,7 +1575,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 numberVerticalOffsetPercent: Math.max(-35, numOffsetPercent - 1),
                               })
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-emerald-300 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ⬆️ Subir Número
                           </button>
@@ -1586,7 +1586,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 numberVerticalOffsetPercent: Math.min(35, numOffsetPercent + 1),
                               })
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-amber-300 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ⬇️ Bajar Número
                           </button>
@@ -1598,7 +1598,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 numberVerticalOffsetPercent: Math.min(35, numOffsetPercent + 1),
                               })
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-sky-300 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-sky-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ↕️ Separar más del nombre
                           </button>
@@ -1610,7 +1610,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 numberVerticalOffsetPercent: Math.max(-35, numOffsetPercent - 1),
                               })
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-purple-300 cursor-pointer active:scale-95"
+                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-purple-700 cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ↕️ Juntar al nombre
                           </button>
@@ -1619,11 +1619,11 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                     </div>
 
                     {/* BLOQUE 3: 🎨 COLOR, BORDE DE LETRAS Y FONDO DE ESPALDA */}
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                      <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-2xs">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                         <div className="flex items-center gap-2">
-                          <Palette className="w-4 h-4 text-amber-400" />
-                          <h4 className="text-sm font-bold text-white">
+                          <Palette className="w-4 h-4 text-amber-600" />
+                          <h4 className="text-sm font-bold text-slate-900">
                             🎨 Color, Borde y Fondo de Espalda
                           </h4>
                         </div>
@@ -1631,9 +1631,9 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
                       {/* Color de Relleno y Color de Borde */}
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 space-y-2">
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-200">Color de Letra:</span>
+                            <span className="text-xs font-semibold text-slate-700">Color de Letra:</span>
                             <input
                               type="color"
                               value={currentDorsalFill}
@@ -1651,8 +1651,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                   onClick={() => applyDorsalStyleChange({ fillColor: hex })}
                                   className={`w-5 h-5 rounded-full border cursor-pointer transition-transform ${
                                     currentDorsalFill.toLowerCase() === hex
-                                      ? 'ring-2 ring-cyan-400 scale-110 border-white'
-                                      : 'border-slate-600 hover:scale-105'
+                                      ? 'ring-2 ring-violet-500 scale-110 border-white'
+                                      : 'border-slate-300 hover:scale-105'
                                   }`}
                                   style={{ backgroundColor: hex }}
                                   title={`Color ${hex}`}
@@ -1662,9 +1662,9 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                           </div>
                         </div>
 
-                        <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 space-y-2">
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-200">Color de Borde:</span>
+                            <span className="text-xs font-semibold text-slate-700">Color de Borde:</span>
                             <input
                               type="color"
                               value={currentDorsalStroke}
@@ -1682,8 +1682,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                   onClick={() => applyDorsalStyleChange({ strokeColor: hex })}
                                   className={`w-5 h-5 rounded-full border cursor-pointer transition-transform ${
                                     currentDorsalStroke.toLowerCase() === hex
-                                      ? 'ring-2 ring-cyan-400 scale-110 border-white'
-                                      : 'border-slate-600 hover:scale-105'
+                                      ? 'ring-2 ring-violet-500 scale-110 border-white'
+                                      : 'border-slate-300 hover:scale-105'
                                   }`}
                                   style={{ backgroundColor: hex }}
                                   title={`Borde ${hex}`}
@@ -1696,7 +1696,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
                       {/* Botones de Grosor de Borde con Nombres Claros */}
                       <div className="space-y-1.5">
-                        <span className="text-xs font-semibold text-slate-300 block">
+                        <span className="text-xs font-semibold text-slate-700 block">
                           Grosor del borde de letras y números:
                         </span>
                         <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
@@ -1715,8 +1715,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 onClick={() => applyDorsalStyleChange({ strokeWidthMm: opt.widthMm })}
                                 className={`px-2 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
                                   isSelected
-                                    ? 'bg-amber-400 text-slate-950 shadow-sm'
-                                    : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                                    ? 'bg-amber-400 text-slate-950 shadow-2xs'
+                                    : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
                                 }`}
                               >
                                 {opt.label}
@@ -1727,12 +1727,12 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                       </div>
 
                       {/* Sección compacta para subir/bajar el dibujo de fondo de la espalda */}
-                      <div className="pt-2 border-t border-slate-800 space-y-2">
+                      <div className="pt-2 border-t border-slate-200 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-200">
+                          <span className="text-xs font-semibold text-slate-700">
                             ⬆️ Subir / ⬇️ Bajar dibujo de fondo de espalda:
                           </span>
-                          <span className="text-[11px] font-bold text-emerald-300">
+                          <span className="text-[11px] font-bold text-emerald-700">
                             {formatOffsetSummary(backOffsetMm, 'Original (0 cm)')}
                           </span>
                         </div>
@@ -1744,14 +1744,14 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 backArtOffsetYMm: Math.max(-80, backOffsetMm - 5),
                               })
                             }
-                            className="px-2 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer active:scale-95"
+                            className="px-2 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ⬆️ Subir (+5 mm)
                           </button>
                           <button
                             type="button"
                             onClick={() => applyCalibrationChange({ backArtOffsetYMm: 0 })}
-                            className="px-2 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold cursor-pointer active:scale-95"
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold cursor-pointer active:scale-95 shadow-2xs"
                           >
                             🔄 Original (0)
                           </button>
@@ -1762,7 +1762,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 backArtOffsetYMm: Math.min(40, backOffsetMm + 5),
                               })
                             }
-                            className="px-2 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 text-xs font-bold cursor-pointer active:scale-95"
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-amber-700 text-xs font-bold cursor-pointer active:scale-95 shadow-2xs"
                           >
                             ⬇️ Bajar (-5 mm)
                           </button>
@@ -1783,14 +1783,14 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   />
 
                   {/* Número opcional en el Pecho / Frente */}
-                  <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-2xs">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-sky-400" />
+                        <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-violet-600" />
                           <span>🔢 Número Pequeño en el Pecho (Opcional)</span>
                         </h4>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-slate-500">
                           Actívalo si el diseño lleva el número del jugador también en la parte delantera.
                         </p>
                       </div>
@@ -1801,10 +1801,10 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                             includeFrontNumber: !generationConfig.includeFrontNumber,
                           })
                         }
-                        className={`px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
                           generationConfig.includeFrontNumber
-                            ? 'bg-sky-500 text-slate-950 shadow-md'
-                            : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700'
+                            ? 'bg-violet-600 text-white shadow-2xs'
+                            : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
                         }`}
                       >
                         {generationConfig.includeFrontNumber
@@ -1814,9 +1814,9 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                     </div>
 
                     {generationConfig.includeFrontNumber && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-800">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
                         <div className="space-y-1.5">
-                          <span className="text-xs font-semibold text-slate-300 block">
+                          <span className="text-xs font-semibold text-slate-700 block">
                             ¿En qué lado del pecho va?:
                           </span>
                           <div className="grid grid-cols-3 gap-1.5">
@@ -1834,10 +1834,10 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                     frontNumberXPercent: pos.x,
                                   })
                                 }
-                                className={`px-2 py-2 rounded-lg text-xs font-bold cursor-pointer ${
+                                className={`px-2 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
                                   (generationConfig.frontNumberPosition || 'CENTRO') === pos.id
-                                    ? 'bg-sky-500 text-slate-950'
-                                    : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                                    ? 'bg-violet-600 text-white shadow-2xs'
+                                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
                                 }`}
                               >
                                 {pos.label}
@@ -1847,7 +1847,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                         </div>
 
                         <div className="space-y-1.5">
-                          <span className="text-xs font-semibold text-slate-300 block">
+                          <span className="text-xs font-semibold text-slate-700 block">
                             Tamaño del número del pecho:
                           </span>
                           <div className="grid grid-cols-3 gap-1.5">
@@ -1861,14 +1861,14 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                   ),
                                 })
                               }
-                              className="px-2 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-white cursor-pointer"
+                              className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer shadow-2xs"
                             >
                               🔍− Más Pequeño
                             </button>
                             <button
                               type="button"
                               onClick={() => applyCalibrationChange({ frontNumberScale: 1 })}
-                              className="px-2 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-sky-300 cursor-pointer"
+                              className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600 cursor-pointer shadow-2xs"
                             >
                               Normal (100%)
                             </button>
@@ -1882,7 +1882,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                   ),
                                 })
                               }
-                              className="px-2 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold cursor-pointer"
+                              className="px-2 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold cursor-pointer shadow-2xs"
                             >
                               🔍+ Más Grande
                             </button>
@@ -1890,7 +1890,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                         </div>
 
                         <div className="space-y-1.5">
-                          <span className="text-xs font-semibold text-slate-300 block">
+                          <span className="text-xs font-semibold text-slate-700 block">
                             Mover posición en el pecho:
                           </span>
                           <div className="grid grid-cols-2 gap-1.5">
@@ -1904,7 +1904,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                   ),
                                 })
                               }
-                              className="px-2 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-emerald-300 cursor-pointer"
+                              className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer shadow-2xs"
                             >
                               ⬆️ Subir en el Pecho
                             </button>
@@ -1918,7 +1918,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                   ),
                                 })
                               }
-                              className="px-2 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-amber-300 cursor-pointer"
+                              className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer shadow-2xs"
                             >
                               ⬇️ Bajar en el Pecho
                             </button>
@@ -1931,14 +1931,14 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
               )}
 
               {activeZone === 'PANTALONETA' && (
-                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-4">
+                <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4 shadow-2xs">
                   {!orderHasShorts ? (
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
                       <div>
-                        <h4 className="text-sm font-bold text-white">
+                        <h4 className="text-sm font-bold text-slate-900">
                           🩳 Este pedido solo tiene Camisetas activas en este momento
                         </h4>
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-slate-500 mt-1">
                           Cuando cargues un pedido con pantalonetas (o uniforme completo), aquí podrás elegir en qué pierna va el número y ajustar su tamaño y posición con un clic.
                         </p>
                       </div>
@@ -1951,12 +1951,12 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                         offsetMm={shortOffsetMm}
                         onChangeOffsetMm={(val) => applyCalibrationChange({ shortArtOffsetYMm: val })}
                       />
-                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
                         <div>
-                          <h4 className="text-sm font-bold text-white">
+                          <h4 className="text-sm font-bold text-slate-900">
                             🩳 Ajuste del Número en la Pantaloneta
                           </h4>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-slate-500">
                             Elige si la pantaloneta lleva número, en qué pierna se estampa y acomoda su tamaño o altura.
                           </p>
                         </div>
@@ -1968,10 +1968,10 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                               includeShortNumber: generationConfig.includeShortNumber === false,
                             })
                           }
-                          className={`px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
                             generationConfig.includeShortNumber !== false
-                              ? 'bg-emerald-500 text-slate-950 shadow-md'
-                              : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700'
+                              ? 'bg-emerald-600 text-white shadow-2xs'
+                              : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
                           }`}
                         >
                           {generationConfig.includeShortNumber !== false
@@ -1984,17 +1984,17 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {/* Selección de pierna */}
                           <div className="space-y-2">
-                            <span className="text-xs font-semibold text-slate-300 block">
+                            <span className="text-xs font-semibold text-slate-700 block">
                               1. ¿En qué pierna va el número?:
                             </span>
                             <div className="grid grid-cols-2 gap-2">
                               <button
                                 type="button"
                                 onClick={() => applyCalibrationChange({ shortNumberPiece: 'IZQ' })}
-                                className={`px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                                className={`px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${
                                   generationConfig.shortNumberPiece === 'IZQ'
-                                    ? 'bg-cyan-400 text-slate-950 shadow-md'
-                                    : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                                    ? 'bg-violet-600 text-white shadow-2xs'
+                                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
                                 }`}
                               >
                                 🦵 Pierna Izquierda
@@ -2002,10 +2002,10 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                               <button
                                 type="button"
                                 onClick={() => applyCalibrationChange({ shortNumberPiece: 'DER' })}
-                                className={`px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                                className={`px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${
                                   (generationConfig.shortNumberPiece || 'DER') === 'DER'
-                                    ? 'bg-cyan-400 text-slate-950 shadow-md'
-                                    : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                                    ? 'bg-violet-600 text-white shadow-2xs'
+                                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
                                 }`}
                               >
                                 🦵 Pierna Derecha
@@ -2015,7 +2015,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
                           {/* Tamaño del número */}
                           <div className="space-y-2">
-                            <span className="text-xs font-semibold text-slate-300 block">
+                            <span className="text-xs font-semibold text-slate-700 block">
                               2. Tamaño del número ({Math.round((generationConfig.shortNumberScale ?? 1) * 100)}%):
                             </span>
                             <div className="grid grid-cols-3 gap-2">
@@ -2029,14 +2029,14 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                     ),
                                   })
                                 }
-                                className="px-2.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-white cursor-pointer"
+                                className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer shadow-2xs"
                               >
                                 🔍− Más Pequeño
                               </button>
                               <button
                                 type="button"
                                 onClick={() => applyCalibrationChange({ shortNumberScale: 1 })}
-                                className="px-2.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-cyan-300 cursor-pointer"
+                                className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600 cursor-pointer shadow-2xs"
                               >
                                 Normal (100%)
                               </button>
@@ -2050,7 +2050,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                     ),
                                   })
                                 }
-                                className="px-2.5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold cursor-pointer"
+                                className="px-2.5 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold cursor-pointer shadow-2xs"
                               >
                                 🔍+ Más Grande
                               </button>
@@ -2059,7 +2059,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
                           {/* Posición del número en la pantaloneta */}
                           <div className="space-y-2">
-                            <span className="text-xs font-semibold text-slate-300 block">
+                            <span className="text-xs font-semibold text-slate-700 block">
                               3. Mover posición del número:
                             </span>
                             <div className="grid grid-cols-2 gap-2">
@@ -2073,7 +2073,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                     ),
                                   })
                                 }
-                                className="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-emerald-300 cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer shadow-2xs"
                               >
                                 ⬆️ Subir Número
                               </button>
@@ -2087,7 +2087,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                     ),
                                   })
                                 }
-                                className="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-amber-300 cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer shadow-2xs"
                               >
                                 ⬇️ Bajar Número
                               </button>
@@ -2101,7 +2101,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                     ),
                                   })
                                 }
-                                className="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer shadow-2xs"
                               >
                                 ⬅️ Hacia la Izquierda
                               </button>
@@ -2115,7 +2115,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                     ),
                                   })
                                 }
-                                className="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer shadow-2xs"
                               >
                                 ➡️ Hacia la Derecha
                               </button>
@@ -2132,23 +2132,23 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
           {/* GRILLA INFERIOR DE PIEZAS DE LA PRENDA CON CONEXIÓN VISUAL DINÁMICA */}
           {sortedPieces.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[380px] p-8 text-center bg-slate-900/50 border border-slate-800 rounded-2xl">
-              <div className="w-16 h-16 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center mb-4 shadow-inner">
+            <div className="flex flex-col items-center justify-center min-h-[380px] p-8 text-center bg-white border border-slate-200 rounded-xl shadow-2xs">
+              <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-4 shadow-2xs">
                 {currentPlayer.pieces.some(
                   (p) => p.pieceType.startsWith('SHORT') || p.pieceType.startsWith('PANTALONETA')
                 ) ? (
-                  <Scissors className="w-8 h-8 text-sky-400" />
+                  <Scissors className="w-8 h-8 text-violet-600" />
                 ) : (
-                  <Shirt className="w-8 h-8 text-purple-400" />
+                  <Shirt className="w-8 h-8 text-violet-600" />
                 )}
               </div>
-              <h3 className="text-base font-bold text-white mb-2 font-mono">
+              <h3 className="text-base font-bold text-slate-900 mb-2 font-mono">
                 {currentPlayer.playerName} (#{currentPlayer.playerNumber}) no tiene piezas de{' '}
                 {garmentTypeFilter === 'CAMISETA' ? 'Camiseta' : 'Short'}
               </h3>
-              <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
+              <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
                 En el archivo Excel, este jugador está registrado con pedido de{' '}
-                <span className="text-amber-400 font-bold uppercase font-mono">
+                <span className="text-amber-700 font-bold uppercase font-mono">
                   {currentPlayer.pieces.some(
                     (p) => p.pieceType.startsWith('SHORT') || p.pieceType.startsWith('PANTALONETA')
                   )
@@ -2163,7 +2163,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   onClick={() =>
                     setGarmentTypeFilter(garmentTypeFilter === 'CAMISETA' ? 'SHORT' : 'CAMISETA')
                   }
-                  className="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-purple-950 flex items-center gap-2 cursor-pointer active:scale-95"
+                  className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-95"
                 >
                   {garmentTypeFilter === 'CAMISETA' ? (
                     <>
@@ -2180,7 +2180,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setGarmentTypeFilter('ALL')}
-                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 transition-all cursor-pointer flex items-center gap-2"
+                  className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-all cursor-pointer flex items-center gap-2 shadow-2xs"
                 >
                   <Layers className="w-3.5 h-3.5" />
                   <span>Ver Todo el Pedido</span>

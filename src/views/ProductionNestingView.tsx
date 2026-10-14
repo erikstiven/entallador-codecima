@@ -95,11 +95,11 @@ const CanvasPieceItem = React.memo<CanvasPieceItemProps>(({
       }}
     >
       {isLightweight || !svgInnerHtml ? (
-        <div className="w-full h-full flex flex-col items-center justify-center p-1.5 bg-slate-900/90 text-center pointer-events-none border border-dashed border-violet-500/30">
-          <span className="text-[10px] font-bold font-mono text-amber-400 truncate max-w-full">
+        <div className="w-full h-full flex flex-col items-center justify-center p-1.5 bg-white/95 text-center pointer-events-none border border-dashed border-violet-400">
+          <span className="text-[10px] font-bold font-mono text-slate-800 truncate max-w-full">
             {piece.playerName} #{piece.playerNumber}
           </span>
-          <span className="text-[9px] font-mono text-purple-300 truncate max-w-full">
+          <span className="text-[9px] font-mono text-violet-700 truncate max-w-full">
             {piece.pieceType} • T{piece.sizeName}
           </span>
         </div>
@@ -426,21 +426,21 @@ export const ProductionNestingView: React.FC = () => {
   );
 
   return (
-    <div className={`flex flex-col bg-slate-950 overflow-hidden select-none ${isPreviewMode ? 'h-screen' : 'h-[calc(100vh-4rem)]'}`}>
+    <div className={`flex flex-col bg-slate-100 overflow-hidden select-none ${isPreviewMode ? 'h-screen' : 'h-[calc(100vh-4rem)]'}`}>
       {!isPreviewMode && generationResult && generationResult.warnings.length > 0 && (
-        <div className="flex-shrink-0 border-b border-amber-500/40 bg-amber-950/70 px-6 py-2 text-xs text-amber-100">
+        <div className="flex-shrink-0 border-b border-amber-200 bg-amber-50 px-6 py-2 text-xs text-amber-900">
           <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-amber-400" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-amber-600" />
             <div className="min-w-0 flex-1">
               <div>
-                <strong className="text-amber-300">Producción incompleta:</strong>{' '}
+                <strong className="text-amber-800">Producción incompleta:</strong>{' '}
                 {warningSummaries.join(' ')}
               </div>
               <details className="mt-1">
-                <summary className="w-fit cursor-pointer font-semibold text-amber-300 hover:underline">
+                <summary className="w-fit cursor-pointer font-semibold text-amber-700 hover:underline">
                   Ver detalle ({generationResult.warnings.length})
                 </summary>
-                <ul className="mt-1.5 max-h-28 list-disc space-y-1 overflow-y-auto pl-5 text-[11px] text-amber-100">
+                <ul className="mt-1.5 max-h-28 list-disc space-y-1 overflow-y-auto pl-5 text-[11px] text-amber-800">
                   {generationResult.warnings.map((warning, index) => (
                     <li key={`${index}_${warning}`}>{warning}</li>
                   ))}

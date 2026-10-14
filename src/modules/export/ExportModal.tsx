@@ -214,17 +214,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
+      <div className="bg-white border border-slate-200 rounded-xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-violet-100 border border-violet-200 text-violet-700">
+            <div className="p-2 rounded-lg bg-violet-100 border border-violet-200 text-violet-700">
               <Printer className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 Exportar Producción a Escala Real
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-800 border border-violet-200 font-mono">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-violet-100 text-violet-800 border border-violet-200 font-mono">
                   {formatDisplay} 1:1
                 </span>
               </h2>
@@ -263,7 +263,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 setFileName(e.target.value);
                 setExportSuccessDone(false);
               }}
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:border-violet-500 focus:bg-white focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 font-mono focus:border-violet-500 focus:bg-white focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="PRODUCCION_UNIFORMES"
             />
           </div>
@@ -283,11 +283,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     setSelectedFormat(fmt);
                     setExportSuccessDone(false);
                   }}
-                  className={`py-2 px-1.5 rounded-xl border font-mono font-bold text-center transition-all ${
+                  className={`py-2 px-1.5 rounded-lg border font-mono font-bold text-center transition-all ${
                     isExporting ? 'opacity-50 cursor-not-allowed ' : 'cursor-pointer '
                   }${
                     selectedFormat === fmt
-                      ? 'bg-violet-600 text-white border-violet-500 shadow-sm'
+                      ? 'bg-violet-600 text-white border-violet-500 shadow-xs'
                       : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-200'
                   }`}
                 >
@@ -296,7 +296,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               ))}
             </div>
             {selectedFormat === 'EPS' && (
-              <div className="mt-2 p-2.5 rounded-xl bg-violet-50 border border-violet-200 text-[11px] text-violet-900 flex items-start gap-2">
+              <div className="mt-2 p-2.5 rounded-lg bg-violet-50 border border-violet-200 text-[11px] text-violet-900 flex items-start gap-2">
                 <Info className="w-3.5 h-3.5 text-violet-600 shrink-0 mt-0.5" />
                 <span>
                   <strong>EPS Level 3 (Curvas 1:1):</strong> Motor aislado vía Inkscape CLI para RIPs (Mimaki, Epson, Wasatch) y plotters industriales.
@@ -304,7 +304,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               </div>
             )}
             {selectedFormat === 'SVG' && (
-              <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-start gap-2">
+              <div className="mt-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-start gap-2">
                 <Info className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
                 <span>
                   <strong>SVG Maestro 1:1:</strong> Vectorial nativo con degradados, máscaras y tipografías trazadas. Compatible directo con Illustrator.
@@ -315,7 +315,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
           {/* Selector de alcance cuando hay múltiples pliegos */}
           {sheets.length > 1 && selectedFormat !== 'EXCEL_SUMMARY' && (
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
               <div className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-violet-600" />
                 Cantidad de Pliegos a Descargar
@@ -328,11 +328,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     setExportAllSheets(true);
                     setExportSuccessDone(false);
                   }}
-                  className={`py-2 px-2.5 rounded-xl border font-semibold text-left transition-all ${
+                  className={`py-2 px-2.5 rounded-lg border font-semibold text-left transition-all ${
                     isExporting ? 'opacity-50 cursor-not-allowed ' : 'cursor-pointer '
                   }${
                     exportAllSheets
-                      ? 'bg-violet-600 text-white border-violet-500 shadow-sm'
+                      ? 'bg-violet-600 text-white border-violet-500 shadow-xs'
                       : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
@@ -346,11 +346,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     setExportAllSheets(false);
                     setExportSuccessDone(false);
                   }}
-                  className={`py-2 px-2.5 rounded-xl border font-semibold text-left transition-all ${
+                  className={`py-2 px-2.5 rounded-lg border font-semibold text-left transition-all ${
                     isExporting ? 'opacity-50 cursor-not-allowed ' : 'cursor-pointer '
                   }${
                     !exportAllSheets
-                      ? 'bg-violet-600 text-white border-violet-500 shadow-sm'
+                      ? 'bg-violet-600 text-white border-violet-500 shadow-xs'
                       : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
@@ -362,7 +362,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           )}
 
           {/* Opciones de Identificación */}
-          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
             <label
               className={`flex items-center gap-2.5 text-slate-700 ${
                 isExporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:text-slate-900'
@@ -386,7 +386,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </div>
 
           {/* Summary Strip */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between text-xs text-slate-600">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between text-xs text-slate-600">
             <div className="flex items-center gap-2">
               <Ruler className="w-4 h-4 text-violet-600" />
               <span>
@@ -408,13 +408,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
           {/* Panel de Progreso Paso a Paso durante la exportación */}
           {isExporting && (
-            <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4 space-y-2.5 animate-in fade-in duration-150">
+            <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 space-y-2.5 animate-in fade-in duration-150">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-violet-900 flex items-center gap-2">
                   <Loader2 className="w-4 h-4 text-violet-600 animate-spin shrink-0" />
                   {exportStepText || 'Procesando archivo de producción 1:1...'}
                 </span>
-                <span className="font-mono font-bold text-violet-700 bg-white px-2 py-0.5 rounded-lg border border-violet-200 shadow-xs">
+                <span className="font-mono font-bold text-violet-700 bg-white px-2 py-0.5 rounded-md border border-violet-200 shadow-2xs">
                   {exportProgressPercent}%
                 </span>
               </div>
@@ -432,7 +432,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
           {/* Banner Verde Claro de Confirmación al Terminar */}
           {exportSuccessDone && !isExporting && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 space-y-1.5 animate-in fade-in duration-200">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 space-y-1.5 animate-in fade-in duration-200">
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>{exportStepText || '¡Exportación completada! Archivos descargados.'}</span>
@@ -459,7 +459,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             type="button"
             onClick={handleClose}
             disabled={isExporting}
-            className={`px-4 py-2 text-xs font-semibold rounded-xl transition-colors ${
+            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors ${
               isExporting
                 ? 'text-slate-300 cursor-not-allowed opacity-50'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200 cursor-pointer'
@@ -472,7 +472,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             type="button"
             onClick={handleExport}
             disabled={isExporting}
-            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition-all ${
+            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold shadow-xs transition-all ${
               exportSuccessDone && !isExporting
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-emerald-200'
                 : isExporting

@@ -43,11 +43,11 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white border border-slate-200 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-violet-100 text-violet-700 rounded-xl">
+            <div className="p-2 bg-violet-100 text-violet-700 rounded-lg">
               <Type className="w-5 h-5" />
             </div>
             <div>
@@ -91,7 +91,7 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
               <select
                 value={activeFontFamily}
                 onChange={(e) => onSelectFont(e.target.value)}
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-medium focus:outline-hidden focus:border-violet-500 cursor-pointer text-xs"
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-medium focus:outline-hidden focus:border-violet-500 cursor-pointer text-xs"
               >
                 {localFonts.length > 0 && (
                   <optgroup label="Fuentes cargadas en esta sesión">
@@ -125,7 +125,7 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="px-3.5 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+                className="px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
                 title="Subir archivo .ttf, .otf o .font"
               >
                 <UploadCloud className="w-4 h-4" />
@@ -260,7 +260,7 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
+            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
           >
             <Check className="w-4 h-4" />
             <span>Listo, Aplicar Estilo</span>
@@ -271,7 +271,7 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
       {/* Sub-modal de Instrucciones para Google Fonts */}
       {showHelpModal && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-md p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                 <Info className="w-4 h-4 text-violet-600" />
@@ -307,7 +307,7 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
             <button
               type="button"
               onClick={() => setShowHelpModal(false)}
-              className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer mt-2"
+              className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer mt-2 shadow-xs"
             >
               Entendido
             </button>

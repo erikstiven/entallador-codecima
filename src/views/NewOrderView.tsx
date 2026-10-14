@@ -235,7 +235,7 @@ export const NewOrderView: React.FC = () => {
 
       {/* Import Card (Single unified zone when no items loaded) */}
       {items.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm space-y-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-xs space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
             <div>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight">
@@ -640,7 +640,7 @@ export const NewOrderView: React.FC = () => {
       )}
 
       {/* Bottom Generation CTA Bar */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
         <div className="space-y-1">
           <div className="text-xs text-slate-600">
             {items.length === 0 ? (

@@ -73,7 +73,7 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           {title && (
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
               {title}
             </h4>
           )}
@@ -85,7 +85,7 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
       {/* CARRUSEL ÚNICO DE INSPECCIÓN */}
       {activePiece && (
         <div
-          className="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 space-y-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+          className="bg-white border border-slate-200 rounded-xl p-4 space-y-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 shadow-xs"
           tabIndex={0}
           onKeyDown={handleCarouselKeyDown}
           role="region"
@@ -106,15 +106,15 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
                     setZoomLevel(DEFAULT_PREVIEW_ZOOM);
                     setFitMode('content');
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 flex-shrink-0 transition-all border ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 flex-shrink-0 transition-all border cursor-pointer ${
                     isCurrent
-                      ? 'bg-violet-600/20 border-violet-500 text-white shadow-sm'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                      ? 'bg-violet-50 border-violet-300 text-violet-900 shadow-2xs'
+                      : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
                   <span
                     className={`w-2 h-2 rounded-full ${
-                      hasArt ? 'bg-emerald-400' : 'bg-amber-400'
+                      hasArt ? 'bg-emerald-500' : 'bg-amber-500'
                     }`}
                   />
                   <span>{piece.title}</span>
@@ -124,24 +124,24 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
           </div>
 
           {/* Escenario de Enfoque con Controles de Navegación */}
-          <div className="relative w-full h-[26rem] sm:h-[30rem] bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden flex items-center justify-center p-6 sm:p-8 group">
+          <div className="relative w-full h-[26rem] sm:h-[30rem] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden flex items-center justify-center p-6 sm:p-8 group">
             {/* Control de vista SVG */}
-            <div className="absolute top-3 left-3 z-20 flex items-center bg-white/90 border border-slate-200 rounded-lg p-1 shadow-xs backdrop-blur-xs">
+            <div className="absolute top-3 left-3 z-20 flex items-center bg-white/95 border border-slate-200 rounded-lg p-1 shadow-xs backdrop-blur-xs">
               <button
                 type="button"
                 onClick={() => setFitMode(fitMode === 'document' ? 'content' : 'document')}
-                className="px-2.5 py-1 rounded text-[10px] font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors"
+                className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                 title="Alternar encuadre de la pieza"
               >
                 Vista SVG
               </button>
             </div>
             {/* Controles flotantes de Zoom */}
-            <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-slate-950/80 border border-slate-800 rounded-lg p-1 shadow-lg backdrop-blur-xs">
+            <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-white/95 border border-slate-200 rounded-lg p-1 shadow-xs backdrop-blur-xs">
               <button
                 type="button"
                 onClick={() => changeZoom(0.25)}
-                className="p-1 hover:bg-slate-800 text-slate-300 hover:text-white rounded"
+                className="p-1 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-md cursor-pointer"
                 title="Acercar"
               >
                 <ZoomIn className="w-4 h-4" />
@@ -149,7 +149,7 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
               <button
                 type="button"
                 onClick={() => changeZoom(-0.25)}
-                className="p-1 hover:bg-slate-800 text-slate-300 hover:text-white rounded"
+                className="p-1 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-md cursor-pointer"
                 title="Alejar"
               >
                 <ZoomOut className="w-4 h-4" />
@@ -157,12 +157,12 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
               <button
                 type="button"
                 onClick={() => setZoomLevel(DEFAULT_PREVIEW_ZOOM)}
-                className="p-1 hover:bg-slate-800 text-slate-300 hover:text-white rounded"
+                className="p-1 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-md cursor-pointer"
                 title="Restablecer tamaño 100%"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
-              <span className="text-[10px] font-mono text-slate-400 px-1 font-semibold">
+              <span className="text-[10px] font-mono text-slate-600 px-1 font-semibold">
                 {Math.round(zoomLevel * 100)}%
               </span>
             </div>
@@ -172,7 +172,7 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
               type="button"
               onClick={handlePrev}
               disabled={pieces.length < 2}
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 p-2 bg-slate-950/80 hover:bg-violet-600 text-slate-300 hover:text-white border border-slate-800 rounded-full transition-all shadow-lg cursor-pointer"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/95 hover:bg-violet-600 text-slate-600 hover:text-white border border-slate-200 rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
               title="Pieza anterior"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -183,7 +183,7 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
               type="button"
               onClick={handleNext}
               disabled={pieces.length < 2}
-              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2 bg-slate-950/80 hover:bg-violet-600 text-slate-300 hover:text-white border border-slate-800 rounded-full transition-all shadow-lg cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/95 hover:bg-violet-600 text-slate-600 hover:text-white border border-slate-200 rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
               title="Pieza siguiente"
             >
               <ChevronRight className="w-5 h-5" />
@@ -200,7 +200,7 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
                   />
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center text-slate-600 space-y-2 select-none">
+                <div className="flex flex-col items-center justify-center text-slate-400 space-y-2 select-none">
                   {activePiece.silhouette}
                   <p className="text-xs font-semibold text-slate-500">
                     No hay arte cargado para {activePiece.title}
@@ -213,9 +213,9 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
           {/* Pie de Carrusel con Acciones Rápidas */}
           <div className="flex items-center justify-between text-xs pt-1">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-white text-sm">{activePiece.title}</span>
+              <span className="font-bold text-slate-800 text-sm">{activePiece.title}</span>
               {activePiece.subtitle && (
-                <span className="text-slate-400 text-xs hidden sm:inline">
+                <span className="text-slate-500 text-xs hidden sm:inline">
                   — {activePiece.subtitle}
                 </span>
               )}
@@ -223,7 +223,7 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
 
             <div className="flex items-center gap-2">
               {activePiece.onUploadFile && (
-                <label className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors">
+                <label className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-xs">
                   {activePiece.svgContent ? 'Reemplazar SVG' : 'Subir SVG'}
                   <input
                     type="file"
@@ -241,7 +241,7 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
                 <button
                   type="button"
                   onClick={activePiece.onRemove}
-                  className="px-3 py-1.5 bg-slate-900 hover:bg-red-950 text-rose-400 border border-slate-800 hover:border-red-800 rounded-lg text-xs font-semibold transition-colors"
+                  className="px-3 py-1.5 bg-white hover:bg-red-50 text-red-600 border border-slate-200 hover:border-red-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                 >
                   Quitar
                 </button>
