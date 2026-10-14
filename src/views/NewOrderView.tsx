@@ -317,7 +317,7 @@ export const NewOrderView: React.FC = () => {
   };
 
   return (
-    <div className="p-5 sm:p-6 max-w-[1600px] w-full mx-auto space-y-4 text-slate-800">
+    <div className="p-6 w-full space-y-5 text-slate-800 animate-in fade-in duration-200">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}

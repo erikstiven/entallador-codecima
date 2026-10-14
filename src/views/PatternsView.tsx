@@ -30,6 +30,7 @@ import { polygonToSvgPath } from '@/core/geometry/transform';
 import { showAlert } from '@/core/ui/alerts';
 import { dbService } from '@/core/database/db';
 import { generateIllustratorTemplateSvg } from '@/modules/patterns/patternTemplateExporter';
+import { Select, Button } from '@/components/ui';
 
 export const PatternsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -298,7 +299,7 @@ exportMoldesParaCimatex();`;
   ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 w-full space-y-5 text-slate-800 animate-in fade-in duration-200">
       <input
         ref={fileInputRef}
         type="file"
@@ -307,15 +308,18 @@ exportMoldesParaCimatex();`;
         onChange={handleFileUpload}
       />
 
-      {/* VISTA 1: CATÁLOGO DE MOLDERÍAS (MODO SUBIMIFYER 1:1) */}
+      {/* VISTA 1: CATÁLOGO DE MOLDERÍAS (MODO SUBLIMIFYER 1:1) */}
       {catalogMode === 'CATALOG' ? (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Header del Catálogo */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/90 pb-4">
+        <div className="space-y-5 animate-in fade-in duration-200">
+          {/* Header del Catálogo (Estandarizado en tarjeta elegante con botones Button) */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl px-5 sm:px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
             <div className="flex items-center gap-4">
-              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                Catálogo de molderías
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-extrabold text-slate-900 tracking-tight">
+                  Catálogo de molderías
+                </h2>
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-600 shrink-0" />
+              </div>
 
               {/* Segmented Control: Subidas | Biblioteca */}
               <div className="bg-slate-100 p-0.5 rounded-lg border border-slate-200/80 flex items-center text-xs font-semibold">
@@ -344,13 +348,15 @@ exportMoldesParaCimatex();`;
               </div>
             </div>
 
-            {/* Action buttons */}
+            {/* Action buttons con Button estandarizado */}
             <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImportingSvg}
-                className="rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
+                className="shadow-xs cursor-pointer"
+                title="Subir archivo SVG de moldería exportado de Illustrator"
               >
                 {isImportingSvg ? (
                   <>
@@ -359,73 +365,81 @@ exportMoldesParaCimatex();`;
                   </>
                 ) : (
                   <>
-                    <Plus className="w-3.5 h-3.5 text-white" />
+                    <Plus className="w-3.5 h-3.5" />
                     <span>Subir moldería</span>
                   </>
                 )}
-              </button>
+              </Button>
 
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={handleDownloadTemplate}
                 disabled={!activePatternSet && patternSets.length === 0}
-                className="rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer disabled:opacity-40"
-                title="Descargar plantilla de Illustrator"
+                className="shadow-2xs cursor-pointer"
+                title="Descargar plantilla SVG 1:1 para Illustrator"
               >
                 <Download className="w-3.5 h-3.5 text-violet-600" />
                 <span className="hidden sm:inline">Descargar plantilla</span>
-              </button>
+              </Button>
 
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={handleDownloadScript}
-                className="rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
-                title="Descargar script JSX para Illustrator"
+                className="shadow-2xs cursor-pointer"
+                title="Descargar script JSX para Adobe Illustrator"
               >
                 <FileCode className="w-3.5 h-3.5 text-slate-500" />
                 <span className="hidden sm:inline">Script JSX</span>
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* Barra de Búsqueda y Filtros */}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="relative flex-1 max-w-md">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por nombre..."
+                placeholder="Buscar moldería por nombre o deporte..."
                 className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-violet-500 shadow-2xs font-medium"
               />
             </div>
 
             <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-800 shadow-2xs cursor-pointer transition-colors"
+              <Button
+                variant="secondary"
+                size="sm"
+                className="px-2.5 py-1.5 h-8 gap-1.5 text-slate-600 shadow-2xs cursor-pointer"
                 title="Historial de recientes"
               >
-                <Clock className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-800 shadow-2xs cursor-pointer transition-colors"
+                <Clock className="w-3.5 h-3.5 text-slate-500" />
+                <span className="text-xs">Recientes</span>
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="px-2.5 py-1.5 h-8 gap-1.5 text-slate-600 shadow-2xs cursor-pointer"
                 title="Filtrar por etiqueta"
               >
-                <Tag className="w-4 h-4" />
-              </button>
+                <Tag className="w-3.5 h-3.5 text-slate-500" />
+                <span className="text-xs">Etiquetas</span>
+              </Button>
             </div>
           </div>
 
           {/* Sección "Inicio" */}
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
-            Inicio
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+              Inicio ({filteredSets.length} {filteredSets.length === 1 ? 'moldería' : 'molderías'})
+            </div>
           </div>
 
           {/* Grid de Tarjetas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {catalogTab === 'UPLOADS' ? (
               <>
                 {filteredSets.map((set) => {
@@ -608,19 +622,20 @@ exportMoldesParaCimatex();`;
         /* VISTA 2: DETALLE E INSPECTOR DE MOLDERÍA ACTIVA */
         <div className="space-y-5 animate-in fade-in duration-200">
           {/* Top Breadcrumb Header para Volver al Catálogo */}
-          <div className="flex items-center justify-between gap-3 border-b border-slate-200/90 pb-3">
-            <button
-              type="button"
+          <div className="bg-white border border-slate-200/90 rounded-2xl px-5 sm:px-6 py-3 flex items-center justify-between gap-3 shadow-2xs">
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setCatalogMode('CATALOG')}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer"
+              className="cursor-pointer shadow-2xs"
             >
               <ArrowLeft className="w-4 h-4 text-violet-600" />
               <span>Volver al catálogo de molderías</span>
-            </button>
+            </Button>
 
             {activePatternSet && (
               <div className="text-xs text-slate-500 font-medium">
-                Moldería: <strong className="text-slate-900 font-bold">{activePatternSet.name}</strong>
+                Moldería: <strong className="text-slate-900 font-bold font-mono">{activePatternSet.name}</strong>
               </div>
             )}
           </div>
@@ -639,25 +654,26 @@ exportMoldesParaCimatex();`;
           ) : (
             <>
               {/* Active Pattern Set Header Card */}
-              <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+              <div className="bg-white border border-slate-200/90 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   {patternSets.length > 1 && (
                     <div className="space-y-1">
                       <label className="text-[10px] text-slate-500 font-mono uppercase font-bold block">Conjunto Activo:</label>
-                      <select
+                      <Select
+                        sizeVariant="sm"
                         value={activePatternSet.id}
                         onChange={(e) => {
                           const found = patternSets.find((s) => s.id === e.target.value);
                           if (found) setActivePatternSet(found);
                         }}
-                        className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-medium shadow-2xs"
+                        className="font-medium"
                       >
                         {patternSets.map((s) => (
                           <option key={s.id} value={s.id}>
                             {s.name} ({s.sizes.length} tallas)
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                   )}
                   <div>
@@ -679,34 +695,40 @@ exportMoldesParaCimatex();`;
 
                 {/* Action Buttons in single unified row */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={handleSavePatterns}
                     disabled={isSaving}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                    className={`shadow-xs cursor-pointer ${
+                      isSaved ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : ''
+                    }`}
                     title="Guardar molde de forma permanente"
                   >
                     {isSaving ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-500" />
                         <span>Guardando molde...</span>
                       </>
                     ) : isSaved ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-white" />
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
                         <span>¡Molde Guardado!</span>
                       </>
                     ) : (
                       <>
-                        <Save className="w-3.5 h-3.5 text-white" />
+                        <Save className="w-3.5 h-3.5 text-slate-500" />
                         <span>Guardar Molde</span>
                       </>
                     )}
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isImportingSvg}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
+                    className="shadow-xs cursor-pointer"
                   >
                     {isImportingSvg ? (
                       <>
@@ -715,33 +737,37 @@ exportMoldesParaCimatex();`;
                       </>
                     ) : (
                       <>
-                        <Plus className="w-3.5 h-3.5 text-white" />
+                        <Plus className="w-3.5 h-3.5" />
                         <span>Cargar Otro Molde SVG</span>
                       </>
                     )}
-                  </button>
+                  </Button>
 
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={handleDownloadTemplate}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 rounded-lg text-xs font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer"
+                    className="shadow-2xs cursor-pointer"
                     title="Descargar plantilla editable con capas para Adobe Illustrator"
                   >
                     <Download className="w-3.5 h-3.5 text-violet-600" />
                     <span>Descargar Plantilla Illustrator</span>
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={handleDownloadScript}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                    className="shadow-2xs cursor-pointer"
                     title="Descargar script JSX para Adobe Illustrator"
                   >
                     <FileCode className="w-3.5 h-3.5 text-slate-500" />
                     <span>Script JSX</span>
-                  </button>
+                  </Button>
 
-                  <button
-                    type="button"
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={async () => {
                       const confirmed = await showAlert.confirm(
                         '¿Eliminar este molde?',
@@ -753,16 +779,17 @@ exportMoldesParaCimatex();`;
                         setCatalogMode('CATALOG');
                       }
                     }}
-                    className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 hover:border-red-200 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                    className="p-1.5 h-8 w-8 justify-center cursor-pointer"
                     title="Eliminar este conjunto de moldes activo"
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
 
                   {patternSets.length > 0 && (
                     <div className="flex items-center pl-2 ml-1 border-l border-slate-200">
-                      <button
-                        type="button"
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         onClick={async () => {
                           const confirmed = await showAlert.confirm(
                             '¿Limpiar TODOS los moldes de la biblioteca?',
@@ -774,12 +801,12 @@ exportMoldesParaCimatex();`;
                             setCatalogMode('CATALOG');
                           }
                         }}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 transition-colors cursor-pointer"
-                        title="Acción administrativa: Limpiar toda la biblioteca de moldes"
+                        className="text-xs border-red-200 bg-red-50 text-red-700 hover:bg-red-100 cursor-pointer"
+                        title="Vacia toda la base de datos de moldes cargados"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Limpiar Moldes (Todos)</span>
-                      </button>
+                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                        <span>Limpiar Biblioteca</span>
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -874,20 +901,21 @@ exportMoldesParaCimatex();`;
                   )}
                   <div className="space-y-1 flex-1">
                     <label className="text-xs text-slate-700 font-medium block">Pieza Detectada:</label>
-                    <select
+                    <Select
+                      sizeVariant="sm"
                       value={selectedPieceForAssignment?.id || ''}
                       onChange={(e) => {
                         const found = activePatternSet.unassignedPieces.find((p) => p.id === e.target.value);
                         selectPieceForAssignment(found || null);
                       }}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-mono shadow-2xs focus:border-violet-500 focus:outline-none"
+                      className="w-full font-mono text-xs"
                     >
                       {activePatternSet.unassignedPieces.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.pieceName} ({(p.bbox.width / 10).toFixed(1)} × {(p.bbox.height / 10).toFixed(1)} cm)
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 </div>
 
@@ -905,10 +933,11 @@ exportMoldesParaCimatex();`;
                   </div>
                   <div>
                     <label className="text-slate-700 font-medium block mb-1">Tipo de Pieza:</label>
-                    <select
+                    <Select
+                      sizeVariant="sm"
                       value={assignType}
                       onChange={(e) => setAssignType(e.target.value as PieceType)}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-slate-800 text-[11px] shadow-2xs focus:border-violet-500 focus:outline-none"
+                      className="w-full text-xs"
                     >
                       <option value="DELANTERO_V">DELANTERO (CUELLO V)</option>
                       <option value="DELANTERO_REDONDO">DELANTERO (CUELLO REDONDO)</option>
@@ -920,7 +949,7 @@ exportMoldesParaCimatex();`;
                       <option value="PANTALONETA_IZQ">PANTALONETA (PIERNA / ESPEJO)</option>
                       <option value="PANTALONETA_DER">PANTALONETA DER (SI ES DISTINTA)</option>
                       <option value="OTRO">OTRO / AUXILIAR</option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
 
@@ -1105,10 +1134,11 @@ exportMoldesParaCimatex();`;
                     >
                       {/* Top Header of Card: Piece Type Selector and Delete Action */}
                       <div className="flex items-center justify-between gap-2">
-                        <select
+                        <Select
+                          sizeVariant="sm"
                           value={piece.pieceType}
                           onChange={(e) => updatePieceType(currentSizeObj.sizeName, piece.id, e.target.value as PieceType)}
-                          className="flex-1 bg-white border border-slate-200 hover:border-violet-400 focus:border-violet-600 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-violet-900 focus:outline-none cursor-pointer transition-colors"
+                          className="flex-1 font-mono font-bold text-violet-900 text-xs"
                           title="Cambiar tipo de pieza si fue clasificada incorrectamente"
                         >
                           <option value="DELANTERO_V">DELANTERO (CUELLO V)</option>
@@ -1121,7 +1151,7 @@ exportMoldesParaCimatex();`;
                           <option value="PANTALONETA_IZQ">PANTALONETA (PIERNA / ESPEJO)</option>
                           <option value="PANTALONETA_DER">PANTALONETA DER (SI ES DISTINTA)</option>
                           <option value="OTRO">OTRO / AUX</option>
-                        </select>
+                        </Select>
 
                         <button
                           type="button"

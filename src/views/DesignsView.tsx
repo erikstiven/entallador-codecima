@@ -407,7 +407,7 @@ export const DesignsView: React.FC = () => {
   );
 
   return (
-    <div className="h-full min-h-0 p-5 flex flex-col overflow-hidden max-w-[1600px] w-full mx-auto">
+    <div className="h-full min-h-0 p-6 flex flex-col overflow-hidden w-full text-slate-800">
       {/* Input de carga masiva de bloques SVG del modelo */}
       <input
         ref={multiInputRef}

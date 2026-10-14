@@ -45,9 +45,9 @@ export const SettingsView: React.FC = () => {
   const formatValue = (mmVal: number) => format(mmVal);
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8 pb-16 text-slate-800">
+    <div className="p-6 w-full space-y-5 pb-16 text-slate-800 animate-in fade-in duration-200">
       {/* Encabezado Principal */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5">
+      <div className="bg-white border border-slate-200/90 rounded-2xl px-5 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
         <div className="flex items-center gap-4">
           <img 
             src="/cimatex-icon.png" 

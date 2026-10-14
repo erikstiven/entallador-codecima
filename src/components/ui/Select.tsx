@@ -22,6 +22,7 @@ export interface SelectProps {
   containerClassName?: string;
   name?: string;
   id?: string;
+  title?: string;
 }
 
 export const Select: React.FC<SelectProps> = ({
@@ -38,6 +39,7 @@ export const Select: React.FC<SelectProps> = ({
   containerClassName = '',
   name,
   id,
+  title,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -166,6 +168,7 @@ export const Select: React.FC<SelectProps> = ({
         ref={buttonRef}
         type="button"
         id={id}
+        title={title}
         disabled={disabled}
         onClick={() => !disabled && setIsOpen((prev) => !prev)}
         className={`w-full flex items-center justify-between gap-1.5 bg-white text-slate-800 font-medium transition-all cursor-pointer focus:outline-none shadow-2xs disabled:opacity-50 disabled:bg-slate-50 disabled:cursor-not-allowed ${sizeClasses} ${
