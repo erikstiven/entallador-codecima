@@ -62,7 +62,7 @@ export const Header: React.FC = () => {
         <button
           type="button"
           onClick={() => navigateTo('/landing')}
-          className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-full px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-2xs"
+          className="flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-xs"
           title="Ir a la página web de presentación (Landing)"
         >
           <Globe className="w-3.5 h-3.5 text-violet-600" />
@@ -73,10 +73,10 @@ export const Header: React.FC = () => {
         <button
           type="button"
           onClick={() => setCurrentView('SETTINGS')}
-          className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-full px-3 py-1 text-xs transition-all cursor-pointer group shadow-2xs"
+          className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs transition-all cursor-pointer group shadow-xs"
           title="Ver perfil de empresa y ajustes de usuario"
         >
-          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-violet-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white text-[10px] font-black shadow-xs">
+          <div className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center text-white text-[10px] font-bold shadow-xs">
             {settings.companyName.substring(0, 2).toUpperCase() || 'CD'}
           </div>
           <div className="text-left hidden md:block">

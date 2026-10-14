@@ -62,7 +62,7 @@ export const Sidebar: React.FC = () => {
       <div>
         <div className="p-3 border-b border-slate-100 flex items-center justify-between min-h-[58px]">
           <div className="flex items-center space-x-2.5 overflow-hidden">
-            <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200/80 p-1 flex items-center justify-center overflow-hidden shadow-xs flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 p-1 flex items-center justify-center overflow-hidden shadow-2xs flex-shrink-0">
               <img 
                 src="/cimatex-icon.png" 
                 alt="CimaTex" 
@@ -102,7 +102,7 @@ export const Sidebar: React.FC = () => {
         {/* Navigation Items */}
         <nav className="p-2 space-y-1">
           {!isCollapsed && (
-            <div className="px-3 pt-2 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+            <div className="px-2.5 pt-2 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
               Flujo de Producción
             </div>
           )}
@@ -117,30 +117,30 @@ export const Sidebar: React.FC = () => {
                 type="button"
                 onClick={() => setCurrentView(item.id)}
                 title={isCollapsed ? `${item.label} — ${item.description}` : undefined}
-                className={`w-full flex items-center rounded-xl transition-all duration-150 text-xs font-medium cursor-pointer group ${
+                className={`w-full flex items-center rounded-lg transition-all duration-150 text-xs font-medium cursor-pointer group ${
                   isCollapsed
-                    ? 'justify-center p-2.5'
-                    : 'justify-between px-3 py-2.5'
+                    ? 'justify-center p-2'
+                    : 'justify-between px-2.5 py-2'
                 } ${
                   isActive
-                    ? 'bg-violet-600 text-white shadow-xs font-semibold ring-1 ring-violet-500/20'
-                    : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100/80'
+                    ? 'bg-violet-50 text-violet-900 border border-violet-200/90 font-semibold shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
                 }`}
               >
-                <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 min-w-0'}`}>
-                  <div className={`p-1 rounded-lg transition-colors flex-shrink-0 ${
+                <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5 min-w-0'}`}>
+                  <div className={`p-1 rounded-md transition-colors flex-shrink-0 ${
                     isActive
-                      ? 'bg-white/20 text-white'
+                      ? 'bg-violet-600 text-white'
                       : 'bg-slate-100 text-slate-500 group-hover:text-violet-600 group-hover:bg-violet-50'
                   }`}>
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-3.5 h-3.5" />
                   </div>
 
                   {!isCollapsed && (
                     <div className="text-left min-w-0">
                       <div className="leading-tight truncate">{item.label}</div>
                       <div className={`text-[10px] font-normal truncate mt-0.5 ${
-                        isActive ? 'text-violet-100' : 'text-slate-400'
+                        isActive ? 'text-violet-700 font-medium' : 'text-slate-400'
                       }`}>
                         {item.description}
                       </div>
@@ -151,7 +151,7 @@ export const Sidebar: React.FC = () => {
                 {!isCollapsed && (
                   <div className="flex items-center ml-2 flex-shrink-0">
                     <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                      isActive ? 'bg-black/20 text-white' : 'text-slate-400 group-hover:text-slate-600'
+                      isActive ? 'bg-violet-200/70 text-violet-800' : 'text-slate-400 group-hover:text-slate-600'
                     }`}>
                       {item.stepNumber}
                     </span>
