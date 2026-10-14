@@ -30,15 +30,6 @@ interface DorsalConfigModalProps {
   onSampleNumberChange: (val: string) => void;
 }
 
-// 5 colores deportivos clave, concisos y esenciales
-const ESSENTIAL_DORSAL_COLORS = [
-  { name: 'Blanco', hex: '#FFFFFF' },
-  { name: 'Negro', hex: '#000000' },
-  { name: 'Dorado', hex: '#F59E0B' },
-  { name: 'Amarillo', hex: '#FACC15' },
-  { name: 'Rojo', hex: '#DC2626' },
-];
-
 export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
   isOpen,
   onClose,
@@ -91,16 +82,6 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
   );
 
   const activeFontObj = POPULAR_SPORTS_FONTS.find((f) => f.family === activeFontFamily);
-
-  // Aplicar color de una sola vez ("de una") sin colisiones de estado asíncrono
-  const handleApplyPresetColor = (preset: typeof ESSENTIAL_DORSAL_COLORS[0]) => {
-    onFillHexChange(preset.hex);
-    if (preset.hex === '#000000') {
-      setPreviewBg('light');
-    } else {
-      setPreviewBg('dark');
-    }
-  };
 
   // Cambio bidireccional en canal CMYK -> recalcula HEX
   const handleCmykChannelChange = (channel: keyof CMYK, val: number) => {
@@ -348,31 +329,6 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
                   placeholder="#FFFFFF"
                 />
               </div>
-            </div>
-
-            {/* Pocas Opciones y Claras (5 Colores Clave Deportivos) */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {ESSENTIAL_DORSAL_COLORS.map((preset) => {
-                const isSelected = fillHex.toUpperCase() === preset.hex.toUpperCase();
-                return (
-                  <button
-                    key={preset.name}
-                    type="button"
-                    onClick={() => handleApplyPresetColor(preset)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-violet-600 bg-violet-50 text-violet-900 ring-2 ring-violet-500/20 font-bold shadow-2xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-2xs'
-                    }`}
-                  >
-                    <span
-                      className="w-3 h-3 rounded-full border border-slate-300 shrink-0 shadow-2xs"
-                      style={{ backgroundColor: preset.hex }}
-                    />
-                    <span>{preset.name}</span>
-                  </button>
-                );
-              })}
             </div>
 
             {/* Canales CMYK Compactos (Sin Desbordar Pantalla) */}
