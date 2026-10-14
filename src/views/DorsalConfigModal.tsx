@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { POPULAR_SPORTS_FONTS } from '@/core/fonts/googleFonts';
 import { CMYK, hexToCmyk, cmykToHex } from '@/core/color/cmykColor';
+import { Modal } from '@/components/ui/Modal';
 
 interface DorsalConfigModalProps {
   isOpen: boolean;
@@ -102,34 +103,26 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col">
-        {/* Modal Header */}
-        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-violet-100 text-violet-700 rounded-lg">
-              <Type className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 leading-tight">
-                Configuración de Dorsal y Tipografía
-              </h3>
-              <p className="text-[11px] text-slate-500">
-                Ajusta la fuente y el color vectorial para nombres y números de la espalda
-              </p>
-            </div>
-          </div>
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        maxWidth="xl"
+        title="Configuración de Dorsal y Tipografía"
+        subtitle="Ajusta la fuente y el color vectorial para nombres y números de la espalda"
+        icon={<Type className="w-4 h-4" />}
+        footer={
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="px-4 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95"
           >
-            <X className="w-4 h-4" />
+            <Check className="w-3.5 h-3.5 text-white" />
+            <span>Listo, Aplicar Estilo</span>
           </button>
-        </div>
-
-        {/* Modal Body */}
-        <div className="p-5 space-y-4">
+        }
+      >
+        <div className="space-y-4">
           {/* Fila 1: Selector de Tipografía Dinámico y Conciso */}
           <div className="space-y-1.5 relative" ref={fontSelectRef}>
             <div className="flex items-center justify-between">
@@ -572,63 +565,40 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Modal Footer */}
-        <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-end gap-2 bg-slate-50/80 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95"
-          >
-            <Check className="w-3.5 h-3.5 text-white" />
-            <span>Listo, Aplicar Estilo</span>
-          </button>
-        </div>
-      </div>
+      </Modal>
 
       {/* Sub-modal de Instrucciones para Google Fonts */}
-      {showHelpModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-5 space-y-3.5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                <Info className="w-4 h-4 text-violet-600" />
-                Cómo obtener fuentes deportivas
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowHelpModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-md cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <ol className="text-xs text-slate-600 space-y-2 list-decimal pl-4 leading-relaxed">
-              <li>
-                Entra a <strong className="text-slate-800">Google Fonts</strong> (fonts.google.com).
-              </li>
-              <li>
-                Busca tipografías como <span className="font-mono font-bold text-violet-700">Bebas Neue</span>, <span className="font-mono font-bold text-violet-700">Oswald</span> o <span className="font-mono font-bold text-violet-700">Teko</span>.
-              </li>
-              <li>
-                Descarga el archivo ZIP y descomprímelo para obtener el archivo <span className="font-mono font-bold">.ttf</span> u <span className="font-mono font-bold">.otf</span>.
-              </li>
-              <li>
-                Pulsa <strong className="text-violet-600">"Subir Fuente"</strong> y selecciona ese archivo.
-              </li>
-            </ol>
-
-            <button
-              type="button"
-              onClick={() => setShowHelpModal(false)}
-              className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer mt-1 shadow-xs"
-            >
-              Entendido
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      <Modal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        maxWidth="md"
+        title="Cómo obtener fuentes deportivas"
+        icon={<Info className="w-4 h-4 text-violet-600" />}
+        footer={
+          <button
+            type="button"
+            onClick={() => setShowHelpModal(false)}
+            className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+          >
+            Entendido
+          </button>
+        }
+      >
+        <ol className="text-xs text-slate-600 space-y-2.5 list-decimal pl-4 leading-relaxed">
+          <li>
+            Entra a <strong className="text-slate-800">Google Fonts</strong> (fonts.google.com).
+          </li>
+          <li>
+            Busca tipografías como <span className="font-mono font-bold text-violet-700">Bebas Neue</span>, <span className="font-mono font-bold text-violet-700">Oswald</span> o <span className="font-mono font-bold text-violet-700">Teko</span>.
+          </li>
+          <li>
+            Descarga el archivo ZIP y descomprímelo para obtener el archivo <span className="font-mono font-bold">.ttf</span> u <span className="font-mono font-bold">.otf</span>.
+          </li>
+          <li>
+            Pulsa <strong className="text-violet-600">"Subir Fuente"</strong> y selecciona ese archivo.
+          </li>
+        </ol>
+      </Modal>
+    </>
   );
 };

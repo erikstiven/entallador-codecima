@@ -107,13 +107,9 @@ export const Sidebar: React.FC = () => {
               </div>
               {isVisuallyExpanded && (
                 <div className="truncate animate-in fade-in duration-150">
-                  <h1 className="text-sm font-extrabold tracking-tight text-slate-900 flex items-center gap-1">
-                    <span>Cima</span>
-                    <span className="text-violet-600">Tex</span>
+                  <h1 className="text-base font-black tracking-tight text-slate-900 leading-none">
+                    <span>Cima</span><span className="text-violet-600">Tex</span>
                   </h1>
-                  <div className="text-[10px] text-slate-400 font-medium truncate">
-                    Entallador Textil
-                  </div>
                 </div>
               )}
             </div>

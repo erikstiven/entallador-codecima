@@ -8,12 +8,12 @@ import Swal, { SweetAlertOptions, SweetAlertIcon } from 'sweetalert2';
  */
 const CustomSwal = Swal.mixin({
   customClass: {
-    popup: 'swal2-modern-popup !rounded-xl !border !border-slate-200 !shadow-2xl !p-6 !font-sans !bg-white !max-w-md',
+    popup: 'swal2-modern-popup !rounded-2xl !border !border-slate-200 !shadow-2xl !p-6 !font-sans !bg-white !max-w-md',
     title: 'swal2-modern-title !text-base !font-bold !text-slate-900 !tracking-tight !m-0 !mt-2',
-    htmlContainer: 'swal2-modern-text !text-xs !text-slate-600 !leading-relaxed !m-0 !mt-1.5',
-    confirmButton: 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-white !bg-violet-600 hover:!bg-violet-700 shadow-xs cursor-pointer transition-colors disabled:opacity-50',
-    cancelButton: 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-slate-700 !bg-white hover:!bg-slate-50 !border !border-slate-200 shadow-xs cursor-pointer transition-colors',
-    actions: '!flex !items-center !justify-end !gap-2.5 !w-full !mt-5 !pt-4 !border-t !border-slate-100 !m-0',
+    htmlContainer: 'swal2-modern-text !text-xs !text-slate-600 !leading-relaxed !m-0 !mt-2',
+    confirmButton: 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-bold !text-white !bg-violet-600 hover:!bg-violet-700 shadow-xs cursor-pointer transition-all active:scale-95 disabled:opacity-50',
+    cancelButton: 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-slate-700 !bg-white hover:!bg-slate-50 !border !border-slate-200 shadow-xs cursor-pointer transition-all active:scale-95',
+    actions: '!flex !items-center !justify-end !gap-3 !w-full !mt-6 !pt-4 !border-t !border-slate-100 !m-0',
   },
   buttonsStyling: false,
 });
@@ -116,14 +116,14 @@ export const showAlert = {
       cancelButtonText,
       reverseButtons: true,
       customClass: {
-        popup: 'swal2-modern-popup !rounded-xl !border !border-slate-200 !shadow-2xl !p-6 !font-sans !bg-white !max-w-md',
+        popup: 'swal2-modern-popup !rounded-2xl !border !border-slate-200 !shadow-2xl !p-6 !font-sans !bg-white !max-w-md',
         title: 'swal2-modern-title !text-base !font-bold !text-slate-900 !tracking-tight !m-0 !mt-2',
-        htmlContainer: 'swal2-modern-text !text-xs !text-slate-600 !leading-relaxed !m-0 !mt-1.5',
+        htmlContainer: 'swal2-modern-text !text-xs !text-slate-600 !leading-relaxed !m-0 !mt-2',
         confirmButton: isDangerous
-          ? 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-white !bg-red-600 hover:!bg-red-700 shadow-xs cursor-pointer transition-colors'
-          : 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-white !bg-violet-600 hover:!bg-violet-700 shadow-xs cursor-pointer transition-colors',
-        cancelButton: 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-slate-700 !bg-white hover:!bg-slate-50 !border !border-slate-200 shadow-xs cursor-pointer transition-colors',
-        actions: '!flex !items-center !justify-end !gap-2.5 !w-full !mt-5 !pt-4 !border-t !border-slate-100 !m-0',
+          ? 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-bold !text-white !bg-red-600 hover:!bg-red-700 shadow-xs cursor-pointer transition-all active:scale-95'
+          : 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-bold !text-white !bg-violet-600 hover:!bg-violet-700 shadow-xs cursor-pointer transition-all active:scale-95',
+        cancelButton: 'inline-flex items-center justify-center px-4 py-2 !rounded-lg text-xs font-semibold !text-slate-700 !bg-white hover:!bg-slate-50 !border !border-slate-200 shadow-xs cursor-pointer transition-all active:scale-95',
+        actions: '!flex !items-center !justify-end !gap-3 !w-full !mt-6 !pt-4 !border-t !border-slate-100 !m-0',
       },
     });
     return result.isConfirmed;

@@ -19,6 +19,7 @@ import { showAlert } from '@/core/ui/alerts';
 import { checkInkscapeAvailability, isElectronEpsAvailable } from './epsConversionClient';
 import { useSystemSettingsStore } from '@/modules/settings/systemSettingsStore';
 import { useUnits } from '@/core/units/useUnits';
+import { Modal } from '@/components/ui/Modal';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -213,43 +214,75 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white border border-slate-200 rounded-xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-violet-100 border border-violet-200 text-violet-700">
-              <Printer className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                Exportar Producción a Escala Real
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-violet-100 text-violet-800 border border-violet-200 font-mono">
-                  {formatDisplay} 1:1
-                </span>
-              </h2>
-              <p className="text-[11px] text-slate-500">
-                Archivo vectorial 1:1 listo para impresión en plotter / RIP / Illustrator
-              </p>
-            </div>
-          </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      maxWidth="lg"
+      title={
+        <span className="flex items-center gap-2">
+          Exportar Producción a Escala Real
+          <span className="text-[10px] px-2 py-0.5 rounded-md bg-violet-100 text-violet-800 border border-violet-200 font-mono">
+            {formatDisplay} 1:1
+          </span>
+        </span>
+      }
+      subtitle="Archivo vectorial 1:1 listo para impresión en plotter / RIP / Illustrator"
+      icon={<Printer className="w-5 h-5 text-violet-700" />}
+      closeOnBackdropClick={!isExporting}
+      closeOnEscape={!isExporting}
+      showCloseButton={!isExporting}
+      footer={
+        <div className="flex items-center justify-between gap-3 w-full">
           <button
             type="button"
             onClick={handleClose}
             disabled={isExporting}
-            title={isExporting ? 'Espera a que termine la exportación' : 'Cerrar ventana'}
-            className={`p-1.5 rounded-lg transition-colors ${
+            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors ${
               isExporting
                 ? 'text-slate-300 cursor-not-allowed opacity-50'
-                : 'text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200 cursor-pointer'
             }`}
           >
-            <X className="w-5 h-5" />
+            {exportSuccessDone ? 'Cerrar Ventana' : 'Cancelar'}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={isExporting}
+            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold shadow-xs transition-all ${
+              exportSuccessDone && !isExporting
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-emerald-200'
+                : isExporting
+                ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
+                : 'btn-brand-primary shadow-xs cursor-pointer active:scale-95'
+            }`}
+          >
+            {exportSuccessDone && !isExporting ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
+                ¡Archivo 1:1 Descargado con Éxito!
+              </>
+            ) : isExporting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-white shrink-0" />
+                {selectedFormat === 'EPS' && !exportProgressPercent
+                  ? 'Procesando EPS con Inkscape...'
+                  : `Generando archivo 1:1 (${exportProgressPercent}%)...`}
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 shrink-0" />
+                {targetSheetCount > 1
+                  ? `Descargar ${sheets.length} Pliegos en ${selectedFormat} 1:1`
+                  : `Descargar ${formatDisplay} 1:1 para Impresión`}
+              </>
+            )}
           </button>
         </div>
-
-        {/* Body */}
-        <div className="p-6 space-y-4">
+      }
+    >
+      <div className="space-y-4">
           {/* File Name */}
           <div>
             <label className="text-xs font-semibold text-slate-700 block mb-1.5">
@@ -452,58 +485,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
           )}
         </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={isExporting}
-            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors ${
-              isExporting
-                ? 'text-slate-300 cursor-not-allowed opacity-50'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200 cursor-pointer'
-            }`}
-          >
-            {exportSuccessDone ? 'Cerrar Ventana' : 'Cancelar'}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={isExporting}
-            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold shadow-xs transition-all ${
-              exportSuccessDone && !isExporting
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-emerald-200'
-                : isExporting
-                ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
-                : 'btn-brand-primary shadow-xs cursor-pointer active:scale-95'
-            }`}
-          >
-            {exportSuccessDone && !isExporting ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
-                ¡Archivo 1:1 Descargado con Éxito!
-              </>
-            ) : isExporting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-white shrink-0" />
-                {selectedFormat === 'EPS' && !exportProgressPercent
-                  ? 'Procesando EPS con Inkscape...'
-                  : `Generando archivo 1:1 (${exportProgressPercent}%)...`}
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4 shrink-0" />
-                {targetSheetCount > 1
-                  ? `Descargar ${sheets.length} Pliegos en ${selectedFormat} 1:1`
-                  : `Descargar ${formatDisplay} 1:1 para Impresión`}
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 
