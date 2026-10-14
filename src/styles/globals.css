@@ -466,6 +466,14 @@ html.light .glass-panel {
    ============================================================ */
 
 .swal2-container {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1rem !important;
   background-color: rgba(0, 0, 0, 0.7) !important;
   backdrop-filter: blur(4px) !important;
   -webkit-backdrop-filter: blur(4px) !important;
@@ -475,14 +483,41 @@ html.light .glass-panel {
 .swal2-container.swal2-top-end,
 .swal2-container.swal2-top,
 .swal2-container.swal2-top-start {
+  position: fixed !important;
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
   background-color: transparent !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
 
 .swal2-modern-popup {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  margin: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
   animation: swal2-fade-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.swal2-modern-popup .swal2-title {
+  text-align: center !important;
+  width: 100% !important;
+}
+
+.swal2-modern-popup .swal2-html-container {
+  text-align: center !important;
+  width: 100% !important;
+}
+
+.swal2-modern-popup .swal2-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
+  width: 100% !important;
 }
 
 .swal2-modern-popup .swal2-icon {

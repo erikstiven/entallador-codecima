@@ -184,22 +184,18 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
                   }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full shrink-0 ${
-                      isCurrent
-                        ? hasArt
-                          ? 'bg-emerald-300 ring-2 ring-violet-400'
-                          : 'bg-violet-300'
-                        : hasArt
-                          ? 'bg-emerald-500'
+                    className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all ${
+                      hasArt
+                        ? isCurrent
+                          ? 'bg-emerald-400 ring-2 ring-white shadow-2xs'
+                          : 'bg-emerald-500 ring-2 ring-emerald-200 shadow-2xs'
+                        : isCurrent
+                          ? 'bg-violet-300'
                           : 'bg-slate-300'
                     }`}
+                    title={hasArt ? 'Arte SVG cargado' : 'Sin arte cargado'}
                   />
                   <span>{piece.title}</span>
-                  {hasArt && (
-                    <span className={`text-[10px] font-medium ${isCurrent ? 'text-violet-200' : 'text-emerald-600'}`}>
-                      (Cargado)
-                    </span>
-                  )}
                 </button>
               );
             })}

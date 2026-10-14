@@ -562,25 +562,6 @@ export const DesignsView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => multiInputRef.current?.click()}
-                  disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                  className="h-8 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs px-3 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs active:scale-95"
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                      <span>Cargando SVG...</span>
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="w-3.5 h-3.5 text-white" />
-                      <span>Subir bloques (SVG)</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => setIsDorsalModalOpen(true)}
                   disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
                   className="h-8 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs active:scale-95"
