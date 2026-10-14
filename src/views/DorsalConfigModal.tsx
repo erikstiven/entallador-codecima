@@ -20,6 +20,15 @@ interface DorsalConfigModalProps {
   onSampleNumberChange: (val: string) => void;
 }
 
+const PRESET_DORSAL_COLORS = [
+  { name: 'Blanco', hex: '#FFFFFF', cmyk: { c: 0, m: 0, y: 0, k: 0 } },
+  { name: 'Negro', hex: '#000000', cmyk: { c: 0, m: 0, y: 0, k: 100 } },
+  { name: 'Dorado', hex: '#F59E0B', cmyk: { c: 0, m: 35, y: 95, k: 0 } },
+  { name: 'Amarillo', hex: '#FACC15', cmyk: { c: 0, m: 0, y: 90, k: 0 } },
+  { name: 'Rojo', hex: '#DC2626', cmyk: { c: 0, m: 90, y: 90, k: 10 } },
+  { name: 'Azul', hex: '#2563EB', cmyk: { c: 90, m: 65, y: 0, k: 0 } },
+];
+
 export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
   isOpen,
   onClose,
@@ -37,17 +46,31 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
   onSampleNumberChange,
 }) => {
   const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
+  const [previewBg, setPreviewBg] = useState<'dark' | 'light'>('dark');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
+  const handleApplyPresetColor = (preset: typeof PRESET_DORSAL_COLORS[0]) => {
+    onFillHexChange(preset.hex);
+    onFillCmykChange('c', preset.cmyk.c);
+    onFillCmykChange('m', preset.cmyk.m);
+    onFillCmykChange('y', preset.cmyk.y);
+    onFillCmykChange('k', preset.cmyk.k);
+    if (preset.hex === '#000000') {
+      setPreviewBg('light');
+    } else {
+      setPreviewBg('dark');
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white border border-slate-200 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-violet-100 text-violet-700 rounded-lg">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-violet-100 text-violet-700 rounded-xl">
               <Type className="w-5 h-5" />
             </div>
             <div>
@@ -91,7 +114,7 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
               <select
                 value={activeFontFamily}
                 onChange={(e) => onSelectFont(e.target.value)}
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-medium focus:outline-hidden focus:border-violet-500 cursor-pointer text-xs"
+                className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-medium focus:outline-none focus:border-violet-500 cursor-pointer text-xs shadow-2xs"
               >
                 {localFonts.length > 0 && (
                   <optgroup label="Fuentes cargadas en esta sesión">
@@ -103,7 +126,7 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
                   </optgroup>
                 )}
 
-                <optgroup label="Fuentes incluidas en CimaTex">
+                <optgroup label="Fuentes deportivas incluidas">
                   {POPULAR_SPORTS_FONTS.map((f) => (
                     <option key={f.family} value={f.family}>
                       {f.family} ({f.category})
@@ -125,18 +148,18 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+                className="px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap active:scale-95"
                 title="Subir archivo .ttf, .otf o .font"
               >
-                <UploadCloud className="w-4 h-4" />
+                <UploadCloud className="w-4 h-4 text-white" />
                 <span>Subir Fuente</span>
               </button>
             </div>
           </div>
 
-          {/* Fila 2: Relleno Vectorial CMYK y HEX */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
+          {/* Fila 2: Relleno Vectorial CMYK y HEX con Presets Rápidos */}
+          <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-4 space-y-3.5">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
                 <span
                   className="w-4 h-4 rounded-full border border-slate-300 shadow-2xs"
@@ -144,60 +167,93 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
                 />
                 Color de Relleno Vectorial:
               </span>
-              <div className="flex items-center gap-1.5">
+
+              {/* Selector de color y código HEX */}
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-2.5 py-1 shadow-2xs">
                 <input
                   type="color"
                   value={fillHex}
                   onChange={(e) => onFillHexChange(e.target.value)}
-                  className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
+                  className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent p-0"
                 />
-                <span className="font-mono text-xs font-bold text-slate-700">{fillHex}</span>
+                <span className="font-mono text-xs font-bold text-slate-800">{fillHex}</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-2">
-              <div className="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-2xs">
-                <span className="text-[10px] font-mono text-cyan-600 block font-bold">C% (Cian)</span>
+            {/* Presets Rápidos de Color Deportivo */}
+            <div>
+              <span className="text-[11px] font-semibold text-slate-500 block mb-1.5">
+                Colores rápidos deportivos:
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {PRESET_DORSAL_COLORS.map((preset) => {
+                  const isSelected = fillHex.toUpperCase() === preset.hex.toUpperCase();
+                  return (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => handleApplyPresetColor(preset)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-violet-600 bg-violet-50 text-violet-900 ring-2 ring-violet-500/20 font-bold'
+                          : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-2xs'
+                      }`}
+                    >
+                      <span
+                        className="w-3 h-3 rounded-full border border-slate-300 shrink-0 shadow-2xs"
+                        style={{ backgroundColor: preset.hex }}
+                      />
+                      <span>{preset.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Canales CMYK para Impresión Textil */}
+            <div className="grid grid-cols-4 gap-2 pt-1">
+              <div className="bg-white p-2 rounded-lg border border-cyan-200 text-center shadow-2xs">
+                <span className="text-[10px] font-mono text-cyan-600 block font-bold mb-0.5">C% (Cian)</span>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={fillCmyk.c}
                   onChange={(e) => onFillCmykChange('c', Number(e.target.value))}
-                  className="w-full bg-transparent text-center font-mono font-bold text-slate-900 text-xs focus:outline-hidden"
+                  className="w-full bg-transparent text-center font-mono font-bold text-slate-900 text-xs focus:outline-none"
                 />
               </div>
-              <div className="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-2xs">
-                <span className="text-[10px] font-mono text-pink-600 block font-bold">M% (Magenta)</span>
+              <div className="bg-white p-2 rounded-lg border border-pink-200 text-center shadow-2xs">
+                <span className="text-[10px] font-mono text-pink-600 block font-bold mb-0.5">M% (Magenta)</span>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={fillCmyk.m}
                   onChange={(e) => onFillCmykChange('m', Number(e.target.value))}
-                  className="w-full bg-transparent text-center font-mono font-bold text-slate-900 text-xs focus:outline-hidden"
+                  className="w-full bg-transparent text-center font-mono font-bold text-slate-900 text-xs focus:outline-none"
                 />
               </div>
-              <div className="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-2xs">
-                <span className="text-[10px] font-mono text-amber-600 block font-bold">Y% (Amarillo)</span>
+              <div className="bg-white p-2 rounded-lg border border-amber-200 text-center shadow-2xs">
+                <span className="text-[10px] font-mono text-amber-600 block font-bold mb-0.5">Y% (Amarillo)</span>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={fillCmyk.y}
                   onChange={(e) => onFillCmykChange('y', Number(e.target.value))}
-                  className="w-full bg-transparent text-center font-mono font-bold text-slate-900 text-xs focus:outline-hidden"
+                  className="w-full bg-transparent text-center font-mono font-bold text-slate-900 text-xs focus:outline-none"
                 />
               </div>
               <div className="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-2xs">
-                <span className="text-[10px] font-mono text-slate-700 block font-bold">K% (Negro)</span>
+                <span className="text-[10px] font-mono text-slate-700 block font-bold mb-0.5">K% (Negro)</span>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={fillCmyk.k}
                   onChange={(e) => onFillCmykChange('k', Number(e.target.value))}
-                  className="w-full bg-transparent text-center font-mono font-bold text-slate-900 text-xs focus:outline-hidden"
+                  className="w-full bg-transparent text-center font-mono font-bold text-slate-900 text-xs focus:outline-none"
                 />
               </div>
             </div>
@@ -206,45 +262,80 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
             </p>
           </div>
 
-          {/* Fila 3: Previsualización de Muestra */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-              <span>Muestra en vivo:</span>
+          {/* Fila 3: Previsualización de Muestra en Vivo */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-800 flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={sampleName}
-                  onChange={(e) => onSampleNameChange(e.target.value.toUpperCase())}
-                  className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-900 font-mono text-xs w-28 uppercase text-center focus:outline-hidden"
-                  placeholder="NOMBRE"
-                />
-                <input
-                  type="text"
-                  value={sampleNumber}
-                  onChange={(e) => onSampleNumberChange(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-violet-700 font-mono text-xs w-12 text-center font-bold focus:outline-hidden"
-                  placeholder="N°"
-                />
+                <span>Muestra en vivo:</span>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={sampleName}
+                    onChange={(e) => onSampleNameChange(e.target.value.toUpperCase())}
+                    className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-900 font-mono text-xs w-28 uppercase text-center focus:outline-none shadow-2xs"
+                    placeholder="NOMBRE"
+                  />
+                  <input
+                    type="text"
+                    value={sampleNumber}
+                    onChange={(e) => onSampleNumberChange(e.target.value)}
+                    className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-violet-700 font-mono text-xs w-12 text-center font-bold focus:outline-none shadow-2xs"
+                    placeholder="N°"
+                  />
+                </div>
+              </div>
+
+              {/* Selector de fondo de camiseta para la muestra */}
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setPreviewBg('dark')}
+                  className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer ${
+                    previewBg === 'dark'
+                      ? 'bg-slate-800 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Fondo Oscuro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewBg('light')}
+                  className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer ${
+                    previewBg === 'light'
+                      ? 'bg-white text-slate-900 border border-slate-200 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Fondo Claro
+                </button>
               </div>
             </div>
 
-            <div className="w-full bg-slate-900 rounded-xl p-6 flex items-center justify-center min-h-[90px] shadow-inner">
+            {/* Lienzo de previsualización con contraste garantizado */}
+            <div
+              className="w-full rounded-xl p-6 flex items-center justify-center min-h-[110px] shadow-inner transition-colors border"
+              style={{
+                backgroundColor: previewBg === 'dark' ? '#0f172a' : '#f8fafc',
+                borderColor: previewBg === 'dark' ? '#1e293b' : '#e2e8f0',
+              }}
+            >
               <div className="text-center flex items-center justify-center gap-4 flex-wrap select-none">
                 <span
-                  className="font-bold tracking-wider uppercase leading-none"
+                  className="font-bold tracking-wider uppercase leading-none drop-shadow-xs"
                   style={{
                     fontFamily: `'${activeFontFamily}', Impact, 'Arial Narrow', sans-serif`,
-                    fontSize: '26px',
+                    fontSize: '28px',
                     color: fillHex,
                   }}
                 >
                   {sampleName || 'NOMBRE'}
                 </span>
                 <span
-                  className="font-bold tracking-tight leading-none"
+                  className="font-bold tracking-tight leading-none drop-shadow-xs"
                   style={{
                     fontFamily: `'${activeFontFamily}', Impact, 'Arial Narrow', sans-serif`,
-                    fontSize: '44px',
+                    fontSize: '48px',
                     color: fillHex,
                   }}
                 >
@@ -270,7 +361,7 @@ export const DorsalConfigModal: React.FC<DorsalConfigModalProps> = ({
 
       {/* Sub-modal de Instrucciones para Google Fonts */}
       {showHelpModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-white border border-slate-200 rounded-xl w-full max-w-md p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
