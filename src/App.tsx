@@ -2,13 +2,16 @@ import React from 'react';
 import { LandingApp } from '@/landing/LandingApp';
 import { useAppRoute } from '@/landing/router/landingRouteStore';
 import { WorkshopApp } from '@/views/WorkshopApp';
+import { GlobalAlertHost } from '@/core/ui/GlobalAlertHost';
 
 export const App: React.FC = () => {
   const { mode } = useAppRoute();
 
-  if (mode === 'workshop') {
-    return <WorkshopApp />;
-  }
-
-  return <LandingApp />;
+  return (
+    <>
+      {mode === 'workshop' ? <WorkshopApp /> : <LandingApp />}
+      <GlobalAlertHost />
+    </>
+  );
 };
+
