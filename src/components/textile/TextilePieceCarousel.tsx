@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
   ZoomIn,
   ZoomOut,
-  RotateCcw
+  RotateCcw,
+  Hand,
+  UploadCloud
 } from 'lucide-react';
 import { SvgTextilePreview } from './SvgTextilePreview';
 export type PieceStatus = 'loaded' | 'pending' | 'needs_review';
@@ -60,7 +62,14 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(DEFAULT_PREVIEW_ZOOM);
+  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [panMode, setPanMode] = useState<boolean>(false);
+  const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [fitMode, setFitMode] = useState<'content' | 'document'>('content');
+
+  const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const uploadInputRef = useRef<HTMLInputElement>(null);
 
   const activePiece = pieces[activeIndex] || pieces[0];
 
@@ -71,17 +80,43 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
   const handlePrev = () => {
     setActiveIndex((prev) => (prev > 0 ? prev - 1 : pieces.length - 1));
     setZoomLevel(DEFAULT_PREVIEW_ZOOM);
-    setFitMode('content');
+    setPanOffset({ x: 0, y: 0 });
   };
 
   const handleNext = () => {
     setActiveIndex((prev) => (prev < pieces.length - 1 ? prev + 1 : 0));
     setZoomLevel(DEFAULT_PREVIEW_ZOOM);
-    setFitMode('content');
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  const resetView = () => {
+    setZoomLevel(DEFAULT_PREVIEW_ZOOM);
+    setPanOffset({ x: 0, y: 0 });
   };
 
   const changeZoom = (delta: number) => {
     setZoomLevel((current) => Math.min(4, Math.max(0.5, current + delta)));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0 || !activePiece.svgContent) return;
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX - panOffset.x,
+      y: e.clientY - panOffset.y,
+    };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setPanOffset({
+      x: e.clientX - dragStartRef.current.x,
+      y: e.clientY - dragStartRef.current.y,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
   };
 
   const handleCarouselKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -137,6 +172,7 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
                   onClick={() => {
                     setActiveIndex(index);
                     setZoomLevel(DEFAULT_PREVIEW_ZOOM);
+                    setPanOffset({ x: 0, y: 0 });
                     setFitMode('content');
                   }}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 flex-shrink-0 transition-all cursor-pointer ${
@@ -170,48 +206,66 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
           </div>
 
           {/* Escenario de Enfoque con Controles de Navegación */}
-          <div className="relative w-full h-[26rem] sm:h-[30rem] bg-slate-50 border border-slate-200/90 rounded-xl overflow-hidden flex items-center justify-center p-6 sm:p-8 group">
-            {/* Control de vista SVG */}
-            <div className="absolute top-3 left-3 z-20 flex items-center bg-white/95 border border-slate-200 rounded-lg p-1 shadow-xs backdrop-blur-xs">
-              <button
-                type="button"
-                onClick={() => setFitMode(fitMode === 'document' ? 'content' : 'document')}
-                className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
-                title="Alternar encuadre de la pieza"
-              >
-                Vista SVG
-              </button>
-            </div>
-            {/* Controles flotantes de Zoom */}
-            <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-white/95 border border-slate-200 rounded-lg p-1 shadow-xs backdrop-blur-xs">
-              <button
-                type="button"
-                onClick={() => changeZoom(0.25)}
-                className="p-1 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-md cursor-pointer"
-                title="Acercar"
-              >
-                <ZoomIn className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => changeZoom(-0.25)}
-                className="p-1 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-md cursor-pointer"
-                title="Alejar"
-              >
-                <ZoomOut className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setZoomLevel(DEFAULT_PREVIEW_ZOOM)}
-                className="p-1 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-md cursor-pointer"
-                title="Restablecer tamaño 100%"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-              <span className="text-[10px] font-mono text-slate-600 px-1 font-semibold">
-                {Math.round(zoomLevel * 100)}%
-              </span>
-            </div>
+          <div
+            className={`relative w-full h-[26rem] sm:h-[30rem] bg-slate-50 border border-slate-200/90 rounded-xl overflow-hidden flex items-center justify-center p-6 sm:p-8 select-none group ${
+              activePiece.svgContent
+                ? isDragging
+                  ? 'cursor-grabbing'
+                  : panMode || zoomLevel > 1
+                    ? 'cursor-grab'
+                    : 'cursor-default'
+                : ''
+            }`}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            {/* Controles flotantes de Navegación y Zoom (Solo cuando hay arte cargado) */}
+            {activePiece.svgContent && (
+              <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-white/95 border border-slate-200 rounded-lg p-1 shadow-xs backdrop-blur-xs">
+                {/* Herramienta Manito (Navegación / Arrastre) */}
+                <button
+                  type="button"
+                  onClick={() => setPanMode((prev) => !prev)}
+                  className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                    panMode
+                      ? 'bg-violet-100 text-violet-700 font-bold ring-1 ring-violet-300'
+                      : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+                  }`}
+                  title={panMode ? 'Modo desplazamiento activo (arrastra para mover)' : 'Activar Manito para navegar/arrastrar'}
+                >
+                  <Hand className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeZoom(0.25)}
+                  className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-md cursor-pointer"
+                  title="Acercar (+)"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeZoom(-0.25)}
+                  className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-md cursor-pointer"
+                  title="Alejar (-)"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={resetView}
+                  className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-md cursor-pointer"
+                  title="Restablecer tamaño original y centrar"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-[10px] font-mono text-slate-600 px-1 font-semibold">
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+              </div>
+            )}
 
             {/* Flecha Anterior */}
             <button
@@ -235,9 +289,15 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
               <ChevronRight className="w-5 h-5" />
             </button>
 
-            {/* Contenido Visual con Zoom */}
-            <div className="w-full h-full flex items-center justify-center transition-transform duration-150" style={{ transform: `scale(${zoomLevel})` }}>
-              {activePiece.svgContent ? (
+            {/* Contenido Visual con Zoom y Desplazamiento */}
+            {activePiece.svgContent ? (
+              <div
+                className="w-full h-full flex items-center justify-center pointer-events-auto"
+                style={{
+                  transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`,
+                  transition: isDragging ? 'none' : 'transform 100ms ease-out',
+                }}
+              >
                 <div className="w-full h-full max-w-full max-h-full flex items-center justify-center p-2">
                   <SvgTextilePreview
                     svgContent={activePiece.svgContent}
@@ -245,15 +305,61 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
                     fitMode={fitMode}
                   />
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center text-slate-400 space-y-2 select-none">
-                  {activePiece.silhouette}
-                  <p className="text-xs font-semibold text-slate-500">
-                    No hay arte cargado para {activePiece.title}
+              </div>
+            ) : (
+              /* Recuadro de Carga Dinámica: Da clic en todo el ancho para subir o arrastrar SVG */
+              <div
+                onClick={() => uploadInputRef.current?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(true);
+                }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(false);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file && activePiece.onUploadFile) {
+                    activePiece.onUploadFile(file);
+                  }
+                }}
+                className={`w-full h-full flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl transition-all cursor-pointer select-none group/dropzone ${
+                  isDragOver
+                    ? 'border-violet-500 bg-violet-50/70 scale-[1.01]'
+                    : 'border-slate-300 hover:border-violet-400 bg-white/70 hover:bg-violet-50/20'
+                }`}
+                title={`Haz clic en el recuadro para subir arte de ${activePiece.title}`}
+              >
+                <input
+                  ref={uploadInputRef}
+                  type="file"
+                  accept=".svg"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file && activePiece.onUploadFile) {
+                      activePiece.onUploadFile(file);
+                      e.target.value = '';
+                    }
+                  }}
+                  className="hidden"
+                />
+                <div className="w-16 h-16 rounded-2xl bg-white group-hover/dropzone:bg-violet-100 border border-slate-200 group-hover/dropzone:border-violet-300 flex items-center justify-center mb-3 transition-all shadow-2xs group-hover/dropzone:scale-105">
+                  <UploadCloud className="w-8 h-8 text-slate-400 group-hover/dropzone:text-violet-600 transition-colors" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-bold text-slate-800 group-hover/dropzone:text-violet-700 transition-colors">
+                    Haz clic aquí o arrastra un archivo SVG
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Cargar arte vectorial para <span className="font-semibold text-slate-700">{activePiece.title}</span>
                   </p>
                 </div>
-              )}
-            </div>
+                <span className="mt-4 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center gap-2 transition-all group-hover/dropzone:shadow-sm">
+                  <UploadCloud className="w-3.5 h-3.5 text-white" />
+                  <span>Examinar archivo SVG</span>
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Pie de Carrusel con Acciones Rápidas */}
