@@ -14,6 +14,7 @@ import {
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { useSystemSettingsStore } from '@/modules/settings/systemSettingsStore';
 import { useAuthStore } from '@/landing/auth/authStore';
+import { getRoleTheme } from '@/core/theme/userRoleTokens';
 
 interface NotificationItem {
   id: string;
@@ -132,15 +133,16 @@ export const Header: React.FC = () => {
   const info = getTitle();
 
   // Nombre y Rol institucional estilo 1:1 con SIFEF
-  const displayName = authUser?.name || 'Auditor Transversal';
+  const displayName = authUser?.name || 'Usuario CimaTex';
   const displayRole = authUser?.role || 'ADMINISTRADOR';
+  const roleTheme = getRoleTheme(displayRole);
   const displayInitials = displayName
     .split(' ')
     .filter(Boolean)
     .map((word) => word[0])
     .join('')
     .substring(0, 2)
-    .toUpperCase() || 'AT';
+    .toUpperCase() || 'UC';
 
   return (
     <header className="h-14 bg-white border-b border-slate-200/90 px-4 sm:px-6 flex items-center justify-between select-none z-30 transition-colors">
@@ -279,17 +281,17 @@ export const Header: React.FC = () => {
             className="flex items-center gap-3 py-1 px-1.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group"
             title="Opciones de cuenta"
           >
-            {/* Avatar Circular Oscuro (#0f172a) con Iniciales en Blanco */}
-            <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-black shadow-xs ring-2 ring-slate-100 group-hover:ring-slate-200 transition-all">
+            {/* Avatar Circular con estilos de rol centralizados */}
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black shadow-xs ring-2 ring-white transition-all ${roleTheme.avatarClass}`}>
               {displayInitials}
             </div>
 
             {/* Nombre y Rol apilados */}
             <div className="text-left hidden md:block">
-              <div className="text-slate-900 font-extrabold text-xs tracking-tight leading-tight group-hover:text-primary transition-colors">
+              <div className="text-slate-900 font-extrabold text-xs tracking-tight leading-tight group-hover:text-violet-600 transition-colors">
                 {displayName}
               </div>
-              <div className="text-[9px] text-slate-400 font-mono tracking-wider font-bold uppercase leading-none mt-0.5">
+              <div className={`text-[9px] font-mono tracking-wider font-bold uppercase leading-none mt-0.5 ${roleTheme.textClass}`}>
                 {displayRole}
               </div>
             </div>
@@ -308,9 +310,9 @@ export const Header: React.FC = () => {
               <div className="px-4 py-2.5 border-b border-slate-100">
                 <p className="font-bold text-slate-900 text-xs">{displayName}</p>
                 <p className="text-[10px] text-slate-400 font-mono truncate">
-                  {authUser?.email || `${settings.companyName.toLowerCase() || 'admin'}@taller.local`}
+                  {authUser?.email || `${settings.companyName.toLowerCase() || 'usuario'}@codecima.com`}
                 </p>
-                <span className="inline-block mt-1.5 px-2 py-0.5 bg-slate-100 text-slate-700 text-[9px] font-bold font-mono rounded uppercase">
+                <span className={`inline-block mt-1.5 px-2 py-0.5 text-[9px] font-bold font-mono rounded-md uppercase tracking-wider ${roleTheme.badgeClass}`}>
                   {displayRole}
                 </span>
               </div>

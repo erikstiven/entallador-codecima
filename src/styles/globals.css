@@ -32,6 +32,39 @@
   --hmb-raised: #f1f5f9;
   --hmb-line: #e2e8f0;
   --hmb-text: #0f172a;
+
+  /* ============================================================
+     Tokens de Colores para Tipos de Usuario / Roles
+     ============================================================ */
+  /* Administrador: Azul Institucional */
+  --role-admin-bg: #eff6ff;
+  --role-admin-text: #1d4ed8;
+  --role-admin-border: #bfdbfe;
+  --role-admin-ring: #93c5fd;
+
+  /* Operador / Taller de Corte: Esmeralda Producción */
+  --role-operator-bg: #ecfdf5;
+  --role-operator-text: #047857;
+  --role-operator-border: #a7f3d0;
+  --role-operator-ring: #6ee7b7;
+
+  /* Diseñador / Creativo Textil: Violeta / Púrpura de Marca */
+  --role-designer-bg: #f5f3ff;
+  --role-designer-text: #6d28d9;
+  --role-designer-border: #ddd6fe;
+  --role-designer-ring: #c4b5fd;
+
+  /* Auditor / Control de Calidad: Ámbar / Calidad */
+  --role-auditor-bg: #fffbeb;
+  --role-auditor-text: #b45309;
+  --role-auditor-border: #fde68a;
+  --role-auditor-ring: #fcd34d;
+
+  /* Usuario / Cliente / Default: Slate Neutro */
+  --role-default-bg: #f1f5f9;
+  --role-default-text: #334155;
+  --role-default-border: #cbd5e1;
+  --role-default-ring: #94a3b8;
 }
 
 html.light {
@@ -193,6 +226,80 @@ html.light [class*="bg-brand-primary"] * {
 }
 .bg-brand-light {
   background-color: var(--brand-primary-light) !important;
+}
+
+/* ============================================================
+   Clases Semánticas para Tipos de Usuario / Roles
+   ============================================================ */
+/* Badges de rol (pill indicator) */
+.role-badge-admin {
+  background-color: var(--role-admin-bg) !important;
+  color: var(--role-admin-text) !important;
+  border: 1px solid var(--role-admin-border) !important;
+}
+.role-badge-operator {
+  background-color: var(--role-operator-bg) !important;
+  color: var(--role-operator-text) !important;
+  border: 1px solid var(--role-operator-border) !important;
+}
+.role-badge-designer {
+  background-color: var(--role-designer-bg) !important;
+  color: var(--role-designer-text) !important;
+  border: 1px solid var(--role-designer-border) !important;
+}
+.role-badge-auditor {
+  background-color: var(--role-auditor-bg) !important;
+  color: var(--role-auditor-text) !important;
+  border: 1px solid var(--role-auditor-border) !important;
+}
+.role-badge-default {
+  background-color: var(--role-default-bg) !important;
+  color: var(--role-default-text) !important;
+  border: 1px solid var(--role-default-border) !important;
+}
+
+/* Textos de subtítulo de rol */
+.role-text-admin {
+  color: var(--role-admin-text) !important;
+}
+.role-text-operator {
+  color: var(--role-operator-text) !important;
+}
+.role-text-designer {
+  color: var(--role-designer-text) !important;
+}
+.role-text-auditor {
+  color: var(--role-auditor-text) !important;
+}
+.role-text-default {
+  color: var(--role-default-text) !important;
+}
+
+/* Avatares circulares según rol */
+.role-avatar-admin {
+  background-color: var(--role-admin-bg) !important;
+  color: var(--role-admin-text) !important;
+  border: 1px solid var(--role-admin-border) !important;
+}
+.role-avatar-operator {
+  background-color: var(--role-operator-bg) !important;
+  color: var(--role-operator-text) !important;
+  border: 1px solid var(--role-operator-border) !important;
+}
+.role-avatar-designer {
+  background-color: var(--role-designer-bg) !important;
+  color: var(--role-designer-text) !important;
+  border: 1px solid var(--role-designer-border) !important;
+}
+.role-avatar-auditor {
+  background-color: var(--role-auditor-bg) !important;
+  color: var(--role-auditor-text) !important;
+  border: 1px solid var(--role-auditor-border) !important;
+}
+.role-avatar-default {
+  background-color: var(--role-default-bg) !important;
+  color: var(--role-default-text) !important;
+  border: 1px solid var(--role-default-border) !important;
 }
 
 html.light .border-slate-800 { border-color: #cbd5e1 !important; }

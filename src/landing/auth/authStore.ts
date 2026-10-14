@@ -172,6 +172,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       plan: 'Gratis',
       createdAt: new Date().toISOString(),
       provider: 'google',
+      role: profile?.role || 'ADMINISTRADOR',
     };
 
     try {
