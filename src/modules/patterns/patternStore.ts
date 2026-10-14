@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { PatternSet, PatternPiece, PieceType } from './types';
 import { parsePatternSvg, getDefaultRotationsForPieceType } from './patternParser';
 import { dbService } from '@/core/database/db';
+import { useOrderStore } from '@/modules/orders/orderStore';
 import { 
   savePatternSetToDb, 
   getPatternSetsFromDb, 
@@ -128,6 +129,10 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
           activePatternSet: finalActive,
           selectedPieceForAssignment: nextSelectedPiece,
         });
+        if (finalActive && finalActive.sizes && finalActive.sizes.length > 0) {
+          const patternSizes = finalActive.sizes.map((s) => s.sizeName);
+          useOrderStore.getState().setAvailableSizes(patternSizes);
+        }
       } else {
         persistActivePatternId(null);
         set({ patternSets: [], activePatternSet: null, selectedPieceForAssignment: null });
@@ -150,6 +155,11 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
       activePatternSet: patternSet,
       selectedPieceForAssignment: patternSet.unassignedPieces.length > 0 ? patternSet.unassignedPieces[0] : null,
     });
+
+    if (patternSet.sizes && patternSet.sizes.length > 0) {
+      const patternSizes = patternSet.sizes.map((s) => s.sizeName);
+      useOrderStore.getState().setAvailableSizes(patternSizes);
+    }
 
     try {
       savePatternSetToDb(dbService, patternSet);
@@ -250,6 +260,10 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
       activePatternSet: patternSet,
       selectedPieceForAssignment: patternSet?.unassignedPieces[0] || null,
     });
+    if (patternSet && patternSet.sizes && patternSet.sizes.length > 0) {
+      const patternSizes = patternSet.sizes.map((s) => s.sizeName);
+      useOrderStore.getState().setAvailableSizes(patternSizes);
+    }
   },
 
   deletePatternSet: (id) => {
@@ -273,6 +287,10 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
       activePatternSet: newActive,
       selectedPieceForAssignment: newActive && newActive.unassignedPieces.length > 0 ? newActive.unassignedPieces[0] : null,
     });
+    if (newActive && newActive.sizes && newActive.sizes.length > 0) {
+      const patternSizes = newActive.sizes.map((s) => s.sizeName);
+      useOrderStore.getState().setAvailableSizes(patternSizes);
+    }
   },
 
   discardUnassignedPiece: (pieceId) => {

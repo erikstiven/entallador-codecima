@@ -60,7 +60,7 @@ export const Sidebar: React.FC = () => {
     >
       {/* Brand Header */}
       <div>
-        <div className="p-3 border-b border-slate-100 flex items-center justify-between min-h-[58px]">
+        <div className="h-14 px-3 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center space-x-2.5 overflow-hidden">
             <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 p-1 flex items-center justify-center overflow-hidden shadow-2xs flex-shrink-0">
               <img 
@@ -74,7 +74,7 @@ export const Sidebar: React.FC = () => {
                 <h1 className="text-sm font-extrabold tracking-tight text-slate-900 flex items-center gap-1">
                   <span>Cima</span>
                   <span className="text-violet-600">Tex</span>
-                  <span className="text-[9px] font-mono font-bold text-violet-700 bg-violet-50 px-1 py-0.2 rounded border border-violet-200">
+                  <span className="text-[9px] font-mono font-bold text-violet-700 bg-violet-50 px-1 py-0.5 rounded border border-violet-200">
                     v2.5
                   </span>
                 </h1>

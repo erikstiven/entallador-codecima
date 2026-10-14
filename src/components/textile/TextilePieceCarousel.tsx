@@ -7,13 +7,46 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { SvgTextilePreview } from './SvgTextilePreview';
-import { TextilePieceCardProps } from './TextilePieceCard';
+export type PieceStatus = 'loaded' | 'pending' | 'needs_review';
+
+export interface TextilePieceCardProps {
+  /** Título principal de la ranura */
+  title: string;
+  /** Subtítulo descriptivo */
+  subtitle?: string;
+  /** Icono representativo */
+  icon?: React.ReactNode;
+  /** Silueta vectorial guía si no hay arte cargado */
+  silhouette?: React.ReactNode;
+  /** Nombre sugerido de archivo (ej. "Frente.svg") */
+  fileName?: string;
+  /** Contenido SVG cargado */
+  svgContent?: string;
+  /** Estado de la pieza */
+  status?: PieceStatus;
+  /** Mensaje de alerta si requiere revisión */
+  statusMessage?: string;
+  /** Namespace único para evitar colisiones */
+  namespace: string;
+  /** Callback al seleccionar un archivo */
+  onUploadFile?: (file: File) => void;
+  /** Callback para quitar el arte */
+  onRemove?: () => void;
+  /** Callback para abrir en modal o vista maximizada */
+  onInspect?: () => void;
+  /** Proporción del contenedor (por defecto 3:4) */
+  aspectRatio?: '3/4' | '4/5' | 'square';
+  /** Clases CSS adicionales */
+  className?: string;
+}
+
+export type TextilePieceItem = TextilePieceCardProps & { id: string };
 
 const DEFAULT_PREVIEW_ZOOM = 1.0;
 
 export interface TextilePieceCarouselProps {
   /** Lista de piezas a mostrar */
-  pieces: (TextilePieceCardProps & { id: string })[];
+  pieces: TextilePieceItem[];
   /** Título de la sección */
   title?: string;
   /** Subtítulo o descripción */

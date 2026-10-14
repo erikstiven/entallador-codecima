@@ -1,13 +1,11 @@
 import React from 'react';
-import { Sun, Moon, Globe } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
-import { useThemeStore } from '@/modules/settings/themeStore';
 import { useSystemSettingsStore } from '@/modules/settings/systemSettingsStore';
 import { navigateTo } from '@/landing/router/landingRouteStore';
 
 export const Header: React.FC = () => {
   const { currentView, setCurrentView } = useNavigationStore();
-  const { theme, toggleTheme } = useThemeStore();
   const { settings } = useSystemSettingsStore();
 
   const getTitle = () => {
@@ -76,11 +74,11 @@ export const Header: React.FC = () => {
           className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs transition-all cursor-pointer group shadow-xs"
           title="Ver perfil de empresa y ajustes de usuario"
         >
-          <div className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center text-white text-[10px] font-bold shadow-xs">
+          <div className="w-6 h-6 rounded-full bg-brand-primary flex items-center justify-center text-white text-[10px] font-bold shadow-xs">
             {settings.companyName.substring(0, 2).toUpperCase() || 'CD'}
           </div>
           <div className="text-left hidden md:block">
-            <div className="text-slate-900 font-bold text-[11px] leading-tight group-hover:text-violet-600 transition-colors">
+            <div className="text-slate-900 font-bold text-[11px] leading-tight group-hover:text-brand-primary transition-colors">
               {settings.companyName || 'Codecima'}
             </div>
             <div className="text-[9px] text-slate-500 font-mono leading-none">

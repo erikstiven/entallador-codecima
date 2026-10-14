@@ -153,7 +153,7 @@ export const useOrderStore = create<OrderState>()(
       rowNumber: items.length + 1,
       playerName: item.playerName || '',
       playerNumber: item.playerNumber || '',
-      sizeName: item.sizeName || '28',
+      sizeName: item.sizeName || availableSizes[0] || 'S',
       garmentType: item.garmentType || 'COMPLETO',
       necklineType: item.necklineType || 'REDONDO',
       gender: item.gender,

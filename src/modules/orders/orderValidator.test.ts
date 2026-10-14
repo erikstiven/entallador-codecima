@@ -28,6 +28,9 @@ describe('Order Validator Unit Tests', () => {
     expect(normalizeSizeName('t32')).toBe('32');
     expect(normalizeSizeName('  m  ')).toBe('M');
     expect(normalizeSizeName('XL')).toBe('XL');
+    expect(normalizeSizeName('TALLA M')).toBe('M');
+    expect(normalizeSizeName('T-L')).toBe('L');
+    expect(normalizeSizeName('SZ-XL')).toBe('XL');
   });
 
   it('debe normalizar tipos de prenda a COMPLETO, CAMISETA o SHORT', () => {

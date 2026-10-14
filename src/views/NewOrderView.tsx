@@ -252,7 +252,7 @@ export const NewOrderView: React.FC = () => {
                   addItem({
                     playerName: 'JUGADOR 1',
                     playerNumber: '1',
-                    sizeName: availableSizes[0] || '28',
+                    sizeName: availableSizes[0] || 'S',
                     garmentType: 'COMPLETO',
                     necklineType: 'REDONDO',
                     quantity: 1,
@@ -401,7 +401,7 @@ export const NewOrderView: React.FC = () => {
                     </button>
                   )}
                   <button
-                    onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: availableSizes[0] || '28', garmentType: 'CAMISETA', necklineType: 'REDONDO', quantity: 1 })}
+                    onClick={() => addItem({ playerName: 'NUEVO', playerNumber: '00', sizeName: availableSizes[0] || 'S', garmentType: 'CAMISETA', necklineType: 'REDONDO', quantity: 1 })}
                     className="px-3 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -504,7 +504,8 @@ export const NewOrderView: React.FC = () => {
                 <thead className="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200 z-10 text-[11px] uppercase tracking-wider">
                   <tr>
                     <th className="py-3 px-3 w-12 text-center">#</th>
-                    <th className="py-3 px-3 w-28">Talla</th>
+                    <th className="py-3 px-3 w-32">Talla</th>
+                    <th className="py-3 px-3 w-20 text-center">Cant.</th>
                     <th className="py-3 px-3">Nombre Dorsal</th>
                     <th className="py-3 px-3 w-24">Número</th>
                     <th className="py-3 px-3 w-36">Tipo Prenda</th>
@@ -525,15 +526,37 @@ export const NewOrderView: React.FC = () => {
                       
                       {/* Editable Size */}
                       <td className="py-2 px-3">
-                        <input
-                          type="text"
+                        <select
                           value={item.sizeName}
                           onChange={(e) => updateItem(item.id, { sizeName: e.target.value })}
-                          className={`w-16 bg-white border rounded-lg px-2 py-1 text-center font-bold font-mono focus:outline-none focus:border-violet-500 ${
+                          className={`w-full bg-white border rounded-lg px-2 py-1 font-bold font-mono text-xs focus:outline-none focus:border-violet-500 cursor-pointer ${
                             item.errors.some((e) => e.field === 'sizeName')
                               ? 'border-red-500 text-red-600 bg-red-50'
                               : 'border-slate-300 text-slate-900'
                           }`}
+                        >
+                          {(!item.sizeName || !availableSizes.some((s) => s.toUpperCase() === item.sizeName.toUpperCase())) && (
+                            <option value={item.sizeName || ''}>
+                              {item.sizeName ? `${item.sizeName} (No registrada)` : '-- Seleccionar --'}
+                            </option>
+                          )}
+                          {availableSizes.map((sz) => (
+                            <option key={sz} value={sz}>
+                              {sz}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* Editable Quantity */}
+                      <td className="py-2 px-3 text-center">
+                        <input
+                          type="number"
+                          min="1"
+                          max="999"
+                          value={item.quantity || 1}
+                          onChange={(e) => updateItem(item.id, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                          className="w-16 px-2 py-1 text-center border border-slate-200 rounded-md text-sm"
                         />
                       </td>
 

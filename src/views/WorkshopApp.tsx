@@ -6,6 +6,7 @@ import { dbService } from '@/core/database/db';
 import { useDesignStore } from '@/modules/designs/designStore';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { applyThemeToDocument, useThemeStore } from '@/modules/settings/themeStore';
+import { restoreAndRegisterCustomFonts } from '@/core/fonts/fontRepository';
 
 const NewOrderView = lazy(() =>
   import('@/views/NewOrderView').then((module) => ({ default: module.NewOrderView }))
@@ -57,12 +58,13 @@ export const WorkshopApp: React.FC = () => {
     applyThemeToDocument(useThemeStore.getState().theme);
 
     // Inicializar base de datos SQLite embebida con persistencia local IndexedDB
-    // únicamente cuando se monta el sistema de taller (/app)
+    // y restaurar tipografías personalizadas guardadas por el usuario
     dbService
       .initialize()
       .then(() => {
         useDesignStore.getState().loadDesignsFromDatabase();
         usePatternStore.getState().loadFromDatabase();
+        void restoreAndRegisterCustomFonts();
       })
       .catch((err) => console.error('Error inicializando SQLite:', err));
   }, []);

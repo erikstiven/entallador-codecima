@@ -21,6 +21,7 @@ import { useDesignStore } from '@/modules/designs/designStore';
 import { dbService } from '@/core/database/db';
 import { PieceType } from '@/core/geometry/types';
 import { POPULAR_SPORTS_FONTS, loadGoogleFont, loadCustomFontFromFile } from '@/core/fonts/googleFonts';
+import { getAllStoredCustomFonts } from '@/core/fonts/fontRepository';
 import { cmykToHex, hexToCmyk, CMYK } from '@/core/color/cmykColor';
 import { useGeneratorStore } from '@/modules/generator/generatorStore';
 import { useNestingStore } from '@/core/nesting/nestingStore';
@@ -34,14 +35,6 @@ const SilhouetteJerseyRound: React.FC<{ className?: string }> = ({ className = '
     <path d="M35 16 C42 25 58 25 65 16 L84 25 L75 40 L68 35 L68 86 L32 86 L32 35 L25 40 L16 25 Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M35 16 C42 25 58 25 65 16" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
     <circle cx="50" cy="42" r="3" fill="currentColor" opacity="0.4" />
-  </svg>
-);
-
-const SilhouetteJerseyV: React.FC<{ className?: string }> = ({ className = 'w-16 h-16' }) => (
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M34 16 L50 32 L66 16 L84 25 L75 40 L68 35 L68 86 L32 86 L32 35 L25 40 L16 25 Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M34 16 L50 32 L66 16" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
-    <circle cx="50" cy="46" r="3" fill="currentColor" opacity="0.4" />
   </svg>
 );
 
@@ -73,124 +66,8 @@ const SilhouetteShort: React.FC<{ className?: string }> = ({ className = 'w-16 h
   </svg>
 );
 
-interface PieceSlotCardProps {
-  title: string;
-  subtitle?: string;
-  icon: React.ReactNode;
-  silhouette: React.ReactNode;
-  fileName: string;
-  artwork?: { svgArtContent?: string };
-  inputRef: React.RefObject<HTMLInputElement | null>;
-  onRemove: () => void;
-  previewNamespace: string;
-  accentColor?: 'sky' | 'indigo' | 'purple' | 'amber' | 'emerald';
-  extraAction?: React.ReactNode;
-}
-
-const PieceSlotCard: React.FC<PieceSlotCardProps> = ({
-  title,
-  subtitle,
-  icon,
-  silhouette,
-  fileName,
-  artwork,
-  inputRef,
-  onRemove,
-  previewNamespace,
-  extraAction,
-}) => {
-  const isLoaded = Boolean(artwork?.svgArtContent);
-
-  return (
-    <div className="bg-white border border-slate-200 hover:border-violet-300 rounded-xl p-3.5 flex flex-col justify-between space-y-2.5 transition-all duration-200 shadow-xs hover:shadow-sm group">
-      {/* Encabezado con Icono, Título y Badge Shadcn */}
-      <div className="flex items-center justify-between gap-1.5 min-h-[24px]">
-        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-          <span className="flex-shrink-0">{icon}</span>
-          <span className="font-bold text-[12px] text-slate-800 truncate" title={subtitle || title}>
-            {title}
-          </span>
-        </div>
-
-        {isLoaded ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs flex-shrink-0">
-            <CheckCircle2 className="w-2.5 h-2.5" /> Cargado
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs flex-shrink-0">
-            <AlertCircle className="w-2.5 h-2.5" /> Pendiente
-          </span>
-        )}
-      </div>
-
-      {/* Zona de Drop / Visualización con Proporción Textil 3:4 */}
-      <div
-        onClick={() => inputRef.current?.click()}
-        className={`relative w-full h-56 sm:h-64 rounded-xl border flex items-center justify-center p-2 cursor-pointer overflow-hidden transition-all duration-200 ${
-          isLoaded
-            ? 'border-slate-200 bg-white hover:border-violet-400 shadow-inner'
-            : 'border-dashed border-slate-300 hover:border-violet-400 bg-slate-50/70 hover:bg-slate-50'
-        }`}
-      >
-        {isLoaded ? (
-          <SvgTextilePreview
-            svgContent={artwork?.svgArtContent}
-            namespace={previewNamespace}
-            className="p-2"
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center text-center space-y-3 select-none relative z-10 p-2">
-            {/* Silueta vectorial tenue de fondo */}
-            <div className="text-slate-300 group-hover:text-slate-400 transition-colors">
-              {silhouette}
-            </div>
-            <div className="bg-white border border-slate-200 group-hover:border-violet-400 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs group-hover:scale-105 transition-all">
-              <UploadCloud className="w-3.5 h-3.5 text-violet-600" />
-              <span>{fileName}</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Barra de Acciones Inferior */}
-      {isLoaded ? (
-        <div className="flex items-center justify-between pt-0.5 text-xs">
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="text-slate-500 hover:text-slate-900 transition-colors cursor-pointer text-[11px] font-medium"
-          >
-            Reemplazar
-          </button>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="text-red-600 hover:text-red-700 transition-colors cursor-pointer text-[11px] font-medium"
-          >
-            Quitar
-          </button>
-        </div>
-      ) : (
-        extraAction && (
-          <div className="pt-0.5">
-            {extraAction}
-          </div>
-        )
-      )}
-    </div>
-  );
-};
-
 export const DesignsView: React.FC = () => {
-  const frenteRedondoInputRef = useRef<HTMLInputElement>(null);
-  const frenteVInputRef = useRef<HTMLInputElement>(null);
-  const espaldaInputRef = useRef<HTMLInputElement>(null);
-  const mangaIzqInputRef = useRef<HTMLInputElement>(null);
-  const mangaDerInputRef = useRef<HTMLInputElement>(null);
-  const pantalonetaIzqInputRef = useRef<HTMLInputElement>(null);
-  const pantalonetaDerInputRef = useRef<HTMLInputElement>(null);
   const multiInputRef = useRef<HTMLInputElement>(null);
-  const fontFileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     designs,
@@ -276,20 +153,6 @@ export const DesignsView: React.FC = () => {
   const [localFonts, setLocalFonts] = useState<string[]>([]);
   const [isDorsalModalOpen, setIsDorsalModalOpen] = useState<boolean>(false);
 
-  const handleFontFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const fontName = await loadCustomFontFromFile(file);
-      setLocalFonts((prev) => Array.from(new Set([fontName, ...prev])));
-      setActiveFontFamily(fontName);
-      applyStyleUpdates({ fontFamily: fontName });
-      showAlert.toast('success', `Fuente "${fontName}" sincronizada`);
-    } catch (err) {
-      console.error('Error al cargar archivo de fuente:', err);
-      showAlert.error('Error de Fuente', 'No se pudo leer el archivo TTF/OTF seleccionado.');
-    }
-  };
 
   // Colores CMYK de Relleno (Fill)
   const [fillHex, setFillHex] = useState<string>('#FFFFFF');
@@ -307,6 +170,11 @@ export const DesignsView: React.FC = () => {
 
   useEffect(() => {
     if (designs.length === 0) loadDesignsFromDatabase();
+    void getAllStoredCustomFonts().then((stored) => {
+      if (stored.length > 0) {
+        setLocalFonts((prev) => Array.from(new Set([...prev, ...stored.map((s) => s.name)])));
+      }
+    });
   }, []);
 
   // Sincronizar reglas del diseño activo
@@ -380,7 +248,7 @@ export const DesignsView: React.FC = () => {
     applyStyleUpdates({ fontFamily });
     const localOption = POPULAR_SPORTS_FONTS.find((font) => font.family === fontFamily)?.isLocal;
     if (localOption && !curvesReady) {
-      fontFileInputRef.current?.click();
+      setIsDorsalModalOpen(true);
     }
   };
 
@@ -540,49 +408,9 @@ export const DesignsView: React.FC = () => {
     </button>
   );
 
-  const handleCopyMangaIzqToDer = () => {
-    if (!activeDesign || !mangaIzqArt) return;
-    setPieceArtwork('MANGA_DER', mangaIzqArt.svgArtContent);
-  };
-
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-5">
-      {/* Inputs ocultos de carga */}
-      <input
-        ref={frenteRedondoInputRef}
-        type="file"
-        accept=".svg"
-        className="hidden"
-        onChange={(e) => handleUploadSingleBlock('DELANTERO_REDONDO', e.target.files?.[0])}
-      />
-      <input
-        ref={frenteVInputRef}
-        type="file"
-        accept=".svg"
-        className="hidden"
-        onChange={(e) => handleUploadSingleBlock('DELANTERO_V', e.target.files?.[0])}
-      />
-      <input
-        ref={espaldaInputRef}
-        type="file"
-        accept=".svg"
-        className="hidden"
-        onChange={(e) => handleUploadSingleBlock('ESPALDA', e.target.files?.[0])}
-      />
-      <input
-        ref={mangaIzqInputRef}
-        type="file"
-        accept=".svg"
-        className="hidden"
-        onChange={(e) => handleUploadSingleBlock('MANGA_IZQ', e.target.files?.[0])}
-      />
-      <input
-        ref={mangaDerInputRef}
-        type="file"
-        accept=".svg"
-        className="hidden"
-        onChange={(e) => handleUploadSingleBlock('MANGA_DER', e.target.files?.[0])}
-      />
+      {/* Input de carga masiva de bloques SVG del modelo */}
       <input
         ref={multiInputRef}
         type="file"
@@ -590,20 +418,6 @@ export const DesignsView: React.FC = () => {
         multiple
         className="hidden"
         onChange={(e) => e.target.files && handleUploadMultipleFiles(e.target.files)}
-      />
-      <input
-        ref={pantalonetaIzqInputRef}
-        type="file"
-        accept=".svg"
-        className="hidden"
-        onChange={(e) => handleUploadSingleBlock('PANTALONETA_IZQ', e.target.files?.[0])}
-      />
-      <input
-        ref={pantalonetaDerInputRef}
-        type="file"
-        accept=".svg"
-        className="hidden"
-        onChange={(e) => handleUploadSingleBlock('PANTALONETA_DER', e.target.files?.[0])}
       />
 
       {/* Grilla Principal */}

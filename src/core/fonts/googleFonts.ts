@@ -49,6 +49,7 @@ export async function getLocalSystemFonts(): Promise<string[]> {
 
 import * as opentype from 'opentype.js';
 import { registerOpentypeFont, loadOpentypeFont } from './fontManager';
+import { saveCustomFontToDb } from './fontRepository';
 
 /**
  * Carga un archivo de fuente local (.ttf, .otf, .woff) directamente en el navegador con FontFace y opentype
@@ -68,6 +69,7 @@ export async function loadCustomFontFromFile(file: File): Promise<string> {
   try {
     const parsedFont = opentype.parse(buffer);
     registerOpentypeFont(fontName, parsedFont);
+    void saveCustomFontToDb(fontName, file.name, buffer);
   } catch (err) {
     console.warn('Error al parsear con opentype.js:', err);
   }

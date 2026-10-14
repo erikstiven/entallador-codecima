@@ -477,7 +477,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-emerald-200'
                 : isExporting
                 ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
-                : 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-200 cursor-pointer active:scale-95'
+                : 'btn-brand-primary shadow-xs cursor-pointer active:scale-95'
             }`}
           >
             {exportSuccessDone && !isExporting ? (

@@ -11,6 +11,15 @@
 :root {
   color-scheme: light;
 
+  /* Radio de bordes estándar Tailwind (8px base) */
+  --radius: 0.5rem;
+
+  /* Variables de marca y botones configurables */
+  --brand-primary: #7c3aed;
+  --brand-primary-hover: #6d28d9;
+  --brand-primary-light: #f5f3ff;
+  --brand-primary-text: #ffffff;
+
   /* Paleta taller estándar minimalista (clara) */
   --hmb-bg: #f8fafc;
   --hmb-surface: #ffffff;
@@ -112,7 +121,9 @@ html.light .text-slate-400 { color: #475569 !important; }
 html.light .text-slate-500 { color: #64748b !important; }
 html.light .text-slate-600 { color: #94a3b8 !important; }
 html.light .text-slate-950 { color: #0f172a !important; }
-html.light .text-white { color: #0f172a !important; }
+html.light .text-white:not(.btn-brand-primary):not([data-variant="primary"]):not([class*="bg-brand-primary"]):not([style*="--brand-primary"]) {
+  color: #0f172a !important;
+}
 
 /* Excepciones donde text-white DEBE seguir siendo blanco (botones con fondos oscuros/de color) */
 html.light .bg-violet-600,
@@ -127,7 +138,12 @@ html.light .bg-sky-600,
 html.light .bg-blue-600,
 html.light .bg-amber-600,
 html.light .bg-red-600,
-html.light [class*="bg-gradient-to-"] {
+html.light [class*="bg-gradient-to-"],
+html.light .btn-brand-primary,
+html.light [data-brand-btn],
+html.light [data-variant="primary"],
+html.light [style*="--brand-primary"],
+html.light [class*="bg-brand-primary"] {
   color: #ffffff !important;
 }
 html.light .bg-violet-600 *,
@@ -140,8 +156,31 @@ html.light .bg-emerald-600 *,
 html.light .bg-emerald-500 *,
 html.light .bg-sky-600 *,
 html.light .bg-blue-600 *,
-html.light [class*="bg-gradient-to-"] * {
+html.light [class*="bg-gradient-to-"] *,
+html.light .btn-brand-primary *,
+html.light [data-brand-btn] *,
+html.light [data-variant="primary"] *,
+html.light [style*="--brand-primary"] *,
+html.light [class*="bg-brand-primary"] * {
   color: inherit;
+}
+
+/* Utilidades reactivas con variables de marca */
+.bg-brand-primary {
+  background-color: var(--brand-primary) !important;
+  color: var(--brand-primary-text, #ffffff) !important;
+}
+.bg-brand-primary:hover:not(:disabled) {
+  background-color: var(--brand-primary-hover) !important;
+}
+.text-brand-primary {
+  color: var(--brand-primary) !important;
+}
+.border-brand-primary {
+  border-color: var(--brand-primary) !important;
+}
+.bg-brand-light {
+  background-color: var(--brand-primary-light) !important;
 }
 
 html.light .border-slate-800 { border-color: #cbd5e1 !important; }

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   CheckCircle2,
-  Printer,
+  ArrowRight,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -356,14 +356,16 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
           <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{explanation}</p>
         </div>
 
-        {/* Botón rápido para volver a 0 */}
+        {/* Botón único para restablecer a posición original */}
         <button
           type="button"
           onClick={() => onChangeOffsetMm(0)}
           disabled={roundedOffset === 0}
-          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 disabled:opacity-40 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-1.5 self-start md:self-auto cursor-pointer transition-all shadow-2xs"
+          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-1.5 self-start md:self-auto cursor-pointer transition-all shadow-2xs"
+          title="Restablecer posición original del dibujo (0 mm)"
         >
-          <span>🔄 Volver a Posición Original (0)</span>
+          <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+          <span>Restablecer Posición Original</span>
         </button>
       </div>
 
@@ -436,7 +438,7 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
       </div>
 
       {/* Botones Grandes y Claros con Flechas */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <button
           type="button"
           onClick={() => onChangeOffsetMm(clamp(roundedOffset - 5))}
@@ -455,18 +457,6 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
 
         <button
           type="button"
-          onClick={() => onChangeOffsetMm(0)}
-          className={`px-3 py-2 rounded-lg border font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all ${
-            roundedOffset === 0
-              ? 'bg-violet-600 text-white border-violet-500 shadow-xs'
-              : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-2xs'
-          }`}
-        >
-          <span>🔄 Posición Original (0)</span>
-        </button>
-
-        <button
-          type="button"
           onClick={() => onChangeOffsetMm(clamp(roundedOffset + 1))}
           className="px-3 py-2 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-2xs"
         >
@@ -476,7 +466,7 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
         <button
           type="button"
           onClick={() => onChangeOffsetMm(clamp(roundedOffset + 5))}
-          className="px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all col-span-2 sm:col-span-1"
+          className="px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
         >
           <span>⬇️ Bajar Dibujo (-5 mm)</span>
         </button>
@@ -497,19 +487,18 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
           value={roundedOffset}
           onChange={(e) => onChangeOffsetMm(clamp(Number(e.target.value)))}
           style={{ direction: 'rtl' }}
-          className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+          className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-violet-600"
           title="Desliza hacia la derecha para subir el dibujo y dejar espacio de costura"
         />
       </div>
 
       {/* Botones Rápidos Recomendados (1 Clic) */}
       <div className="space-y-1.5">
-        <span className="text-[11px] font-semibold text-slate-400 block">
+        <span className="text-[11px] font-semibold text-slate-500 block">
           ⚡ Ajustes rápidos recomendados (1 solo clic):
         </span>
         <div className="flex flex-wrap items-center gap-2">
           {[
-            { label: 'Posición Original (0)', value: 0, highlight: false },
             { label: 'Subir 1 cm (Costura fina)', value: -10, highlight: false },
             { label: '⭐ Subir 2 cm (Basta normal recomendada)', value: -20, highlight: true },
             { label: 'Subir 2.5 cm (Basta ancha)', value: -25, highlight: false },
@@ -523,10 +512,10 @@ const VisualArtworkOffsetControl: React.FC<VisualArtworkOffsetControlProps> = ({
                 onClick={() => onChangeOffsetMm(preset.value)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95 ${
                   isSelected
-                    ? 'bg-cyan-400 text-slate-950 font-bold shadow-md ring-2 ring-cyan-300'
+                    ? 'bg-violet-600 text-white font-bold shadow-xs'
                     : preset.highlight
-                    ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 font-bold'
-                    : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
                 }`}
               >
                 {preset.label}
@@ -944,8 +933,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
             title="Confirmar revisión de uniformes y pasar al Rollo de Sublimación"
             className="flex items-center gap-2 px-5 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border disabled:border-slate-200 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95"
           >
-            <Printer className="w-4 h-4" />
-            <span>Pasar al Rollo de Sublimación →</span>
+            <span>Pasar al Rollo de Sublimación</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>

@@ -171,7 +171,9 @@ exportMoldesParaCimatex();`;
     const link = document.createElement('a');
     link.href = url;
     link.download = 'cimatex_export_helper.jsx';
+    link.click();
     URL.revokeObjectURL(url);
+    showAlert.toast('success', 'Script JSX para Illustrator descargado con éxito');
   };
 
   const handleDownloadTemplate = () => {
@@ -369,27 +371,8 @@ exportMoldesParaCimatex();`;
                 <span>Script JSX</span>
               </button>
 
-              {patternSets.length > 0 && (
-                <button
-                  onClick={async () => {
-                    const confirmed = await showAlert.confirm(
-                      '¿Limpiar todos los moldes?',
-                      'Esta acción eliminará todos los conjuntos de moldes cargados en la base de datos.'
-                    );
-                    if (confirmed) {
-                      clearAllPatterns();
-                      showAlert.toast('info', 'Moldes limpiados');
-                    }
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200 shadow-xs transition-colors cursor-pointer"
-                  title="Limpiar y borrar todos los moldes cargados"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Limpiar Moldes</span>
-                </button>
-              )}
-
               <button
+                type="button"
                 onClick={async () => {
                   const confirmed = await showAlert.confirm(
                     '¿Eliminar este molde?',
@@ -400,11 +383,35 @@ exportMoldesParaCimatex();`;
                     showAlert.toast('info', 'Conjunto de moldes eliminado');
                   }
                 }}
-                className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors border border-transparent hover:border-red-200 cursor-pointer"
-                title="Eliminar este conjunto de moldes"
+                className="inline-flex items-center gap-1.5 px-3 py-2 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 shadow-xs transition-colors cursor-pointer"
+                title="Eliminar este conjunto de moldes activo"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Eliminar Molde</span>
               </button>
+
+              {patternSets.length > 0 && (
+                <div className="flex items-center pl-2 ml-1 border-l border-slate-200">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const confirmed = await showAlert.confirm(
+                        '¿Limpiar TODOS los moldes de la biblioteca?',
+                        '¡ADVERTENCIA DE SEGURIDAD! Esta acción administrativa eliminará permanentemente todos los conjuntos de moldes guardados en la base de datos local. ¿Estás completamente seguro?'
+                      );
+                      if (confirmed) {
+                        clearAllPatterns();
+                        showAlert.toast('info', 'Biblioteca de moldes vaciada por completo');
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg text-xs font-medium border border-slate-200 hover:border-red-200 transition-colors cursor-pointer"
+                    title="Acción administrativa: Limpiar toda la biblioteca de moldes"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Limpiar Moldes (Todos)</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -427,29 +434,31 @@ exportMoldesParaCimatex();`;
 
           {/* Unassigned Pieces Banner / Manual Assigner */}
           {activePatternSet.unassignedPieces.length > 0 && (
-            <div className="bg-amber-950/20 border border-amber-800/40 rounded-xl p-5 space-y-4">
+            <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-5 space-y-4 shadow-2xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2 text-amber-300 font-semibold text-xs">
-                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div className="flex items-center gap-2 text-amber-900 font-semibold text-xs">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                     <span>Trazos Auxiliares: {activePatternSet.unassignedPieces.length} trazo(s) adicionales detectados en el archivo</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-600 mt-1">
                     Tus moldes principales por talla ya fueron clasificados con éxito. Estos trazos no tenían talla escrita (ej. shorts, pretinas o líneas auxiliares).
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
+                    type="button"
                     onClick={() => discardAllUnassignedPieces()}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-700 transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer font-medium"
                     title="Descartar todos los trazos auxiliares si no los necesitas"
                   >
                     Descartar Todos ({activePatternSet.unassignedPieces.length})
                   </button>
                   {selectedPieceForAssignment && (
                     <button
+                      type="button"
                       onClick={() => discardUnassignedPiece(selectedPieceForAssignment.id)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-950/50 rounded-lg border border-red-900/50 transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-red-600 hover:text-red-700 bg-white hover:bg-red-50 rounded-lg border border-red-200 shadow-2xs transition-colors cursor-pointer font-medium"
                       title="Descartar solo este trazo específico"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -463,7 +472,7 @@ exportMoldesParaCimatex();`;
                 {/* Visual Thumbnail Preview */}
                 <div className="flex items-center gap-3">
                   {selectedPieceForAssignment ? (
-                    <div className="w-20 h-20 bg-slate-950 rounded-lg border border-slate-800 p-1 flex items-center justify-center flex-shrink-0">
+                    <div className="w-20 h-20 bg-slate-50 rounded-lg border border-slate-200 p-1 flex items-center justify-center flex-shrink-0 shadow-inner">
                       {(() => {
                         const pathD = polygonToSvgPath(selectedPieceForAssignment.cutPolygon) || selectedPieceForAssignment.svgPathData;
                         const pad = Math.max(selectedPieceForAssignment.bbox.width, selectedPieceForAssignment.bbox.height) * 0.08;
@@ -475,7 +484,7 @@ exportMoldesParaCimatex();`;
                           <svg
                             viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
                             preserveAspectRatio="xMidYMid meet"
-                            className="w-full h-full text-amber-400 stroke-current fill-amber-500/10"
+                            className="w-full h-full text-amber-600 stroke-current fill-amber-500/10"
                           >
                             <path
                               d={pathD}
@@ -489,19 +498,19 @@ exportMoldesParaCimatex();`;
                       })()}
                     </div>
                   ) : (
-                    <div className="w-20 h-20 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-center text-slate-600 text-xs flex-shrink-0">
+                    <div className="w-20 h-20 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 text-xs flex-shrink-0">
                       Sin pieza
                     </div>
                   )}
                   <div className="space-y-1 flex-1">
-                    <label className="text-xs text-slate-300 font-medium block">Pieza Detectada:</label>
+                    <label className="text-xs text-slate-700 font-medium block">Pieza Detectada:</label>
                     <select
                       value={selectedPieceForAssignment?.id || ''}
                       onChange={(e) => {
                         const found = activePatternSet.unassignedPieces.find((p) => p.id === e.target.value);
                         selectPieceForAssignment(found || null);
                       }}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-mono shadow-2xs focus:border-violet-500 focus:outline-none"
                     >
                       {activePatternSet.unassignedPieces.map((p) => (
                         <option key={p.id} value={p.id}>
@@ -515,21 +524,21 @@ exportMoldesParaCimatex();`;
                 {/* Formulario de asignación */}
                 <div className="grid grid-cols-2 gap-3 text-xs col-span-2">
                   <div>
-                    <label className="text-slate-400 block mb-1">Asignar a Talla:</label>
+                    <label className="text-slate-700 font-medium block mb-1">Asignar a Talla:</label>
                     <input
                       type="text"
                       value={assignSize}
                       onChange={(e) => setAssignSize(e.target.value.toUpperCase())}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-bold font-mono"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-900 font-bold font-mono shadow-2xs focus:border-violet-500 focus:outline-none"
                       placeholder="28, 30, S, M"
                     />
                   </div>
                   <div>
-                    <label className="text-slate-400 block mb-1">Tipo de Pieza:</label>
+                    <label className="text-slate-700 font-medium block mb-1">Tipo de Pieza:</label>
                     <select
                       value={assignType}
                       onChange={(e) => setAssignType(e.target.value as PieceType)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-200 text-[11px]"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-slate-800 text-[11px] shadow-2xs focus:border-violet-500 focus:outline-none"
                     >
                       <option value="DELANTERO_V">DELANTERO (CUELLO V)</option>
                       <option value="DELANTERO_REDONDO">DELANTERO (CUELLO REDONDO)</option>
@@ -547,7 +556,7 @@ exportMoldesParaCimatex();`;
 
                 {/* Botón de confirmar */}
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                  <div className="flex items-center gap-3 text-[11px] text-slate-600 font-medium">
                     <span>Rotaciones:</span>
                     <label className="flex items-center gap-1 cursor-pointer">
                       <input type="checkbox" checked={rot0} onChange={(e) => setRot0(e.target.checked)} />
@@ -559,8 +568,9 @@ exportMoldesParaCimatex();`;
                     </label>
                   </div>
                   <button
+                    type="button"
                     onClick={submitManualAssignment}
-                    className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-semibold shadow-md flex items-center justify-center gap-1.5"
+                    className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5" />
                     Confirmar Asignación
