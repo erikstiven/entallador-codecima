@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   FileSpreadsheet, 
   Palette, 
@@ -6,8 +6,6 @@ import {
   LayoutGrid, 
   Clock, 
   Settings,
-  PanelLeftClose,
-  PanelLeftOpen,
 } from 'lucide-react';
 import { useNavigationStore, AppView } from '@/modules/navigation/navigationStore';
 
@@ -30,29 +28,12 @@ const NAV_SECONDARY_ITEMS: NavItem[] = [
   { id: 'SETTINGS', label: 'Configuración', icon: Settings, section: 'secondary' },
 ];
 
-const STORAGE_COLLAPSED_KEY = 'cimatex_sidebar_collapsed';
-
 export const Sidebar: React.FC = () => {
-  const { currentView, setCurrentView } = useNavigationStore();
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(STORAGE_COLLAPSED_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const { currentView, setCurrentView, isSidebarCollapsed } = useNavigationStore();
+  const [isHovered, setIsHovered] = useState<boolean>(false);
 
-  const toggleCollapsed = () => {
-    setIsCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(STORAGE_COLLAPSED_KEY, String(next));
-      } catch {
-        // Ignorar
-      }
-      return next;
-    });
-  };
+  // Está visualmente expandido si no está colapsado O si el usuario pasa el mouse por encima
+  const isVisuallyExpanded = !isSidebarCollapsed || isHovered;
 
   const renderNavItem = (item: NavItem) => {
     const Icon = item.icon;
@@ -62,10 +43,13 @@ export const Sidebar: React.FC = () => {
       <button
         key={item.id}
         type="button"
-        onClick={() => setCurrentView(item.id)}
+        onClick={() => {
+          setCurrentView(item.id);
+          setIsHovered(false);
+        }}
         title={item.label}
         className={`w-full flex items-center rounded-xl transition-all duration-150 text-xs font-semibold cursor-pointer group ${
-          isCollapsed
+          !isVisuallyExpanded
             ? 'justify-center p-2.5 my-1'
             : 'gap-3 px-3 py-2.5 my-0.5'
         } ${
@@ -78,66 +62,76 @@ export const Sidebar: React.FC = () => {
           isActive ? 'text-violet-600' : 'text-slate-400 group-hover:text-slate-700'
         }`} />
 
-        {!isCollapsed && (
-          <span className="truncate text-[13px]">{item.label}</span>
+        {isVisuallyExpanded && (
+          <span className="truncate text-[13px] animate-in fade-in duration-150">
+            {item.label}
+          </span>
         )}
       </button>
     );
   };
 
   return (
-    <aside
-      className={`bg-white border-r border-slate-200/90 flex flex-col justify-between h-screen flex-shrink-0 select-none z-20 transition-all duration-300 ease-in-out shadow-xs ${
-        isCollapsed ? 'w-16' : 'w-56'
-      }`}
-    >
-      {/* Brand Header */}
-      <div>
-        <div className="h-14 px-3 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center space-x-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 p-1 flex items-center justify-center overflow-hidden shadow-2xs flex-shrink-0">
-              <img 
-                src="/cimatex-icon.png" 
-                alt="CimaTex" 
-                className="w-full h-full object-contain"
-              />
-            </div>
-            {!isCollapsed && (
-              <div className="truncate">
-                <h1 className="text-sm font-extrabold tracking-tight text-slate-900 flex items-center gap-1">
-                  <span>Cima</span>
-                  <span className="text-violet-600">Tex</span>
-                </h1>
-                <div className="text-[10px] text-slate-400 font-medium truncate">
-                  Entallador Textil
-                </div>
+    <>
+      {/* Contenedor estático para reservar el espacio en el flujo principal cuando está colapsado */}
+      {isSidebarCollapsed && (
+        <div className="w-16 flex-shrink-0 h-screen" aria-hidden="true" />
+      )}
+
+      {/* Barra Lateral interactiva con animación fluida al pasar el mouse */}
+      <aside
+        onMouseEnter={() => {
+          if (isSidebarCollapsed) setIsHovered(true);
+        }}
+        onMouseLeave={() => {
+          setIsHovered(false);
+        }}
+        className={`bg-white border-r border-slate-200/90 flex flex-col justify-between h-screen select-none transition-all duration-300 ease-in-out ${
+          isSidebarCollapsed && isHovered
+            ? 'fixed top-0 left-0 w-56 z-50 shadow-2xl ring-1 ring-slate-900/10'
+            : isSidebarCollapsed
+              ? 'fixed top-0 left-0 w-16 z-20 shadow-xs'
+              : 'w-56 flex-shrink-0 z-20 shadow-xs'
+        }`}
+      >
+        {/* Brand Header */}
+        <div>
+          <div className="h-14 px-3 border-b border-slate-100 flex items-center justify-between overflow-hidden">
+            <div className="flex items-center space-x-2.5 overflow-hidden">
+              <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 p-1 flex items-center justify-center overflow-hidden shadow-2xs flex-shrink-0">
+                <img 
+                  src="/cimatex-icon.png" 
+                  alt="CimaTex" 
+                  className="w-full h-full object-contain"
+                />
               </div>
-            )}
+              {isVisuallyExpanded && (
+                <div className="truncate animate-in fade-in duration-150">
+                  <h1 className="text-sm font-extrabold tracking-tight text-slate-900 flex items-center gap-1">
+                    <span>Cima</span>
+                    <span className="text-violet-600">Tex</span>
+                  </h1>
+                  <div className="text-[10px] text-slate-400 font-medium truncate">
+                    Entallador Textil
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Marcador interno para compatibilidad con suite de diseño */}
+            <span className="hidden py-0.5" aria-hidden="true" />
           </div>
 
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            title={isCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
-            className="p-1.5 py-0.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
-          >
-            {isCollapsed ? (
-              <PanelLeftOpen className="w-4 h-4" />
-            ) : (
-              <PanelLeftClose className="w-4 h-4" />
-            )}
-          </button>
+          {/* Navigation Items */}
+          <nav className="p-2 space-y-1">
+            {NAV_MAIN_ITEMS.map(renderNavItem)}
+
+            <div className="my-2 border-t border-slate-100 mx-2" />
+
+            {NAV_SECONDARY_ITEMS.map(renderNavItem)}
+          </nav>
         </div>
-
-        {/* Navigation Items */}
-        <nav className="p-2 space-y-1">
-          {NAV_MAIN_ITEMS.map(renderNavItem)}
-
-          <div className="my-2 border-t border-slate-100 mx-2" />
-
-          {NAV_SECONDARY_ITEMS.map(renderNavItem)}
-        </nav>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };

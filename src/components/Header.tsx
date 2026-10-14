@@ -2,15 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Bell,
   ChevronDown,
-  Calendar,
-  Search,
   CheckCircle2,
   Clock,
   Sparkles,
   Settings,
   History,
   LogOut,
-  User as UserIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { useSystemSettingsStore } from '@/modules/settings/systemSettingsStore';
@@ -53,7 +52,12 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
 ];
 
 export const Header: React.FC = () => {
-  const { currentView, setCurrentView } = useNavigationStore();
+  const {
+    currentView,
+    setCurrentView,
+    isSidebarCollapsed,
+    toggleSidebarCollapsed,
+  } = useNavigationStore();
   const { settings } = useSystemSettingsStore();
   const authUser = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -140,8 +144,21 @@ export const Header: React.FC = () => {
 
   return (
     <header className="h-14 bg-white border-b border-slate-200/90 px-4 sm:px-6 flex items-center justify-between select-none z-30 transition-colors">
-      {/* Título de Vista Activa y Buscador Global */}
-      <div className="flex items-center gap-6 min-w-0">
+      {/* Botón de Colapsar/Expandir Barra Lateral y Título de Vista Activa */}
+      <div className="flex items-center gap-3 min-w-0">
+        <button
+          type="button"
+          onClick={toggleSidebarCollapsed}
+          title={isSidebarCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
+          className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
+        >
+          {isSidebarCollapsed ? (
+            <PanelLeftOpen className="w-4 h-4" />
+          ) : (
+            <PanelLeftClose className="w-4 h-4" />
+          )}
+        </button>
+
         <div className="min-w-0">
           <h2 className="text-sm font-extrabold text-slate-900 tracking-tight truncate">
             {info.title}
@@ -150,26 +167,10 @@ export const Header: React.FC = () => {
             {info.subtitle}
           </p>
         </div>
-
-        {/* Buscador contextual */}
-        <div className="hidden xl:flex items-center relative w-72">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Buscar proyectos, moldes, pedidos..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-full focus:bg-white focus:outline-none focus:border-violet-400 text-slate-800 placeholder:text-slate-400 transition-all shadow-2xs"
-          />
-        </div>
       </div>
 
-      {/* Derecha: Periodo, Campana de Notificaciones, Separador y Perfil Usuario (1:1 SIFEF) */}
+      {/* Derecha: Campana de Notificaciones, Separador y Perfil Usuario (1:1 SIFEF) */}
       <div className="flex items-center gap-3">
-        {/* Selector de Periodo */}
-        <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200/80 px-3 py-1 rounded-full shadow-2xs">
-          <span className="text-slate-400 text-[11px] font-medium">Periodo:</span>
-          <Calendar className="w-3.5 h-3.5 text-slate-500" />
-          <span className="font-semibold text-slate-800 text-[11px]">2026 - 2027</span>
-        </div>
 
         {/* Campana de Notificaciones con Badge */}
         <div className="relative" ref={notifRef}>
