@@ -70,7 +70,7 @@
   - **Checks:** `npm test` (37 passed test files, 193 passed tests).
   - **Evidence / Commit:** Commit `e33c466` (`feat(ui): add dorsal config modal, single-click size marks, and clean typography controls`).
 
-- [ ] **TASK-4: Plantilla Excel con Dropdowns Nativos, Persistencia `F5`, Nómina Manual y Segmentación de Pliegos (2 a 5 metros)**
+- [x] **TASK-4: Plantilla Excel con Dropdowns Nativos, Persistencia `F5`, Nómina Manual y Segmentación de Pliegos (2 a 5 metros)**
   - **ID:** `TASK-4`
   - **Route:** Delegated Direct (Writer trigger: touches `src/modules/orders/excelParser.ts`, `src/modules/orders/orderStore.ts`, `src/views/NewOrderView.tsx`, `src/modules/export/ExportModal.tsx`, `src/core/nesting/modularNestingEngine.ts`, `src/views/ProductionNestingView.tsx`).
   - **Scope:** Incorporar validación de datos nativa en la plantilla Excel descargada (`select` para Tipo Prenda y Cuello). Sincronizar automáticamente las tallas del molde activo con el pedido. Agregar persistencia a `orderStore` (evitar borrado al refrescar). Habilitar tabla de adición manual de jugadores. Implementar segmentación automática de pliegos largos en tramos de 2 a 5 metros en el motor de nesting y visualizador con scroll limpio. Eliminar casillas obsoletas de calibración física y línea de corte en el modal de exportación.
@@ -79,17 +79,19 @@
     - Al recargar con `F5`, los pedidos permanecen intactos en pantalla.
     - Se pueden agregar jugadores manualmente fila a fila.
     - Pliegos mayores a 5 metros se fraccionan automáticamente en partes descargables sin colapsar Illustrator.
-  - **Checks:** `npx vitest run src/modules/orders/ src/modules/export/ src/core/nesting/` + `npm test`.
-  - **Evidence / Commit:** TBD
+  - **Checks:** `npx vitest run src/modules/orders/ src/modules/export/ src/core/nesting/` + `npm test` (37 test suites, 193 passed) + `npm run build` (tsc & vite build clean, 0 errors).
+  - **Evidence / Commit:** Commit `5b40075` (`feat(orders): excel dropdowns, order persistence, manual roster entry, and pliego segmentation`).
 
 ---
 
 ## Progress, Verification Evidence & Next Step
 
-- **Current Status:** TASK-1, TASK-2 y TASK-3 completadas y verificadas con suite completa de pruebas unitarias y de integración.
+- **Current Status:** 100% de tareas completadas (TASK-1, TASK-2, TASK-3, TASK-4) en la rama `feat/minimalist-light-redesign-and-process-overhaul`.
 - **Verification Evidence:**
   - `npm test`: 37 test files passed, 193 tests passed, 0 failures.
+  - `npm run build`: Compilación TypeScript estricta y empaquetado Vite completados sin errores.
   - Commit `e3a36a4`: Shell UI y Sidebar colapsable estandarizados en tema claro.
   - Commit `720adb9`: Frente unificado `DELANTERO`, botón "Ajustar pieza" eliminado, exportador de plantilla descargable para Adobe Illustrator.
   - Commit `e33c466`: Modal desplegable de dorsales con soporte `.ttf`/`.otf`/`.font` y guía Google Fonts, marquilla interna 1-clic y "Restablecer posiciones predeterminadas".
-- **Next Step:** Ejecutar `TASK-4` (Plantilla Excel con Dropdowns Nativos, Persistencia F5, Nómina Manual y Segmentación de Pliegos en tramos de 2 a 5 metros).
+  - Commit `5b40075`: Plantilla Excel con dropdowns nativos, persistencia `F5`, nómina manual, segmentación de pliegos (2 a 5 metros) y modal de exportación limpio en Tema Claro.
+- **Next Step:** Trabajo completo y verificado. Presentar el balance final de la reestructuración al usuario.
