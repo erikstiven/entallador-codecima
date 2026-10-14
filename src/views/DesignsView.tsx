@@ -453,18 +453,40 @@ export const DesignsView: React.FC = () => {
                 <div
                   key={d.id}
                   onClick={() => setActiveDesign(d)}
-                  className={`border rounded-lg px-2.5 py-2 cursor-pointer transition-all duration-150 ${
+                  className={`group border rounded-lg px-2.5 py-2 cursor-pointer transition-all duration-150 flex items-center justify-between gap-1.5 ${
                     isSelected
                       ? 'border-violet-500 bg-violet-50/60 shadow-2xs ring-1 ring-violet-500/20'
                       : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
                     <span className="font-semibold text-xs text-slate-800 truncate">{d.name}</span>
                     {blocksReady >= 4 && (
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Modelo completo" />
                     )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const confirmed = await showAlert.confirm(
+                        `¿Eliminar modelo "${d.name}"?`,
+                        'Esta acción borrará permanentemente este diseño maestro.',
+                        'Sí, eliminar',
+                        'Cancelar',
+                        'warning',
+                        true
+                      );
+                      if (confirmed) {
+                        deleteDesign(d.id);
+                        showAlert.toast('info', `Modelo "${d.name}" eliminado`);
+                      }
+                    }}
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded transition-all shrink-0 cursor-pointer"
+                    title={`Eliminar ${d.name}`}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
                 </div>
               );
             })}
@@ -575,17 +597,22 @@ export const DesignsView: React.FC = () => {
                 <button
                   type="button"
                   onClick={async () => {
+                    if (!activeDesign) return;
                     const confirmed = await showAlert.confirm(
                       `¿Eliminar modelo "${activeDesign.name}"?`,
-                      'Esta acción borrará este diseño maestro.'
+                      'Esta acción borrará permanentemente este diseño maestro.',
+                      'Sí, eliminar',
+                      'Cancelar',
+                      'warning',
+                      true
                     );
                     if (confirmed) {
                       deleteDesign(activeDesign.id);
-                      showAlert.toast('info', 'Modelo eliminado');
+                      showAlert.toast('info', `Modelo "${activeDesign.name}" eliminado`);
                     }
                   }}
                   disabled={!activeDesign || isUploading || saveStatus === 'SAVING'}
-                  className="h-8 w-8 flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 hover:border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                  className="h-8 w-8 flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 hover:border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs active:scale-95"
                   title="Eliminar este modelo"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
