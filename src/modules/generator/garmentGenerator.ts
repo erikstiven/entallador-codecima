@@ -649,12 +649,14 @@ export function generateGarmentPieces(
     const missingArtworkGroups: string[] = [];
 
     if (effectiveGarmentType === 'CAMISETA' || effectiveGarmentType === 'COMPLETO') {
-      const hasFrontArtwork = wantsNecklineV
-        ? Boolean(masterDesign.pieceArtworks['DELANTERO_V'] || masterDesign.pieceArtworks['DELANTERO'])
-        : Boolean(masterDesign.pieceArtworks['DELANTERO_REDONDO'] || masterDesign.pieceArtworks['DELANTERO']);
+      const hasFrontArtwork = Boolean(
+        masterDesign.pieceArtworks['DELANTERO'] ||
+        masterDesign.pieceArtworks['DELANTERO_REDONDO'] ||
+        masterDesign.pieceArtworks['DELANTERO_V']
+      );
 
       if (!hasFrontArtwork) {
-        missingArtworkGroups.push(`diseño del frente (cuello ${wantsNecklineV ? 'V' : 'redondo'})`);
+        missingArtworkGroups.push('diseño del frente');
       }
       if (!masterDesign.pieceArtworks['ESPALDA']) missingArtworkGroups.push('diseño de la espalda');
       if (!masterDesign.pieceArtworks['MANGA_IZQ'] && !masterDesign.pieceArtworks['MANGA_DER']) {
@@ -696,11 +698,11 @@ export function generateGarmentPieces(
         let artwork = masterDesign.pieceArtworks[pieceType];
         if (!artwork) {
           if (pieceType === 'DELANTERO_V' || (pieceType === 'DELANTERO' && wantsNecklineV)) {
-            artwork = masterDesign.pieceArtworks['DELANTERO_V'] || masterDesign.pieceArtworks['DELANTERO'];
+            artwork = masterDesign.pieceArtworks['DELANTERO_V'] || masterDesign.pieceArtworks['DELANTERO'] || masterDesign.pieceArtworks['DELANTERO_REDONDO'];
           } else if (pieceType === 'DELANTERO_REDONDO' || (pieceType === 'DELANTERO' && !wantsNecklineV)) {
-            artwork = masterDesign.pieceArtworks['DELANTERO_REDONDO'] || masterDesign.pieceArtworks['DELANTERO'];
+            artwork = masterDesign.pieceArtworks['DELANTERO_REDONDO'] || masterDesign.pieceArtworks['DELANTERO'] || masterDesign.pieceArtworks['DELANTERO_V'];
           } else if (pieceType.startsWith('DELANTERO')) {
-            artwork = masterDesign.pieceArtworks['DELANTERO_REDONDO'] || masterDesign.pieceArtworks['DELANTERO_V'] || masterDesign.pieceArtworks['DELANTERO'];
+            artwork = masterDesign.pieceArtworks['DELANTERO'] || masterDesign.pieceArtworks['DELANTERO_REDONDO'] || masterDesign.pieceArtworks['DELANTERO_V'];
           } else if (pieceType === 'MANGA_DER') {
             artwork = masterDesign.pieceArtworks['MANGA_DER'] || masterDesign.pieceArtworks['MANGA_IZQ'] || masterDesign.pieceArtworks['MANGA' as PieceType];
           } else if (pieceType === 'MANGA_IZQ') {

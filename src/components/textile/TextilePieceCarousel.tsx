@@ -125,20 +125,15 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
 
           {/* Escenario de Enfoque con Controles de Navegación */}
           <div className="relative w-full h-[26rem] sm:h-[30rem] bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden flex items-center justify-center p-6 sm:p-8 group">
-            <div className="absolute top-3 left-3 z-20 flex items-center bg-slate-950/80 border border-slate-800 rounded-lg p-1 shadow-lg backdrop-blur-xs">
+            {/* Control de vista SVG */}
+            <div className="absolute top-3 left-3 z-20 flex items-center bg-white/90 border border-slate-200 rounded-lg p-1 shadow-xs backdrop-blur-xs">
               <button
                 type="button"
-                onClick={() => setFitMode('content')}
-                className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-colors ${fitMode === 'content' ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                onClick={() => setFitMode(fitMode === 'document' ? 'content' : 'document')}
+                className="px-2.5 py-1 rounded text-[10px] font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors"
+                title="Alternar encuadre de la pieza"
               >
-                Ajustar pieza
-              </button>
-              <button
-                type="button"
-                onClick={() => setFitMode('document')}
-                className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-colors ${fitMode === 'document' ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white'}`}
-              >
-                SVG completo
+                Vista SVG
               </button>
             </div>
             {/* Controles flotantes de Zoom */}

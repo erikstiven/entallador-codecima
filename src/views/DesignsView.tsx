@@ -491,9 +491,7 @@ export const DesignsView: React.FC = () => {
     });
   };
 
-  const frenteRedondoArt = activeDesign?.pieceArtworks['DELANTERO_REDONDO'] || activeDesign?.pieceArtworks['DELANTERO'];
-  const frenteVArt = activeDesign?.pieceArtworks['DELANTERO_V'];
-  const isLegacyGenericDelantero = Boolean(activeDesign?.pieceArtworks['DELANTERO'] && !activeDesign?.pieceArtworks['DELANTERO_REDONDO'] && !activeDesign?.pieceArtworks['DELANTERO_V']);
+  const frenteArt = activeDesign?.pieceArtworks['DELANTERO'] || activeDesign?.pieceArtworks['DELANTERO_REDONDO'] || activeDesign?.pieceArtworks['DELANTERO_V'];
   const espaldaArt = activeDesign?.pieceArtworks['ESPALDA'];
   const mangaIzqArt = activeDesign?.pieceArtworks['MANGA_IZQ'];
   const mangaDerArt = activeDesign?.pieceArtworks['MANGA_DER'];
@@ -501,7 +499,7 @@ export const DesignsView: React.FC = () => {
   const pantalonetaDerArt = activeDesign?.pieceArtworks['PANTALONETA_DER'] || activeDesign?.pieceArtworks['SHORT_ESPALDA'];
 
   const activeMainBlocksCount = [
-    Boolean(frenteRedondoArt?.svgArtContent || frenteVArt?.svgArtContent),
+    Boolean(frenteArt?.svgArtContent),
     Boolean(espaldaArt?.svgArtContent),
     Boolean(mangaIzqArt?.svgArtContent),
     Boolean(mangaDerArt?.svgArtContent),
@@ -1098,51 +1096,31 @@ export const DesignsView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Banner de Compatibilidad y Alerta si tiene Delantero Genérico Antiguo */}
-              {isLegacyGenericDelantero && (
-                <div className="p-3.5 bg-amber-950/50 border border-amber-500/50 rounded-xl flex items-start gap-3 text-amber-200 text-xs">
-                  <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                  <div className="space-y-1">
-                    <div className="font-bold text-amber-300">Diseño Requiere Revisión — Formato Antiguo Detectado</div>
-                    <p className="text-amber-200/90 leading-relaxed text-[11px]">
-                      Este modelo contiene un arte <span className="font-mono font-bold">DELANTERO</span> genérico. En el nuevo sistema de producción industrial, debes cargar independientemente <span className="font-bold text-white">Delantero Redondo</span> y/o <span className="font-bold text-white">Delantero Cuello V</span> para que el entallador no sustituya piezas silenciosamente.
-                    </p>
-                  </div>
-                </div>
-              )}
-
               {/* LAS RANURAS DE BLOQUES DE ARTE CON VISTA CUADRÍCULA Y CARRUSEL */}
               <div className="space-y-6">
                 <TextilePieceCarousel
-                  title="Piezas de Camiseta (Frente Redondo, Frente V, Espalda, Mangas)"
-                  subtitle="Carga independiente de variantes de cuello y mangas para evitar sustituciones silenciosas"
+                  title="Piezas de Camiseta (Frente, Espalda, Mangas)"
+                  subtitle="Carga de arte para frente, espalda y mangas para entallado 1:1"
                   pieces={[
                     {
-                      id: 'frente_redondo',
-                      title: 'Frente Redondo',
-                      subtitle: 'Arte para cuello redondo',
-                      icon: <Shirt className="w-3.5 h-3.5 text-sky-400" />,
+                      id: 'frente',
+                      title: 'Frente',
+                      subtitle: 'Arte universal de frente (cuello redondo y V)',
+                      icon: <Shirt className="w-3.5 h-3.5 text-sky-500" />,
                       silhouette: <SilhouetteJerseyRound />,
-                      fileName: 'Frente Redondo.svg',
-                      svgContent: frenteRedondoArt?.svgArtContent,
-                      namespace: 'preview_frente_redondo',
-                      onUploadFile: (file: File) => handleUploadSingleBlock('DELANTERO_REDONDO', file),
-                      onRemove: () => {
-                        removePieceArtwork('DELANTERO_REDONDO');
-                        removePieceArtwork('DELANTERO');
+                      fileName: 'Frente.svg',
+                      svgContent: frenteArt?.svgArtContent,
+                      namespace: 'preview_frente',
+                      onUploadFile: (file: File) => {
+                        handleUploadSingleBlock('DELANTERO', file);
+                        handleUploadSingleBlock('DELANTERO_REDONDO', file);
+                        handleUploadSingleBlock('DELANTERO_V', file);
                       },
-                    },
-                    {
-                      id: 'frente_v',
-                      title: 'Frente Cuello V',
-                      subtitle: 'Arte para cuello en V',
-                      icon: <Shirt className="w-3.5 h-3.5 text-indigo-400" />,
-                      silhouette: <SilhouetteJerseyV />,
-                      fileName: 'Frente Cuello V.svg',
-                      svgContent: frenteVArt?.svgArtContent,
-                      namespace: 'preview_frente_v',
-                      onUploadFile: (file: File) => handleUploadSingleBlock('DELANTERO_V', file),
-                      onRemove: () => removePieceArtwork('DELANTERO_V'),
+                      onRemove: () => {
+                        removePieceArtwork('DELANTERO');
+                        removePieceArtwork('DELANTERO_REDONDO');
+                        removePieceArtwork('DELANTERO_V');
+                      },
                     },
                     {
                       id: 'espalda',

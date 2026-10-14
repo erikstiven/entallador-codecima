@@ -22,6 +22,7 @@ import { PieceType, PatternPiece } from '@/modules/patterns/types';
 import { polygonToSvgPath } from '@/core/geometry/transform';
 import { showAlert } from '@/core/ui/alerts';
 import { dbService } from '@/core/database/db';
+import { generateIllustratorTemplateSvg } from '@/modules/patterns/patternTemplateExporter';
 
 export const PatternsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -170,8 +171,21 @@ exportMoldesParaCimatex();`;
     const link = document.createElement('a');
     link.href = url;
     link.download = 'cimatex_export_helper.jsx';
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadTemplate = () => {
+    if (!activePatternSet) return;
+    const svgContent = generateIllustratorTemplateSvg(activePatternSet);
+    const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safeName = activePatternSet.name.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+    link.download = `PLANTILLA_MOLDES_${safeName}_1A1.svg`;
     link.click();
     URL.revokeObjectURL(url);
+    showAlert.toast('success', 'Plantilla SVG editable para Illustrator descargada con éxito.');
   };
 
   const submitManualAssignment = () => {
@@ -335,6 +349,15 @@ exportMoldesParaCimatex();`;
                     <span>Cargar Otro Molde SVG</span>
                   </>
                 )}
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadTemplate}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                title="Descargar plantilla editable con capas para Adobe Illustrator"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Descargar Plantilla Illustrator</span>
               </button>
               <button
                 onClick={handleDownloadScript}
