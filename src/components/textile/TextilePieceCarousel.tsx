@@ -102,17 +102,17 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
 
   return (
     <div className="space-y-3.5">
-      {/* Barra de Controles y Selector de Vista */}
+      {/* Barra de Controles y Selector de Vista con Jerarquía Clara */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           {title && (
-            <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
-              {title}
+            <h4 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-violet-600 shrink-0" />
+              <span>{title}</span>
             </h4>
           )}
-          {subtitle && <p className="text-[11px] text-slate-500 mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
         </div>
-
       </div>
 
       {/* CARRUSEL ÚNICO DE INSPECCIÓN */}
@@ -124,8 +124,8 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
           role="region"
           aria-label="Carrusel de piezas textiles. Use flechas para navegar y más o menos para cambiar el zoom."
         >
-          {/* Selector de pestañas rápidas */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          {/* Selector de pestañas rápidas con jerarquía visual clara */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 border border-slate-200 rounded-xl overflow-x-auto scrollbar-thin">
             {pieces.map((piece, index) => {
               const isCurrent = index === activeIndex;
               const hasArt = Boolean(piece.svgContent);
@@ -139,25 +139,38 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
                     setZoomLevel(DEFAULT_PREVIEW_ZOOM);
                     setFitMode('content');
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 flex-shrink-0 transition-all border cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 flex-shrink-0 transition-all cursor-pointer ${
                     isCurrent
-                      ? 'bg-violet-50 border-violet-300 text-violet-900 shadow-2xs'
-                      : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      ? 'bg-violet-600 text-white shadow-xs font-bold'
+                      : hasArt
+                        ? 'bg-white text-slate-800 hover:bg-slate-50 border border-slate-200/90 shadow-2xs font-semibold'
+                        : 'bg-white/70 text-slate-600 hover:bg-white hover:text-slate-900 border border-slate-200/60 font-medium'
                   }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${
-                      hasArt ? 'bg-emerald-500' : 'bg-amber-500'
+                    className={`w-2 h-2 rounded-full shrink-0 ${
+                      isCurrent
+                        ? hasArt
+                          ? 'bg-emerald-300 ring-2 ring-violet-400'
+                          : 'bg-violet-300'
+                        : hasArt
+                          ? 'bg-emerald-500'
+                          : 'bg-slate-300'
                     }`}
                   />
                   <span>{piece.title}</span>
+                  {hasArt && (
+                    <span className={`text-[10px] font-medium ${isCurrent ? 'text-violet-200' : 'text-emerald-600'}`}>
+                      (Cargado)
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
 
           {/* Escenario de Enfoque con Controles de Navegación */}
-          <div className="relative w-full h-[26rem] sm:h-[30rem] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden flex items-center justify-center p-6 sm:p-8 group">
+          <div className="relative w-full h-[26rem] sm:h-[30rem] bg-slate-50 border border-slate-200/90 rounded-xl overflow-hidden flex items-center justify-center p-6 sm:p-8 group">
             {/* Control de vista SVG */}
             <div className="absolute top-3 left-3 z-20 flex items-center bg-white/95 border border-slate-200 rounded-lg p-1 shadow-xs backdrop-blur-xs">
               <button
