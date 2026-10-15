@@ -7,6 +7,9 @@ import { HeroSection } from './components/HeroSection';
 import { SolutionsSection } from './components/SolutionsSection';
 import { BenefitsSection } from './components/BenefitsSection';
 import { DemoSection } from './components/DemoSection';
+import { ComparisonSection } from './components/ComparisonSection';
+import { SavingsCalculatorSection } from './components/SavingsCalculatorSection';
+import { FaqSection } from './components/FaqSection';
 import { PricingSection, type PricingCurrency } from './components/PricingSection';
 import { CtaSection } from './components/CtaSection';
 import { LandingFooter } from './components/LandingFooter';
@@ -54,6 +57,9 @@ const LandingShellContent: React.FC<{
             <SolutionsSection />
             <BenefitsSection />
             <DemoSection />
+            <ComparisonSection />
+            <SavingsCalculatorSection />
+            <FaqSection />
 
             {/* Unified Bottom Block (#pricing -> #cta -> Footer) with screen-blended white dot overlay */}
             <div

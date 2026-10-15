@@ -349,7 +349,7 @@ exportMoldesParaCimatex();`;
             </div>
 
             {/* Action buttons con Button estandarizado */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               <Button
                 variant="primary"
                 size="sm"
@@ -397,8 +397,8 @@ exportMoldesParaCimatex();`;
           </div>
 
           {/* Barra de Búsqueda y Filtros */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
+            <div className="relative flex-1 max-w-md min-w-[200px]">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -409,7 +409,7 @@ exportMoldesParaCimatex();`;
               />
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <Button
                 variant="secondary"
                 size="sm"
@@ -983,19 +983,19 @@ exportMoldesParaCimatex();`;
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
             {/* Size Tabs Header & View Mode Switcher */}
             <div className="p-3 bg-slate-50/70 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 overflow-x-auto py-0.5">
+              <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto scroll-smooth py-1 scrollbar-thin">
                 {viewMode === 'CARDS' ? (
                   <>
-                    <span className="text-xs font-medium text-slate-500 mr-1 flex items-center gap-1">
+                    <span className="text-xs font-medium text-slate-500 mr-1 flex items-center gap-1 shrink-0">
                       <Sliders className="w-3.5 h-3.5 text-slate-400" /> Tallas:
                     </span>
                     {activePatternSet.sizes.map((s) => (
                       <button
                         key={s.id}
                         onClick={() => setActiveSizeTab(s.sizeName)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                           activeSizeTab === s.sizeName
-                            ? 'bg-violet-600 text-white shadow-xs'
+                            ? 'bg-violet-600 text-white shadow-xs font-bold'
                             : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-100/60'
                         }`}
                       >
@@ -1004,7 +1004,7 @@ exportMoldesParaCimatex();`;
                     ))}
                   </>
                 ) : (
-                  <span className="text-xs font-semibold text-slate-800 flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-800 flex items-center gap-2 shrink-0">
                     <Table className="w-4 h-4 text-violet-600" />
                     Tabla de Moldes y Graduación (Medidas en cm)
                   </span>

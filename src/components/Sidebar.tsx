@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileSpreadsheet, 
   Palette, 
@@ -30,8 +30,22 @@ const NAV_SECONDARY_ITEMS: NavItem[] = [
 ];
 
 export const Sidebar: React.FC = () => {
-  const { currentView, setCurrentView, isSidebarCollapsed } = useNavigationStore();
+  const { currentView, setCurrentView, isSidebarCollapsed, setSidebarCollapsed } = useNavigationStore();
   const [isHovered, setIsHovered] = useState<boolean>(false);
+
+  // Auto-colapsar a modo riel en pantallas reducidas (<1024px) para optimizar ergonomía de taller
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        setSidebarCollapsed(true);
+      }
+    };
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setSidebarCollapsed(true);
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [setSidebarCollapsed]);
 
   // Está visualmente expandido si no está colapsado O si el usuario pasa el mouse por encima
   const isVisuallyExpanded = !isSidebarCollapsed || isHovered;
@@ -47,6 +61,9 @@ export const Sidebar: React.FC = () => {
         onClick={() => {
           setCurrentView(item.id);
           setIsHovered(false);
+          if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+            setSidebarCollapsed(true);
+          }
         }}
         title={item.label}
         className={`w-full flex items-center rounded-xl transition-all duration-150 text-xs font-semibold cursor-pointer group ${
@@ -74,6 +91,15 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
+      {/* Overlay accesible con desenfoque suave para pantallas táctiles y móviles cuando la barra está expandida */}
+      {!isSidebarCollapsed && (
+        <div
+          onClick={() => setSidebarCollapsed(true)}
+          className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs z-30 lg:hidden cursor-pointer"
+          aria-hidden="true"
+        />
+      )}
+
       {/* Contenedor estático para reservar el espacio en el flujo principal cuando está colapsado */}
       {isSidebarCollapsed && (
         <div className="w-16 flex-shrink-0 h-screen" aria-hidden="true" />
@@ -92,7 +118,7 @@ export const Sidebar: React.FC = () => {
             ? 'fixed top-0 left-0 w-56 z-50 shadow-2xl ring-1 ring-slate-900/10'
             : isSidebarCollapsed
               ? 'fixed top-0 left-0 w-16 z-20 shadow-xs'
-              : 'w-56 flex-shrink-0 z-20 shadow-xs'
+              : 'fixed top-0 left-0 w-56 z-40 lg:static lg:z-20 lg:w-56 flex-shrink-0 shadow-xl lg:shadow-xs'
         }`}
       >
         {/* Brand Header */}

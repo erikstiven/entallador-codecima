@@ -145,9 +145,6 @@ export const SettingsView: React.FC = () => {
       totalRollWidthMm: preset.widthMm,
       printableWidthMm: preset.widthMm,
     });
-    handleUpdateSettings({
-      defaultRollWidthMm: preset.widthMm,
-    });
     triggerSaveNotification();
     showAlert.toast('success', `Ancho configurado para ${preset.name} (${preset.widthMm} mm)`);
   };
@@ -421,12 +418,12 @@ export const SettingsView: React.FC = () => {
             </div>
 
             {/* Botones de Acción de Respaldo */}
-            <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 pt-2 border-t border-slate-100 flex-wrap">
               <button
                 type="button"
                 onClick={handleDownloadBackup}
                 disabled={isExportingBackup || isRestoringBackup}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white shadow-xs transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white shadow-xs transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                 title="Descargar archivo completo con moldes, diseños y ajustes"
               >
                 {isExportingBackup ? (
@@ -446,7 +443,7 @@ export const SettingsView: React.FC = () => {
                 type="button"
                 onClick={() => backupInputRef.current?.click()}
                 disabled={isExportingBackup || isRestoringBackup}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                 title="Restaurar base de datos desde un archivo .cimatex"
               >
                 {isRestoringBackup ? (
@@ -509,7 +506,7 @@ export const SettingsView: React.FC = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
             {POPULAR_PLOTTER_PRESETS.map((preset) => {
               const isActive = Math.abs(activeProfile.totalRollWidthMm - preset.widthMm) < 0.5;
               return (

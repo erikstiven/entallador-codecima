@@ -1,6 +1,6 @@
 import { dbService } from '@/core/database/db';
 import { useSystemSettingsStore, SystemSettings } from './systemSettingsStore';
-import { useProfileStore, WorkshopProfile } from './profileStore';
+import { useProfileStore, ProductionProfile } from './profileStore';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { useDesignStore } from '@/modules/designs/designStore';
 import { getAllStoredCustomFonts, saveCustomFontToDb, restoreAndRegisterCustomFonts } from '@/core/fonts/fontRepository';
@@ -21,8 +21,8 @@ export interface CimaTexBackupPayload {
   };
   settings: SystemSettings;
   profiles: {
-    list: WorkshopProfile[];
-    active: WorkshopProfile | null;
+    list: ProductionProfile[];
+    active: ProductionProfile | null;
   };
   customFonts?: StoredFontBackup[];
   metadata?: {
@@ -202,7 +202,7 @@ export async function restoreCimaTexBackup(payload: CimaTexBackupPayload): Promi
   // 5. Restaurar fuentes personalizadas
   if (payload.customFonts && payload.customFonts.length > 0) {
     for (const fontItem of payload.customFonts) {
-      const buffer = base64ToUint8Array(fontItem.base64Buffer).buffer;
+      const buffer = base64ToUint8Array(fontItem.base64Buffer).buffer as ArrayBuffer;
       await saveCustomFontToDb(fontItem.name, fontItem.fileName, buffer);
     }
     await restoreAndRegisterCustomFonts();

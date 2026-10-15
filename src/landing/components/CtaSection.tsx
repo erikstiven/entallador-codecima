@@ -29,7 +29,7 @@ export const CtaSection: React.FC = () => {
         }}
       />
 
-      <div className="container relative z-10 flex min-h-[32vh] justify-center px-4 md:px-6">
+      <div className="container relative z-10 flex min-h-[32vh] justify-center px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center space-y-5 text-center">
           <div className="relative mb-1">
             <img
@@ -37,20 +37,20 @@ export const CtaSection: React.FC = () => {
               alt="Mascota CimaTex"
               width={140}
               height={140}
-              className="h-28 md:h-36 w-auto object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:scale-105"
+              className="h-24 sm:h-28 md:h-36 w-auto object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:scale-105"
             />
           </div>
-          <h3 className="text-3xl md:text-4xl lg:text-4xl font-bold tracking-tight text-white">
+          <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white">
             {title}
           </h3>
-          <p className="mx-auto max-w-[700px] text-white/80 md:text-xl">
+          <p className="mx-auto max-w-[700px] text-white/80 text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
             {description}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 mt-2">
+          <div className="flex flex-col sm:flex-row gap-4 mt-2 w-full sm:w-auto justify-center">
             <button
               type="button"
               onClick={openAuthModal}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-full h-12 px-8 text-base mt-1 bg-white text-[#180d33] hover:bg-white/90 shadow-lg cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-full h-12 px-8 text-base mt-1 bg-white text-[#180d33] hover:bg-white/90 active:scale-95 shadow-lg touch-manipulation cursor-pointer"
             >
               {buttonLabel}
               <ArrowRight className="ml-2 size-4" />

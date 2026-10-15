@@ -31,7 +31,7 @@ export const LandingFooter: React.FC = () => {
         }}
       />
 
-      <div className="container relative z-10 flex flex-col gap-8 px-4 py-10 md:px-6 lg:py-16">
+      <div className="container relative z-10 flex flex-col gap-8 px-4 sm:px-6 lg:px-8 py-10 md:py-16">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
           <div className="space-y-4">
             <a
@@ -233,11 +233,11 @@ export const LandingFooter: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 sm:flex-row justify-between items-center border-t border-white/10 pt-8">
+        <div className="flex flex-col gap-4 sm:flex-row justify-between items-center border-t border-white/10 pt-8 text-center sm:text-left">
           <p className="text-xs text-white/60">
             © {new Date().getFullYear()} CimaTex por Codecima. {t.footer.copyright}
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap justify-center sm:justify-end gap-4">
             <a
               href="/privacy-policy"
               onClick={(e) => handleLinkClick(e, '/privacy-policy')}

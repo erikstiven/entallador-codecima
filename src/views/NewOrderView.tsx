@@ -340,7 +340,7 @@ export const NewOrderView: React.FC = () => {
         </div>
 
         {/* Grupo de botones a la derecha alineados */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* Cargar Excel (Secundario blanco) */}
           <Button
             variant="secondary"
@@ -620,7 +620,7 @@ export const NewOrderView: React.FC = () => {
             </div>
 
             {isMassEditOpen && (
-              <div className="p-3.5 bg-white border-t border-slate-100">
+              <div className="p-3.5 bg-white border-t border-slate-100 max-h-[85vh] overflow-y-auto">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 items-end">
                   {/* Tipo Prenda */}
                   <div className="space-y-1">
@@ -708,7 +708,7 @@ export const NewOrderView: React.FC = () => {
         {/* 4. TABLA DE NÓMINA */}
           <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
             {/* Barra superior de la tabla con botón + Agregar Jugador */}
-            <div className="px-4 py-2.5 bg-slate-50/70 border-b border-slate-200/70 flex items-center justify-between gap-3">
+            <div className="px-4 py-2.5 bg-slate-50/70 border-b border-slate-200/70 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-800">
                   Nómina de Jugadores ({items.length})
@@ -729,8 +729,8 @@ export const NewOrderView: React.FC = () => {
               </Button>
             </div>
 
-            <div className="overflow-x-auto max-h-[480px]">
-              <table className="w-full text-left text-xs font-sans">
+            <div className="overflow-x-auto max-h-[480px] scroll-smooth">
+              <table className="w-full min-w-[760px] text-left text-xs font-sans">
                 <thead className="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200 z-10 text-[11px] uppercase tracking-wider font-mono">
                   <tr>
                     <th className="py-2.5 px-3 w-12 text-center">#</th>
@@ -936,7 +936,7 @@ export const NewOrderView: React.FC = () => {
             </div>
 
             {/* Pie de tabla con botón + Agregar otra fila */}
-            <div className="px-4 py-2 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between">
+            <div className="px-4 py-2 bg-slate-50/60 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
               <span className="text-[11px] text-slate-400 font-medium font-mono">
                 {items.length} {items.length === 1 ? 'jugador registrado' : 'jugadores registrados'}
               </span>
@@ -955,7 +955,7 @@ export const NewOrderView: React.FC = () => {
         </div>
 
       {/* 5. BARRA INFERIOR DE ACCIÓN (CTA) */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs">
         <div className="space-y-1">
           <div className="text-xs text-slate-600">
             {items.length === 0 ? (
@@ -985,7 +985,7 @@ export const NewOrderView: React.FC = () => {
               </span>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-slate-500">
             <span className="inline-flex items-center gap-1.5">
               <span className="text-slate-400 font-medium">Molde:</span>
               {currentPatternSet ? (

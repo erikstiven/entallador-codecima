@@ -452,10 +452,10 @@ export const ProductionNestingView: React.FC = () => {
       )}
 
       {/* Barra de Navegación Principal del Flujo de Producción */}
-      {!isPreviewMode && <div className="bg-white border-b border-slate-200 px-6 py-2.5 flex items-center justify-between flex-shrink-0 z-30 shadow-xs">
+      {!isPreviewMode && <div className="bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 flex-shrink-0 z-30 shadow-xs">
         {/* Selector de Pestañas: 1. Revisión vs 2. Rollo */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-1 text-xs">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-1 text-xs flex-wrap gap-1">
             <button
               onClick={() => setActiveTab('INSPECTION')}
               className={`px-3.5 py-1.5 rounded-md font-bold transition-all flex items-center gap-2 cursor-pointer ${
@@ -489,9 +489,9 @@ export const ProductionNestingView: React.FC = () => {
 
         {/* Acciones del Extremo Derecho (Solo cuando se visualiza el Rollo) */}
         {activeTab === 'ROLL' && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {/* Controles de Zoom del Rollo */}
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-1 text-xs text-slate-600 shadow-xs">
+            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-1 text-xs text-slate-600 shadow-xs flex-wrap gap-1">
               <button
                 onClick={() => setZoomLevel((z) => Math.max(z - 10, 15))}
                 className="p-1 hover:text-slate-900 hover:bg-slate-100 rounded cursor-pointer"
@@ -676,8 +676,8 @@ export const ProductionNestingView: React.FC = () => {
           )}
 
           {/* Cinta superior de configuración de Bobina y Pliego */}
-          {!isPreviewMode && <div className="bg-slate-50/95 border-b border-slate-200 px-6 py-2 flex flex-wrap items-center justify-between gap-4 z-20 text-xs">
-            <div className="flex flex-wrap items-center gap-3">
+          {!isPreviewMode && <div className="bg-slate-50/95 border-b border-slate-200 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 sm:gap-4 z-20 text-xs">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <details className="group relative">
                 <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-xs hover:border-violet-500">
                   <Settings2 className="h-3.5 w-3.5 text-violet-600" />
@@ -910,9 +910,9 @@ export const ProductionNestingView: React.FC = () => {
 
           {/* SELECTOR DE PARTES / PLIEGOS PARTICIONADOS EN UN SELECT COMPACTO Y MODERNO */}
           {sheets.length > 0 && (
-            <div className="bg-white border-b border-slate-200 px-6 py-2 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 shadow-xs">
-              <div className="flex items-center gap-2.5">
-                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5 font-mono">
+            <div className="bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 flex-shrink-0 shadow-xs">
+              <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap min-w-0">
+                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5 font-mono shrink-0">
                   <Layers className="w-4 h-4 text-violet-600" />
                   <span>PARTE / PLIEGO:</span>
                 </span>
@@ -926,7 +926,7 @@ export const ProductionNestingView: React.FC = () => {
                       setActiveSheetIndex(Number(e.target.value));
                     }
                   }}
-                  className="bg-white border border-slate-300 hover:border-violet-500 rounded-lg px-3 py-1.5 text-xs font-bold font-mono text-violet-700 shadow-2xs focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                  className="bg-white border border-slate-300 hover:border-violet-500 rounded-lg px-3 py-1.5 text-xs font-bold font-mono text-violet-700 shadow-2xs focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer max-w-[280px] sm:max-w-md truncate"
                 >
                   {sheets.map((sheet, idx) => {
                     const isCamiseta = sheet.garmentType === 'CAMISETA';
@@ -943,7 +943,7 @@ export const ProductionNestingView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setViewAllSheets(!viewAllSheets)}
-                  className={`px-2.5 py-1.5 rounded-lg border text-xs font-mono font-semibold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1.5 rounded-lg border text-xs font-mono font-semibold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 shrink-0 ${
                     viewAllSheets
                       ? 'bg-violet-600 text-white border-violet-600 shadow-xs'
                       : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'

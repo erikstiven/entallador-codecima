@@ -146,9 +146,9 @@ export const Header: React.FC = () => {
     .toUpperCase() || 'UC';
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200/90 px-4 sm:px-6 flex items-center justify-between select-none z-30 transition-colors">
+    <header className="h-14 bg-white border-b border-slate-200/90 px-3 sm:px-6 flex items-center justify-between select-none z-30 transition-colors">
       {/* Botón de Colapsar/Expandir Barra Lateral y Título de Vista Activa */}
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 max-w-[55%] sm:max-w-none">
         <button
           type="button"
           onClick={toggleSidebarCollapsed}
@@ -162,18 +162,18 @@ export const Header: React.FC = () => {
           )}
         </button>
 
-        <div className="min-w-0">
-          <h2 className="text-sm font-extrabold text-slate-900 tracking-tight truncate">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight truncate">
             {info.title}
           </h2>
-          <p className="text-[11px] text-slate-500 hidden sm:block -mt-0.5 truncate">
+          <p className="text-[10px] sm:text-[11px] text-slate-500 hidden sm:block -mt-0.5 truncate">
             {info.subtitle}
           </p>
         </div>
       </div>
 
       {/* Derecha: Campana de Notificaciones, Separador y Perfil Usuario (1:1 SIFEF) */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
 
         {/* Campana de Notificaciones con Badge */}
         <div className="relative" ref={notifRef}>
@@ -188,15 +188,15 @@ export const Header: React.FC = () => {
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute 1 top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center shadow-xs ring-2 ring-white">
-                {unreadCount}
+              <span className="absolute top-0.5 right-0.5 min-w-[18px] max-w-[28px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center shadow-xs ring-2 ring-white truncate">
+                {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </button>
 
           {/* Menú desplegable de Notificaciones */}
           {isNotificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
+            <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] sm:w-80 max-w-sm bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
               <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-slate-900">Notificaciones</span>
@@ -279,27 +279,27 @@ export const Header: React.FC = () => {
               setIsUserMenuOpen((prev) => !prev);
               setIsNotificationsOpen(false);
             }}
-            className="flex items-center gap-3 py-1 px-1.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group"
+            className="flex items-center gap-1.5 sm:gap-3 py-1 px-1.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group"
             title="Opciones de cuenta"
           >
             {/* Avatar Circular con estilos de rol centralizados */}
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black shadow-xs ring-2 ring-white transition-all ${roleTheme.avatarClass}`}>
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black shadow-xs ring-2 ring-white shrink-0 transition-all ${roleTheme.avatarClass}`}>
               {displayInitials}
             </div>
 
             {/* Nombre y Rol apilados */}
-            <div className="text-left hidden md:block">
-              <div className="text-slate-900 font-extrabold text-xs tracking-tight leading-tight group-hover:text-violet-600 transition-colors">
+            <div className="text-left hidden md:block max-w-[140px] lg:max-w-[180px]">
+              <div className="text-slate-900 font-extrabold text-xs tracking-tight leading-tight group-hover:text-violet-600 transition-colors truncate">
                 {displayName}
               </div>
-              <div className={`text-[9px] font-mono tracking-wider font-bold uppercase leading-none mt-0.5 ${roleTheme.textClass}`}>
+              <div className={`text-[9px] font-mono tracking-wider font-bold uppercase leading-none mt-0.5 truncate ${roleTheme.textClass}`}>
                 {displayRole}
               </div>
             </div>
 
             {/* Flecha Chevron desplegable */}
             <ChevronDown
-              className={`w-4 h-4 text-slate-400 group-hover:text-slate-700 transition-transform duration-150 ${
+              className={`w-4 h-4 text-slate-400 group-hover:text-slate-700 transition-transform duration-150 shrink-0 ${
                 isUserMenuOpen ? 'rotate-180 text-slate-900' : ''
               }`}
             />
@@ -307,7 +307,7 @@ export const Header: React.FC = () => {
 
           {/* Menú desplegable del Perfil */}
           {isUserMenuOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
+            <div className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-1.5rem)] bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
               <div className="px-4 py-2.5 border-b border-slate-100">
                 <p className="font-bold text-slate-900 text-xs">{displayName}</p>
                 <p className="text-[10px] text-slate-400 font-mono truncate">

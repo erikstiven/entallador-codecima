@@ -407,7 +407,7 @@ export const DesignsView: React.FC = () => {
   );
 
   return (
-    <div className="h-full min-h-0 p-6 flex flex-col overflow-hidden w-full text-slate-800">
+    <div className="h-full min-h-0 p-3 sm:p-6 flex flex-col overflow-hidden w-full text-slate-800">
       {/* Input de carga masiva de bloques SVG del modelo */}
       <input
         ref={multiInputRef}
@@ -419,9 +419,9 @@ export const DesignsView: React.FC = () => {
       />
 
       {/* Grilla Principal con Scroll Independiente en ambas columnas */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 sm:gap-5">
         {/* Columna Izquierda: Modelos con scroll independiente */}
-        <div className="w-full lg:w-56 shrink-0 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col h-full min-h-0 overflow-hidden">
+        <div className="w-full lg:w-56 shrink-0 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col max-h-52 lg:max-h-none lg:h-full min-h-0 overflow-hidden">
           <div className="p-3 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Modelos ({designs.length})
@@ -520,7 +520,7 @@ export const DesignsView: React.FC = () => {
         {activeDesign ? (
           <div className="flex-1 min-h-0 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col h-full overflow-hidden">
             {/* Header fijo del Editor - Fila única y compacta */}
-            <div className="h-12 px-4 border-b border-slate-200 shrink-0 bg-white flex items-center justify-between gap-3">
+            <div className="min-h-12 py-2 px-3 sm:px-4 border-b border-slate-200 shrink-0 bg-white flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
               {/* Título editable del modelo */}
               <div className="flex items-center gap-2 min-w-0">
                 <span className="w-2 h-2 rounded-full bg-violet-600 shrink-0" />
@@ -580,7 +580,7 @@ export const DesignsView: React.FC = () => {
               </div>
 
               {/* Acciones principales en una sola fila compacta */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap">
                 {renderSaveDesignButton()}
 
                 <button

@@ -234,9 +234,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
         }}
       />
 
-      <div className="container relative z-10 px-4 md:px-6">
+      <div className="container relative z-10 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
             {pricing.title}
           </h2>
         </div>
@@ -256,7 +256,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
               {row.map((feature, idx) => (
                 <li
                   key={idx}
-                  className="group inline-flex select-none items-center gap-1.5 rounded-full border border-border/60 bg-white/90 px-3.5 py-1.5 text-sm shadow-sm backdrop-blur [-webkit-tap-highlight-color:transparent] transition-[background-color,border-color,box-shadow,transform,color] duration-[350ms] ease-[cubic-bezier(.22,.61,.36,1)] [@media(hover:hover)]:hover:border-[color:var(--primary-dark)] [@media(hover:hover)]:hover:bg-[color:var(--primary-dark)] [@media(hover:hover)]:hover:text-white [@media(hover:hover)]:hover:shadow-[0_8px_18px_-8px_rgba(91,33,182,.7)] motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5"
+                  className="group inline-flex select-none items-center gap-1.5 rounded-full border border-border/60 bg-white/90 px-3.5 py-1.5 text-xs sm:text-sm shadow-sm backdrop-blur [-webkit-tap-highlight-color:transparent] transition-[background-color,border-color,box-shadow,transform,color] duration-[350ms] ease-[cubic-bezier(.22,.61,.36,1)] [@media(hover:hover)]:hover:border-[color:var(--primary-dark)] [@media(hover:hover)]:hover:bg-[color:var(--primary-dark)] [@media(hover:hover)]:hover:text-white [@media(hover:hover)]:hover:shadow-[0_8px_18px_-8px_rgba(91,33,182,.7)] motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5"
                 >
                   <Check className="size-3.5 md:size-4 shrink-0 text-primary transition-colors duration-[350ms] group-hover:text-white [@media(hover:hover)]:group-hover:text-white" />
                   {feature}
@@ -280,7 +280,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                     data-currency={option.value}
                     aria-pressed={isActive}
                     onClick={() => handleSelectCurrency(option.value)}
-                    className={`rounded-full px-4 py-1.5 text-sm transition-colors duration-[350ms] ease-[cubic-bezier(.22,.61,.36,1)] ${
+                    className={`rounded-full px-4 py-1.5 text-sm transition-colors duration-[350ms] ease-[cubic-bezier(.22,.61,.36,1)] touch-manipulation cursor-pointer ${
                       isActive
                         ? 'bg-[color:var(--primary-dark)] text-white shadow-[0_8px_18px_-8px_rgba(91,33,182,.7)]'
                         : 'text-muted-foreground hover:text-foreground'
@@ -296,14 +296,14 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
 
         {/* ── SINGLE FEATURED PLAN: PLAN GRATIS ("solo 1 por ahora gratis, comienza gratis") ── */}
         <div className="mx-auto mt-10 max-w-lg">
-          <div className="relative rounded-3xl border-2 border-violet-500/40 bg-white text-slate-800 shadow-2xl p-7 sm:p-9 text-center flex flex-col items-center">
+          <div className="relative rounded-3xl border-2 border-violet-500/40 bg-white text-slate-800 shadow-2xl p-6 sm:p-9 text-center flex flex-col items-center">
             {/* Top Pill */}
             <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 text-violet-700 font-mono text-xs font-bold px-4 py-1 border border-violet-300 shadow-xs mb-3">
               <Sparkles className="size-3.5 text-violet-600" />
               PLAN GRATUITO · ACCESO COMPLETO
             </span>
 
-            <h3 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-900">
               Comienza Gratis
             </h3>
             <p className="mt-2 text-xs sm:text-sm text-slate-500 max-w-sm">
@@ -315,7 +315,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                 69 USD / mes
               </span>
               <div className="flex items-baseline justify-center gap-1.5 mt-0.5">
-                <span className="text-5xl sm:text-6xl font-black tracking-tight text-violet-600">
+                <span className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-violet-600">
                   0 USD
                 </span>
                 <span className="text-sm font-semibold text-slate-500">
@@ -351,7 +351,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
               <button
                 type="button"
                 onClick={openAuthModal}
-                className="w-full h-13 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-bold text-base shadow-xl shadow-violet-600/30 inline-flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
+                className="w-full h-12 sm:h-13 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-bold text-base shadow-xl shadow-violet-600/30 inline-flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer touch-manipulation"
               >
                 <span>Comenzar gratis con Google</span>
                 <ChevronRight className="size-5" />

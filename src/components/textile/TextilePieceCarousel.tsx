@@ -159,8 +159,8 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
           role="region"
           aria-label="Carrusel de piezas textiles. Use flechas para navegar y más o menos para cambiar el zoom."
         >
-          {/* Selector de pestañas rápidas con jerarquía visual clara */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 border border-slate-200 rounded-xl overflow-x-auto scrollbar-thin">
+          {/* Selector de pestañas rápidas con jerarquía visual clara y scroll horizontal suave */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 border border-slate-200 rounded-xl overflow-x-auto scroll-smooth scrollbar-thin">
             {pieces.map((piece, index) => {
               const isCurrent = index === activeIndex;
               const hasArt = Boolean(piece.svgContent);
@@ -175,7 +175,7 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
                     setPanOffset({ x: 0, y: 0 });
                     setFitMode('content');
                   }}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 flex-shrink-0 transition-all cursor-pointer ${
+                  className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 shrink-0 whitespace-nowrap transition-all cursor-pointer ${
                     isCurrent
                       ? 'bg-violet-600 text-white shadow-xs font-bold'
                       : hasArt
@@ -203,7 +203,7 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
 
           {/* Escenario de Enfoque con Controles de Navegación */}
           <div
-            className={`relative w-full h-[26rem] sm:h-[30rem] bg-slate-50 border border-slate-200/90 rounded-xl overflow-hidden flex items-center justify-center p-6 sm:p-8 select-none group ${
+            className={`relative w-full h-[22rem] sm:h-[28rem] lg:h-[30rem] bg-slate-50 border border-slate-200/90 rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-8 select-none group ${
               activePiece.svgContent
                 ? isDragging
                   ? 'cursor-grabbing'
@@ -359,17 +359,17 @@ export const TextilePieceCarousel: React.FC<TextilePieceCarouselProps> = ({
           </div>
 
           {/* Pie de Carrusel con Acciones Rápidas */}
-          <div className="flex items-center justify-between text-xs pt-1">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-800 text-sm">{activePiece.title}</span>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-bold text-slate-800 text-xs sm:text-sm truncate">{activePiece.title}</span>
               {activePiece.subtitle && (
-                <span className="text-slate-500 text-xs hidden sm:inline">
+                <span className="text-slate-500 text-xs hidden sm:inline truncate">
                   — {activePiece.subtitle}
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {activePiece.onUploadFile && (
                 <label className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors shadow-xs">
                   {activePiece.svgContent ? 'Reemplazar SVG' : 'Subir SVG'}

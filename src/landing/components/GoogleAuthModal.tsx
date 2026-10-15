@@ -110,16 +110,16 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = (props) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-2xl p-6 sm:p-8 text-slate-800 overflow-hidden"
+        className="relative max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-slate-200 shadow-2xl p-5 sm:p-8 text-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           type="button"
           onClick={handleClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+          className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors touch-manipulation cursor-pointer"
           title="Cerrar ventana"
         >
           <X className="size-5" />
@@ -204,7 +204,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = (props) => {
             type="button"
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 text-slate-800 font-semibold text-sm shadow-xs transition-all duration-200 active:scale-98 disabled:opacity-70 cursor-pointer group"
+            className="w-full flex items-center justify-center gap-3 py-3 px-4 min-h-[48px] rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 text-slate-800 font-semibold text-sm shadow-xs transition-all duration-200 active:scale-98 disabled:opacity-70 cursor-pointer group touch-manipulation"
           >
             {isLoading ? (
               <>

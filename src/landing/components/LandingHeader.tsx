@@ -95,6 +95,15 @@ export const LandingHeader: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
+
   const navRecord = t.nav as Record<string, string | undefined>;
   const appNavLabel = navRecord.app ?? t.nav.demo;
   const signInLabel = navRecord.signIn ?? t.nav.login;
@@ -108,18 +117,18 @@ export const LandingHeader: React.FC = () => {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full bg-background transition-shadow duration-300 ${
+      className={`sticky top-0 z-50 w-full bg-background/95 backdrop-blur-md transition-shadow duration-300 ${
         isScrolled ? 'shadow-sm' : ''
       }`}
     >
-      <div className="container relative flex h-16 items-center justify-between">
+      <div className="container relative flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <a
           href="/"
           onClick={(e) => {
             e.preventDefault();
             navigateTo('/');
           }}
-          className="flex shrink-0 items-center gap-2.5 font-bold transition-opacity hover:opacity-90"
+          className="flex shrink-0 items-center gap-2.5 font-bold transition-opacity hover:opacity-90 select-none"
         >
           <img
             src="/cimatex-icon.png"
@@ -155,7 +164,7 @@ export const LandingHeader: React.FC = () => {
           <button
             type="button"
             onClick={openAuthModal}
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap cursor-pointer"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap cursor-pointer px-2 py-1"
           >
             {signInLabel}
           </button>
@@ -169,17 +178,19 @@ export const LandingHeader: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex items-center lg:hidden">
+        <div className="flex items-center lg:hidden gap-1">
+          <LanguageSwitcher />
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground h-10 w-10"
-            aria-label="Abrir menú"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all hover:bg-accent hover:text-accent-foreground h-11 w-11 active:scale-95 touch-manipulation cursor-pointer"
+            aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? (
-              <X className="size-5" />
+              <X className="size-6 text-foreground" />
             ) : (
-              <Menu className="size-5" />
+              <Menu className="size-6 text-foreground" />
             )}
             <span className="sr-only">Toggle menu</span>
           </button>
@@ -187,50 +198,56 @@ export const LandingHeader: React.FC = () => {
       </div>
 
       {mobileMenuOpen && (
-        <div className="lg:hidden absolute top-16 inset-x-0 bg-background border-b shadow-[0_10px_15px_-3px_rgba(9,14,13,0.12),0_20px_40px_-24px_rgba(9,14,13,0.45)]">
-          <div className="container py-4 flex flex-col gap-4">
-            {navItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMobileMenuOpen(false);
-                  navigateTo(item.target);
-                }}
-                className="py-2 text-sm font-medium"
-              >
-                {item.label}
-              </a>
-            ))}
-            <div className="flex flex-col gap-3 pt-3 border-t">
-              <div className="self-start">
-                <LanguageSwitcher />
+        <>
+          {/* Backdrop overlay for outside tap */}
+          <div
+            className="fixed inset-0 top-16 bg-black/40 backdrop-blur-xs z-30 lg:hidden animate-in fade-in duration-200"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+
+          <div className="lg:hidden absolute top-16 inset-x-0 bg-background border-b border-border shadow-xl z-40 animate-in slide-in-from-top-2 duration-200">
+            <div className="container px-4 sm:px-6 py-5 flex flex-col gap-3">
+              {navItems.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMobileMenuOpen(false);
+                    navigateTo(item.target);
+                  }}
+                  className="py-2.5 px-3 rounded-lg text-base font-semibold text-foreground/90 hover:bg-muted transition-colors"
+                >
+                  {item.label}
+                </a>
+              ))}
+              <div className="flex flex-col gap-3 pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    openAuthModal();
+                  }}
+                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border-[1.5px] border-primary text-[15px] font-semibold text-primary transition-colors hover:bg-primary/5 active:scale-98 touch-manipulation cursor-pointer shadow-xs"
+                >
+                  <LogIn className="size-4" />
+                  <span>{signInLabel}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    openAuthModal();
+                  }}
+                  className="h-12 w-full rounded-full text-[15px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 active:scale-98 inline-flex items-center justify-center transition-colors touch-manipulation cursor-pointer shadow-md"
+                >
+                  <span>{t.nav.getStarted}</span>
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  openAuthModal();
-                }}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-full border-[1.5px] border-primary text-[15px] font-semibold text-primary transition-colors hover:bg-primary/5 cursor-pointer"
-              >
-                <LogIn className="size-4" />
-                {signInLabel}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  openAuthModal();
-                }}
-                className="h-11 w-full rounded-full text-[15px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center transition-colors cursor-pointer"
-              >
-                {t.nav.getStarted}
-              </button>
             </div>
           </div>
-        </div>
+        </>
       )}
     </header>
   );

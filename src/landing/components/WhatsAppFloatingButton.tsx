@@ -74,7 +74,7 @@ export const WhatsAppFloatingButton: React.FC<WhatsAppFloatingButtonProps> = ({
         type="button"
         onClick={() => openWhatsApp(phoneNumber, message)}
         aria-label="Contactar por WhatsApp"
-        className="group relative bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105"
+        className="group relative bg-green-500 hover:bg-green-600 text-white p-3.5 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105 active:scale-95 touch-manipulation cursor-pointer"
       >
         <svg
           className="w-6 h-6 fill-current"

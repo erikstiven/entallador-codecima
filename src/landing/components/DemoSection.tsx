@@ -11,7 +11,7 @@ export const DemoSection: React.FC = () => {
   return (
     <section
       id="demo"
-      className="relative z-10 scroll-mt-16 w-full pt-20 md:pt-32"
+      className="relative z-10 scroll-mt-16 w-full pt-16 sm:pt-20 md:pt-32"
       style={{
         background: 'linear-gradient(to bottom, #ffffff 0%, #fbfbfc 100%)',
       }}
@@ -31,13 +31,13 @@ export const DemoSection: React.FC = () => {
       />
 
       {t.appMock?.title && (
-        <div className="container px-4 md:px-6 mb-12">
+        <div className="container px-4 sm:px-6 lg:px-8 mb-8 sm:mb-12">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
               {t.appMock.title}
             </h2>
             {subtitle && (
-              <p className="mt-4 text-base md:text-lg text-muted-foreground">
+              <p className="mt-4 text-sm sm:text-base md:text-lg text-muted-foreground">
                 {subtitle}
               </p>
             )}
@@ -45,7 +45,7 @@ export const DemoSection: React.FC = () => {
         </div>
       )}
 
-      <div className="relative z-10 mx-auto w-full max-w-[1280px] overflow-hidden rounded-t-xl border border-b-0 border-black/10 bg-muted/60 shadow-2xl [container-type:inline-size] max-[1328px]:w-[calc(100%-2rem)]">
+      <div className="relative z-10 mx-auto w-full max-w-[1280px] overflow-hidden rounded-t-xl border border-b-0 border-black/10 bg-muted/60 shadow-2xl [container-type:inline-size] max-[1328px]:w-[calc(100%-1.5rem)] sm:max-[1328px]:w-[calc(100%-2rem)]">
         <div className="flex h-[clamp(24px,3.15cqw,40px)] items-center gap-[clamp(6px,1.1cqw,14px)] px-[clamp(8px,1.25cqw,16px)]">
           <div className="flex items-center gap-[clamp(4px,0.6cqw,8px)]">
             <span className="block size-[clamp(6px,0.94cqw,12px)] rounded-full bg-[#FF5F57]" />

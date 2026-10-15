@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { ProductionProfile } from '@/core/geometry/types';
 
+export type { ProductionProfile };
+
 interface ProfileState {
   profiles: ProductionProfile[];
   activeProfile: ProductionProfile;

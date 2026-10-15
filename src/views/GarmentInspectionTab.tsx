@@ -545,7 +545,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
   } = useGeneratorStore();
   const { activeDesign, updatePlaceholderRule } = useDesignStore();
 
-  const [showCalibrationPanel, setShowCalibrationPanel] = useState<boolean>(true);
+  const [showCalibrationPanel, setShowCalibrationPanel] = useState<boolean>(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
   const [activeZone, setActiveZone] = useState<CalibrationZone>('ESPALDA');
   const [showColorBorderConfig, setShowColorBorderConfig] = useState<boolean>(false);
   const [pieceViewGroup, setPieceViewGroup] = useState<PieceViewGroup>('CUERPO');
@@ -991,9 +991,18 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
         };
 
         return (
-          <div className="flex-1 overflow-hidden flex flex-col lg:flex-row min-h-0">
+          <div className="flex-1 overflow-hidden flex flex-col lg:flex-row min-h-0 relative">
+            {/* Backdrop para cerrar panel en pantallas menores a 1024px */}
+            {showCalibrationPanel && (
+              <div
+                onClick={() => setShowCalibrationPanel(false)}
+                className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-30 lg:hidden cursor-pointer"
+                aria-hidden="true"
+              />
+            )}
+
             {/* COLUMNA IZQUIERDA: CARRUSEL Y VISUALIZADOR DE PIEZAS (AMPLIO Y PROPORCIONAL) */}
-            <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 min-w-0">
               {/* Barra superior de navegación por Carrusel de Secciones de la Prenda */}
               <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-2xs">
                 {/* Info del Jugador */}
@@ -1007,18 +1016,18 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   </span>
                 </div>
 
-                {/* Selector de Carrusel por Secciones */}
-                <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200/80 p-1 rounded-xl">
+                {/* Selector de Carrusel por Secciones con soporte táctil y flechas de buen área de clic */}
+                <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200/80 p-1 rounded-xl max-w-full">
                   <button
                     type="button"
                     onClick={handlePrevViewGroup}
-                    className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                    className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
                     title="Sección anterior del carrusel"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 overflow-x-auto scroll-smooth py-0.5">
                     {availableViewGroups.map((grp) => {
                       const isActive = pieceViewGroup === grp.id;
                       return (
@@ -1026,14 +1035,15 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                           key={grp.id}
                           type="button"
                           onClick={() => setPieceViewGroup(grp.id)}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                          className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                             isActive
                               ? 'bg-white text-violet-700 shadow-2xs border border-slate-200 font-extrabold'
                               : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                           }`}
                         >
                           <span>{grp.icon}</span>
-                          <span>{grp.label}</span>
+                          <span className="hidden sm:inline">{grp.label}</span>
+                          <span className="sm:hidden">{grp.shortLabel}</span>
                         </button>
                       );
                     })}
@@ -1042,10 +1052,10 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   <button
                     type="button"
                     onClick={handleNextViewGroup}
-                    className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                    className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
                     title="Siguiente sección del carrusel"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </div>
 
@@ -1155,7 +1165,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
             {/* COLUMNA DERECHA: SIDEBAR DE AJUSTES EN VIVO (CON ACORDEONES CERRADOS POR DEFECTO) */}
             {showCalibrationPanel && (
-              <aside className="w-full lg:w-[410px] xl:w-[430px] shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 bg-white flex flex-col h-full shadow-lg z-10">
+              <aside className="fixed inset-y-0 right-0 z-40 w-full sm:w-[410px] max-w-full lg:static lg:z-10 lg:w-[380px] xl:w-[420px] shrink-0 border-l border-slate-200 bg-white flex flex-col h-full shadow-2xl lg:shadow-lg animate-in slide-in-from-right-10 duration-200">
                 {/* Encabezado del Panel Lateral */}
                 <div className="p-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                   <div className="flex items-center gap-2">

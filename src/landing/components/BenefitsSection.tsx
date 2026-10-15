@@ -27,17 +27,17 @@ export const BenefitsSection: React.FC = () => {
   return (
     <section
       id="beneficios"
-      className="relative mx-4 scroll-mt-16 overflow-hidden rounded-[2rem] bg-[#180d33] bg-[radial-gradient(#351d66_1px,transparent_1px)] bg-[size:22px_22px] py-20 text-white shadow-[0_30px_60px_-34px_rgba(24,13,51,0.75)] md:mx-6 md:rounded-[2.5rem] md:py-32"
+      className="relative mx-3 sm:mx-4 md:mx-6 scroll-mt-16 overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] bg-[#180d33] bg-[radial-gradient(#351d66_1px,transparent_1px)] bg-[size:22px_22px] py-16 sm:py-20 text-white shadow-[0_30px_60px_-34px_rgba(24,13,51,0.75)] md:rounded-[2.5rem] md:py-32"
     >
-      <div className="container relative px-4 md:px-6">
-        <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-20">
+      <div className="container relative px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-20">
           <div className="lg:self-center">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
               <span className="block text-white">{benefits.titleLine1}</span>
               <span className="block text-[#a78bfa]">{benefits.titleLine2}</span>
             </h2>
             {benefits.subtitle && (
-              <p className="mt-6 max-w-md text-base md:text-lg text-white/70">
+              <p className="mt-4 sm:mt-6 max-w-md text-sm sm:text-base md:text-lg text-white/70 leading-relaxed">
                 {benefits.subtitle}
               </p>
             )}
