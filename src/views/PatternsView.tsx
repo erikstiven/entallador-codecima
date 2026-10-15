@@ -1348,15 +1348,16 @@ exportMoldesParaCimatex();`;
                   {currentSizeObj.pieces.map((piece) => (
                     <div
                       key={piece.id}
-                      className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-violet-300 hover:shadow-xs transition-all space-y-3"
+                      className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-violet-300 hover:shadow-xs transition-all space-y-3 overflow-hidden"
                     >
-                      {/* Top Header of Card: Piece Type Selector and Delete Action */}
-                      <div className="flex items-center justify-between gap-2">
+                      {/* Top Header of Card: Piece Type Selector and Actions */}
+                      <div className="flex items-center justify-between gap-1.5 min-w-0">
                         <Select
                           sizeVariant="sm"
+                          containerClassName="flex-1 min-w-0"
                           value={piece.pieceType}
                           onChange={(e) => updatePieceType(currentSizeObj.sizeName, piece.id, e.target.value as PieceType)}
-                          className="flex-1 font-mono font-bold text-violet-900 text-xs"
+                          className="w-full font-mono font-bold text-violet-900 text-xs"
                           title="Cambiar tipo de pieza si fue clasificada incorrectamente"
                         >
                           <option value="DELANTERO_V">DELANTERO (CUELLO V)</option>
@@ -1365,8 +1366,8 @@ exportMoldesParaCimatex();`;
                           <option value="ESPALDA">ESPALDA</option>
                           <option value="MANGA_IZQ">MANGA</option>
                           <option value="CUELLO">CUELLO / RIB</option>
-                          <option value="PANTALONETA_IZQ">PANTALONETA (PIERNA IZQ / MOLDE ÚNICO)</option>
-                          <option value="PANTALONETA_DER">PANTALONETA (PIERNA DER / AUX)</option>
+                          <option value="PANTALONETA_IZQ">PANTALONETA (IZQ / BASE)</option>
+                          <option value="PANTALONETA_DER">PANTALONETA (DER / AUX)</option>
                           {!['DELANTERO_V', 'DELANTERO_REDONDO', 'DELANTERO', 'ESPALDA', 'MANGA_IZQ', 'CUELLO', 'PANTALONETA_IZQ', 'PANTALONETA_DER'].includes(piece.pieceType) && (
                             <option value={piece.pieceType} className="hidden">{piece.pieceType}</option>
                           )}

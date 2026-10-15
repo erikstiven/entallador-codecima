@@ -163,7 +163,7 @@ export const Select: React.FC<SelectProps> = ({
   }[sizeVariant];
 
   return (
-    <div className={`relative inline-block w-full ${containerClassName}`}>
+    <div className={`relative inline-block w-full min-w-0 ${containerClassName}`}>
       <button
         ref={buttonRef}
         type="button"
