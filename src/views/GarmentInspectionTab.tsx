@@ -139,6 +139,7 @@ const InspectionPieceCard = React.memo<InspectionPieceCardProps>(
     const isEspalda = piece.pieceType === 'ESPALDA';
     const isDelantero = piece.pieceType.startsWith('DELANTERO');
     const isManga = piece.pieceType.startsWith('MANGA');
+    const isShort = piece.pieceType.startsWith('SHORT') || piece.pieceType.startsWith('PANTALONETA');
     const zone = getPieceZone(piece.pieceType);
 
     // Memoizar el objeto dangerouslySetInnerHTML para que React jamás toque el DOM SVG si pieceSvg es idéntico
@@ -178,6 +179,8 @@ const InspectionPieceCard = React.memo<InspectionPieceCardProps>(
                   ? 'bg-purple-500'
                   : isDelantero
                   ? 'bg-sky-500'
+                  : isShort
+                  ? 'bg-emerald-500'
                   : 'bg-amber-500'
               }`}
             />
@@ -685,10 +688,33 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
   const handleSelectZoneTab = (zone: CalibrationZone) => {
     setActiveZone(zone);
-    if (zone === 'PANTALONETA' && garmentTypeFilter === 'CAMISETA' && orderHasShorts) {
-      setGarmentTypeFilter('ALL');
-    } else if (zone !== 'PANTALONETA' && garmentTypeFilter === 'SHORT') {
-      setGarmentTypeFilter('ALL');
+    if (zone === 'PANTALONETA') {
+      if (garmentTypeFilter === 'CAMISETA' && orderHasShorts) {
+        setGarmentTypeFilter('ALL');
+      }
+      setPieceViewGroup('SHORTS');
+    } else if (zone === 'FRENTE' || zone === 'ESPALDA') {
+      if (garmentTypeFilter === 'SHORT') {
+        setGarmentTypeFilter('ALL');
+      }
+      if (pieceViewGroup === 'SHORTS') {
+        setPieceViewGroup('CUERPO');
+      }
+    }
+  };
+
+  const handleSelectGarmentFilter = (filter: 'CAMISETA' | 'SHORT' | 'ALL') => {
+    setGarmentTypeFilter(filter);
+    if (filter === 'SHORT') {
+      setPieceViewGroup('SHORTS');
+      setActiveZone('PANTALONETA');
+    } else if (filter === 'CAMISETA') {
+      setPieceViewGroup('CUERPO');
+      if (activeZone === 'PANTALONETA') {
+        setActiveZone('ESPALDA');
+      }
+    } else {
+      setPieceViewGroup('TODAS');
     }
   };
 
@@ -788,7 +814,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
           <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5 text-xs">
             <button
               type="button"
-              onClick={() => setGarmentTypeFilter('CAMISETA')}
+              onClick={() => handleSelectGarmentFilter('CAMISETA')}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 garmentTypeFilter === 'CAMISETA'
                   ? 'bg-violet-600 text-white shadow-xs'
@@ -801,7 +827,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setGarmentTypeFilter('SHORT')}
+              onClick={() => handleSelectGarmentFilter('SHORT')}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 garmentTypeFilter === 'SHORT'
                   ? 'bg-violet-600 text-white shadow-xs'
@@ -814,7 +840,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setGarmentTypeFilter('ALL')}
+              onClick={() => handleSelectGarmentFilter('ALL')}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 garmentTypeFilter === 'ALL'
                   ? 'bg-violet-600 text-white shadow-xs'
@@ -948,25 +974,39 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
       {/* 2. ÁREA CENTRAL EN SPLIT LAYOUT LATERAL (CARRUSEL DE PIEZAS A LA IZQUIERDA + AJUSTES EN ACORDEÓN A LA DERECHA) */}
       {currentPlayer && (() => {
-        // Filtrar piezas a mostrar según el carrusel/sección activa
+        // Filtrar piezas a mostrar según el carrusel/sección activa de forma directa y desacoplada
         const displayPieces = (() => {
+          const allPlayerPieces = currentPlayer.pieces;
           if (pieceViewGroup === 'CUERPO') {
-            const list = sortedPieces.filter(
-              (p) => p.pieceType.startsWith('DELANTERO') || p.pieceType === 'ESPALDA'
-            );
-            return list.length > 0 ? list : sortedPieces;
+            return allPlayerPieces
+              .filter((p) => p.pieceType.startsWith('DELANTERO') || p.pieceType === 'ESPALDA')
+              .sort((a, b) => getPieceOrder(a.pieceType) - getPieceOrder(b.pieceType));
           }
           if (pieceViewGroup === 'MANGAS') {
-            const list = sortedPieces.filter((p) => p.pieceType.startsWith('MANGA'));
-            return list.length > 0 ? list : sortedPieces;
+            return allPlayerPieces
+              .filter((p) => p.pieceType.startsWith('MANGA'))
+              .sort((a, b) => getPieceOrder(a.pieceType) - getPieceOrder(b.pieceType));
           }
           if (pieceViewGroup === 'SHORTS') {
-            const list = sortedPieces.filter(
+            return allPlayerPieces
+              .filter((p) => p.pieceType.startsWith('SHORT') || p.pieceType.startsWith('PANTALONETA'))
+              .sort((a, b) => getPieceOrder(a.pieceType) - getPieceOrder(b.pieceType));
+          }
+          // 'TODAS'
+          let list = allPlayerPieces;
+          if (garmentTypeFilter === 'CAMISETA') {
+            list = list.filter(
+              (p) =>
+                p.pieceType.startsWith('DELANTERO') ||
+                p.pieceType === 'ESPALDA' ||
+                p.pieceType.startsWith('MANGA')
+            );
+          } else if (garmentTypeFilter === 'SHORT') {
+            list = list.filter(
               (p) => p.pieceType.startsWith('SHORT') || p.pieceType.startsWith('PANTALONETA')
             );
-            return list.length > 0 ? list : sortedPieces;
           }
-          return sortedPieces;
+          return [...list].sort((a, b) => getPieceOrder(a.pieceType) - getPieceOrder(b.pieceType));
         })();
 
         const availableViewGroups: { id: PieceViewGroup; label: string; shortLabel: string; icon: string }[] = [
@@ -980,14 +1020,37 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
         const currentGroupIndex = availableViewGroups.findIndex((g) => g.id === pieceViewGroup);
 
+        const handleSelectViewGroup = (grpId: PieceViewGroup) => {
+          setPieceViewGroup(grpId);
+          if (grpId === 'SHORTS') {
+            if (garmentTypeFilter === 'CAMISETA') {
+              setGarmentTypeFilter('ALL');
+            }
+            setActiveZone('PANTALONETA');
+          } else if (grpId === 'CUERPO') {
+            if (garmentTypeFilter === 'SHORT') {
+              setGarmentTypeFilter('ALL');
+            }
+            if (activeZone === 'PANTALONETA') {
+              setActiveZone('ESPALDA');
+            }
+          } else if (grpId === 'MANGAS') {
+            if (garmentTypeFilter === 'SHORT') {
+              setGarmentTypeFilter('ALL');
+            }
+          } else if (grpId === 'TODAS') {
+            setGarmentTypeFilter('ALL');
+          }
+        };
+
         const handleNextViewGroup = () => {
           const nextIdx = (currentGroupIndex + 1) % availableViewGroups.length;
-          setPieceViewGroup(availableViewGroups[nextIdx].id);
+          handleSelectViewGroup(availableViewGroups[nextIdx].id);
         };
 
         const handlePrevViewGroup = () => {
           const prevIdx = (currentGroupIndex - 1 + availableViewGroups.length) % availableViewGroups.length;
-          setPieceViewGroup(availableViewGroups[prevIdx].id);
+          handleSelectViewGroup(availableViewGroups[prevIdx].id);
         };
 
         return (
@@ -1034,7 +1097,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                         <button
                           key={grp.id}
                           type="button"
-                          onClick={() => setPieceViewGroup(grp.id)}
+                          onClick={() => handleSelectViewGroup(grp.id)}
                           className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                             isActive
                               ? 'bg-white text-violet-700 shadow-2xs border border-slate-200 font-extrabold'
@@ -1086,7 +1149,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   </div>
                   <h3 className="text-base font-bold text-slate-900 mb-2 font-mono">
                     {currentPlayer.playerName} (#{currentPlayer.playerNumber}) no tiene piezas de{' '}
-                    {garmentTypeFilter === 'CAMISETA' ? 'Camiseta' : 'Short'}
+                    {pieceViewGroup === 'SHORTS' || garmentTypeFilter === 'SHORT' ? 'Short' : 'Camiseta'}
                   </h3>
                   <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
                     En el archivo Excel, este jugador está registrado con pedido de{' '}
@@ -1097,31 +1160,35 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                         ? 'Solo Short'
                         : 'Solo Camiseta'}
                     </span>
-                    . Tu filtro superior está en "{garmentTypeFilter === 'CAMISETA' ? 'Camisetas' : 'Shorts'}".
+                    .
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-3">
                     <button
                       type="button"
-                      onClick={() =>
-                        setGarmentTypeFilter(garmentTypeFilter === 'CAMISETA' ? 'SHORT' : 'CAMISETA')
-                      }
+                      onClick={() => {
+                        if (pieceViewGroup === 'SHORTS') {
+                          handleSelectViewGroup('CUERPO');
+                        } else {
+                          handleSelectViewGroup('SHORTS');
+                        }
+                      }}
                       className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-95"
                     >
-                      {garmentTypeFilter === 'CAMISETA' ? (
-                        <>
-                          <Scissors className="w-3.5 h-3.5" />
-                          <span>Ver Shorts de este jugador</span>
-                        </>
-                      ) : (
+                      {pieceViewGroup === 'SHORTS' ? (
                         <>
                           <Shirt className="w-3.5 h-3.5" />
                           <span>Ver Camiseta de este jugador</span>
+                        </>
+                      ) : (
+                        <>
+                          <Scissors className="w-3.5 h-3.5" />
+                          <span>Ver Shorts de este jugador</span>
                         </>
                       )}
                     </button>
                     <button
                       type="button"
-                      onClick={() => setGarmentTypeFilter('ALL')}
+                      onClick={() => handleSelectViewGroup('TODAS')}
                       className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-all cursor-pointer flex items-center gap-2 shadow-2xs"
                     >
                       <Layers className="w-3.5 h-3.5" />
