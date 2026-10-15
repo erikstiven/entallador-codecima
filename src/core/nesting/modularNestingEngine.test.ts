@@ -70,7 +70,7 @@ describe('modularNestingEngine', () => {
     expect(m2.xMm).toBeGreaterThan(esp.xMm + esp.effectiveWidthMm);
   });
 
-  it('debe estructurar shorts en pares lado a lado en un pliego independiente', () => {
+  it('debe estructurar shorts en pares lado a lado en un pliego independiente y centrados', () => {
     const pieces: NestingPieceInput[] = [
       createMockPiece('p1_s1', 'player_1', 'FELIPITO', 'PANTALONETA_IZQ', 500, 450),
       createMockPiece('p1_s2', 'player_1', 'FELIPITO', 'PANTALONETA_DER', 500, 450),
@@ -88,8 +88,45 @@ describe('modularNestingEngine', () => {
     const s1 = result.placedPieces.find((p) => p.pieceType === 'PANTALONETA_IZQ')!;
     const s2 = result.placedPieces.find((p) => p.pieceType === 'PANTALONETA_DER')!;
 
-    expect(s1.xMm).toBe(3);
-    expect(s2.xMm).toBeGreaterThanOrEqual(503);
+    expect(s1.xMm).toBeGreaterThanOrEqual(3);
+    expect(s2.xMm).toBeGreaterThan(s1.xMm + 500);
+  });
+
+  it('debe empaquetar 3 pantalonetas por fila en bobina de 1600 mm para máximo aprovechamiento', () => {
+    const pieces: NestingPieceInput[] = [
+      createMockPiece('p1_izq', 'player_1', 'JUGADOR_1', 'PANTALONETA_IZQ', 470, 400),
+      createMockPiece('p1_der', 'player_1', 'JUGADOR_1', 'PANTALONETA_DER', 470, 400),
+      createMockPiece('p2_izq', 'player_2', 'JUGADOR_2', 'PANTALONETA_IZQ', 470, 400),
+      createMockPiece('p2_der', 'player_2', 'JUGADOR_2', 'PANTALONETA_DER', 470, 400),
+    ];
+
+    const result = performModularNesting(pieces, {
+      printableWidthMm: 1600,
+      maxSheetLengthMm: 5000,
+      spacingMm: 3,
+    });
+
+    // En 1600 mm con piezas de 470 mm caben 3 piezas en la fila 1 (470*3 + 6 = 1416 mm <= 1600 mm)
+    const row1Pieces = result.placedPieces.filter((p) => Math.abs(p.yMm - result.placedPieces[0].yMm) < 5);
+    expect(row1Pieces.length).toBe(3);
+  });
+
+  it('debe aplicar modo puzzle con giro a 180° en la pierna derecha cuando allowedRotations incluye 180', () => {
+    const p1 = createMockPiece('p1_izq', 'player_1', 'JUGADOR_1', 'PANTALONETA_IZQ', 470, 400);
+    const p2 = createMockPiece('p1_der', 'player_1', 'JUGADOR_1', 'PANTALONETA_DER', 470, 400);
+    p1.allowedRotations = [0, 180];
+    p2.allowedRotations = [0, 180];
+
+    const result = performModularNesting([p1, p2], {
+      printableWidthMm: 1120,
+      maxSheetLengthMm: 5000,
+    });
+
+    const placedIzq = result.placedPieces.find((p) => p.pieceType === 'PANTALONETA_IZQ')!;
+    const placedDer = result.placedPieces.find((p) => p.pieceType === 'PANTALONETA_DER')!;
+
+    expect(placedIzq.rotationDeg).toBe(0);
+    expect(placedDer.rotationDeg).toBe(180);
   });
 
   it('debe particionar en múltiples pliegos si la altura acumulada supera maxSheetLengthMm (500 cm)', () => {

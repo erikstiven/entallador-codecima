@@ -2267,81 +2267,170 @@ export function performModularNesting(
   // ==========================================
   if (shortPlayerList.length > 0) {
     let currentSheet = createNewSheet('SHORT');
-    let shortRowX = sideMarginMm;
     let shortRowY = topMarginMm;
-    let shortRowH = 0;
+
+    // 1. Recopilar la cola de piezas de short organizadas por jugador
+    interface ShortPiecePlan {
+      piece: NestingPieceInput;
+      playerSet: PlayerShortSet;
+      rotationDeg: number;
+      w: number;
+      h: number;
+    }
+
+    const shortItemsToPlace: ShortPiecePlan[] = [];
+    const canRotate180 = customOptions?.allowRotation !== false;
 
     for (const playerSet of shortPlayerList) {
       const pIzq = playerSet.pantaIzq;
       const pDer = playerSet.pantaDer;
 
-      const wIzq = pIzq ? pIzq.bbox.width : 0;
-      const hIzq = pIzq ? pIzq.bbox.height : 0;
-      const wDer = pDer ? pDer.bbox.width : 0;
-      const hDer = pDer ? pDer.bbox.height : 0;
+      // Si el jugador tiene ambas piernas, aplicar modo puzzle tiro-con-tiro (0° izq, 180° der si está permitido)
+      if (pIzq && pDer) {
+        const izqRotAllowed = canRotate180 && (pIzq.allowedRotations?.includes(180) ?? false);
+        const derRotAllowed = canRotate180 && (pDer.allowedRotations?.includes(180) ?? false);
 
-      const pairW = (pIzq ? wIzq : 0) + (pIzq && pDer ? spacingMm : 0) + (pDer ? wDer : 0);
-      const pairH = Math.max(hIzq, hDer);
+        // Modo puzzle: Izquierda a 0°, Derecha a 180° (o 0° si no está permitido)
+        const rotIzq = 0;
+        const rotDer = derRotAllowed ? 180 : 0;
 
-      // Si el par no cabe en el ancho de la fila actual, saltar a la siguiente fila
-      if (shortRowX > sideMarginMm && shortRowX + pairW + sideMarginMm > printableWidthMm) {
-        shortRowY += shortRowH + spacingMm;
-        shortRowX = sideMarginMm;
-        shortRowH = 0;
-      }
+        shortItemsToPlace.push({
+          piece: pIzq,
+          playerSet,
+          rotationDeg: rotIzq,
+          w: pIzq.bbox.width,
+          h: pIzq.bbox.height,
+        });
 
-      // Particionado de pliego para Shorts
-      if (shortRowY + pairH + topMarginMm > maxSheetLengthMm && currentSheet.placedPieces.length > 0) {
-        currentSheet.heightMm = shortRowY + topMarginMm;
-        currentSheet.fileName = `PARTE_${currentSheet.sheetNumber}_SHORTS_${printableWidthMm.toFixed(0)}x${currentSheet.heightMm.toFixed(0)}mm`;
-
-        currentSheet = createNewSheet('SHORT');
-        shortRowX = sideMarginMm;
-        shortRowY = topMarginMm;
-        shortRowH = 0;
-      }
-
-      if (pIzq) {
-        const placedIzq: PlacedNestingPiece = {
-          ...pIzq,
-          xMm: Number(shortRowX.toFixed(2)),
-          yMm: Number(shortRowY.toFixed(2)),
+        shortItemsToPlace.push({
+          piece: pDer,
+          playerSet,
+          rotationDeg: rotDer,
+          w: pDer.bbox.width,
+          h: pDer.bbox.height,
+        });
+      } else if (pIzq) {
+        shortItemsToPlace.push({
+          piece: pIzq,
+          playerSet,
           rotationDeg: 0,
-          effectiveWidthMm: wIzq,
-          effectiveHeightMm: hIzq,
-          isLocked: false,
-          sheetIndex: currentSheet.sheetNumber - 1,
-        };
-        currentSheet.placedPieces.push(placedIzq);
-        allPlacedPieces.push(placedIzq);
-        shortRowX += wIzq + spacingMm;
-      }
-
-      if (pDer) {
-        const placedDer: PlacedNestingPiece = {
-          ...pDer,
-          xMm: Number(shortRowX.toFixed(2)),
-          yMm: Number(shortRowY.toFixed(2)),
+          w: pIzq.bbox.width,
+          h: pIzq.bbox.height,
+        });
+      } else if (pDer) {
+        shortItemsToPlace.push({
+          piece: pDer,
+          playerSet,
           rotationDeg: 0,
-          effectiveWidthMm: wDer,
-          effectiveHeightMm: hDer,
-          isLocked: false,
-          sheetIndex: currentSheet.sheetNumber - 1,
-        };
-        currentSheet.placedPieces.push(placedDer);
-        allPlacedPieces.push(placedDer);
-        shortRowX += wDer + spacingMm;
+          w: pDer.bbox.width,
+          h: pDer.bbox.height,
+        });
       }
 
-      shortRowH = Math.max(shortRowH, pairH);
-
-      if (!currentSheet.playerNames.includes(playerSet.playerName)) {
-        currentSheet.playerNames.push(playerSet.playerName);
+      // Piezas accesorias del jugador (pretinas, ribetes, vivos de pantaloneta)
+      if (playerSet.otherPieces && playerSet.otherPieces.length > 0) {
+        for (const other of playerSet.otherPieces) {
+          shortItemsToPlace.push({
+            piece: other,
+            playerSet,
+            rotationDeg: 0,
+            w: other.bbox.width,
+            h: other.bbox.height,
+          });
+        }
       }
     }
 
-    shortRowY += shortRowH + spacingMm;
-    currentSheet.heightMm = Number((shortRowY + topMarginMm).toFixed(2));
+    // 2. Empaquetado dinámico en filas (Multi-Piece Shelf Packing)
+    // Permite que quepan 2, 3 o 4 pantalonetas según el ancho del plóter (1.12m, 1.60m, 1.80m, etc.)
+    interface ShortRowPlan {
+      items: ShortPiecePlan[];
+      rowWidth: number;
+      rowHeight: number;
+    }
+
+    const rows: ShortRowPlan[] = [];
+    let currentRowItems: ShortPiecePlan[] = [];
+    let currentRowWidth = 0;
+    let currentRowHeight = 0;
+
+    for (const item of shortItemsToPlace) {
+      const addedWidth = currentRowItems.length > 0 ? spacingMm + item.w : item.w;
+
+      // Si excede el ancho útil y ya hay al menos una pieza en la fila: cerrar fila e iniciar nueva
+      if (currentRowItems.length > 0 && currentRowWidth + addedWidth + (sideMarginMm * 2) > printableWidthMm) {
+        rows.push({
+          items: currentRowItems,
+          rowWidth: currentRowWidth,
+          rowHeight: currentRowHeight,
+        });
+        currentRowItems = [item];
+        currentRowWidth = item.w;
+        currentRowHeight = item.h;
+      } else {
+        currentRowItems.push(item);
+        currentRowWidth += addedWidth;
+        currentRowHeight = Math.max(currentRowHeight, item.h);
+      }
+    }
+
+    if (currentRowItems.length > 0) {
+      rows.push({
+        items: currentRowItems,
+        rowWidth: currentRowWidth,
+        rowHeight: currentRowHeight,
+      });
+    }
+
+    // 3. Posicionar cada fila centrada simétricamente y particionar pliegos de ser necesario
+    for (const row of rows) {
+      // Particionado de pliego si supera maxSheetLengthMm
+      if (shortRowY + row.rowHeight + topMarginMm > maxSheetLengthMm && currentSheet.placedPieces.length > 0) {
+        const sheetHeight = Math.max(topMarginMm, shortRowY - spacingMm + topMarginMm);
+        currentSheet.heightMm = Number(sheetHeight.toFixed(2));
+        currentSheet.fileName = `PARTE_${currentSheet.sheetNumber}_SHORTS_${printableWidthMm.toFixed(0)}x${currentSheet.heightMm.toFixed(0)}mm`;
+
+        currentSheet = createNewSheet('SHORT');
+        shortRowY = topMarginMm;
+      }
+
+      // Centrado simétrico de la fila
+      const leftoverWidth = Math.max(0, printableWidthMm - row.rowWidth);
+      const rowStartX = Math.max(sideMarginMm, Number((leftoverWidth / 2.0).toFixed(2)));
+
+      let currentX = rowStartX;
+
+      for (const item of row.items) {
+        // Alinear verticalmente en la fila (centrado vertical suave si difieren en altura)
+        const verticalOffset = Math.max(0, Number(((row.rowHeight - item.h) / 2.0).toFixed(2)));
+        const finalY = Number((shortRowY + verticalOffset).toFixed(2));
+
+        const placed: PlacedNestingPiece = {
+          ...item.piece,
+          xMm: Number(currentX.toFixed(2)),
+          yMm: finalY,
+          rotationDeg: item.rotationDeg,
+          effectiveWidthMm: item.w,
+          effectiveHeightMm: item.h,
+          isLocked: false,
+          sheetIndex: currentSheet.sheetNumber - 1,
+        };
+
+        currentSheet.placedPieces.push(placed);
+        allPlacedPieces.push(placed);
+
+        if (!currentSheet.playerNames.includes(item.playerSet.playerName)) {
+          currentSheet.playerNames.push(item.playerSet.playerName);
+        }
+
+        currentX += item.w + spacingMm;
+      }
+
+      shortRowY += row.rowHeight + spacingMm;
+    }
+
+    const finalSheetHeight = Math.max(topMarginMm, shortRowY - spacingMm + topMarginMm);
+    currentSheet.heightMm = Number(finalSheetHeight.toFixed(2));
     currentSheet.fileName = `PARTE_${currentSheet.sheetNumber}_SHORTS_${printableWidthMm.toFixed(0)}x${currentSheet.heightMm.toFixed(0)}mm`;
   }
 
