@@ -29,6 +29,9 @@ const PROFILE_STORAGE_KEY = 'codecima_production_profile';
 const PROFILES_LIST_STORAGE_KEY = 'codecima_production_profiles_list';
 
 function loadStoredProfiles(): ProductionProfile[] {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return DEFAULT_PROFILES;
+  }
   try {
     const raw = localStorage.getItem(PROFILES_LIST_STORAGE_KEY);
     if (raw) {
@@ -44,6 +47,9 @@ function loadStoredProfiles(): ProductionProfile[] {
 }
 
 function loadStoredProfile(availableProfiles: ProductionProfile[]): ProductionProfile {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return availableProfiles[0] || DEFAULT_PROFILES[0];
+  }
   try {
     const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
     if (raw) {

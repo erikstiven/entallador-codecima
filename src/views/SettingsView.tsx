@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Sun, 
   Ruler, 
@@ -13,22 +13,75 @@ import {
   Eye,
   Settings as SettingsIcon,
   Factory,
+  Download,
+  UploadCloud,
+  ShieldCheck,
+  Database,
+  Printer,
+  Loader2,
+  FileCheck
 } from 'lucide-react';
 import { useProfileStore } from '@/modules/settings/profileStore';
 import { useSystemSettingsStore, DisplayUnit } from '@/modules/settings/systemSettingsStore';
+import { usePatternStore } from '@/modules/patterns/patternStore';
+import { useDesignStore } from '@/modules/designs/designStore';
+import { downloadCimaTexBackup, parseBackupFile, restoreCimaTexBackup } from '@/modules/settings/backupService';
 import { useUnits } from '@/core/units/useUnits';
 import { showAlert } from '@/core/ui/alerts';
 import { Button } from '@/components/ui/Button';
+
+export const POPULAR_PLOTTER_PRESETS = [
+  {
+    id: 'epson-f6470',
+    brand: 'Epson',
+    name: 'Epson SureColor F6370 / F6470',
+    widthMm: 1118.0,
+    badge: '44" (1.118 m)',
+  },
+  {
+    id: 'mimaki-ts100',
+    brand: 'Mimaki',
+    name: 'Mimaki TS100-1600 / JV100',
+    widthMm: 1600.0,
+    badge: '63" (1.600 m)',
+  },
+  {
+    id: 'roland-rt640',
+    brand: 'Roland',
+    name: 'Roland Texart RT-640 / XT-640',
+    widthMm: 1615.0,
+    badge: '64" (1.615 m)',
+  },
+  {
+    id: 'mutoh-1638wx',
+    brand: 'Mutoh',
+    name: 'Mutoh ValueJet 1638WX',
+    widthMm: 1625.0,
+    badge: '64" (1.625 m)',
+  },
+  {
+    id: 'calandra-mesa-70',
+    brand: 'Genérico',
+    name: 'Mesa Plana / Plóter Compacto',
+    widthMm: 700.0,
+    badge: '28" (700 mm)',
+  },
+];
 
 type SettingsTab = 'SYSTEM' | 'PRODUCTION';
 
 export const SettingsView: React.FC = () => {
   const { profiles, activeProfile, setActiveProfile, updateActiveProfile, addProfile, deleteProfile } = useProfileStore();
   const { settings, updateSettings, resetSettings } = useSystemSettingsStore();
+  const { patternSets } = usePatternStore();
+  const { designs } = useDesignStore();
   const { unit, unitLabel, unitStep, precision, toDisplay, toInternalMm, format } = useUnits();
   
   const [activeTab, setActiveTab] = useState<SettingsTab>('SYSTEM');
   const [savedFlash, setSavedFlash] = useState(false);
+  const [isExportingBackup, setIsExportingBackup] = useState(false);
+  const [isRestoringBackup, setIsRestoringBackup] = useState(false);
+  const backupInputRef = useRef<HTMLInputElement>(null);
 
   const triggerSaveNotification = () => {
     setSavedFlash(true);
@@ -43,6 +96,61 @@ export const SettingsView: React.FC = () => {
   const rawToDisplay = toDisplay;
   const displayToMm = toInternalMm;
   const formatValue = (mmVal: number) => format(mmVal);
+
+  const handleDownloadBackup = async () => {
+    setIsExportingBackup(true);
+    try {
+      const fileName = await downloadCimaTexBackup();
+      showAlert.toast('success', `Copia de seguridad descargada: ${fileName}`);
+    } catch (err) {
+      showAlert.error('Error al generar respaldo', err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setIsExportingBackup(false);
+    }
+  };
+
+  const handleRestoreBackupFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsRestoringBackup(true);
+      const payload = await parseBackupFile(file);
+
+      const countInfo = payload.metadata
+        ? `\n\nContenido a restaurar:\n• ${payload.metadata.patternSetsCount} juegos de moldes\n• ${payload.metadata.designsCount} diseños maestros\n• ${payload.metadata.fontsCount} fuentes personalizadas`
+        : '';
+
+      const confirmed = await showAlert.confirm(
+        '¿Restaurar copia de seguridad?',
+        `Se sobreescribirán los moldes, diseños y configuraciones actuales con los datos de "${file.name}".${countInfo}\n\n¿Deseas continuar?`
+      );
+
+      if (confirmed) {
+        await restoreCimaTexBackup(payload);
+        showAlert.toast('success', '¡Copia de seguridad restaurada exitosamente!');
+      }
+    } catch (err) {
+      showAlert.error('Error al restaurar respaldo', err instanceof Error ? err.message : 'Archivo no válido');
+    } finally {
+      setIsRestoringBackup(false);
+      if (backupInputRef.current) {
+        backupInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleApplyPlotterPreset = (preset: typeof POPULAR_PLOTTER_PRESETS[0]) => {
+    updateActiveProfile({
+      totalRollWidthMm: preset.widthMm,
+      printableWidthMm: preset.widthMm,
+    });
+    handleUpdateSettings({
+      defaultRollWidthMm: preset.widthMm,
+    });
+    triggerSaveNotification();
+    showAlert.toast('success', `Ancho configurado para ${preset.name} (${preset.widthMm} mm)`);
+  };
 
   return (
     <div className="p-6 w-full space-y-5 pb-16 text-slate-800 animate-in fade-in duration-200">
@@ -262,6 +370,107 @@ export const SettingsView: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* 3. SECCIÓN: COPIA DE SEGURIDAD Y RESTAURACIÓN (.cimatex) */}
+          <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5 shadow-xs">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                <Database className="w-4 h-4 text-violet-600" />
+                <h3>Copia de Seguridad y Respaldo del Taller (.cimatex)</h3>
+              </div>
+              <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 font-semibold flex items-center gap-1.5 shadow-2xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                Protección contra borrado de navegador
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 -mt-2">
+              Exporta un archivo portátil <strong className="text-slate-800">.cimatex</strong> con todos tus moldes, diseños maestros, tipografías personalizadas y configuraciones para guardarlo en una memoria USB o restaurarlo en otra computadora.
+            </p>
+
+            {/* Métricas rápidas de contenido protegido */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
+                <div className="p-2 bg-violet-100 text-violet-700 rounded-lg shrink-0">
+                  <Scissors className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 text-sm">{patternSets.length}</div>
+                  <div className="text-[11px] text-slate-500">Juegos de moldes guardados</div>
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
+                <div className="p-2 bg-purple-100 text-purple-700 rounded-lg shrink-0">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 text-sm">{designs.length}</div>
+                  <div className="text-[11px] text-slate-500">Diseños maestros activos</div>
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
+                <div className="p-2 bg-sky-100 text-sky-700 rounded-lg shrink-0">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 text-sm">{profiles.length}</div>
+                  <div className="text-[11px] text-slate-500">Formatos y perfiles de marco</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Botones de Acción de Respaldo */}
+            <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={handleDownloadBackup}
+                disabled={isExportingBackup || isRestoringBackup}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white shadow-xs transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Descargar archivo completo con moldes, diseños y ajustes"
+              >
+                {isExportingBackup ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Empaquetando Respaldo...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 text-white" />
+                    <span>Descargar Copia de Seguridad (.cimatex)</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => backupInputRef.current?.click()}
+                disabled={isExportingBackup || isRestoringBackup}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Restaurar base de datos desde un archivo .cimatex"
+              >
+                {isRestoringBackup ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-violet-600" />
+                    <span>Restaurando Base de Datos...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-4 h-4 text-violet-600" />
+                    <span>Restaurar Respaldo (.cimatex)</span>
+                  </>
+                )}
+              </button>
+
+              <input
+                ref={backupInputRef}
+                type="file"
+                accept=".cimatex,.json"
+                className="hidden"
+                onChange={handleRestoreBackupFile}
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -287,6 +496,50 @@ export const SettingsView: React.FC = () => {
         <p className="text-xs text-slate-500 -mt-2">
           Configura las dimensiones del marco de trabajo donde se entallarán y distribuirán los moldes para su exportación (SVG, EPS, PDF).
         </p>
+
+        {/* Presets de Plóteres Populares de Sublimación (1 Clic) */}
+        <div className="space-y-2 pt-2 border-t border-slate-100">
+          <div className="flex items-center justify-between">
+            <label className="block text-[11px] font-semibold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+              <Printer className="w-3.5 h-3.5 text-violet-600" />
+              <span>Plóteres Populares de la Industria (Configuración en 1 Clic)</span>
+            </label>
+            <span className="text-[10px] text-slate-400 font-medium">
+              Haz clic para sincronizar ancho de bobina
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            {POPULAR_PLOTTER_PRESETS.map((preset) => {
+              const isActive = Math.abs(activeProfile.totalRollWidthMm - preset.widthMm) < 0.5;
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => handleApplyPlotterPreset(preset)}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group flex flex-col justify-between ${
+                    isActive
+                      ? 'bg-violet-50 border-violet-600 text-violet-950 shadow-xs ring-1 ring-violet-500/20'
+                      : 'bg-slate-50 hover:bg-white border-slate-200 text-slate-700 hover:border-slate-300 shadow-2xs'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1 w-full">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-violet-600 font-mono">
+                      {preset.brand}
+                    </span>
+                    {isActive && <CheckCircle2 className="w-3.5 h-3.5 text-violet-600 shrink-0" />}
+                  </div>
+                  <div className="font-bold text-xs text-slate-900 truncate mt-1" title={preset.name}>
+                    {preset.name}
+                  </div>
+                  <div className="text-[11px] font-mono text-slate-500 mt-1">
+                    {preset.badge}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Formatos Guardados y Botón de Agregar */}
         <div className="space-y-2">
