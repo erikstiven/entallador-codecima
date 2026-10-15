@@ -566,5 +566,102 @@ describe('Garment Generator Engine (Fusión de Molde + Diseño + Jugador)', () =
     expect(sampleSleeve).toContain('y="-30"');
     expect(sampleFront).toContain('y="-15"');
   });
+
+  it('debe espejar automáticamente en X la pantaloneta derecha cuando el conjunto solo incluye 1 molde de pantaloneta', () => {
+    // Conjunto con 1 sola pierna de pantaloneta asimétrica (tiro en el lado derecho x=300)
+    const singleShortPatternSet: PatternSet = {
+      id: 'pat_single_short',
+      name: 'MOLDE SHORT ÚNICO',
+      garmentType: 'FUTBOL',
+      sizes: [
+        {
+          id: 'sz_28_short',
+          sizeName: '28',
+          sortOrder: 1,
+          pieces: [
+            {
+              id: 'p_t28_panta_unica',
+              sizeName: '28',
+              pieceType: 'PANTALONETA_IZQ',
+              pieceName: 'T28_PANTALONETA',
+              // Polígono asimétrico: base izquierda en x=0, tiro sobresaliendo en x=300
+              cutPolygon: [
+                { x: 0, y: 0 },
+                { x: 250, y: 0 },
+                { x: 300, y: 200 }, // Tiro derecho que sobresale
+                { x: 250, y: 400 },
+                { x: 0, y: 400 },
+              ],
+              bbox: { minX: 0, minY: 0, maxX: 300, maxY: 400, width: 300, height: 400 },
+              areaMm2: 110000,
+              allowedRotationsDeg: [0, 180],
+              svgPathData: 'M 0 0 L 250 0 L 300 200 L 250 400 L 0 400 Z',
+              originalElementId: 'PANTALONETA_T28',
+              placeholders: [],
+              isAssigned: true,
+            },
+          ],
+        },
+      ],
+      unassignedPieces: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const shortDesign: MasterDesign = {
+      id: 'des_short_test',
+      name: 'DISEÑO SHORT',
+      sport: 'FUTBOL',
+      colors: ['#000000', '#ffffff', '#ffd700'],
+      pieceArtworks: {
+        PANTALONETA_IZQ: {
+          pieceType: 'PANTALONETA_IZQ',
+          svgArtContent: '<rect width="300" height="400" fill="#111827" />',
+          placeholders: [],
+        },
+        PANTALONETA_DER: {
+          pieceType: 'PANTALONETA_DER',
+          svgArtContent: '<rect width="300" height="400" fill="#111827" />',
+          placeholders: [],
+        },
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const playerOrder: OrderItem[] = [
+      {
+        id: 'ord_short_1',
+        rowNumber: 1,
+        playerName: 'MATEO',
+        playerNumber: '10',
+        sizeName: '28',
+        garmentType: 'SHORT',
+        quantity: 1,
+        isValid: true,
+        errors: [],
+        warnings: [],
+      },
+    ];
+
+    const result = generateGarmentPieces(playerOrder, singleShortPatternSet, shortDesign);
+    expect(result.pieces.length).toBe(2);
+
+    const leftShort = result.pieces.find((p) => p.pieceType === 'PANTALONETA_IZQ');
+    const rightShort = result.pieces.find((p) => p.pieceType === 'PANTALONETA_DER');
+
+    expect(leftShort).toBeDefined();
+    expect(rightShort).toBeDefined();
+
+    // En la pierna izquierda original, el punto más sobresaliente está en X = 300
+    const leftMaxX = Math.max(...leftShort!.cutPolygon.map((pt) => pt.x));
+    expect(leftMaxX).toBe(300);
+
+    // En la pierna derecha espejada, el punto sobresaliente (300) se invirtió hacia X = 0 (300 - 300 = 0)
+    // y el punto original x=0 pasó a X = 300 (300 - 0 = 300)
+    const rightPointAtY200 = rightShort!.cutPolygon.find((pt) => Math.abs(pt.y - 200) < 1);
+    expect(rightPointAtY200).toBeDefined();
+    expect(rightPointAtY200!.x).toBe(0); // Invertido en espejo matemático exacto
+  });
 });
 

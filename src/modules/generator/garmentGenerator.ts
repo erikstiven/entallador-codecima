@@ -490,8 +490,25 @@ function buildPreparedSizeMolds(sizePieces: PatternPiece[]): PreparedSizeMolds {
   if (!rawPantaIzq && !rawPantaDer) {
     const genericShort = sizePieces.find((p) => p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT'));
     if (genericShort) {
-      rawPantaIzq = { ...genericShort, id: `${genericShort.id}_izq`, pieceType: 'PANTALONETA_IZQ' };
-      rawPantaDer = { ...genericShort, id: `${genericShort.id}_der`, pieceType: 'PANTALONETA_DER' };
+      const w = genericShort.bbox.width;
+      const mirroredPoly = genericShort.cutPolygon.map((pt) => ({
+        x: Number((w - pt.x).toFixed(2)),
+        y: pt.y,
+      }));
+      rawPantaIzq = {
+        ...genericShort,
+        id: `${genericShort.id}_izq`,
+        pieceType: 'PANTALONETA_IZQ',
+        pieceName: `${genericShort.pieceName}_IZQ`,
+      };
+      rawPantaDer = {
+        ...genericShort,
+        id: `${genericShort.id}_der`,
+        pieceType: 'PANTALONETA_DER',
+        pieceName: `${genericShort.pieceName}_DER`,
+        cutPolygon: mirroredPoly,
+        svgPathData: polygonToSvgPath(mirroredPoly),
+      };
     }
   } else if (rawPantaIzq && !rawPantaDer) {
     const w = rawPantaIzq.bbox.width;

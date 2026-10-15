@@ -1161,8 +1161,8 @@ exportMoldesParaCimatex();`;
                       <option value="ESPALDA">ESPALDA</option>
                       <option value="MANGA_IZQ">MANGA</option>
                       <option value="CUELLO">CUELLO / RIB</option>
-                      <option value="PANTALONETA_IZQ">PANTALONETA</option>
-                      <option value="PANTALONETA_DER">PANTALONETA AUX</option>
+                      <option value="PANTALONETA_IZQ">PANTALONETA (PIERNA IZQ / MOLDE ÚNICO)</option>
+                      <option value="PANTALONETA_DER">PANTALONETA (PIERNA DER / AUX)</option>
                     </Select>
                   </div>
                 </div>
@@ -1361,8 +1361,8 @@ exportMoldesParaCimatex();`;
                           <option value="ESPALDA">ESPALDA</option>
                           <option value="MANGA_IZQ">MANGA</option>
                           <option value="CUELLO">CUELLO / RIB</option>
-                          <option value="PANTALONETA_IZQ">PANTALONETA</option>
-                          <option value="PANTALONETA_DER">PANTALONETA AUX</option>
+                          <option value="PANTALONETA_IZQ">PANTALONETA (PIERNA IZQ / MOLDE ÚNICO)</option>
+                          <option value="PANTALONETA_DER">PANTALONETA (PIERNA DER / AUX)</option>
                           {!['DELANTERO_V', 'DELANTERO_REDONDO', 'DELANTERO', 'ESPALDA', 'MANGA_IZQ', 'CUELLO', 'PANTALONETA_IZQ', 'PANTALONETA_DER'].includes(piece.pieceType) && (
                             <option value={piece.pieceType} className="hidden">{piece.pieceType}</option>
                           )}
