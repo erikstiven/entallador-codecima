@@ -22,7 +22,9 @@ import {
   Shapes,
   Clock,
   Tag,
-  Grid
+  Grid,
+  Pencil,
+  X
 } from 'lucide-react';
 import { usePatternStore } from '@/modules/patterns/patternStore';
 import { PieceType, PatternPiece } from '@/modules/patterns/types';
@@ -42,6 +44,7 @@ export const PatternsView: React.FC = () => {
     loadFromDatabase,
     importSvg,
     appendSvgToActiveSet,
+    renamePatternSet,
     selectPieceForAssignment,
     assignPieceManually,
     setActivePatternSet,
@@ -65,6 +68,10 @@ export const PatternsView: React.FC = () => {
   const [catalogTab, setCatalogTab] = useState<'UPLOADS' | 'LIBRARY'>('UPLOADS');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [isEditingSetName, setIsEditingSetName] = useState<boolean>(false);
+  const [editingSetNameValue, setEditingSetNameValue] = useState<string>('');
+  const [renamingCardId, setRenamingCardId] = useState<string | null>(null);
+  const [renamingCardValue, setRenamingCardValue] = useState<string>('');
 
   const renderSilhouettePreview = (set: typeof patternSets[0]) => {
     const size = set.sizes[0];
@@ -246,6 +253,39 @@ export const PatternsView: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     processAppendSvgFile(file);
+  };
+
+  const handleStartEditingName = () => {
+    if (!activePatternSet) return;
+    setEditingSetNameValue(activePatternSet.name);
+    setIsEditingSetName(true);
+  };
+
+  const handleSaveSetName = () => {
+    if (!activePatternSet) return;
+    const trimmed = editingSetNameValue.trim();
+    if (trimmed && trimmed !== activePatternSet.name) {
+      renamePatternSet(activePatternSet.id, trimmed);
+      showAlert.toast('success', `Moldería renombrada a "${trimmed}"`);
+    }
+    setIsEditingSetName(false);
+  };
+
+  const handleStartRenameCard = (set: typeof patternSets[0], e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveMenuId(null);
+    setRenamingCardId(set.id);
+    setRenamingCardValue(set.name);
+  };
+
+  const handleSaveRenameCard = (setId: string, e?: React.MouseEvent | React.KeyboardEvent) => {
+    e?.stopPropagation();
+    const trimmed = renamingCardValue.trim();
+    if (trimmed) {
+      renamePatternSet(setId, trimmed);
+      showAlert.toast('success', `Moldería renombrada a "${trimmed}"`);
+    }
+    setRenamingCardId(null);
   };
 
 
@@ -560,6 +600,14 @@ exportMoldesParaCimatex();`;
                               </button>
                               <button
                                 type="button"
+                                onClick={(e) => handleStartRenameCard(set, e)}
+                                className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-2 cursor-pointer"
+                              >
+                                <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                                <span>Renombrar moldería</span>
+                              </button>
+                              <button
+                                type="button"
                                 onClick={async () => {
                                   setActiveMenuId(null);
                                   const confirmed = await showAlert.confirm(
@@ -584,9 +632,54 @@ exportMoldesParaCimatex();`;
                       {/* Card Body */}
                       <div className="p-3.5 space-y-2">
                         <div>
-                          <h4 className="text-xs font-bold text-slate-900 truncate group-hover:text-violet-700 transition-colors">
-                            {set.name}
-                          </h4>
+                          {renamingCardId === set.id ? (
+                            <div className="flex items-center gap-1 my-0.5" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="text"
+                                value={renamingCardValue}
+                                onChange={(e) => setRenamingCardValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveRenameCard(set.id, e);
+                                  if (e.key === 'Escape') setRenamingCardId(null);
+                                }}
+                                autoFocus
+                                className="px-2 py-0.5 text-xs font-bold text-slate-900 border-2 border-violet-500 rounded-md focus:outline-none w-full bg-white shadow-2xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => handleSaveRenameCard(set.id, e)}
+                                className="p-1 rounded text-emerald-600 hover:bg-emerald-50 cursor-pointer"
+                                title="Guardar"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRenamingCardId(null);
+                                }}
+                                className="p-1 rounded text-slate-400 hover:bg-slate-100 cursor-pointer"
+                                title="Cancelar"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between group/title">
+                              <h4 className="text-xs font-bold text-slate-900 truncate group-hover:text-violet-700 transition-colors">
+                                {set.name}
+                              </h4>
+                              <button
+                                type="button"
+                                onClick={(e) => handleStartRenameCard(set, e)}
+                                className="opacity-0 group-hover/title:opacity-100 p-0.5 rounded text-slate-400 hover:text-violet-600 transition-opacity cursor-pointer"
+                                title="Renombrar moldería"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
                           <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
                             {set.garmentType || 'Sin etiquetas'}
                           </div>
@@ -729,8 +822,57 @@ exportMoldesParaCimatex();`;
                   )}
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />
-                      <h3 className="text-base font-bold text-slate-900 tracking-tight">{activePatternSet.name}</h3>
+                      <span className="w-2.5 h-2.5 rounded-full bg-violet-600 shrink-0" />
+                      {isEditingSetName ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            value={editingSetNameValue}
+                            onChange={(e) => setEditingSetNameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveSetName();
+                              if (e.key === 'Escape') setIsEditingSetName(false);
+                            }}
+                            autoFocus
+                            className="px-2.5 py-1 text-base font-bold text-slate-900 border-2 border-violet-500 rounded-lg focus:outline-none bg-white shadow-2xs font-sans min-w-[240px]"
+                            placeholder="Nombre de la moldería..."
+                          />
+                          <button
+                            type="button"
+                            onClick={handleSaveSetName}
+                            className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 cursor-pointer shadow-2xs"
+                            title="Guardar nombre"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingSetName(false)}
+                            className="p-1.5 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200 cursor-pointer shadow-2xs"
+                            title="Cancelar"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 group/title">
+                          <h3
+                            onClick={handleStartEditingName}
+                            className="text-base font-bold text-slate-900 tracking-tight cursor-pointer hover:text-violet-700 transition-colors"
+                            title="Clic para renombrar esta moldería"
+                          >
+                            {activePatternSet.name}
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={handleStartEditingName}
+                            className="p-1 rounded-md text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors cursor-pointer"
+                            title="Renombrar esta moldería"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">
                       {activePatternSet.sizes.length} tallas registradas •{' '}

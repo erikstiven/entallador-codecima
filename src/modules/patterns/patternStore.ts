@@ -28,6 +28,7 @@ interface PatternStoreState {
   assignPieceManually: (pieceId: string, sizeName: string, pieceType: PieceType, rotations?: number[]) => void;
   saveActiveSet: () => void;
   setActivePatternSet: (set: PatternSet | null) => void;
+  renamePatternSet: (id: string, newName: string) => void;
   deletePatternSet: (id: string) => void;
   discardUnassignedPiece: (pieceId: string) => void;
   discardAllUnassignedPieces: () => void;
@@ -364,6 +365,39 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     if (patternSet && patternSet.sizes && patternSet.sizes.length > 0) {
       const patternSizes = patternSet.sizes.map((s) => s.sizeName);
       useOrderStore.getState().setAvailableSizes(patternSizes);
+    }
+  },
+
+  renamePatternSet: (id, newName) => {
+    const cleanName = newName.trim();
+    if (!cleanName) return;
+
+    const sets = get().patternSets.map((s) => {
+      if (s.id !== id) return s;
+      return {
+        ...s,
+        name: cleanName,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    const active = get().activePatternSet;
+    const updatedActive =
+      active && active.id === id
+        ? { ...active, name: cleanName, updatedAt: new Date().toISOString() }
+        : active;
+
+    persistActivePatternId(updatedActive);
+    set({
+      patternSets: sets,
+      activePatternSet: updatedActive,
+    });
+
+    try {
+      dbService.run('UPDATE pattern_sets SET name = ? WHERE id = ?', [cleanName, id]);
+      dbService.scheduleAutoSave();
+    } catch (err) {
+      console.error('Error renombrando molde en SQLite:', err);
     }
   },
 
