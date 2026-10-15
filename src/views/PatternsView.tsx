@@ -941,14 +941,12 @@ exportMoldesParaCimatex();`;
                     >
                       <option value="DELANTERO_V">DELANTERO (CUELLO V)</option>
                       <option value="DELANTERO_REDONDO">DELANTERO (CUELLO REDONDO)</option>
-                      <option value="DELANTERO">DELANTERO (ESTÁNDAR)</option>
+                      <option value="DELANTERO">DELANTERO (AUXILIAR)</option>
                       <option value="ESPALDA">ESPALDA</option>
-                      <option value="MANGA_IZQ">MANGA (CORTA / SIMÉTRICA)</option>
-                      <option value="MANGA_DER">MANGA DER (SI ES DISTINTA)</option>
+                      <option value="MANGA_IZQ">MANGA</option>
                       <option value="CUELLO">CUELLO / RIB</option>
-                      <option value="PANTALONETA_IZQ">PANTALONETA (PIERNA / ESPEJO)</option>
-                      <option value="PANTALONETA_DER">PANTALONETA DER (SI ES DISTINTA)</option>
-                      <option value="OTRO">OTRO / AUXILIAR</option>
+                      <option value="PANTALONETA_IZQ">PANTALONETA</option>
+                      <option value="PANTALONETA_DER">PANTALONETA AUX</option>
                     </Select>
                   </div>
                 </div>
@@ -1143,14 +1141,15 @@ exportMoldesParaCimatex();`;
                         >
                           <option value="DELANTERO_V">DELANTERO (CUELLO V)</option>
                           <option value="DELANTERO_REDONDO">DELANTERO (CUELLO REDONDO)</option>
-                          <option value="DELANTERO">DELANTERO (ESTÁNDAR)</option>
+                          <option value="DELANTERO">DELANTERO (AUXILIAR)</option>
                           <option value="ESPALDA">ESPALDA</option>
-                          <option value="MANGA_IZQ">MANGA (CORTA / SIMÉTRICA)</option>
-                          <option value="MANGA_DER">MANGA DER (SI ES DISTINTA)</option>
+                          <option value="MANGA_IZQ">MANGA</option>
                           <option value="CUELLO">CUELLO / RIB</option>
-                          <option value="PANTALONETA_IZQ">PANTALONETA (PIERNA / ESPEJO)</option>
-                          <option value="PANTALONETA_DER">PANTALONETA DER (SI ES DISTINTA)</option>
-                          <option value="OTRO">OTRO / AUX</option>
+                          <option value="PANTALONETA_IZQ">PANTALONETA</option>
+                          <option value="PANTALONETA_DER">PANTALONETA AUX</option>
+                          {!['DELANTERO_V', 'DELANTERO_REDONDO', 'DELANTERO', 'ESPALDA', 'MANGA_IZQ', 'CUELLO', 'PANTALONETA_IZQ', 'PANTALONETA_DER'].includes(piece.pieceType) && (
+                            <option value={piece.pieceType} className="hidden">{piece.pieceType}</option>
+                          )}
                         </Select>
 
                         <button
