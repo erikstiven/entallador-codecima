@@ -767,6 +767,48 @@ describe('modularNestingEngine', () => {
         }
       }
     });
+
+    it('debe acomodar mangas continuas en columna derecha para tallas adultas T42 sin huecos blancos entre mangas', () => {
+      // Caso exacto Colombia T42: Delantero 600x785, Espalda 600x785, Mangas 500x260 en bobina 1120 mm
+      // Delantero + Espalda = 1204 > 1120, por lo que van apilados en columna izquierda
+      const pieces: NestingPieceInput[] = [
+        createMockPiece('joffre_del', 'p1', 'JOFFRE', 'DELANTERO', 600, 785),
+        createMockPiece('joffre_esp', 'p1', 'JOFFRE', 'ESPALDA', 600, 785),
+        createMockPiece('joffre_m1', 'p1', 'JOFFRE', 'MANGA_IZQ', 500, 260),
+        createMockPiece('joffre_m2', 'p1', 'JOFFRE', 'MANGA_DER', 500, 260),
+        createMockPiece('snayder_del', 'p2', 'SNAYDER', 'DELANTERO', 600, 785),
+        createMockPiece('snayder_esp', 'p2', 'SNAYDER', 'ESPALDA', 600, 785),
+        createMockPiece('snayder_m1', 'p2', 'SNAYDER', 'MANGA_IZQ', 500, 260),
+        createMockPiece('snayder_m2', 'p2', 'SNAYDER', 'MANGA_DER', 500, 260),
+      ];
+
+      const res = performModularNesting(pieces, {
+        printableWidthMm: 1120,
+        maxSheetLengthMm: 5000,
+      });
+
+      expect(res.sheets).toBeDefined();
+      expect(res.placedPieces.length).toBe(pieces.length);
+
+      // Todas las mangas deben estar a la derecha de los cuerpos (xMm > 600)
+      const sleeves = res.placedPieces
+        .filter((p) => p.pieceType.includes('MANGA'))
+        .sort((a, b) => a.yMm - b.yMm);
+
+      expect(sleeves.length).toBe(4);
+      for (const sleeve of sleeves) {
+        expect(sleeve.xMm).toBeGreaterThanOrEqual(600);
+      }
+
+      // La distancia vertical entre mangas consecutivas NO debe tener huecos muertos (> 15 mm)
+      for (let i = 0; i < sleeves.length - 1; i++) {
+        const currentBottom = sleeves[i].yMm + sleeves[i].effectiveHeightMm;
+        const nextTop = sleeves[i + 1].yMm;
+        const gap = nextTop - currentBottom;
+        // El gap debe ser el spacing normal (~4 mm), nunca un hueco de 280 mm
+        expect(gap).toBeLessThanOrEqual(15);
+      }
+    });
   });
 });
 

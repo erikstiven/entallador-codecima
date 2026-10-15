@@ -770,6 +770,486 @@ export function performModularNesting(
       }
       const projectedBodyBottomY = projectedJerseyY;
 
+      const tryPlaceSingleSleeveInRow = (candidates: NestingPieceInput[], rowRightEdge: number): boolean => {
+        let bestIndex = -1;
+        let bestX = Infinity;
+        let bestY = Infinity;
+        let bestBottom = Infinity;
+        let bestArea = -Infinity;
+        let bestRotation = 90;
+        const previousSleevePolygons = placedPieces
+          .filter(isSleevePiece)
+          .map(getPlacedPiecePolygon);
+        const previousSleeveBoxes = previousSleevePolygons.map(computeBoundingBox);
+        const projectedBodyLaneStart = projectedBodyPieces.length > 0
+          ? Math.min(...projectedBodyPieces.map(
+              (piece) => piece.xMm + piece.effectiveWidthMm + spacingMm
+            ))
+          : sideMarginMm;
+
+        for (let index = 0; index < candidates.length; index++) {
+          const sleeve = candidates[index];
+          const sleeveWidth = sleeve.bbox.height;
+          const sleeveHeight = sleeve.bbox.width;
+          const minScanX = Math.max(
+            sideMarginMm,
+            Math.min(rowRightEdge, projectedBodyLaneStart)
+          );
+          const maxScanX = printableWidthMm - sideMarginMm - sleeveWidth;
+          if (minScanX > maxScanX + 0.01) continue;
+
+          const scanOffsets = new Set<number>();
+          const addScanOffset = (x: number): void => {
+            const clamped = Math.max(minScanX, Math.min(maxScanX, x));
+            scanOffsets.add(Number(clamped.toFixed(2)));
+          };
+          addScanOffset(minScanX);
+          addScanOffset(maxScanX);
+          addScanOffset(rowRightEdge);
+          if (singleColumnAnchorX !== null) addScanOffset(singleColumnAnchorX);
+          for (const body of projectedBodyPieces) {
+            addScanOffset(body.xMm + body.effectiveWidthMm + spacingMm);
+          }
+          for (const box of previousSleeveBoxes) {
+            addScanOffset(box.minX);
+            addScanOffset(box.maxX - sleeveWidth);
+          }
+
+          const preferredRotation = sleeve.pieceType.toUpperCase().includes('DER') ? 270 : 90;
+          const rotations = preferredRotation === 90 ? [90, 270] : [270, 90];
+          for (const rotation of rotations) {
+            let foundCandidateForRotation = false;
+            for (const candidateX of scanOffsets) {
+              const localPolygon = (sleeve.cutPolygon && sleeve.cutPolygon.length >= 3)
+                ? getOrientedPolygon(sleeve.cutPolygon, rotation, candidateX, 0)
+                : [
+                    { x: candidateX, y: 0 },
+                    { x: candidateX + sleeveWidth, y: 0 },
+                    { x: candidateX + sleeveWidth, y: sleeveHeight },
+                    { x: candidateX, y: sleeveHeight },
+                  ];
+              let candidateY = computeMinGroupYBelowPolygons(
+                previousSleevePolygons,
+                [localPolygon],
+                spacingMm,
+                topMarginMm
+              );
+              candidateY = moveGroupBelowBlockingPieces(
+                [localPolygon],
+                candidateY,
+                projectedBodyPieces,
+                spacingMm
+              );
+              const candidateBottom = candidateY + sleeveHeight;
+              if (candidateBottom > projectedBodyBottomY + 0.01) continue;
+              foundCandidateForRotation = true;
+
+              const area = sleeve.areaMm2 || sleeve.bbox.width * sleeve.bbox.height;
+              if (candidateBottom < bestBottom - 0.01
+                || (Math.abs(candidateBottom - bestBottom) <= 0.01 && candidateY < bestY - 0.01)
+                || (Math.abs(candidateBottom - bestBottom) <= 0.01
+                  && Math.abs(candidateY - bestY) <= 0.01
+                  && area > bestArea)) {
+                bestIndex = index;
+                bestX = candidateX;
+                bestY = candidateY;
+                bestBottom = candidateBottom;
+                bestArea = area;
+                bestRotation = rotation;
+              }
+            }
+            if (foundCandidateForRotation) break;
+          }
+        }
+
+        if (bestIndex < 0) return false;
+
+        const sleeve = candidates[bestIndex];
+        const sleeveWidth = sleeve.bbox.height;
+        const sleeveHeight = sleeve.bbox.width;
+        const bestLocalPolygon = (sleeve.cutPolygon && sleeve.cutPolygon.length >= 3)
+          ? getOrientedPolygon(sleeve.cutPolygon, bestRotation, bestX, 0)
+          : [
+              { x: bestX, y: 0 },
+              { x: bestX + sleeveWidth, y: 0 },
+              { x: bestX + sleeveWidth, y: sleeveHeight },
+              { x: bestX, y: sleeveHeight },
+            ];
+        bestY = refineGroupYForEuclideanSpacing(
+          previousSleevePolygons,
+          [bestLocalPolygon],
+          bestY,
+          spacingMm
+        );
+        bestY = moveGroupBelowBlockingPieces(
+          [bestLocalPolygon],
+          bestY,
+          projectedBodyPieces,
+          spacingMm
+        );
+        if (bestY + sleeveHeight > projectedBodyBottomY + 0.01) return false;
+        placedPieces.push({
+          ...sleeve,
+          xMm: Number(bestX.toFixed(2)),
+          yMm: Number(bestY.toFixed(2)),
+          rotationDeg: bestRotation,
+          effectiveWidthMm: sleeveWidth,
+          effectiveHeightMm: sleeveHeight,
+          isLocked: false,
+          sheetIndex: sheetIdx,
+        });
+
+        singleColumnAnchorX = bestX;
+        continuousCol1Y = Math.max(continuousCol1Y, bestY + sleeveHeight + spacingMm);
+        candidates.splice(bestIndex, 1);
+        return true;
+      };
+
+      const placeSleevesInCorridor = (candidates: NestingPieceInput[], rowRightEdge: number): void => {
+        if (candidates.length === 0) return;
+
+        // 1. Probar doble columna evaluando el ancho REAL disponible en la Y de colocación de las mangas
+        let canFitDoubleCol = false;
+        if (candidates.length >= 2) {
+          const sW1 = candidates[0].bbox.height;
+          const sH1 = candidates[0].bbox.width;
+          const sW2 = candidates[1].bbox.height;
+          const requiredDoubleWidth = sW1 + spacingMm + sW2;
+          const realStartX = getMinSafeXForYRange(
+            [...projectedBodyPieces, ...placedPieces.filter(isSleevePiece)],
+            continuousCol1Y,
+            continuousCol1Y + sH1,
+            spacingMm,
+            sideMarginMm
+          );
+          const realAvailableWidth = printableWidthMm - realStartX - sideMarginMm;
+          if (realAvailableWidth >= requiredDoubleWidth) {
+            canFitDoubleCol = true;
+          }
+        }
+
+        if (canFitDoubleCol) {
+          // DOBLE COLUMNA CONTINUA (Para bobinas anchas como 1600mm / 1800mm o tallas infantiles)
+          while (candidates.length >= 2) {
+            const sm1 = candidates[0];
+            const sm2 = candidates[1];
+            const sW1 = sm1.bbox.height;
+            const sH1 = sm1.bbox.width;
+            const sW2 = sm2.bbox.height;
+            const sH2 = sm2.bbox.width;
+
+            const safeCol1X = getMinSafeXForYRange(
+              [...projectedBodyPieces, ...placedPieces.filter(isSleevePiece)],
+              continuousCol1Y,
+              continuousCol1Y + sH1,
+              spacingMm,
+              sideMarginMm
+            );
+            const col1X = Number(safeCol1X.toFixed(2));
+            const col2X = Number((col1X + sW1 + spacingMm).toFixed(2));
+
+            if (col2X + sW2 > printableWidthMm - sideMarginMm) break;
+            if (Math.max(continuousCol1Y + sH1, continuousCol2Y + sH2) > projectedBodyBottomY + 0.01) break;
+
+            placedPieces.push(
+              {
+                ...sm1,
+                xMm: col1X,
+                yMm: Number(continuousCol1Y.toFixed(2)),
+                rotationDeg: 90,
+                effectiveWidthMm: sW1,
+                effectiveHeightMm: sH1,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              },
+              {
+                ...sm2,
+                xMm: col2X,
+                yMm: Number(continuousCol2Y.toFixed(2)),
+                rotationDeg: 90,
+                effectiveWidthMm: sW2,
+                effectiveHeightMm: sH2,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              }
+            );
+
+            continuousCol1Y += sH1 + spacingMm;
+            continuousCol2Y += sH2 + spacingMm;
+            candidates.splice(0, 2);
+          }
+          return;
+        }
+
+        // 2. Probar mangas de forma HORIZONTAL si el ancho libre a la derecha lo permite
+        // (Para tallas adultas en bobina 1120 mm donde el cuerpo deja ~510 mm libres y la manga mide ~500 mm)
+        let placedHorizontal = false;
+        while (candidates.length > 0) {
+          const sm = candidates[0];
+          const sW = sm.bbox.width;
+          const sH = sm.bbox.height;
+          const realStartX = getMinSafeXForYRange(
+            [...projectedBodyPieces, ...placedPieces.filter(isSleevePiece)],
+            continuousCol1Y,
+            continuousCol1Y + sH,
+            spacingMm,
+            sideMarginMm
+          );
+          const realAvailableWidth = printableWidthMm - realStartX - sideMarginMm;
+          if (realAvailableWidth >= sW && sW > sH * 1.25) {
+            if (continuousCol1Y + sH > projectedBodyBottomY + 0.01) break;
+            const rot = sm.pieceType.toUpperCase().includes('DER') ? 180 : 0;
+            placedPieces.push({
+              ...sm,
+              xMm: Number(realStartX.toFixed(2)),
+              yMm: Number(continuousCol1Y.toFixed(2)),
+              rotationDeg: rot,
+              effectiveWidthMm: sW,
+              effectiveHeightMm: sH,
+              isLocked: false,
+              sheetIndex: sheetIdx,
+            });
+            continuousCol1Y += sH + spacingMm;
+            continuousCol2Y = continuousCol1Y;
+            candidates.splice(0, 1);
+            placedHorizontal = true;
+          } else {
+            break;
+          }
+        }
+        if (placedHorizontal && candidates.length === 0) return;
+
+        // 3. COLUMNA VERTICAL ÚNICA TÊTE-BÊCHE (Para bobina 1120 mm)
+        while (candidates.length >= 2) {
+          const sm1 = candidates[0];
+          const sm2 = candidates[1];
+
+          const rot1 = 90;
+          const rot2 = 270;
+          const w1 = sm1.bbox.height;
+          const h1 = sm1.bbox.width;
+          const w2 = sm2.bbox.height;
+          const h2 = sm2.bbox.width;
+
+          const blockingPieces = projectedBodyPieces;
+          const hasOrganicContours = (sm1.cutPolygon?.length ?? 0) > 4
+            || (sm2.cutPolygon?.length ?? 0) > 4;
+
+          const safeXAtCursor = getMinSafeXForYRange(
+            blockingPieces,
+            continuousCol1Y,
+            continuousCol1Y + h1,
+            spacingMm,
+            sideMarginMm
+          );
+          const maxX1 = printableWidthMm - Math.max(w1, w2) - sideMarginMm;
+          if (maxX1 < sideMarginMm) break;
+          const x1: number = Number(Math.max(
+            sideMarginMm,
+            Math.min(singleColumnAnchorX ?? safeXAtCursor, maxX1)
+          ).toFixed(2));
+
+          if (!hasOrganicContours) {
+            const y1 = Number(continuousCol1Y.toFixed(2));
+            const y2 = Number((y1 + h1 + spacingMm).toFixed(2));
+            const x2 = getMinSafeXForYRange(
+              blockingPieces,
+              y2,
+              y2 + h2,
+              spacingMm,
+              x1
+            );
+            if (x2 + w2 > printableWidthMm - sideMarginMm) break;
+            if (y2 + h2 > projectedBodyBottomY + 0.01) break;
+
+            placedPieces.push(
+              {
+                ...sm1,
+                xMm: x1,
+                yMm: y1,
+                rotationDeg: rot1,
+                effectiveWidthMm: w1,
+                effectiveHeightMm: h1,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              },
+              {
+                ...sm2,
+                xMm: x2,
+                yMm: y2,
+                rotationDeg: rot2,
+                effectiveWidthMm: w2,
+                effectiveHeightMm: h2,
+                isLocked: false,
+                sheetIndex: sheetIdx,
+              }
+            );
+            singleColumnAnchorX = x1;
+            continuousCol1Y = y2 + h2 + spacingMm;
+            candidates.splice(0, 2);
+            continue;
+          }
+
+          const previousSleevePolygons = placedPieces
+            .filter(isSleevePiece)
+            .map(getPlacedPiecePolygon);
+          const contactSleevePolygons = previousSleevePolygons.slice(-2);
+
+          const poly1Local = (sm1.cutPolygon && sm1.cutPolygon.length >= 3)
+            ? getOrientedPolygon(sm1.cutPolygon, rot1, x1, 0)
+            : [{ x: x1, y: 0 }, { x: x1 + w1, y: 0 }, { x: x1 + w1, y: h1 }, { x: x1, y: h1 }];
+
+          const minScanX = Math.max(sideMarginMm, x1 - 100);
+          const maxScanX = printableWidthMm - w2 - sideMarginMm;
+          if (minScanX > maxScanX) break;
+
+          const scanOffsets = new Set<number>();
+          scanOffsets.add(x1);
+          scanOffsets.add(Math.min(maxScanX, Math.max(minScanX, x1 + w1 - w2)));
+          scanOffsets.add(Math.min(maxScanX, Math.max(minScanX, x1 + Math.round((w1 - w2) / 2))));
+
+          for (let sx = minScanX; sx <= maxScanX; sx += 8) {
+            scanOffsets.add(Number(sx.toFixed(2)));
+          }
+
+          let bestX2 = x1;
+          let bestY1 = Infinity;
+          let bestY2 = Infinity;
+          let bestBottomY = Infinity;
+          let bestLocalY2 = Infinity;
+
+          const evaluateX2 = (candX2: number): void => {
+            if (candX2 + w2 > printableWidthMm - sideMarginMm) return;
+
+            const poly2AtZero = (sm2.cutPolygon && sm2.cutPolygon.length >= 3)
+              ? getOrientedPolygon(sm2.cutPolygon, rot2, candX2, 0)
+              : [{ x: candX2, y: 0 }, { x: candX2 + w2, y: 0 }, { x: candX2 + w2, y: h2 }, { x: candX2, y: h2 }];
+
+            const localY2 = Math.max(
+              computeMinNonCollidingY(poly1Local, poly2AtZero, 0, spacingMm),
+              spacingMm
+            );
+            const poly2Local = poly2AtZero.map((point) => ({
+              x: point.x,
+              y: point.y + localY2,
+            }));
+            const localPair = [poly1Local, poly2Local];
+
+            let pairY = hasOrganicContours
+              ? computeMinGroupYBelowPolygons(
+                  contactSleevePolygons,
+                  localPair,
+                  spacingMm,
+                  topMarginMm
+                )
+                  : continuousCol1Y;
+            if (hasOrganicContours) {
+              pairY = moveGroupBelowBlockingPieces(
+                localPair,
+                pairY,
+                blockingPieces,
+                spacingMm
+              );
+            }
+
+            const candY1 = Number(pairY.toFixed(2));
+            const candY2 = Number((pairY + localY2).toFixed(2));
+            const bottomY = Math.max(candY1 + h1, candY2 + h2);
+            if (bottomY < bestBottomY) {
+              bestBottomY = bottomY;
+              bestX2 = candX2;
+              bestY1 = candY1;
+              bestY2 = candY2;
+              bestLocalY2 = localY2;
+            }
+          };
+
+          for (const candX2 of scanOffsets) {
+            evaluateX2(candX2);
+          }
+
+          if (Number.isFinite(bestBottomY)) {
+            const coarseBestX2 = bestX2;
+            for (let sx = coarseBestX2 - 8; sx <= coarseBestX2 + 8; sx += 1) {
+              if (sx < minScanX || sx > maxScanX) continue;
+              evaluateX2(Number(sx.toFixed(2)));
+            }
+          }
+
+          if (!Number.isFinite(bestBottomY)) break;
+
+          if (hasOrganicContours) {
+            const bestPoly2AtZero = (sm2.cutPolygon && sm2.cutPolygon.length >= 3)
+              ? getOrientedPolygon(sm2.cutPolygon, rot2, bestX2, 0)
+              : [{ x: bestX2, y: 0 }, { x: bestX2 + w2, y: 0 }, { x: bestX2 + w2, y: h2 }, { x: bestX2, y: h2 }];
+            bestLocalY2 = refineGroupYForEuclideanSpacing(
+              [poly1Local],
+              [bestPoly2AtZero],
+              bestLocalY2,
+              spacingMm
+            );
+            const bestPoly2Local = bestPoly2AtZero.map((point) => ({
+              x: point.x,
+              y: point.y + bestLocalY2,
+            }));
+            const bestLocalPair = [poly1Local, bestPoly2Local];
+            let finalPairY = computeMinGroupYBelowPolygons(
+              previousSleevePolygons,
+              bestLocalPair,
+              spacingMm,
+              topMarginMm
+            );
+            finalPairY = refineGroupYForEuclideanSpacing(
+              previousSleevePolygons,
+              bestLocalPair,
+              finalPairY,
+              spacingMm
+            );
+            finalPairY = moveGroupBelowBlockingPieces(
+              bestLocalPair,
+              finalPairY,
+              blockingPieces,
+              spacingMm
+            );
+            bestY1 = Number(finalPairY.toFixed(2));
+            bestY2 = Number((finalPairY + bestLocalY2).toFixed(2));
+            bestBottomY = Math.max(bestY1 + h1, bestY2 + h2);
+          }
+
+          if (bestBottomY > projectedBodyBottomY + 0.01) break;
+
+          placedPieces.push({
+            ...sm1,
+            xMm: x1,
+            yMm: bestY1,
+            rotationDeg: rot1,
+            effectiveWidthMm: w1,
+            effectiveHeightMm: h1,
+            isLocked: false,
+            sheetIndex: sheetIdx,
+          });
+
+          placedPieces.push({
+            ...sm2,
+            xMm: bestX2,
+            yMm: bestY2,
+            rotationDeg: rot2,
+            effectiveWidthMm: w2,
+            effectiveHeightMm: h2,
+            isLocked: false,
+            sheetIndex: sheetIdx,
+          });
+
+          singleColumnAnchorX = x1;
+          continuousCol1Y = bestBottomY + spacingMm;
+          candidates.splice(0, 2);
+        }
+
+        // 4. Si ninguna variante de pareja resolvió todo el conjunto, intentar una manga en el hueco
+        while (candidates.length > 0 && tryPlaceSingleSleeveInRow(candidates, rowRightEdge)) {
+        }
+      };
+
       for (const playerSet of sheetPlayers) {
         if (!playerNames.includes(playerSet.playerName)) {
           playerNames.push(playerSet.playerName);
@@ -823,485 +1303,13 @@ export function performModularNesting(
           }
 
           const rowRightEdge = (esp ? espX + wEsp : delX + wDel) + spacingMm;
-          const availableRightWidth = printableWidthMm - rowRightEdge - sideMarginMm;
-
-          // Evaluar todas las mangas pendientes, incluidas las de filas futuras.
           const candidatesToPlace = [...leftoverSleeves];
           leftoverSleeves.length = 0;
 
           const collarsToPlace = [...rowCollars, ...leftoverCollars];
           leftoverCollars.length = 0;
-          /**
-           * Variante individual global: explora X y ambas orientaciones verticales
-           * para ocupar el primer hueco lateral real disponible. No queda limitada
-           * a la fila actual: una manga futura puede llenar un hueco anterior.
-           */
-          const tryPlaceSingleSleeveInRow = (): boolean => {
-            let bestIndex = -1;
-            let bestX = Infinity;
-            let bestY = Infinity;
-            let bestBottom = Infinity;
-            let bestArea = -Infinity;
-            let bestRotation = 90;
-            const previousSleevePolygons = placedPieces
-              .filter(isSleevePiece)
-              .map(getPlacedPiecePolygon);
-            const previousSleeveBoxes = previousSleevePolygons.map(computeBoundingBox);
-            const projectedBodyLaneStart = projectedBodyPieces.length > 0
-              ? Math.min(...projectedBodyPieces.map(
-                  (piece) => piece.xMm + piece.effectiveWidthMm + spacingMm
-                ))
-              : sideMarginMm;
 
-            for (let index = 0; index < candidatesToPlace.length; index++) {
-              const sleeve = candidatesToPlace[index];
-              const sleeveWidth = sleeve.bbox.height;
-              const sleeveHeight = sleeve.bbox.width;
-              const minScanX = Math.max(
-                sideMarginMm,
-                Math.min(rowRightEdge, projectedBodyLaneStart)
-              );
-              const maxScanX = printableWidthMm - sideMarginMm - sleeveWidth;
-              if (minScanX > maxScanX + 0.01) continue;
-
-              const scanOffsets = new Set<number>();
-              const addScanOffset = (x: number): void => {
-                const clamped = Math.max(minScanX, Math.min(maxScanX, x));
-                scanOffsets.add(Number(clamped.toFixed(2)));
-              };
-              addScanOffset(minScanX);
-              addScanOffset(maxScanX);
-              addScanOffset(rowRightEdge);
-              if (singleColumnAnchorX !== null) addScanOffset(singleColumnAnchorX);
-              for (const body of projectedBodyPieces) {
-                addScanOffset(body.xMm + body.effectiveWidthMm + spacingMm);
-              }
-              for (const box of previousSleeveBoxes) {
-                addScanOffset(box.minX);
-                addScanOffset(box.maxX - sleeveWidth);
-              }
-
-              const preferredRotation = sleeve.pieceType.toUpperCase().includes('DER') ? 270 : 90;
-              const rotations = preferredRotation === 90 ? [90, 270] : [270, 90];
-              for (const rotation of rotations) {
-                let foundCandidateForRotation = false;
-                for (const candidateX of scanOffsets) {
-                  const localPolygon = (sleeve.cutPolygon && sleeve.cutPolygon.length >= 3)
-                    ? getOrientedPolygon(sleeve.cutPolygon, rotation, candidateX, 0)
-                    : [
-                        { x: candidateX, y: 0 },
-                        { x: candidateX + sleeveWidth, y: 0 },
-                        { x: candidateX + sleeveWidth, y: sleeveHeight },
-                        { x: candidateX, y: sleeveHeight },
-                      ];
-                  let candidateY = computeMinGroupYBelowPolygons(
-                    previousSleevePolygons,
-                    [localPolygon],
-                    spacingMm,
-                    topMarginMm
-                  );
-                  candidateY = moveGroupBelowBlockingPieces(
-                    [localPolygon],
-                    candidateY,
-                    projectedBodyPieces,
-                    spacingMm
-                  );
-                  const candidateBottom = candidateY + sleeveHeight;
-                  if (candidateBottom > projectedBodyBottomY + 0.01) continue;
-                  foundCandidateForRotation = true;
-
-                  const area = sleeve.areaMm2 || sleeve.bbox.width * sleeve.bbox.height;
-                  if (candidateBottom < bestBottom - 0.01
-                    || (Math.abs(candidateBottom - bestBottom) <= 0.01 && candidateY < bestY - 0.01)
-                    || (Math.abs(candidateBottom - bestBottom) <= 0.01
-                      && Math.abs(candidateY - bestY) <= 0.01
-                      && area > bestArea)) {
-                    bestIndex = index;
-                    bestX = candidateX;
-                    bestY = candidateY;
-                    bestBottom = candidateBottom;
-                    bestArea = area;
-                    bestRotation = rotation;
-                  }
-                }
-                // La orientación opuesta es un respaldo, no duplica el coste
-                // cuando la orientación natural ya ofrece una posición segura.
-                if (foundCandidateForRotation) break;
-              }
-            }
-
-            if (bestIndex < 0) return false;
-
-            const sleeve = candidatesToPlace[bestIndex];
-            const sleeveWidth = sleeve.bbox.height;
-            const sleeveHeight = sleeve.bbox.width;
-            const bestLocalPolygon = (sleeve.cutPolygon && sleeve.cutPolygon.length >= 3)
-              ? getOrientedPolygon(sleeve.cutPolygon, bestRotation, bestX, 0)
-              : [
-                  { x: bestX, y: 0 },
-                  { x: bestX + sleeveWidth, y: 0 },
-                  { x: bestX + sleeveWidth, y: sleeveHeight },
-                  { x: bestX, y: sleeveHeight },
-                ];
-            bestY = refineGroupYForEuclideanSpacing(
-              previousSleevePolygons,
-              [bestLocalPolygon],
-              bestY,
-              spacingMm
-            );
-            bestY = moveGroupBelowBlockingPieces(
-              [bestLocalPolygon],
-              bestY,
-              projectedBodyPieces,
-              spacingMm
-            );
-            if (bestY + sleeveHeight > projectedBodyBottomY + 0.01) return false;
-            placedPieces.push({
-              ...sleeve,
-              xMm: Number(bestX.toFixed(2)),
-              yMm: Number(bestY.toFixed(2)),
-              rotationDeg: bestRotation,
-              effectiveWidthMm: sleeveWidth,
-              effectiveHeightMm: sleeveHeight,
-              isLocked: false,
-              sheetIndex: sheetIdx,
-            });
-
-            singleColumnAnchorX = bestX;
-            continuousCol1Y = Math.max(continuousCol1Y, bestY + sleeveHeight + spacingMm);
-            candidatesToPlace.splice(bestIndex, 1);
-            return true;
-          };
-
-          // 1. Probar doble columna evaluando el ancho REAL disponible en la Y de colocación de las mangas,
-          //    no el ancho estático de la camiseta del jugador actual.
-          //    Bug fix: las mangas se colocan en continuousCol1Y (pista vertical continua desacoplada),
-          //    que puede estar al lado de una camiseta MÁS ANGOSTA de un jugador anterior,
-          //    dejando más espacio real del que la camiseta del jugador actual sugiere.
-          let canFitDoubleCol = false;
-          if (candidatesToPlace.length >= 2) {
-            const sW1 = candidatesToPlace[0].bbox.height; // ancho efectivo manga 1 rotada 90°
-            const sH1 = candidatesToPlace[0].bbox.width;  // alto efectivo manga 1 rotada 90°
-            const sW2 = candidatesToPlace[1].bbox.height; // ancho efectivo manga 2 rotada 90°
-            const requiredDoubleWidth = sW1 + spacingMm + sW2;
-            // Calcular el X libre real en el rango Y donde se colocarán las mangas
-            const realStartX = getMinSafeXForYRange(
-              [...projectedBodyPieces, ...placedPieces.filter(isSleevePiece)],
-              continuousCol1Y,
-              continuousCol1Y + sH1,
-              spacingMm,
-              sideMarginMm
-            );
-            const realAvailableWidth = printableWidthMm - realStartX - sideMarginMm;
-            if (realAvailableWidth >= requiredDoubleWidth) {
-              canFitDoubleCol = true;
-            }
-          }
-
-          if (canFitDoubleCol) {
-            // DOBLE COLUMNA CONTINUA (Para bobinas anchas como 1600mm / 1800mm o tallas infantiles)
-            while (candidatesToPlace.length >= 2) {
-              const sm1 = candidatesToPlace[0];
-              const sm2 = candidatesToPlace[1];
-              const sW1 = sm1.bbox.height;
-              const sH1 = sm1.bbox.width;
-              const sW2 = sm2.bbox.height;
-              const sH2 = sm2.bbox.width;
-
-              const safeCol1X = getMinSafeXForYRange(
-                [...projectedBodyPieces, ...placedPieces.filter(isSleevePiece)],
-                continuousCol1Y,
-                continuousCol1Y + sH1,
-                spacingMm,
-                sideMarginMm
-              );
-              const col1X = Number(safeCol1X.toFixed(2));
-              const col2X = Number((col1X + sW1 + spacingMm).toFixed(2));
-
-              if (col2X + sW2 > printableWidthMm - sideMarginMm) break;
-              if (Math.max(continuousCol1Y + sH1, continuousCol2Y + sH2) > projectedBodyBottomY + 0.01) break;
-
-              placedPieces.push(
-                {
-                  ...sm1,
-                  xMm: col1X,
-                  yMm: Number(continuousCol1Y.toFixed(2)),
-                  rotationDeg: 90,
-                  effectiveWidthMm: sW1,
-                  effectiveHeightMm: sH1,
-                  isLocked: false,
-                  sheetIndex: sheetIdx,
-                },
-                {
-                  ...sm2,
-                  xMm: col2X,
-                  yMm: Number(continuousCol2Y.toFixed(2)),
-                  rotationDeg: 90,
-                  effectiveWidthMm: sW2,
-                  effectiveHeightMm: sH2,
-                  isLocked: false,
-                  sheetIndex: sheetIdx,
-                }
-              );
-
-              continuousCol1Y += sH1 + spacingMm;
-              continuousCol2Y += sH2 + spacingMm;
-              candidatesToPlace.splice(0, 2);
-            }
-          } else {
-            // COLUMNA VERTICAL ÚNICA TÊTE-BÊCHE (Para bobina 1120 mm)
-            // Cuando no entran 2 columnas paralelas en el ancho libre, se apilan las mangas
-            // en UNA SOLA COLUMNA VERTICAL al lado derecho de la camiseta:
-            // - Manga 1 a 90° (puño a la izquierda contra la espalda, copa a la derecha)
-            // - Manga 2 a 270° (puño a la derecha contra el margen de bobina, copa a la izquierda)
-            // directamente debajo de Manga 1, ocupando solo el ancho de UNA manga (~180-220 mm).
-            while (candidatesToPlace.length >= 2) {
-              const sm1 = candidatesToPlace[0];
-              const sm2 = candidatesToPlace[1];
-
-              // Rotación canónica tête-bêche:
-              // Manga 1 a 90° (puño a la izquierda contra la espalda, copa a la derecha)
-              // Manga 2 a 270° (puño a la derecha contra el margen, copa a la izquierda encastrada en la curva)
-              const rot1 = 90;
-              const rot2 = 270;
-              const w1 = sm1.bbox.height;
-              const h1 = sm1.bbox.width;
-              const w2 = sm2.bbox.height;
-              const h2 = sm2.bbox.width;
-
-              const blockingPieces = projectedBodyPieces;
-              const hasOrganicContours = (sm1.cutPolygon?.length ?? 0) > 4
-                || (sm2.cutPolygon?.length ?? 0) > 4;
-
-              const safeXAtCursor = getMinSafeXForYRange(
-                blockingPieces,
-                continuousCol1Y,
-                continuousCol1Y + h1,
-                spacingMm,
-                rowRightEdge
-              );
-              const maxX1 = printableWidthMm - Math.max(w1, w2) - sideMarginMm;
-              if (maxX1 < sideMarginMm) break;
-              const x1: number = Number(Math.max(
-                sideMarginMm,
-                Math.min(singleColumnAnchorX ?? safeXAtCursor, maxX1)
-              ).toFixed(2));
-
-              // Rectángulos no pueden ganar encastre entre curvas. Ruta rápida
-              // para pedidos sintéticos y piezas sin contorno orgánico.
-              if (!hasOrganicContours) {
-                const y1 = Number(continuousCol1Y.toFixed(2));
-                const y2 = Number((y1 + h1 + spacingMm).toFixed(2));
-                const x2 = getMinSafeXForYRange(
-                  blockingPieces,
-                  y2,
-                  y2 + h2,
-                  spacingMm,
-                  x1
-                );
-                if (x2 + w2 > printableWidthMm - sideMarginMm) break;
-                if (y2 + h2 > projectedBodyBottomY + 0.01) break;
-
-                placedPieces.push(
-                  {
-                    ...sm1,
-                    xMm: x1,
-                    yMm: y1,
-                    rotationDeg: rot1,
-                    effectiveWidthMm: w1,
-                    effectiveHeightMm: h1,
-                    isLocked: false,
-                    sheetIndex: sheetIdx,
-                  },
-                  {
-                    ...sm2,
-                    xMm: x2,
-                    yMm: y2,
-                    rotationDeg: rot2,
-                    effectiveWidthMm: w2,
-                    effectiveHeightMm: h2,
-                    isLocked: false,
-                    sheetIndex: sheetIdx,
-                  }
-                );
-                singleColumnAnchorX = x1;
-                continuousCol1Y = y2 + h2 + spacingMm;
-                candidatesToPlace.splice(0, 2);
-                continue;
-              }
-
-              const previousSleevePolygons = placedPieces
-                .filter(isSleevePiece)
-                .map(getPlacedPiecePolygon);
-              const contactSleevePolygons = previousSleevePolygons.slice(-2);
-
-              const poly1Local = (sm1.cutPolygon && sm1.cutPolygon.length >= 3)
-                ? getOrientedPolygon(sm1.cutPolygon, rot1, x1, 0)
-                : [{ x: x1, y: 0 }, { x: x1 + w1, y: 0 }, { x: x1 + w1, y: h1 }, { x: x1, y: h1 }];
-
-              // Rango de exploración horizontal para encastrar la curva de Manga 2 en Manga 1
-              const minScanX = Math.max(sideMarginMm, x1 - 100);
-              const maxScanX = printableWidthMm - w2 - sideMarginMm;
-              if (minScanX > maxScanX) break;
-
-              const scanOffsets = new Set<number>();
-              scanOffsets.add(x1);
-              scanOffsets.add(Math.min(maxScanX, Math.max(minScanX, x1 + w1 - w2)));
-              scanOffsets.add(Math.min(maxScanX, Math.max(minScanX, x1 + Math.round((w1 - w2) / 2))));
-
-              // Barrido en pasos de 8 mm para máxima velocidad (< 20ms)
-              for (let sx = minScanX; sx <= maxScanX; sx += 8) {
-                scanOffsets.add(Number(sx.toFixed(2)));
-              }
-
-              let bestX2 = x1;
-              let bestY1 = Infinity;
-              let bestY2 = Infinity;
-              let bestBottomY = Infinity;
-              let bestLocalY2 = Infinity;
-
-              const evaluateX2 = (candX2: number): void => {
-                if (candX2 + w2 > printableWidthMm - sideMarginMm) return;
-
-                const poly2AtZero = (sm2.cutPolygon && sm2.cutPolygon.length >= 3)
-                  ? getOrientedPolygon(sm2.cutPolygon, rot2, candX2, 0)
-                  : [{ x: candX2, y: 0 }, { x: candX2 + w2, y: 0 }, { x: candX2 + w2, y: h2 }, { x: candX2, y: h2 }];
-
-                const localY2 = Math.max(
-                  computeMinNonCollidingY(poly1Local, poly2AtZero, 0, spacingMm),
-                  spacingMm
-                );
-                const poly2Local = poly2AtZero.map((point) => ({
-                  x: point.x,
-                  y: point.y + localY2,
-                }));
-                const localPair = [poly1Local, poly2Local];
-
-                let pairY = hasOrganicContours
-                  ? computeMinGroupYBelowPolygons(
-                      contactSleevePolygons,
-                      localPair,
-                      spacingMm,
-                      topMarginMm
-                    )
-                  : continuousCol1Y;
-                if (hasOrganicContours) {
-                  pairY = moveGroupBelowBlockingPieces(
-                    localPair,
-                    pairY,
-                    blockingPieces,
-                    spacingMm
-                  );
-                }
-
-                const candY1 = Number(pairY.toFixed(2));
-                const candY2 = Number((pairY + localY2).toFixed(2));
-                const bottomY = Math.max(candY1 + h1, candY2 + h2);
-                if (bottomY < bestBottomY) {
-                  bestBottomY = bottomY;
-                  bestX2 = candX2;
-                  bestY1 = candY1;
-                  bestY2 = candY2;
-                  bestLocalY2 = localY2;
-                }
-              };
-
-              for (const candX2 of scanOffsets) {
-                evaluateX2(candX2);
-              }
-
-              // Refinamiento local de 1 mm alrededor del mejor resultado grueso.
-              if (Number.isFinite(bestBottomY)) {
-                const coarseBestX2 = bestX2;
-                for (let sx = coarseBestX2 - 8; sx <= coarseBestX2 + 8; sx += 1) {
-                  if (sx < minScanX || sx > maxScanX) continue;
-                  evaluateX2(Number(sx.toFixed(2)));
-                }
-              }
-
-              // Ninguna posición segura: conservar las mangas como sobrantes.
-              if (!Number.isFinite(bestBottomY)) break;
-
-              // Validación completa una sola vez para el candidato ganador.
-              // Evita el coste cuadrático de comparar todos los polígonos en cada paso X.
-              if (hasOrganicContours) {
-                const bestPoly2AtZero = (sm2.cutPolygon && sm2.cutPolygon.length >= 3)
-                  ? getOrientedPolygon(sm2.cutPolygon, rot2, bestX2, 0)
-                  : [{ x: bestX2, y: 0 }, { x: bestX2 + w2, y: 0 }, { x: bestX2 + w2, y: h2 }, { x: bestX2, y: h2 }];
-                bestLocalY2 = refineGroupYForEuclideanSpacing(
-                  [poly1Local],
-                  [bestPoly2AtZero],
-                  bestLocalY2,
-                  spacingMm
-                );
-                const bestPoly2Local = bestPoly2AtZero.map((point) => ({
-                  x: point.x,
-                  y: point.y + bestLocalY2,
-                }));
-                const bestLocalPair = [poly1Local, bestPoly2Local];
-                let finalPairY = computeMinGroupYBelowPolygons(
-                  previousSleevePolygons,
-                  bestLocalPair,
-                  spacingMm,
-                  topMarginMm
-                );
-                finalPairY = refineGroupYForEuclideanSpacing(
-                  previousSleevePolygons,
-                  bestLocalPair,
-                  finalPairY,
-                  spacingMm
-                );
-                finalPairY = moveGroupBelowBlockingPieces(
-                  bestLocalPair,
-                  finalPairY,
-                  blockingPieces,
-                  spacingMm
-                );
-                bestY1 = Number(finalPairY.toFixed(2));
-                bestY2 = Number((finalPairY + bestLocalY2).toFixed(2));
-                bestBottomY = Math.max(bestY1 + h1, bestY2 + h2);
-              }
-
-              // Una colocación lateral nunca debe alargar la fila de camisetas.
-              // Si el par no cabe, se probará una sola manga y el resto quedará pendiente.
-              if (bestBottomY > projectedBodyBottomY + 0.01) break;
-
-              // Ubicar Manga 1 (90°)
-              placedPieces.push({
-                ...sm1,
-                xMm: x1,
-                yMm: bestY1,
-                rotationDeg: rot1,
-                effectiveWidthMm: w1,
-                effectiveHeightMm: h1,
-                isLocked: false,
-                sheetIndex: sheetIdx,
-              });
-
-              // Ubicar Manga 2 (270°) encastrada orgánicamente en la curvatura
-              placedPieces.push({
-                ...sm2,
-                xMm: bestX2,
-                yMm: bestY2,
-                rotationDeg: rot2,
-                effectiveWidthMm: w2,
-                effectiveHeightMm: h2,
-                isLocked: false,
-                sheetIndex: sheetIdx,
-              });
-
-              singleColumnAnchorX = x1;
-              continuousCol1Y = bestBottomY + spacingMm;
-              candidatesToPlace.splice(0, 2);
-            }
-
-          }
-
-          // Si ninguna variante de pareja resolvió todo el conjunto, intentar
-          // exactamente una manga en el hueco de esta fila.
-          while (candidatesToPlace.length > 0 && tryPlaceSingleSleeveInRow()) {
-            // Seguir llenando el hueco: una pareja no es una unidad indivisible.
-          }
+          placeSleevesInCorridor(candidatesToPlace, rowRightEdge);
 
           // Si sobran mangas que no cupieron en esta fila, guardar para siguientes filas o la base
           leftoverSleeves.push(...candidatesToPlace);
@@ -1310,6 +1318,7 @@ export function performModularNesting(
           jerseyY += jerseyRowH + spacingMm;
         } else {
           // --- Tallas adultas extra grandes que no caben juntas en ancho ---
+          // Delantero y Espalda se apilan en la columna izquierda a X = sideMarginMm
           if (del) {
             placedPieces.push({
               ...del,
@@ -1321,41 +1330,6 @@ export function performModularNesting(
               isLocked: false,
               sheetIndex: sheetIdx,
             });
-
-            const rowRightEdge = sideMarginMm + wDel + spacingMm;
-            const availableRightWidth = printableWidthMm - rowRightEdge - sideMarginMm;
-
-            const candidatesToPlace = [...leftoverSleeves];
-            leftoverSleeves.length = 0;
-
-            let sleeveCurrY = jerseyY;
-            let sleeveToggle = 90;
-
-            while (candidatesToPlace.length > 0) {
-              const sm = candidatesToPlace[0];
-              const sW = sm.bbox.height;
-              const sH = sm.bbox.width;
-
-              if (sW > availableRightWidth) break;
-              if (sleeveCurrY + sH > jerseyY + hDel + 0.5) break;
-
-              placedPieces.push({
-                ...sm,
-                xMm: Number(rowRightEdge.toFixed(2)),
-                yMm: Number(sleeveCurrY.toFixed(2)),
-                rotationDeg: sleeveToggle,
-                effectiveWidthMm: sW,
-                effectiveHeightMm: sH,
-                isLocked: false,
-                sheetIndex: sheetIdx,
-              });
-
-              sleeveCurrY += sH + spacingMm;
-              sleeveToggle = sleeveToggle === 90 ? 270 : 90;
-              candidatesToPlace.splice(0, 1);
-            }
-
-            leftoverSleeves.push(...candidatesToPlace);
             jerseyY += hDel + spacingMm;
           }
 
@@ -1370,48 +1344,26 @@ export function performModularNesting(
               isLocked: false,
               sheetIndex: sheetIdx,
             });
-
-            const rowRightEdge = sideMarginMm + wEsp + spacingMm;
-            const availableRightWidth = printableWidthMm - rowRightEdge - sideMarginMm;
-
-            const candidatesToPlace = [...leftoverSleeves];
-            leftoverSleeves.length = 0;
-
-            let sleeveCurrY = jerseyY;
-            let sleeveToggle = 90;
-
-            while (candidatesToPlace.length > 0) {
-              const sm = candidatesToPlace[0];
-              const sW = sm.bbox.height;
-              const sH = sm.bbox.width;
-
-              if (sW > availableRightWidth) break;
-              if (sleeveCurrY + sH > jerseyY + hEsp + 0.5) break;
-
-              placedPieces.push({
-                ...sm,
-                xMm: Number(rowRightEdge.toFixed(2)),
-                yMm: Number(sleeveCurrY.toFixed(2)),
-                rotationDeg: sleeveToggle,
-                effectiveWidthMm: sW,
-                effectiveHeightMm: sH,
-                isLocked: false,
-                sheetIndex: sheetIdx,
-              });
-
-              sleeveCurrY += sH + spacingMm;
-              sleeveToggle = sleeveToggle === 90 ? 270 : 90;
-              candidatesToPlace.splice(0, 1);
-            }
-
-            leftoverSleeves.push(...candidatesToPlace);
             jerseyY += hEsp + spacingMm;
           }
+
+          // Acomodar mangas en la columna derecha de forma continua sin reiniciar Y ni dejar huecos
+          const candidatesToPlace = [...leftoverSleeves];
+          leftoverSleeves.length = 0;
+
+          const collarsToPlace = [...rowCollars, ...leftoverCollars];
+          leftoverCollars.length = 0;
+
+          const rowRight = sideMarginMm + Math.max(wDel, wEsp);
+          placeSleevesInCorridor(candidatesToPlace, rowRight);
+
+          leftoverSleeves.push(...candidatesToPlace);
+          leftoverCollars.push(...collarsToPlace);
+        }
 
           if (cuello) leftoverCollars.push(cuello);
           for (const o of playerSet.otherPieces) leftoverCollars.push(o);
         }
-      }
 
       const jerseyBottomY = Math.max(jerseyY, continuousCol1Y, continuousCol2Y);
 

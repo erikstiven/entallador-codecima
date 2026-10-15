@@ -4,6 +4,8 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Eye,
   Sliders,
   RotateCcw,
@@ -44,7 +46,7 @@ interface PlayerGarmentGroup {
   pieces: GeneratedPiece[];
 }
 
-export type CalibrationZone = 'MANGAS' | 'ESPALDA' | 'FRENTE' | 'PANTALONETA';
+export type CalibrationZone = 'ESPALDA' | 'FRENTE' | 'PANTALONETA';
 
 /**
  * Formatea una distancia en milímetros a lenguaje humano claro (cm + mm).
@@ -72,10 +74,10 @@ function formatOffsetSummary(offsetMm: number, defaultText = 'Posición original
 }
 
 function getPieceZone(pieceType: string): CalibrationZone {
-  if (pieceType.startsWith('MANGA')) return 'MANGAS';
   if (pieceType === 'ESPALDA') return 'ESPALDA';
   if (pieceType.startsWith('DELANTERO')) return 'FRENTE';
-  return 'PANTALONETA';
+  if (pieceType.startsWith('SHORT') || pieceType.startsWith('PANTALONETA')) return 'PANTALONETA';
+  return 'ESPALDA';
 }
 
 function getHumanPieceTitle(pieceType: string): string {
@@ -543,7 +545,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
   const { activeDesign, updatePlaceholderRule } = useDesignStore();
 
   const [showCalibrationPanel, setShowCalibrationPanel] = useState<boolean>(true);
-  const [activeZone, setActiveZone] = useState<CalibrationZone>('MANGAS');
+  const [activeZone, setActiveZone] = useState<CalibrationZone>('ESPALDA');
+  const [showColorBorderConfig, setShowColorBorderConfig] = useState<boolean>(false);
   const [showSizeMarkConfig, setShowSizeMarkConfig] = useState<boolean>(false);
   const [isTechnicalGrid, setIsTechnicalGrid] = useState<boolean>(false);
   const [showGuides, setShowGuides] = useState<boolean>(true);
@@ -939,62 +942,1083 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
         </div>
       </div>
 
-      {/* 2. ÁREA CENTRAL CON PANEL DE CALIBRACIÓN VISUAL PASO A PASO + GRILLA DE PIEZAS */}
+      {/* 2. ÁREA CENTRAL EN SPLIT LAYOUT LATERAL (VISTA PREVIA A LA IZQUIERDA + AJUSTES A LA DERECHA) */}
       {currentPlayer && (
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* PANEL VISUAL DE CALIBRACIÓN POR ZONAS DE LA PRENDA (100% EN LENGUAJE HUMANO) */}
+        <div className="flex-1 overflow-hidden flex flex-col lg:flex-row min-h-0">
+          {/* COLUMNA IZQUIERDA: LIENZO / VISTA PREVIA DE PIEZAS (100% VISIBLE Y REACTIVO) */}
+          <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
+            {/* Barra informativa del jugador actual con botón para abrir panel si está oculto */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100" />
+                <span className="text-xs font-bold text-slate-800">
+                  Prenda en Revisión:
+                </span>
+                <span className="text-xs font-mono font-bold text-violet-700 bg-violet-50 px-2.5 py-0.5 rounded-md border border-violet-200">
+                  {currentPlayer.playerName} (#{currentPlayer.playerNumber}) — Talla {currentPlayer.sizeName}
+                </span>
+              </div>
+
+              {!showCalibrationPanel && (
+                <button
+                  type="button"
+                  onClick={() => setShowCalibrationPanel(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 text-xs font-bold cursor-pointer transition-all shadow-2xs active:scale-95"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Abrir Ajustes de Dorsal y Número</span>
+                </button>
+              )}
+            </div>
+
+            {/* Grilla fluida de piezas de la prenda */}
+            {sortedPieces.length === 0 ? (
+              <div className="flex flex-col items-center justify-center min-h-[380px] p-8 text-center bg-white border border-slate-200 rounded-xl shadow-2xs">
+                <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-4 shadow-2xs">
+                  {currentPlayer.pieces.some(
+                    (p) => p.pieceType.startsWith('SHORT') || p.pieceType.startsWith('PANTALONETA')
+                  ) ? (
+                    <Scissors className="w-8 h-8 text-violet-600" />
+                  ) : (
+                    <Shirt className="w-8 h-8 text-violet-600" />
+                  )}
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-2 font-mono">
+                  {currentPlayer.playerName} (#{currentPlayer.playerNumber}) no tiene piezas de{' '}
+                  {garmentTypeFilter === 'CAMISETA' ? 'Camiseta' : 'Short'}
+                </h3>
+                <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
+                  En el archivo Excel, este jugador está registrado con pedido de{' '}
+                  <span className="text-amber-700 font-bold uppercase font-mono">
+                    {currentPlayer.pieces.some(
+                      (p) => p.pieceType.startsWith('SHORT') || p.pieceType.startsWith('PANTALONETA')
+                    )
+                      ? 'Solo Short'
+                      : 'Solo Camiseta'}
+                  </span>
+                  . Tu filtro superior está en "{garmentTypeFilter === 'CAMISETA' ? 'Camisetas' : 'Shorts'}".
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setGarmentTypeFilter(garmentTypeFilter === 'CAMISETA' ? 'SHORT' : 'CAMISETA')
+                    }
+                    className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    {garmentTypeFilter === 'CAMISETA' ? (
+                      <>
+                        <Scissors className="w-3.5 h-3.5" />
+                        <span>Ver Shorts de este jugador</span>
+                      </>
+                    ) : (
+                      <>
+                        <Shirt className="w-3.5 h-3.5" />
+                        <span>Ver Camiseta de este jugador</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGarmentTypeFilter('ALL')}
+                    className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-all cursor-pointer flex items-center gap-2 shadow-2xs"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Ver Todo el Pedido</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                {sortedPieces.map((piece) => {
+                  const pieceZone = getPieceZone(piece.pieceType);
+                  const isHighlighted = showCalibrationPanel && activeZone === pieceZone;
+                  const dimensionsLabel = `${formatWithUnits(piece.bbox.width)} × ${formatWithUnits(
+                    piece.bbox.height
+                  )}`;
+
+                  return (
+                    <InspectionPieceCard
+                      key={piece.id}
+                      piece={piece}
+                      pieceSvg={resolvePieceSvg(piece)}
+                      isHighlighted={isHighlighted}
+                      isTechnicalGrid={isTechnicalGrid}
+                      showGuides={showGuides}
+                      hemMarginMm={hemMarginMm}
+                      dimensionsLabel={dimensionsLabel}
+                      hemLabel={hemLabel}
+                      onSelectZone={handleSelectZoneFromCard}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* COLUMNA DERECHA: SIDEBAR DE AJUSTES EN VIVO (DOCK LATERAL COMPACTO) */}
           {showCalibrationPanel && (
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-4">
-              {/* Cabecera del panel: Título simple + Marquilla de talla + Restablecer + Cerrar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-violet-50 border border-violet-200 flex items-center justify-center text-violet-600 font-bold">
-                    <Sparkles className="w-4 h-4" />
+            <aside className="w-full lg:w-[410px] xl:w-[430px] shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 bg-white flex flex-col h-full shadow-lg z-10">
+              {/* Encabezado del Panel Lateral */}
+              <div className="p-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center shadow-xs">
+                    <Sliders className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">
-                      Asistente Visual de Ajuste de Prendas (En Vivo)
+                    <h3 className="text-xs font-bold text-slate-900 leading-tight">
+                      Ajustes de Prenda (En Vivo)
                     </h3>
-                    <p className="text-xs text-slate-500">
-                      Elige qué parte de la prenda deseas acomodar. Todo cambio se aplica al instante a los{' '}
-                      <span className="text-violet-600 font-semibold">{playerGroups.length} uniformes</span> del pedido.
+                    <p className="text-[11px] text-slate-500">
+                      Afecta a los {playerGroups.length} uniformes del pedido
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Botón de Marquilla Interna de Talla (1 solo clic) */}
-                  <div className="flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden shadow-2xs">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        applyCalibrationChange({ includeSizeMark: !generationConfig.includeSizeMark })
-                      }
-                      className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all ${
-                        generationConfig.includeSizeMark
-                          ? 'bg-emerald-600 text-white'
-                          : 'text-slate-700 hover:bg-slate-50'
-                      }`}
-                      title="Activar o desactivar marquilla de talla interna con 1 solo clic"
-                    >
-                      <Tag className="w-3.5 h-3.5" />
-                      <span>
-                        🏷️ Marquilla de Talla: {generationConfig.includeSizeMark ? 'Activada' : 'Desactivada'}
-                      </span>
-                    </button>
-                    {generationConfig.includeSizeMark && (
+                <button
+                  type="button"
+                  onClick={() => setShowCalibrationPanel(false)}
+                  className="p-1 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                  title="Cerrar panel de ajustes"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Selector de Zona en Pills */}
+              <div className="p-3 border-b border-slate-200 bg-white">
+                <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectZoneTab('ESPALDA')}
+                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      activeZone === 'ESPALDA'
+                        ? 'bg-white text-violet-700 shadow-2xs font-extrabold'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Hash className="w-3.5 h-3.5" />
+                    <span>Espalda</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectZoneTab('FRENTE')}
+                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      activeZone === 'FRENTE'
+                        ? 'bg-white text-violet-700 shadow-2xs font-extrabold'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>Pecho</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectZoneTab('PANTALONETA')}
+                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      activeZone === 'PANTALONETA'
+                        ? 'bg-white text-violet-700 shadow-2xs font-extrabold'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Scissors className="w-3.5 h-3.5" />
+                    <span>Short</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Contenido scrolleable de la zona activa */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* ================= ZONA ESPALDA ================= */}
+                {activeZone === 'ESPALDA' && (
+                  <div className="space-y-4">
+                    {/* BLOQUE 1: NOMBRE DEL JUGADOR */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <div className="flex items-center gap-2">
+                          <Type className="w-4 h-4 text-purple-600" />
+                          <h4 className="text-xs font-bold text-slate-900">🅰️ Nombre del Jugador</h4>
+                        </div>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-purple-100/70 text-purple-700 border border-purple-200">
+                          {Math.round(nameScaleX * 100)}% × {Math.round(nameScaleY * 100)}%
+                        </span>
+                      </div>
+
+                      {/* Tamaño del Nombre */}
+                      <div className="space-y-1.5">
+                        <span className="text-[11px] font-semibold text-slate-600 block">
+                          Tamaño del Nombre:
+                        </span>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                nameScaleX: Math.max(0.3, Number((nameScaleX - 0.05).toFixed(2))),
+                                nameScaleY: Math.max(0.3, Number((nameScaleY - 0.05).toFixed(2))),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            🔍− Menor
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => applyCalibrationChange({ nameScaleX: 1.0, nameScaleY: 1.0 })}
+                            className={`px-2 py-1.5 rounded-lg border text-xs font-bold cursor-pointer active:scale-95 shadow-2xs ${
+                              nameScaleX === 1 && nameScaleY === 1
+                                ? 'bg-purple-600 text-white border-purple-600'
+                                : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            100%
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                nameScaleX: Math.min(3.0, Number((nameScaleX + 0.05).toFixed(2))),
+                                nameScaleY: Math.min(3.0, Number((nameScaleY + 0.05).toFixed(2))),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-xs font-bold text-white cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            🔍+ Mayor
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Proporción / Forma del Nombre */}
+                      <div className="space-y-1.5">
+                        <span className="text-[11px] font-semibold text-slate-600 block">
+                          Proporción (Ancho y Alto):
+                        </span>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                nameScaleX: Math.max(0.3, Number((nameScaleX - 0.05).toFixed(2))),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ↔️ Más Angosto
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                nameScaleX: Math.min(3.0, Number((nameScaleX + 0.05).toFixed(2))),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ↔️ Más Ancho
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                nameScaleY: Math.max(0.3, Number((nameScaleY - 0.05).toFixed(2))),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ↕️ Más Bajo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                nameScaleY: Math.min(3.0, Number((nameScaleY + 0.05).toFixed(2))),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ↕️ Más Alto
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Posición vertical del Nombre */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-slate-600">
+                            Posición vertical:
+                          </span>
+                          <span className="text-[11px] text-purple-700 font-semibold">
+                            {nameOffsetPercent === 0
+                              ? 'Original'
+                              : nameOffsetPercent < 0
+                              ? `Subido ${Math.abs(nameOffsetPercent)}%`
+                              : `Bajado ${nameOffsetPercent}%`}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                nameVerticalOffsetPercent: Math.max(-35, nameOffsetPercent - 1),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ⬆️ Subir
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => applyCalibrationChange({ nameVerticalOffsetPercent: 0 })}
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-600 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            🔄 Reset
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                nameVerticalOffsetPercent: Math.min(35, nameOffsetPercent + 1),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ⬇️ Bajar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* BLOQUE 2: NÚMERO DEL JUGADOR */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <div className="flex items-center gap-2">
+                          <Hash className="w-4 h-4 text-violet-600" />
+                          <h4 className="text-xs font-bold text-slate-900">🔟 Número del Jugador</h4>
+                        </div>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-violet-100/70 text-violet-700 border border-violet-200">
+                          {Math.round(numScaleX * 100)}% × {Math.round(numScaleY * 100)}%
+                        </span>
+                      </div>
+
+                      {/* Tamaño del Número */}
+                      <div className="space-y-1.5">
+                        <span className="text-[11px] font-semibold text-slate-600 block">
+                          Tamaño del Número:
+                        </span>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nextX = Math.max(0.3, Number((numScaleX - 0.05).toFixed(2)));
+                              const nextY = Math.max(0.3, Number((numScaleY - 0.05).toFixed(2)));
+                              applyCalibrationChange({
+                                numberScaleX: nextX,
+                                numberScaleY: nextY,
+                                numberScaleFactor: nextY,
+                              });
+                            }}
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            🔍− Menor
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                numberScaleX: 1.0,
+                                numberScaleY: 1.0,
+                                numberScaleFactor: 1.0,
+                              })
+                            }
+                            className={`px-2 py-1.5 rounded-lg border text-xs font-bold cursor-pointer active:scale-95 shadow-2xs ${
+                              numScaleX === 1 && numScaleY === 1
+                                ? 'bg-violet-600 text-white border-violet-600'
+                                : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            100%
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nextX = Math.min(3.0, Number((numScaleX + 0.05).toFixed(2)));
+                              const nextY = Math.min(3.0, Number((numScaleY + 0.05).toFixed(2)));
+                              applyCalibrationChange({
+                                numberScaleX: nextX,
+                                numberScaleY: nextY,
+                                numberScaleFactor: nextY,
+                              });
+                            }}
+                            className="px-2 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-xs font-bold text-white cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            🔍+ Mayor
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Proporción / Forma del Número */}
+                      <div className="space-y-1.5">
+                        <span className="text-[11px] font-semibold text-slate-600 block">
+                          Proporción (Ancho y Alto):
+                        </span>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                numberScaleX: Math.max(0.3, Number((numScaleX - 0.05).toFixed(2))),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ↔️ Más Delgado
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                numberScaleX: Math.min(3.0, Number((numScaleX + 0.05).toFixed(2))),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ↔️ Más Ancho
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nextY = Math.max(0.3, Number((numScaleY - 0.05).toFixed(2)));
+                              applyCalibrationChange({ numberScaleY: nextY, numberScaleFactor: nextY });
+                            }}
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ↕️ Más Corto
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nextY = Math.min(3.0, Number((numScaleY + 0.05).toFixed(2)));
+                              applyCalibrationChange({ numberScaleY: nextY, numberScaleFactor: nextY });
+                            }}
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ↕️ Más Alto
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Posición y Separación */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-slate-600">
+                            Posición y separación:
+                          </span>
+                          <span className="text-[11px] text-violet-700 font-semibold">
+                            {numOffsetPercent === 0
+                              ? 'Centrado'
+                              : numOffsetPercent < 0
+                              ? `Subido ${Math.abs(numOffsetPercent)}%`
+                              : `Bajado ${numOffsetPercent}%`}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                numberVerticalOffsetPercent: Math.max(-35, numOffsetPercent - 1),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ⬆️ Subir Número
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                numberVerticalOffsetPercent: Math.min(35, numOffsetPercent + 1),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ⬇️ Bajar Número
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                nameVerticalOffsetPercent: Math.max(-35, nameOffsetPercent - 1),
+                                numberVerticalOffsetPercent: Math.min(35, numOffsetPercent + 1),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-sky-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ↕️ Separar más
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                nameVerticalOffsetPercent: Math.min(35, nameOffsetPercent + 1),
+                                numberVerticalOffsetPercent: Math.max(-35, numOffsetPercent - 1),
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-purple-700 cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            ↕️ Juntar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* BLOQUE 3: ACORDEÓN COLAPSABLE DE COLOR Y BORDE (OCULTO POR DEFECTO) */}
+                    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
                       <button
                         type="button"
-                        onClick={() => setShowSizeMarkConfig(!showSizeMarkConfig)}
-                        className="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-900 border-l border-slate-200 hover:bg-slate-50 cursor-pointer"
-                        title="Opciones de la marquilla (color y tamaño)"
+                        onClick={() => setShowColorBorderConfig(!showColorBorderConfig)}
+                        className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100/80 transition-colors text-left cursor-pointer"
                       >
-                        <Sliders className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-2">
+                          <Palette className="w-4 h-4 text-amber-600" />
+                          <div>
+                            <span className="text-xs font-bold text-slate-800 block">
+                              🎨 Color y Borde de Letras
+                            </span>
+                            <span className="text-[10px] text-slate-500">
+                              Opcional (definidos en Diseños Maestros)
+                            </span>
+                          </div>
+                        </div>
+                        {showColorBorderConfig ? (
+                          <ChevronUp className="w-4 h-4 text-slate-500" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-slate-500" />
+                        )}
                       </button>
+
+                      {showColorBorderConfig && (
+                        <div className="p-3.5 space-y-3 border-t border-slate-200 bg-white">
+                          <div className="grid grid-cols-2 gap-2.5">
+                            {/* Color de Letra */}
+                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-semibold text-slate-700">Relleno:</span>
+                                <input
+                                  type="color"
+                                  value={currentDorsalFill}
+                                  onChange={(e) => applyDorsalStyleChange({ fillColor: e.target.value })}
+                                  className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                                />
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {['#ffffff', '#000000', '#facc15', '#ef4444', '#3b82f6'].map((hex) => (
+                                  <button
+                                    key={hex}
+                                    type="button"
+                                    onClick={() => applyDorsalStyleChange({ fillColor: hex })}
+                                    className={`w-4 h-4 rounded-full border cursor-pointer ${
+                                      currentDorsalFill.toLowerCase() === hex
+                                        ? 'ring-2 ring-violet-500 scale-110'
+                                        : 'border-slate-300'
+                                    }`}
+                                    style={{ backgroundColor: hex }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Color de Borde */}
+                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-semibold text-slate-700">Borde:</span>
+                                <input
+                                  type="color"
+                                  value={currentDorsalStroke}
+                                  onChange={(e) => applyDorsalStyleChange({ strokeColor: e.target.value })}
+                                  className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                                />
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {['#000000', '#ffffff', '#1e3a8a', '#b91c1c', '#ca8a04'].map((hex) => (
+                                  <button
+                                    key={hex}
+                                    type="button"
+                                    onClick={() => applyDorsalStyleChange({ strokeColor: hex })}
+                                    className={`w-4 h-4 rounded-full border cursor-pointer ${
+                                      currentDorsalStroke.toLowerCase() === hex
+                                        ? 'ring-2 ring-violet-500 scale-110'
+                                        : 'border-slate-300'
+                                    }`}
+                                    style={{ backgroundColor: hex }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Grosor de Borde */}
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-semibold text-slate-600 block">
+                              Grosor del contorno:
+                            </span>
+                            <div className="grid grid-cols-4 gap-1">
+                              {[
+                                { label: 'Sin borde', widthMm: 0 },
+                                { label: 'Fino', widthMm: 1.5 },
+                                { label: 'Medio', widthMm: 2.5 },
+                                { label: 'Grueso', widthMm: 4.0 },
+                              ].map((opt) => {
+                                const isSelected = Math.abs(currentDorsalStrokeWidth - opt.widthMm) < 0.3;
+                                return (
+                                  <button
+                                    key={opt.label}
+                                    type="button"
+                                    onClick={() => applyDorsalStyleChange({ strokeWidthMm: opt.widthMm })}
+                                    className={`px-1.5 py-1 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                                      isSelected
+                                        ? 'bg-amber-400 text-slate-950 font-extrabold shadow-2xs'
+                                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ================= ZONA FRENTE / PECHO ================= */}
+                {activeZone === 'FRENTE' && (
+                  <div className="space-y-4">
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                            <Shield className="w-4 h-4 text-violet-600" />
+                            <span>Número en el Pecho</span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500">
+                            Número pequeño delantero (opcional)
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            applyCalibrationChange({
+                              includeFrontNumber: !generationConfig.includeFrontNumber,
+                            })
+                          }
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                            generationConfig.includeFrontNumber
+                              ? 'bg-violet-600 text-white shadow-2xs'
+                              : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                          }`}
+                        >
+                          {generationConfig.includeFrontNumber ? 'Activado' : 'Desactivado'}
+                        </button>
+                      </div>
+
+                      {generationConfig.includeFrontNumber && (
+                        <div className="space-y-3 pt-2 border-t border-slate-200">
+                          {/* Lado del pecho */}
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-semibold text-slate-600 block">
+                              Ubicación en el pecho:
+                            </span>
+                            <div className="grid grid-cols-3 gap-1">
+                              {[
+                                { id: 'IZQUIERDA', label: 'Izquierda', x: 32 },
+                                { id: 'CENTRO', label: 'Centro', x: 50 },
+                                { id: 'DERECHA', label: 'Derecha', x: 68 },
+                              ].map((pos) => (
+                                <button
+                                  key={pos.id}
+                                  type="button"
+                                  onClick={() =>
+                                    applyCalibrationChange({
+                                      frontNumberPosition: pos.id as 'CENTRO' | 'DERECHA' | 'IZQUIERDA',
+                                      frontNumberXPercent: pos.x,
+                                    })
+                                  }
+                                  className={`px-2 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                                    (generationConfig.frontNumberPosition || 'CENTRO') === pos.id
+                                      ? 'bg-violet-600 text-white shadow-2xs'
+                                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                                  }`}
+                                >
+                                  {pos.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Tamaño */}
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-semibold text-slate-600 block">
+                              Tamaño:
+                            </span>
+                            <div className="grid grid-cols-3 gap-1">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  applyCalibrationChange({
+                                    frontNumberScale: Math.max(
+                                      0.3,
+                                      Number(((generationConfig.frontNumberScale ?? 1) - 0.1).toFixed(2))
+                                    ),
+                                  })
+                                }
+                                className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer shadow-2xs"
+                              >
+                                🔍− Menor
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => applyCalibrationChange({ frontNumberScale: 1 })}
+                                className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-600 cursor-pointer shadow-2xs"
+                              >
+                                100%
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  applyCalibrationChange({
+                                    frontNumberScale: Math.min(
+                                      2.5,
+                                      Number(((generationConfig.frontNumberScale ?? 1) + 0.1).toFixed(2))
+                                    ),
+                                  })
+                                }
+                                className="px-2 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold cursor-pointer shadow-2xs"
+                              >
+                                🔍+ Mayor
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Altura vertical */}
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-semibold text-slate-600 block">
+                              Altura vertical:
+                            </span>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  applyCalibrationChange({
+                                    frontNumberYPercent: Math.max(
+                                      15,
+                                      (generationConfig.frontNumberYPercent ?? 38) - 2
+                                    ),
+                                  })
+                                }
+                                className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer shadow-2xs"
+                              >
+                                ⬆️ Subir
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  applyCalibrationChange({
+                                    frontNumberYPercent: Math.min(
+                                      85,
+                                      (generationConfig.frontNumberYPercent ?? 38) + 2
+                                    ),
+                                  })
+                                }
+                                className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer shadow-2xs"
+                              >
+                                ⬇️ Bajar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ================= ZONA PANTALONETA ================= */}
+                {activeZone === 'PANTALONETA' && (
+                  <div className="space-y-4">
+                    {!orderHasShorts ? (
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center space-y-2">
+                        <Scissors className="w-8 h-8 text-slate-400 mx-auto" />
+                        <h4 className="text-xs font-bold text-slate-800">
+                          Sin piezas de pantaloneta en este pedido
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          Este pedido solo contiene camisetas. Al cargar un pedido con shorts podrás configurar aquí su dorsal.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-900">
+                              Número en Pantaloneta
+                            </h4>
+                            <p className="text-[11px] text-slate-500">
+                              Elige pierna, tamaño y posición
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                includeShortNumber: generationConfig.includeShortNumber === false,
+                              })
+                            }
+                            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                              generationConfig.includeShortNumber !== false
+                                ? 'bg-emerald-600 text-white shadow-2xs'
+                                : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}
+                          >
+                            {generationConfig.includeShortNumber !== false ? 'Activado' : 'Desactivado'}
+                          </button>
+                        </div>
+
+                        {generationConfig.includeShortNumber !== false && (
+                          <div className="space-y-3 pt-2 border-t border-slate-200">
+                            {/* Pierna */}
+                            <div className="space-y-1">
+                              <span className="text-[11px] font-semibold text-slate-600 block">
+                                Pierna:
+                              </span>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => applyCalibrationChange({ shortNumberPiece: 'IZQ' })}
+                                  className={`px-2 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                                    generationConfig.shortNumberPiece === 'IZQ'
+                                      ? 'bg-violet-600 text-white shadow-2xs'
+                                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                                  }`}
+                                >
+                                  Pierna Izquierda
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => applyCalibrationChange({ shortNumberPiece: 'DER' })}
+                                  className={`px-2 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                                    (generationConfig.shortNumberPiece || 'DER') === 'DER'
+                                      ? 'bg-violet-600 text-white shadow-2xs'
+                                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                                  }`}
+                                >
+                                  Pierna Derecha
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Tamaño */}
+                            <div className="space-y-1">
+                              <span className="text-[11px] font-semibold text-slate-600 block">
+                                Tamaño:
+                              </span>
+                              <div className="grid grid-cols-3 gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    applyCalibrationChange({
+                                      shortNumberScale: Math.max(
+                                        0.4,
+                                        Number(((generationConfig.shortNumberScale ?? 1) - 0.1).toFixed(2))
+                                      ),
+                                    })
+                                  }
+                                  className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer shadow-2xs"
+                                >
+                                  🔍− Menor
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => applyCalibrationChange({ shortNumberScale: 1 })}
+                                  className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-600 cursor-pointer shadow-2xs"
+                                >
+                                  100%
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    applyCalibrationChange({
+                                      shortNumberScale: Math.min(
+                                        2.5,
+                                        Number(((generationConfig.shortNumberScale ?? 1) + 0.1).toFixed(2))
+                                      ),
+                                    })
+                                  }
+                                  className="px-2 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold cursor-pointer shadow-2xs"
+                                >
+                                  🔍+ Mayor
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Mover */}
+                            <div className="space-y-1">
+                              <span className="text-[11px] font-semibold text-slate-600 block">
+                                Posición:
+                              </span>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    applyCalibrationChange({
+                                      shortNumberYPercent: Math.max(
+                                        15,
+                                        (generationConfig.shortNumberYPercent ?? 45) - 3
+                                      ),
+                                    })
+                                  }
+                                  className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer shadow-2xs"
+                                >
+                                  ⬆️ Subir
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    applyCalibrationChange({
+                                      shortNumberYPercent: Math.min(
+                                        85,
+                                        (generationConfig.shortNumberYPercent ?? 45) + 3
+                                      ),
+                                    })
+                                  }
+                                  className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer shadow-2xs"
+                                >
+                                  ⬇️ Bajar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    applyCalibrationChange({
+                                      shortNumberXPercent: Math.max(
+                                        10,
+                                        (generationConfig.shortNumberXPercent ?? 50) - 3
+                                      ),
+                                    })
+                                  }
+                                  className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer shadow-2xs"
+                                >
+                                  ⬅️ Izquierda
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    applyCalibrationChange({
+                                      shortNumberXPercent: Math.min(
+                                        90,
+                                        (generationConfig.shortNumberXPercent ?? 50) + 3
+                                      ),
+                                    })
+                                  }
+                                  className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer shadow-2xs"
+                                >
+                                  ➡️ Derecha
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
+                )}
+              </div>
 
-                  {/* Restablecer todos los valores */}
+              {/* Pie del Panel Lateral: Marquilla + Restablecer + Listo */}
+              <div className="p-3.5 border-t border-slate-200 bg-slate-50 space-y-2.5">
+                {/* Marquilla de Talla */}
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applyCalibrationChange({ includeSizeMark: !generationConfig.includeSizeMark })
+                    }
+                    className={`flex-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-2xs ${
+                      generationConfig.includeSizeMark
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                    }`}
+                  >
+                    <Tag className="w-3.5 h-3.5" />
+                    <span>Marquilla de Talla: {generationConfig.includeSizeMark ? 'ON' : 'OFF'}</span>
+                  </button>
+                  {generationConfig.includeSizeMark && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSizeMarkConfig(!showSizeMarkConfig)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 cursor-pointer shadow-2xs"
+                      title="Configurar marquilla"
+                    >
+                      <Sliders className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {showSizeMarkConfig && generationConfig.includeSizeMark && (
+                  <div className="bg-white border border-slate-200 rounded-lg p-2.5 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Color marquilla:</span>
+                      <input
+                        type="color"
+                        value={generationConfig.sizeMarkColor || '#000000'}
+                        onChange={(e) => applyCalibrationChange({ sizeMarkColor: e.target.value })}
+                        className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Tamaño:</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            applyCalibrationChange({
+                              sizeMarkFontSizeMm: Math.max(
+                                3,
+                                Number(((generationConfig.sizeMarkFontSizeMm ?? 8) - unitStepMm).toFixed(2))
+                              ),
+                            })
+                          }
+                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold"
+                        >
+                          −
+                        </button>
+                        <span className="font-mono text-emerald-700 font-bold min-w-[32px] text-center">
+                          {formatDisplayMm(generationConfig.sizeMarkFontSizeMm ?? 8)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            applyCalibrationChange({
+                              sizeMarkFontSizeMm: Math.min(
+                                20,
+                                Number(((generationConfig.sizeMarkFontSizeMm ?? 8) + unitStepMm).toFixed(2))
+                              ),
+                            })
+                          }
+                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Acciones principales del footer */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -1021,1186 +2045,26 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                         shortNumberYPercent: 45,
                         shortNumberScale: 1,
                         includeSizeMark: false,
-                        sizeMarkColor: '#000000',
-                        sizeMarkFontSizeMm: 8,
-                        sizeMarkBottomOffsetMm: 8,
                       });
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-amber-600 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
-                    title="Restablecer todas las piezas a sus posiciones y configuraciones predeterminadas"
+                    className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-amber-700 text-xs font-semibold cursor-pointer shadow-2xs flex items-center justify-center gap-1 active:scale-95"
+                    title="Restablecer posiciones originales"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Restablecer posiciones predeterminadas</span>
+                    <span>Restablecer</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setShowCalibrationPanel(false)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-900 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+                    className="px-2.5 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold cursor-pointer shadow-2xs flex items-center justify-center gap-1 active:scale-95"
                   >
-                    <X className="w-3.5 h-3.5" />
-                    <span>Cerrar</span>
+                    <span>Listo</span>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
-
-              {/* Configuración desplegable opcional para Marquilla Interna de Talla */}
-              {showSizeMarkConfig && (
-                <div className="bg-emerald-50/50 border border-emerald-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        applyCalibrationChange({ includeSizeMark: !generationConfig.includeSizeMark })
-                      }
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                        generationConfig.includeSizeMark
-                          ? 'bg-emerald-600 text-white shadow-2xs'
-                          : 'bg-white text-slate-700 border border-slate-200'
-                      }`}
-                    >
-                      {generationConfig.includeSizeMark
-                        ? '✓ Imprimiendo Talla en las Piezas'
-                        : 'Activar Impresión de Talla en las Piezas'}
-                    </button>
-                    <span className="text-xs text-slate-600">
-                      Imprime una pequeña letra de talla (ej. S, M, L) en el borde inferior para guiar al costurero.
-                    </span>
-                  </div>
-
-                  {generationConfig.includeSizeMark && (
-                    <div className="flex flex-wrap items-center gap-3">
-                      <label className="flex items-center gap-1.5 text-xs text-slate-700">
-                        <span>Color:</span>
-                        <input
-                          type="color"
-                          value={generationConfig.sizeMarkColor || '#000000'}
-                          onChange={(e) => applyCalibrationChange({ sizeMarkColor: e.target.value })}
-                          className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
-                        />
-                      </label>
-                      <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs">
-                        <span className="text-slate-500">Tamaño:</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            applyCalibrationChange({
-                              sizeMarkFontSizeMm: Math.max(
-                                3,
-                                Number(((generationConfig.sizeMarkFontSizeMm ?? 8) - unitStepMm).toFixed(2))
-                              ),
-                            })
-                          }
-                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer"
-                        >
-                          −
-                        </button>
-                        <span className="font-mono text-emerald-700 font-bold min-w-[42px] text-center">
-                          {formatDisplayMm(generationConfig.sizeMarkFontSizeMm ?? 8)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            applyCalibrationChange({
-                              sizeMarkFontSizeMm: Math.min(
-                                20,
-                                Number(((generationConfig.sizeMarkFontSizeMm ?? 8) + unitStepMm).toFixed(2))
-                              ),
-                            })
-                          }
-                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer"
-                        >
-                          +
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs">
-                        <span className="text-slate-500">Altura desde abajo:</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            applyCalibrationChange({
-                              sizeMarkBottomOffsetMm: Math.max(
-                                -20,
-                                Number(((generationConfig.sizeMarkBottomOffsetMm ?? 8) - unitStepMm).toFixed(2))
-                              ),
-                            })
-                          }
-                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer"
-                        >
-                          ⬇️ Bajar
-                        </button>
-                        <span className="font-mono text-emerald-700 font-bold min-w-[42px] text-center">
-                          {formatDisplayMm(generationConfig.sizeMarkBottomOffsetMm ?? 8)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            applyCalibrationChange({
-                              sizeMarkBottomOffsetMm: Math.min(
-                                50,
-                                Number(((generationConfig.sizeMarkBottomOffsetMm ?? 8) + unitStepMm).toFixed(2))
-                              ),
-                            })
-                          }
-                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer"
-                        >
-                          ⬆️ Subir
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 4 BOTONES / TARJETAS GRANDES DE ZONA DE LA PRENDA */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {/* ZONA 1: MANGAS */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectZoneTab('MANGAS')}
-                  className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
-                    activeZone === 'MANGAS'
-                      ? 'bg-violet-50/70 border-2 border-violet-600 shadow-xs'
-                      : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-800">👕 Mangas (Subir / Bajar Dibujo)</span>
-                    {activeZone === 'MANGAS' && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-600 text-white">
-                        Activo
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs font-semibold text-violet-600">
-                    {formatOffsetSummary(sleeveOffsetMm, 'Posición original')}
-                  </p>
-                </button>
-
-                {/* ZONA 2: ESPALDA (NOMBRE Y NÚMERO) */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectZoneTab('ESPALDA')}
-                  className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
-                    activeZone === 'ESPALDA'
-                      ? 'bg-violet-50/70 border-2 border-violet-600 shadow-xs'
-                      : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-800">🔢 Espalda (Nombre y Número)</span>
-                    {activeZone === 'ESPALDA' && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-600 text-white">
-                        Activo
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs font-semibold text-purple-600">
-                    Tamaño y posición de letras y números
-                  </p>
-                </button>
-
-                {/* ZONA 3: PECHO / FRENTE */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectZoneTab('FRENTE')}
-                  className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
-                    activeZone === 'FRENTE'
-                      ? 'bg-violet-50/70 border-2 border-violet-600 shadow-xs'
-                      : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-800">🛡️ Pecho / Frente</span>
-                    {activeZone === 'FRENTE' && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-600 text-white">
-                        Activo
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs font-semibold text-sky-600">
-                    {frontOffsetMm !== 0
-                      ? formatOffsetSummary(frontOffsetMm)
-                      : 'Subir o bajar el dibujo del pecho'}
-                  </p>
-                </button>
-
-                {/* ZONA 4: PANTALONETA */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectZoneTab('PANTALONETA')}
-                  className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
-                    activeZone === 'PANTALONETA'
-                      ? 'bg-violet-50/70 border-2 border-violet-600 shadow-xs'
-                      : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-800">🩳 Pantaloneta</span>
-                    {activeZone === 'PANTALONETA' && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-600 text-white">
-                        Activo
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs font-semibold text-amber-700">
-                    {orderHasShorts
-                      ? generationConfig.includeShortNumber !== false
-                        ? `Número en pierna ${generationConfig.shortNumberPiece === 'IZQ' ? 'izquierda' : 'derecha'}`
-                        : 'Sin número en pantaloneta'
-                      : 'Solo camisetas en este pedido'}
-                  </p>
-                </button>
-              </div>
-
-              {/* CONTENIDO DINÁMICO DE LA ZONA SELECCIONADA */}
-              {activeZone === 'MANGAS' && (
-                <VisualArtworkOffsetControl
-                  title="👕 Ajuste del Dibujo en las Mangas (Izquierda y Derecha)"
-                  explanation="Si al coser el dobladillo (basta) se corta el diseño o los logos de la manga, usa estos botones para subir el dibujo y dejar espacio libre abajo."
-                  offsetMm={sleeveOffsetMm}
-                  onChangeOffsetMm={(val) => applyCalibrationChange({ sleeveArtOffsetYMm: val })}
-                />
-              )}
-
-              {activeZone === 'ESPALDA' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {/* BLOQUE 1: 🅰️ NOMBRE DEL JUGADOR (ARRIBA) */}
-                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-2xs">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <div className="flex items-center gap-2">
-                          <Type className="w-4 h-4 text-purple-600" />
-                          <h4 className="text-sm font-bold text-slate-900">🅰️ Nombre del Jugador (Arriba)</h4>
-                        </div>
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
-                          {Math.round(nameScaleX * 100)}% × {Math.round(nameScaleY * 100)}%
-                        </span>
-                      </div>
-
-                      {/* Tamaño del Nombre */}
-                      <div className="space-y-1.5">
-                        <span className="text-xs font-semibold text-slate-700 block">
-                          Tamaño general del Nombre:
-                        </span>
-                        <div className="grid grid-cols-3 gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                nameScaleX: Math.max(0.3, Number((nameScaleX - 0.05).toFixed(2))),
-                                nameScaleY: Math.max(0.3, Number((nameScaleY - 0.05).toFixed(2))),
-                              })
-                            }
-                            className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer active:scale-95 transition-all shadow-2xs"
-                          >
-                            🔍− Más Pequeño
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => applyCalibrationChange({ nameScaleX: 1.0, nameScaleY: 1.0 })}
-                            className={`px-2.5 py-2 rounded-lg border text-xs font-bold cursor-pointer active:scale-95 transition-all shadow-2xs ${
-                              nameScaleX === 1 && nameScaleY === 1
-                                ? 'bg-purple-600 text-white border-purple-600'
-                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
-                            }`}
-                          >
-                            Normal (100%)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                nameScaleX: Math.min(3.0, Number((nameScaleX + 0.05).toFixed(2))),
-                                nameScaleY: Math.min(3.0, Number((nameScaleY + 0.05).toFixed(2))),
-                              })
-                            }
-                            className="px-2.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-xs font-bold text-white cursor-pointer active:scale-95 transition-all shadow-2xs"
-                          >
-                            🔍+ Más Grande
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Forma de las Letras */}
-                      <div className="space-y-1.5">
-                        <span className="text-xs font-semibold text-slate-700 block">
-                          Forma de las Letras (Ancho y Alto):
-                        </span>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                nameScaleX: Math.max(0.3, Number((nameScaleX - 0.05).toFixed(2))),
-                              })
-                            }
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ↔️ Más Angosto
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                nameScaleX: Math.min(3.0, Number((nameScaleX + 0.05).toFixed(2))),
-                              })
-                            }
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ↔️ Más Ancho
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                nameScaleY: Math.max(0.3, Number((nameScaleY - 0.05).toFixed(2))),
-                              })
-                            }
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ↕️ Más Bajo
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                nameScaleY: Math.min(3.0, Number((nameScaleY + 0.05).toFixed(2))),
-                              })
-                            }
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ↕️ Más Alto
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Posición Vertical del Nombre */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-700">
-                            Posición vertical del Nombre:
-                          </span>
-                          <span className="text-[11px] text-purple-700 font-semibold">
-                            {nameOffsetPercent === 0
-                              ? 'En su lugar original'
-                              : nameOffsetPercent < 0
-                              ? `Subido ${Math.abs(nameOffsetPercent)}%`
-                              : `Bajado ${nameOffsetPercent}%`}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                nameVerticalOffsetPercent: Math.max(-35, nameOffsetPercent - 1),
-                              })
-                            }
-                            className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ⬆️ Subir Nombre
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => applyCalibrationChange({ nameVerticalOffsetPercent: 0 })}
-                            className="px-2 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            🔄 Original
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                nameVerticalOffsetPercent: Math.min(35, nameOffsetPercent + 1),
-                              })
-                            }
-                            className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ⬇️ Bajar Nombre
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* BLOQUE 2: 🔟 NÚMERO DEL JUGADOR (CENTRO) */}
-                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-2xs">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <div className="flex items-center gap-2">
-                          <Hash className="w-4 h-4 text-violet-600" />
-                          <h4 className="text-sm font-bold text-slate-900">🔟 Número del Jugador (Centro)</h4>
-                        </div>
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
-                          {Math.round(numScaleX * 100)}% × {Math.round(numScaleY * 100)}%
-                        </span>
-                      </div>
-
-                      {/* Tamaño del Número */}
-                      <div className="space-y-1.5">
-                        <span className="text-xs font-semibold text-slate-700 block">
-                          Tamaño general del Número:
-                        </span>
-                        <div className="grid grid-cols-3 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const nextX = Math.max(0.3, Number((numScaleX - 0.05).toFixed(2)));
-                              const nextY = Math.max(0.3, Number((numScaleY - 0.05).toFixed(2)));
-                              applyCalibrationChange({
-                                numberScaleX: nextX,
-                                numberScaleY: nextY,
-                                numberScaleFactor: nextY,
-                              });
-                            }}
-                            className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer active:scale-95 transition-all shadow-2xs"
-                          >
-                            🔍− Más Pequeño
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                numberScaleX: 1.0,
-                                numberScaleY: 1.0,
-                                numberScaleFactor: 1.0,
-                              })
-                            }
-                            className={`px-2.5 py-2 rounded-lg border text-xs font-bold cursor-pointer active:scale-95 transition-all shadow-2xs ${
-                              numScaleX === 1 && numScaleY === 1
-                                ? 'bg-violet-600 text-white border-violet-600'
-                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
-                            }`}
-                          >
-                            Normal (100%)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const nextX = Math.min(3.0, Number((numScaleX + 0.05).toFixed(2)));
-                              const nextY = Math.min(3.0, Number((numScaleY + 0.05).toFixed(2)));
-                              applyCalibrationChange({
-                                numberScaleX: nextX,
-                                numberScaleY: nextY,
-                                numberScaleFactor: nextY,
-                              });
-                            }}
-                            className="px-2.5 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-xs font-bold text-white cursor-pointer active:scale-95 transition-all shadow-2xs"
-                          >
-                            🔍+ Más Grande
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Forma del Número */}
-                      <div className="space-y-1.5">
-                        <span className="text-xs font-semibold text-slate-700 block">
-                          Forma del Número (Ancho y Alto):
-                        </span>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                numberScaleX: Math.max(0.3, Number((numScaleX - 0.05).toFixed(2))),
-                              })
-                            }
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ↔️ Más Delgado
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                numberScaleX: Math.min(3.0, Number((numScaleX + 0.05).toFixed(2))),
-                              })
-                            }
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ↔️ Más Ancho
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const nextY = Math.max(0.3, Number((numScaleY - 0.05).toFixed(2)));
-                              applyCalibrationChange({ numberScaleY: nextY, numberScaleFactor: nextY });
-                            }}
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ↕️ Más Corto
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const nextY = Math.min(3.0, Number((numScaleY + 0.05).toFixed(2)));
-                              applyCalibrationChange({ numberScaleY: nextY, numberScaleFactor: nextY });
-                            }}
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ↕️ Más Alto
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Posición y Separación */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-700">
-                            Posición y separación con el nombre:
-                          </span>
-                          <span className="text-[11px] text-violet-700 font-semibold">
-                            {numOffsetPercent === 0
-                              ? 'Centrado original'
-                              : numOffsetPercent < 0
-                              ? `Subido ${Math.abs(numOffsetPercent)}%`
-                              : `Bajado ${numOffsetPercent}%`}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                numberVerticalOffsetPercent: Math.max(-35, numOffsetPercent - 1),
-                              })
-                            }
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ⬆️ Subir Número
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                numberVerticalOffsetPercent: Math.min(35, numOffsetPercent + 1),
-                              })
-                            }
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ⬇️ Bajar Número
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                nameVerticalOffsetPercent: Math.max(-35, nameOffsetPercent - 1),
-                                numberVerticalOffsetPercent: Math.min(35, numOffsetPercent + 1),
-                              })
-                            }
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-sky-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ↕️ Separar más del nombre
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                nameVerticalOffsetPercent: Math.min(35, nameOffsetPercent + 1),
-                                numberVerticalOffsetPercent: Math.max(-35, numOffsetPercent - 1),
-                              })
-                            }
-                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-purple-700 cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ↕️ Juntar al nombre
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* BLOQUE 3: 🎨 COLOR, BORDE DE LETRAS Y FONDO DE ESPALDA */}
-                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-2xs">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <div className="flex items-center gap-2">
-                          <Palette className="w-4 h-4 text-amber-600" />
-                          <h4 className="text-sm font-bold text-slate-900">
-                            🎨 Color, Borde y Fondo de Espalda
-                          </h4>
-                        </div>
-                      </div>
-
-                      {/* Color de Relleno y Color de Borde */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-700">Color de Letra:</span>
-                            <input
-                              type="color"
-                              value={currentDorsalFill}
-                              onChange={(e) => applyDorsalStyleChange({ fillColor: e.target.value })}
-                              className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
-                              title="Elegir cualquier color para el nombre y número"
-                            />
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {['#ffffff', '#000000', '#facc15', '#ef4444', '#3b82f6', '#10b981'].map(
-                              (hex) => (
-                                <button
-                                  key={hex}
-                                  type="button"
-                                  onClick={() => applyDorsalStyleChange({ fillColor: hex })}
-                                  className={`w-5 h-5 rounded-full border cursor-pointer transition-transform ${
-                                    currentDorsalFill.toLowerCase() === hex
-                                      ? 'ring-2 ring-violet-500 scale-110 border-white'
-                                      : 'border-slate-300 hover:scale-105'
-                                  }`}
-                                  style={{ backgroundColor: hex }}
-                                  title={`Color ${hex}`}
-                                />
-                              )
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-700">Color de Borde:</span>
-                            <input
-                              type="color"
-                              value={currentDorsalStroke}
-                              onChange={(e) => applyDorsalStyleChange({ strokeColor: e.target.value })}
-                              className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
-                              title="Elegir color del borde de las letras y números"
-                            />
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {['#000000', '#ffffff', '#1e3a8a', '#b91c1c', '#ca8a04', '#0f172a'].map(
-                              (hex) => (
-                                <button
-                                  key={hex}
-                                  type="button"
-                                  onClick={() => applyDorsalStyleChange({ strokeColor: hex })}
-                                  className={`w-5 h-5 rounded-full border cursor-pointer transition-transform ${
-                                    currentDorsalStroke.toLowerCase() === hex
-                                      ? 'ring-2 ring-violet-500 scale-110 border-white'
-                                      : 'border-slate-300 hover:scale-105'
-                                  }`}
-                                  style={{ backgroundColor: hex }}
-                                  title={`Borde ${hex}`}
-                                />
-                              )
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Botones de Grosor de Borde con Nombres Claros */}
-                      <div className="space-y-1.5">
-                        <span className="text-xs font-semibold text-slate-700 block">
-                          Grosor del borde de letras y números:
-                        </span>
-                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-                          {[
-                            { label: 'Sin borde', widthMm: 0 },
-                            { label: 'Borde Fino', widthMm: 1.5 },
-                            { label: 'Borde Medio', widthMm: 2.5 },
-                            { label: 'Borde Grueso', widthMm: 4.0 },
-                            { label: 'Borde Extra', widthMm: 5.5 },
-                          ].map((opt) => {
-                            const isSelected = Math.abs(currentDorsalStrokeWidth - opt.widthMm) < 0.3;
-                            return (
-                              <button
-                                key={opt.label}
-                                type="button"
-                                onClick={() => applyDorsalStyleChange({ strokeWidthMm: opt.widthMm })}
-                                className={`px-2 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
-                                  isSelected
-                                    ? 'bg-amber-400 text-slate-950 shadow-2xs'
-                                    : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-                                }`}
-                              >
-                                {opt.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Sección compacta para subir/bajar el dibujo de fondo de la espalda */}
-                      <div className="pt-2 border-t border-slate-200 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-700">
-                            ⬆️ Subir / ⬇️ Bajar dibujo de fondo de espalda:
-                          </span>
-                          <span className="text-[11px] font-bold text-emerald-700">
-                            {formatOffsetSummary(backOffsetMm, 'Original (0 cm)')}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                backArtOffsetYMm: Math.max(-80, backOffsetMm - 5),
-                              })
-                            }
-                            className="px-2 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ⬆️ Subir (+5 mm)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => applyCalibrationChange({ backArtOffsetYMm: 0 })}
-                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            🔄 Original (0)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyCalibrationChange({
-                                backArtOffsetYMm: Math.min(40, backOffsetMm + 5),
-                              })
-                            }
-                            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-amber-700 text-xs font-bold cursor-pointer active:scale-95 shadow-2xs"
-                          >
-                            ⬇️ Bajar (-5 mm)
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeZone === 'FRENTE' && (
-                <div className="space-y-4">
-                  <VisualArtworkOffsetControl
-                    title="🛡️ Ajuste del Dibujo y Logos del Pecho / Frente"
-                    explanation="Si al coser el dobladillo inferior se corta parte del diseño del frente, o si deseas acomodar la altura del arte del pecho, súbelo o bájalo aquí."
-                    offsetMm={frontOffsetMm}
-                    onChangeOffsetMm={(val) => applyCalibrationChange({ frontArtOffsetYMm: val })}
-                  />
-
-                  {/* Número opcional en el Pecho / Frente */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-2xs">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-violet-600" />
-                          <span>🔢 Número Pequeño en el Pecho (Opcional)</span>
-                        </h4>
-                        <p className="text-xs text-slate-500">
-                          Actívalo si el diseño lleva el número del jugador también en la parte delantera.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          applyCalibrationChange({
-                            includeFrontNumber: !generationConfig.includeFrontNumber,
-                          })
-                        }
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                          generationConfig.includeFrontNumber
-                            ? 'bg-violet-600 text-white shadow-2xs'
-                            : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
-                        }`}
-                      >
-                        {generationConfig.includeFrontNumber
-                          ? '✓ Número en el Pecho: ACTIVADO'
-                          : 'Activar Número en el Pecho'}
-                      </button>
-                    </div>
-
-                    {generationConfig.includeFrontNumber && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
-                        <div className="space-y-1.5">
-                          <span className="text-xs font-semibold text-slate-700 block">
-                            ¿En qué lado del pecho va?:
-                          </span>
-                          <div className="grid grid-cols-3 gap-1.5">
-                            {[
-                              { id: 'IZQUIERDA', label: '⬅️ Izquierda', x: 32 },
-                              { id: 'CENTRO', label: '🎯 Centro', x: 50 },
-                              { id: 'DERECHA', label: '➡️ Derecha', x: 68 },
-                            ].map((pos) => (
-                              <button
-                                key={pos.id}
-                                type="button"
-                                onClick={() =>
-                                  applyCalibrationChange({
-                                    frontNumberPosition: pos.id as 'CENTRO' | 'DERECHA' | 'IZQUIERDA',
-                                    frontNumberXPercent: pos.x,
-                                  })
-                                }
-                                className={`px-2 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                                  (generationConfig.frontNumberPosition || 'CENTRO') === pos.id
-                                    ? 'bg-violet-600 text-white shadow-2xs'
-                                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
-                                }`}
-                              >
-                                {pos.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <span className="text-xs font-semibold text-slate-700 block">
-                            Tamaño del número del pecho:
-                          </span>
-                          <div className="grid grid-cols-3 gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                applyCalibrationChange({
-                                  frontNumberScale: Math.max(
-                                    0.3,
-                                    Number(((generationConfig.frontNumberScale ?? 1) - 0.1).toFixed(2))
-                                  ),
-                                })
-                              }
-                              className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer shadow-2xs"
-                            >
-                              🔍− Más Pequeño
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => applyCalibrationChange({ frontNumberScale: 1 })}
-                              className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600 cursor-pointer shadow-2xs"
-                            >
-                              Normal (100%)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                applyCalibrationChange({
-                                  frontNumberScale: Math.min(
-                                    2.5,
-                                    Number(((generationConfig.frontNumberScale ?? 1) + 0.1).toFixed(2))
-                                  ),
-                                })
-                              }
-                              className="px-2 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold cursor-pointer shadow-2xs"
-                            >
-                              🔍+ Más Grande
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <span className="text-xs font-semibold text-slate-700 block">
-                            Mover posición en el pecho:
-                          </span>
-                          <div className="grid grid-cols-2 gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                applyCalibrationChange({
-                                  frontNumberYPercent: Math.max(
-                                    15,
-                                    (generationConfig.frontNumberYPercent ?? 38) - 2
-                                  ),
-                                })
-                              }
-                              className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer shadow-2xs"
-                            >
-                              ⬆️ Subir en el Pecho
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                applyCalibrationChange({
-                                  frontNumberYPercent: Math.min(
-                                    85,
-                                    (generationConfig.frontNumberYPercent ?? 38) + 2
-                                  ),
-                                })
-                              }
-                              className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer shadow-2xs"
-                            >
-                              ⬇️ Bajar en el Pecho
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {activeZone === 'PANTALONETA' && (
-                <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4 shadow-2xs">
-                  {!orderHasShorts ? (
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
-                      <div>
-                        <h4 className="text-sm font-bold text-slate-900">
-                          🩳 Este pedido solo tiene Camisetas activas en este momento
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Cuando cargues un pedido con pantalonetas (o uniforme completo), aquí podrás elegir en qué pierna va el número y ajustar su tamaño y posición con un clic.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <VisualArtworkOffsetControl
-                        title="🩳 Ajuste del Dibujo de Fondo de la Pantaloneta"
-                        explanation="Si al coser la basta inferior de la pantaloneta se corta el diseño o las franjas, usa estos botones para subir el dibujo y dejar espacio libre abajo."
-                        offsetMm={shortOffsetMm}
-                        onChangeOffsetMm={(val) => applyCalibrationChange({ shortArtOffsetYMm: val })}
-                      />
-                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-900">
-                            🩳 Ajuste del Número en la Pantaloneta
-                          </h4>
-                          <p className="text-xs text-slate-500">
-                            Elige si la pantaloneta lleva número, en qué pierna se estampa y acomoda su tamaño o altura.
-                          </p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            applyCalibrationChange({
-                              includeShortNumber: generationConfig.includeShortNumber === false,
-                            })
-                          }
-                          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                            generationConfig.includeShortNumber !== false
-                              ? 'bg-emerald-600 text-white shadow-2xs'
-                              : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
-                          }`}
-                        >
-                          {generationConfig.includeShortNumber !== false
-                            ? '✓ Número en Pantaloneta: ACTIVADO'
-                            : 'Activar Número en Pantaloneta'}
-                        </button>
-                      </div>
-
-                      {generationConfig.includeShortNumber !== false && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {/* Selección de pierna */}
-                          <div className="space-y-2">
-                            <span className="text-xs font-semibold text-slate-700 block">
-                              1. ¿En qué pierna va el número?:
-                            </span>
-                            <div className="grid grid-cols-2 gap-2">
-                              <button
-                                type="button"
-                                onClick={() => applyCalibrationChange({ shortNumberPiece: 'IZQ' })}
-                                className={`px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                                  generationConfig.shortNumberPiece === 'IZQ'
-                                    ? 'bg-violet-600 text-white shadow-2xs'
-                                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
-                                }`}
-                              >
-                                🦵 Pierna Izquierda
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => applyCalibrationChange({ shortNumberPiece: 'DER' })}
-                                className={`px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                                  (generationConfig.shortNumberPiece || 'DER') === 'DER'
-                                    ? 'bg-violet-600 text-white shadow-2xs'
-                                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
-                                }`}
-                              >
-                                🦵 Pierna Derecha
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Tamaño del número */}
-                          <div className="space-y-2">
-                            <span className="text-xs font-semibold text-slate-700 block">
-                              2. Tamaño del número ({Math.round((generationConfig.shortNumberScale ?? 1) * 100)}%):
-                            </span>
-                            <div className="grid grid-cols-3 gap-2">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  applyCalibrationChange({
-                                    shortNumberScale: Math.max(
-                                      0.4,
-                                      Number(((generationConfig.shortNumberScale ?? 1) - 0.1).toFixed(2))
-                                    ),
-                                  })
-                                }
-                                className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer shadow-2xs"
-                              >
-                                🔍− Más Pequeño
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => applyCalibrationChange({ shortNumberScale: 1 })}
-                                className="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600 cursor-pointer shadow-2xs"
-                              >
-                                Normal (100%)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  applyCalibrationChange({
-                                    shortNumberScale: Math.min(
-                                      2.5,
-                                      Number(((generationConfig.shortNumberScale ?? 1) + 0.1).toFixed(2))
-                                    ),
-                                  })
-                                }
-                                className="px-2.5 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold cursor-pointer shadow-2xs"
-                              >
-                                🔍+ Más Grande
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Posición del número en la pantaloneta */}
-                          <div className="space-y-2">
-                            <span className="text-xs font-semibold text-slate-700 block">
-                              3. Mover posición del número:
-                            </span>
-                            <div className="grid grid-cols-2 gap-2">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  applyCalibrationChange({
-                                    shortNumberYPercent: Math.max(
-                                      15,
-                                      (generationConfig.shortNumberYPercent ?? 45) - 3
-                                    ),
-                                  })
-                                }
-                                className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-emerald-700 cursor-pointer shadow-2xs"
-                              >
-                                ⬆️ Subir Número
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  applyCalibrationChange({
-                                    shortNumberYPercent: Math.min(
-                                      85,
-                                      (generationConfig.shortNumberYPercent ?? 45) + 3
-                                    ),
-                                  })
-                                }
-                                className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-amber-700 cursor-pointer shadow-2xs"
-                              >
-                                ⬇️ Bajar Número
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  applyCalibrationChange({
-                                    shortNumberXPercent: Math.max(
-                                      10,
-                                      (generationConfig.shortNumberXPercent ?? 50) - 3
-                                    ),
-                                  })
-                                }
-                                className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer shadow-2xs"
-                              >
-                                ⬅️ Hacia la Izquierda
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  applyCalibrationChange({
-                                    shortNumberXPercent: Math.min(
-                                      90,
-                                      (generationConfig.shortNumberXPercent ?? 50) + 3
-                                    ),
-                                  })
-                                }
-                                className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer shadow-2xs"
-                              >
-                                ➡️ Hacia la Derecha
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* GRILLA INFERIOR DE PIEZAS DE LA PRENDA CON CONEXIÓN VISUAL DINÁMICA */}
-          {sortedPieces.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[380px] p-8 text-center bg-white border border-slate-200 rounded-xl shadow-2xs">
-              <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-4 shadow-2xs">
-                {currentPlayer.pieces.some(
-                  (p) => p.pieceType.startsWith('SHORT') || p.pieceType.startsWith('PANTALONETA')
-                ) ? (
-                  <Scissors className="w-8 h-8 text-violet-600" />
-                ) : (
-                  <Shirt className="w-8 h-8 text-violet-600" />
-                )}
-              </div>
-              <h3 className="text-base font-bold text-slate-900 mb-2 font-mono">
-                {currentPlayer.playerName} (#{currentPlayer.playerNumber}) no tiene piezas de{' '}
-                {garmentTypeFilter === 'CAMISETA' ? 'Camiseta' : 'Short'}
-              </h3>
-              <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
-                En el archivo Excel, este jugador está registrado con pedido de{' '}
-                <span className="text-amber-700 font-bold uppercase font-mono">
-                  {currentPlayer.pieces.some(
-                    (p) => p.pieceType.startsWith('SHORT') || p.pieceType.startsWith('PANTALONETA')
-                  )
-                    ? 'Solo Short'
-                    : 'Solo Camiseta'}
-                </span>
-                . Tu filtro superior está en "{garmentTypeFilter === 'CAMISETA' ? 'Camisetas' : 'Shorts'}".
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setGarmentTypeFilter(garmentTypeFilter === 'CAMISETA' ? 'SHORT' : 'CAMISETA')
-                  }
-                  className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-95"
-                >
-                  {garmentTypeFilter === 'CAMISETA' ? (
-                    <>
-                      <Scissors className="w-3.5 h-3.5" />
-                      <span>Ver Shorts de este jugador</span>
-                    </>
-                  ) : (
-                    <>
-                      <Shirt className="w-3.5 h-3.5" />
-                      <span>Ver Camiseta de este jugador</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGarmentTypeFilter('ALL')}
-                  className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-all cursor-pointer flex items-center gap-2 shadow-2xs"
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>Ver Todo el Pedido</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {sortedPieces.map((piece) => {
-                const pieceZone = getPieceZone(piece.pieceType);
-                const isHighlighted = showCalibrationPanel && activeZone === pieceZone;
-                const dimensionsLabel = `${formatWithUnits(piece.bbox.width)} × ${formatWithUnits(
-                  piece.bbox.height
-                )}`;
-
-                return (
-                  <InspectionPieceCard
-                    key={piece.id}
-                    piece={piece}
-                    pieceSvg={resolvePieceSvg(piece)}
-                    isHighlighted={isHighlighted}
-                    isTechnicalGrid={isTechnicalGrid}
-                    showGuides={showGuides}
-                    hemMarginMm={hemMarginMm}
-                    dimensionsLabel={dimensionsLabel}
-                    hemLabel={hemLabel}
-                    onSelectZone={handleSelectZoneFromCard}
-                  />
-                );
-              })}
-            </div>
+            </aside>
           )}
         </div>
       )}
