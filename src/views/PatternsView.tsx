@@ -34,12 +34,14 @@ import { Select, Button } from '@/components/ui';
 
 export const PatternsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const appendFileInputRef = useRef<HTMLInputElement>(null);
   const {
     patternSets,
     activePatternSet,
     selectedPieceForAssignment,
     loadFromDatabase,
     importSvg,
+    appendSvgToActiveSet,
     selectPieceForAssignment,
     assignPieceManually,
     setActivePatternSet,
@@ -56,6 +58,7 @@ export const PatternsView: React.FC = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [isImportingSvg, setIsImportingSvg] = useState<boolean>(false);
+  const [isAppendingSvg, setIsAppendingSvg] = useState<boolean>(false);
   const [importSummaryMsg, setImportSummaryMsg] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'CARDS' | 'TABLE'>('CARDS');
   const [catalogMode, setCatalogMode] = useState<'CATALOG' | 'DETAIL'>('CATALOG');
@@ -204,6 +207,47 @@ export const PatternsView: React.FC = () => {
     processPatternSvgFile(file);
   };
 
+  const processAppendSvgFile = (file: File) => {
+    setIsAppendingSvg(true);
+    setImportSummaryMsg(null);
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target?.result as string;
+        if (content) {
+          await new Promise((resolve) => setTimeout(resolve, 60));
+          const result = appendSvgToActiveSet(content, file.name);
+          await dbService.persistBrowserDb();
+          if (result) {
+            const summaryText = `¡Éxito! Se anexaron ${result.addedPiecesCount} piezas nuevas en ${result.affectedSizes.length} tallas (${result.affectedSizes.join(', ')}) a la moldería actual.`;
+            setImportSummaryMsg(summaryText);
+            showAlert.toast('success', summaryText);
+          }
+        }
+      } catch (err) {
+        console.error('Error anexando SVG de molde:', err);
+        showAlert.error('Error al anexar SVG', 'No se pudieron procesar los vectores del archivo seleccionado.');
+      } finally {
+        setIsAppendingSvg(false);
+        if (appendFileInputRef.current) {
+          appendFileInputRef.current.value = '';
+        }
+      }
+    };
+    reader.onerror = () => {
+      setIsAppendingSvg(false);
+      showAlert.error('Error de lectura', 'No se pudo leer el archivo SVG seleccionado.');
+    };
+    reader.readAsText(file);
+  };
+
+  const handleAppendUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processAppendSvgFile(file);
+  };
+
 
 
   const handleDownloadScript = () => {
@@ -306,6 +350,13 @@ exportMoldesParaCimatex();`;
         accept=".svg"
         className="hidden"
         onChange={handleFileUpload}
+      />
+      <input
+        ref={appendFileInputRef}
+        type="file"
+        accept=".svg"
+        className="hidden"
+        onChange={handleAppendUpload}
       />
 
       {/* VISTA 1: CATÁLOGO DE MOLDERÍAS (MODO SUBLIMIFYER 1:1) */}
@@ -726,19 +777,41 @@ exportMoldesParaCimatex();`;
                   <Button
                     variant="primary"
                     size="sm"
+                    onClick={() => appendFileInputRef.current?.click()}
+                    disabled={isAppendingSvg || isImportingSvg}
+                    className="shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                    title="Anexar piezas desde otro archivo SVG (ej. pantalonetas) a este mismo molde"
+                  >
+                    {isAppendingSvg ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                        <span>Anexando piezas...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>+ Anexar Piezas SVG (ej. Pantalonetas)</span>
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isImportingSvg}
-                    className="shadow-xs cursor-pointer"
+                    disabled={isImportingSvg || isAppendingSvg}
+                    className="shadow-2xs cursor-pointer text-slate-700 hover:text-slate-900"
+                    title="Subir un nuevo conjunto de moldes independiente en el catálogo"
                   >
                     {isImportingSvg ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 text-violet-600 animate-spin" />
                         <span>Analizando vectores...</span>
                       </>
                     ) : (
                       <>
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Cargar Otro Molde SVG</span>
+                        <Plus className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Nuevo Molde Separado</span>
                       </>
                     )}
                   </Button>
@@ -766,7 +839,7 @@ exportMoldesParaCimatex();`;
                   </Button>
 
                   <Button
-                    variant="destructive"
+                    variant="secondary"
                     size="sm"
                     onClick={async () => {
                       const confirmed = await showAlert.confirm(
@@ -779,10 +852,11 @@ exportMoldesParaCimatex();`;
                         setCatalogMode('CATALOG');
                       }
                     }}
-                    className="p-1.5 h-8 w-8 justify-center cursor-pointer"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 shadow-2xs cursor-pointer text-xs"
                     title="Eliminar este conjunto de moldes activo"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                    <span>Eliminar Molde</span>
                   </Button>
 
                   {patternSets.length > 0 && (

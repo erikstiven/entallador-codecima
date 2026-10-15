@@ -16,6 +16,14 @@ interface PatternStoreState {
 
   loadFromDatabase: () => void;
   importSvg: (svgContent: string, setName: string, garmentType: string, fileName?: string) => PatternSet;
+  appendSvgToActiveSet: (
+    svgContent: string,
+    fileName?: string
+  ) => {
+    addedPiecesCount: number;
+    affectedSizes: string[];
+    unassignedAddedCount: number;
+  } | null;
   selectPieceForAssignment: (piece: PatternPiece | null) => void;
   assignPieceManually: (pieceId: string, sizeName: string, pieceType: PieceType, rotations?: number[]) => void;
   saveActiveSet: () => void;
@@ -169,6 +177,99 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     }
 
     return patternSet;
+  },
+
+  appendSvgToActiveSet: (svgContent, fileName) => {
+    const { activePatternSet } = get();
+    if (!activePatternSet) return null;
+
+    const { patternSet: incomingSet } = parsePatternSvg(
+      svgContent,
+      activePatternSet.name,
+      activePatternSet.garmentType,
+      fileName
+    );
+
+    let addedPiecesCount = 0;
+    const affectedSizesSet = new Set<string>();
+    const currentSizes = activePatternSet.sizes.map((s) => ({
+      ...s,
+      pieces: [...s.pieces],
+    }));
+
+    for (const incomingSize of incomingSet.sizes) {
+      const existingSizeIndex = currentSizes.findIndex(
+        (s) => s.sizeName.toUpperCase() === incomingSize.sizeName.toUpperCase()
+      );
+
+      if (existingSizeIndex !== -1) {
+        const existingSize = currentSizes[existingSizeIndex];
+        const mergedPieces = [...existingSize.pieces];
+
+        for (const newPiece of incomingSize.pieces) {
+          const duplicateIndex = mergedPieces.findIndex(
+            (p) => p.id === newPiece.id || (p.pieceType === newPiece.pieceType && p.pieceName === newPiece.pieceName)
+          );
+          if (duplicateIndex !== -1) {
+            mergedPieces[duplicateIndex] = newPiece;
+          } else {
+            mergedPieces.push(newPiece);
+          }
+          addedPiecesCount++;
+          affectedSizesSet.add(existingSize.sizeName);
+        }
+
+        currentSizes[existingSizeIndex] = {
+          ...existingSize,
+          pieces: mergedPieces,
+        };
+      } else {
+        currentSizes.push(incomingSize);
+        addedPiecesCount += incomingSize.pieces.length;
+        affectedSizesSet.add(incomingSize.sizeName);
+      }
+    }
+
+    const mergedUnassigned = [
+      ...activePatternSet.unassignedPieces,
+      ...incomingSet.unassignedPieces,
+    ];
+
+    const rawUpdatedSet: PatternSet = {
+      ...activePatternSet,
+      sizes: currentSizes,
+      unassignedPieces: mergedUnassigned,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updatedSet = sanitizePatternSet(rawUpdatedSet);
+    const updatedSets = get().patternSets.map((s) => s.id === updatedSet.id ? updatedSet : s);
+
+    persistActivePatternId(updatedSet);
+    set({
+      patternSets: updatedSets,
+      activePatternSet: updatedSet,
+      selectedPieceForAssignment:
+        updatedSet.unassignedPieces.length > 0 ? updatedSet.unassignedPieces[0] : null,
+    });
+
+    if (updatedSet.sizes && updatedSet.sizes.length > 0) {
+      const patternSizes = updatedSet.sizes.map((s) => s.sizeName);
+      useOrderStore.getState().setAvailableSizes(patternSizes);
+    }
+
+    try {
+      savePatternSetToDb(dbService, updatedSet);
+      dbService.scheduleAutoSave();
+    } catch (err) {
+      console.error('Error persistiendo molde anexado en SQLite:', err);
+    }
+
+    return {
+      addedPiecesCount,
+      affectedSizes: Array.from(affectedSizesSet),
+      unassignedAddedCount: incomingSet.unassignedPieces.length,
+    };
   },
 
   selectPieceForAssignment: (piece) => {
