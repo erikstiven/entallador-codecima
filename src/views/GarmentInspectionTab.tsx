@@ -2133,7 +2133,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                   </div>
 
                   {showSizeMarkConfig && generationConfig.includeSizeMark && (
-                    <div className="bg-white border border-slate-200 rounded-lg p-2.5 space-y-2 text-xs">
+                    <div className="bg-white border border-slate-200 rounded-lg p-2.5 space-y-2.5 text-xs shadow-2xs">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-600">Color marquilla:</span>
                         <input
@@ -2141,6 +2141,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                           value={generationConfig.sizeMarkColor || '#000000'}
                           onChange={(e) => applyCalibrationChange({ sizeMarkColor: e.target.value })}
                           className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                          title="Color de la marquilla de talla"
                         />
                       </div>
                       <div className="flex items-center justify-between">
@@ -2156,7 +2157,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 ),
                               })
                             }
-                            className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold"
+                            className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer transition-colors"
+                            title="Disminuir tamaño"
                           >
                             −
                           </button>
@@ -2173,9 +2175,88 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 ),
                               })
                             }
-                            className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold"
+                            className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer transition-colors"
+                            title="Aumentar tamaño"
                           >
                             +
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Subir o Bajar Marquilla (Distancia desde el borde inferior) */}
+                      <div className="space-y-1.5 pt-1.5 border-t border-slate-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600" title="Distancia desde el borde inferior de la pieza">
+                            Distancia al borde:
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                applyCalibrationChange({
+                                  sizeMarkBottomOffsetMm: Math.max(
+                                    -20,
+                                    Number(((generationConfig.sizeMarkBottomOffsetMm ?? 8) - unitStepMm).toFixed(2))
+                                  ),
+                                })
+                              }
+                              className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer transition-colors"
+                              title="Bajar marquilla hacia el borde inferior"
+                            >
+                              −
+                            </button>
+                            <span className="font-mono text-emerald-700 font-bold min-w-[36px] text-center" title="Distancia en mm">
+                              {formatDisplayMm(generationConfig.sizeMarkBottomOffsetMm ?? 8)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                applyCalibrationChange({
+                                  sizeMarkBottomOffsetMm: Math.min(
+                                    120,
+                                    Number(((generationConfig.sizeMarkBottomOffsetMm ?? 8) + unitStepMm).toFixed(2))
+                                  ),
+                                })
+                              }
+                              className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer transition-colors"
+                              title="Subir marquilla hacia adentro"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Botones directos de Subir / Bajar para máxima facilidad de uso */}
+                        <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                sizeMarkBottomOffsetMm: Math.min(
+                                  120,
+                                  Number(((generationConfig.sizeMarkBottomOffsetMm ?? 8) + (unitStepMm * 3)).toFixed(2))
+                                ),
+                              })
+                            }
+                            className="px-2 py-1 rounded bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all"
+                            title="Subir marquilla hacia arriba (3mm)"
+                          >
+                            ⬆️ Subir
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyCalibrationChange({
+                                sizeMarkBottomOffsetMm: Math.max(
+                                  -20,
+                                  Number(((generationConfig.sizeMarkBottomOffsetMm ?? 8) - (unitStepMm * 3)).toFixed(2))
+                                ),
+                              })
+                            }
+                            className="px-2 py-1 rounded bg-slate-100 hover:bg-amber-50 hover:text-amber-700 border border-slate-200 text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all"
+                            title="Bajar marquilla hacia el borde (3mm)"
+                          >
+                            ⬇️ Bajar
                           </button>
                         </div>
                       </div>
@@ -2210,6 +2291,9 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                           shortNumberYPercent: 45,
                           shortNumberScale: 1,
                           includeSizeMark: false,
+                          sizeMarkColor: '#000000',
+                          sizeMarkFontSizeMm: 8,
+                          sizeMarkBottomOffsetMm: 8,
                         });
                       }}
                       className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-amber-700 text-xs font-semibold cursor-pointer shadow-2xs flex items-center justify-center gap-1 active:scale-95"
