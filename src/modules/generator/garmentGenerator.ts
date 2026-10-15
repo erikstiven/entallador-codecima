@@ -646,8 +646,8 @@ export function generateGarmentPieces(
       if (mangaDer) piecesToGenerate.push(mangaDer);
     }
     if (effectiveGarmentType === 'SHORT' || effectiveGarmentType === 'COMPLETO') {
-      if (pantaIzq) piecesToGenerate.push(pantaIzq);
       if (pantaDer) piecesToGenerate.push(pantaDer);
+      if (pantaIzq) piecesToGenerate.push(pantaIzq);
     }
 
     const missingPieceGroups: string[] = [];

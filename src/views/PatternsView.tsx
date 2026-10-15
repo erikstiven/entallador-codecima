@@ -36,6 +36,22 @@ import { dbService } from '@/core/database/db';
 import { generateIllustratorTemplateSvg } from '@/modules/patterns/patternTemplateExporter';
 import { Select, Button } from '@/components/ui';
 
+const getPatternPieceSortOrder = (type: string): number => {
+  if (type.startsWith('DELANTERO_V')) return 1;
+  if (type.startsWith('DELANTERO_REDONDO')) return 2;
+  if (type.startsWith('DELANTERO')) return 3;
+  if (type.startsWith('ESPALDA')) return 4;
+  if (type.startsWith('MANGA_DER') || type === 'MANGA_D') return 5.1;
+  if (type.startsWith('MANGA_IZQ') || type === 'MANGA_I') return 5.2;
+  if (type.startsWith('MANGA')) return 5.3;
+  if (type === 'CUELLO') return 6;
+  // Vista de frente al jugador: Pierna Derecha primero (tarjeta izquierda), Pierna Izquierda después (tarjeta derecha)
+  if (type === 'PANTALONETA_DER' || type === 'SHORT_DER' || type === 'SHORT_D' || type === 'SHORT_ESPALDA') return 7.1;
+  if (type === 'PANTALONETA_IZQ' || type === 'SHORT_IZQ' || type === 'SHORT_I' || type === 'SHORT_FRENTE') return 7.2;
+  if (type.startsWith('SHORT') || type.startsWith('PANTALONETA')) return 7.3;
+  return 8;
+};
+
 export const PatternsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const appendFileInputRef = useRef<HTMLInputElement>(null);
@@ -1345,7 +1361,9 @@ exportMoldesParaCimatex();`;
                 </div>
               ) : currentSizeObj ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {currentSizeObj.pieces.map((piece) => (
+                  {[...currentSizeObj.pieces]
+                    .sort((a, b) => getPatternPieceSortOrder(a.pieceType) - getPatternPieceSortOrder(b.pieceType))
+                    .map((piece) => (
                     <div
                       key={piece.id}
                       className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-violet-300 hover:shadow-xs transition-all space-y-3 overflow-hidden"

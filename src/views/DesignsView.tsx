@@ -713,9 +713,25 @@ export const DesignsView: React.FC = () => {
                 {/* BLOQUES OPCIONALES DE PANTALONETA */}
                 <div className="border-t border-slate-200 pt-5">
                   <TextilePieceCarousel
-                    title="Pantaloneta / Short (Pierna Izquierda y Derecha)"
+                    title="Pantaloneta / Short (Pierna Derecha e Izquierda)"
                     subtitle="Opcional. Se combina con los moldes de short de cada talla durante el entallado."
                     pieces={[
+                      {
+                        id: 'short_der',
+                        title: 'Pantaloneta — Pierna Derecha',
+                        subtitle: 'Arte pierna derecha (número dorsal / escudo)',
+                        icon: <Scissors className="w-3.5 h-3.5 text-emerald-600" />,
+                        silhouette: <SilhouetteShort />,
+                        fileName: 'PANTALONETA_DER.svg',
+                        svgContent: pantalonetaDerArt?.svgArtContent,
+                        namespace: 'preview_short_der',
+                        aspectRatio: 'square' as const,
+                        onUploadFile: (file: File) => handleUploadSingleBlock('PANTALONETA_DER', file),
+                        onRemove: () => {
+                          removePieceArtwork('PANTALONETA_DER');
+                          removePieceArtwork('SHORT_ESPALDA');
+                        },
+                      },
                       {
                         id: 'short_izq',
                         title: 'Pantaloneta — Pierna Izquierda',
@@ -730,22 +746,6 @@ export const DesignsView: React.FC = () => {
                         onRemove: () => {
                           removePieceArtwork('PANTALONETA_IZQ');
                           removePieceArtwork('SHORT_FRENTE');
-                        },
-                      },
-                      {
-                        id: 'short_der',
-                        title: 'Pantaloneta — Pierna Derecha',
-                        subtitle: 'Arte pierna derecha',
-                        icon: <Scissors className="w-3.5 h-3.5 text-emerald-600" />,
-                        silhouette: <SilhouetteShort />,
-                        fileName: 'PANTALONETA_DER.svg',
-                        svgContent: pantalonetaDerArt?.svgArtContent,
-                        namespace: 'preview_short_der',
-                        aspectRatio: 'square' as const,
-                        onUploadFile: (file: File) => handleUploadSingleBlock('PANTALONETA_DER', file),
-                        onRemove: () => {
-                          removePieceArtwork('PANTALONETA_DER');
-                          removePieceArtwork('SHORT_ESPALDA');
                         },
                       },
                     ]}

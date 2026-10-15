@@ -88,8 +88,8 @@ describe('modularNestingEngine', () => {
     const s1 = result.placedPieces.find((p) => p.pieceType === 'PANTALONETA_IZQ')!;
     const s2 = result.placedPieces.find((p) => p.pieceType === 'PANTALONETA_DER')!;
 
-    expect(s1.xMm).toBeGreaterThanOrEqual(3);
-    expect(s2.xMm).toBeGreaterThan(s1.xMm + 500);
+    expect(s2.xMm).toBeGreaterThanOrEqual(3);
+    expect(s1.xMm).toBeGreaterThan(s2.xMm + 500);
   });
 
   it('debe empaquetar 3 pantalonetas por fila en bobina de 1600 mm para máximo aprovechamiento', () => {
@@ -111,7 +111,7 @@ describe('modularNestingEngine', () => {
     expect(row1Pieces.length).toBe(3);
   });
 
-  it('debe aplicar modo puzzle con giro a 180° en la pierna derecha cuando allowedRotations incluye 180', () => {
+  it('debe aplicar modo puzzle con giro a 180° en la pierna izquierda cuando allowedRotations incluye 180', () => {
     const p1 = createMockPiece('p1_izq', 'player_1', 'JUGADOR_1', 'PANTALONETA_IZQ', 470, 400);
     const p2 = createMockPiece('p1_der', 'player_1', 'JUGADOR_1', 'PANTALONETA_DER', 470, 400);
     p1.allowedRotations = [0, 180];
@@ -125,8 +125,8 @@ describe('modularNestingEngine', () => {
     const placedIzq = result.placedPieces.find((p) => p.pieceType === 'PANTALONETA_IZQ')!;
     const placedDer = result.placedPieces.find((p) => p.pieceType === 'PANTALONETA_DER')!;
 
-    expect(placedIzq.rotationDeg).toBe(0);
-    expect(placedDer.rotationDeg).toBe(180);
+    expect(placedDer.rotationDeg).toBe(0);
+    expect(placedIzq.rotationDeg).toBe(180);
   });
 
   it('debe particionar en múltiples pliegos si la altura acumulada supera maxSheetLengthMm (500 cm)', () => {

@@ -658,8 +658,13 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
   const getPieceOrder = (type: string) => {
     if (type.startsWith('DELANTERO')) return 1;
     if (type.startsWith('ESPALDA')) return 2;
-    if (type.startsWith('MANGA')) return 3;
-    if (type.startsWith('SHORT') || type.startsWith('PANTALONETA')) return 4;
+    if (type.startsWith('MANGA_DER') || type === 'MANGA_D') return 3.1;
+    if (type.startsWith('MANGA_IZQ') || type === 'MANGA_I') return 3.2;
+    if (type.startsWith('MANGA')) return 3.3;
+    // Vista de frente al jugador: Pierna Derecha primero (tarjeta izquierda), Pierna Izquierda después (tarjeta derecha)
+    if (type === 'PANTALONETA_DER' || type === 'SHORT_ESPALDA' || type === 'SHORT_DER' || type === 'SHORT_D') return 4.1;
+    if (type === 'PANTALONETA_IZQ' || type === 'SHORT_FRENTE' || type === 'SHORT_IZQ' || type === 'SHORT_I') return 4.2;
+    if (type.startsWith('SHORT') || type.startsWith('PANTALONETA')) return 4.3;
     return 5;
   };
 

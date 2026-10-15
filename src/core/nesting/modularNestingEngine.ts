@@ -2285,22 +2285,14 @@ export function performModularNesting(
       const pIzq = playerSet.pantaIzq;
       const pDer = playerSet.pantaDer;
 
-      // Si el jugador tiene ambas piernas, aplicar modo puzzle tiro-con-tiro (0° izq, 180° der si está permitido)
+      // Si el jugador tiene ambas piernas, aplicar modo puzzle tiro-con-tiro (0° der al derecho con dorsal, 180° izq si está permitido)
       if (pIzq && pDer) {
         const izqRotAllowed = canRotate180 && (pIzq.allowedRotations?.includes(180) ?? false);
         const derRotAllowed = canRotate180 && (pDer.allowedRotations?.includes(180) ?? false);
 
-        // Modo puzzle: Izquierda a 0°, Derecha a 180° (o 0° si no está permitido)
-        const rotIzq = 0;
-        const rotDer = derRotAllowed ? 180 : 0;
-
-        shortItemsToPlace.push({
-          piece: pIzq,
-          playerSet,
-          rotationDeg: rotIzq,
-          w: pIzq.bbox.width,
-          h: pIzq.bbox.height,
-        });
+        // Modo puzzle: Derecha a 0° (primero a la izquierda, dorsal visible al derecho), Izquierda a 180° (o 0° si no está permitido)
+        const rotDer = 0;
+        const rotIzq = izqRotAllowed ? 180 : 0;
 
         shortItemsToPlace.push({
           piece: pDer,
@@ -2309,11 +2301,11 @@ export function performModularNesting(
           w: pDer.bbox.width,
           h: pDer.bbox.height,
         });
-      } else if (pIzq) {
+
         shortItemsToPlace.push({
           piece: pIzq,
           playerSet,
-          rotationDeg: 0,
+          rotationDeg: rotIzq,
           w: pIzq.bbox.width,
           h: pIzq.bbox.height,
         });
@@ -2324,6 +2316,14 @@ export function performModularNesting(
           rotationDeg: 0,
           w: pDer.bbox.width,
           h: pDer.bbox.height,
+        });
+      } else if (pIzq) {
+        shortItemsToPlace.push({
+          piece: pIzq,
+          playerSet,
+          rotationDeg: 0,
+          w: pIzq.bbox.width,
+          h: pIzq.bbox.height,
         });
       }
 
