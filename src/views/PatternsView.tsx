@@ -24,6 +24,8 @@ import {
   Tag,
   Grid,
   Pencil,
+  Copy,
+  FlipHorizontal,
   X
 } from 'lucide-react';
 import { usePatternStore } from '@/modules/patterns/patternStore';
@@ -53,6 +55,8 @@ export const PatternsView: React.FC = () => {
     discardAllUnassignedPieces,
     deletePieceFromSize,
     updatePieceType,
+    duplicatePieceInSize,
+    flipPieceHorizontal,
     clearAllPatterns,
     saveActiveSet,
   } = usePatternStore();
@@ -1368,24 +1372,52 @@ exportMoldesParaCimatex();`;
                           )}
                         </Select>
 
-                        <button
-                          type="button"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            const confirmed = await showAlert.confirm(
-                              '¿Eliminar pieza del molde?',
-                              `¿Deseas omitir la pieza "${piece.pieceName}" de la Talla ${currentSizeObj.sizeName}?`
-                            );
-                            if (confirmed) {
-                              deletePieceFromSize(currentSizeObj.sizeName, piece.id);
-                              showAlert.toast('info', 'Pieza eliminada');
-                            }
-                          }}
-                          className="p-1.5 rounded-lg bg-white text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-colors shrink-0 cursor-pointer"
-                          title="Omitir o eliminar esta pieza si está de más o duplicada"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              flipPieceHorizontal(currentSizeObj.sizeName, piece.id);
+                              showAlert.toast('success', `Molde "${piece.pieceName}" volteado en modo espejo`);
+                            }}
+                            className="p-1.5 rounded-lg bg-white text-slate-500 hover:text-violet-700 hover:bg-violet-50 border border-slate-200 hover:border-violet-300 transition-colors shrink-0 cursor-pointer"
+                            title="Voltear molde horizontalmente (modo espejo)"
+                          >
+                            <FlipHorizontal className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              duplicatePieceInSize(currentSizeObj.sizeName, piece.id);
+                              showAlert.toast('success', `Molde "${piece.pieceName}" duplicado con éxito`);
+                            }}
+                            className="p-1.5 rounded-lg bg-white text-slate-500 hover:text-violet-700 hover:bg-violet-50 border border-slate-200 hover:border-violet-300 transition-colors shrink-0 cursor-pointer"
+                            title="Duplicar este molde en esta talla"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const confirmed = await showAlert.confirm(
+                                '¿Eliminar pieza del molde?',
+                                `¿Deseas omitir la pieza "${piece.pieceName}" de la Talla ${currentSizeObj.sizeName}?`
+                              );
+                              if (confirmed) {
+                                deletePieceFromSize(currentSizeObj.sizeName, piece.id);
+                                showAlert.toast('info', 'Pieza eliminada');
+                              }
+                            }}
+                            className="p-1.5 rounded-lg bg-white text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-colors shrink-0 cursor-pointer"
+                            title="Omitir o eliminar esta pieza si está de más o duplicada"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* SVG Thumbnail Mini Preview — 100% Unobstructed & Centered */}

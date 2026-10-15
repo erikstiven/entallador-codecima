@@ -32,6 +32,8 @@ const DEFAULT_CONFIG: GenerationConfig = {
   shortNumberXPercent: 50,
   shortNumberYPercent: 45,
   shortNumberScale: 1,
+  shortNumberScaleX: 1,
+  shortNumberScaleY: 1,
   includeFrontNumber: false,
   frontNumberPosition: 'CENTRO',
   frontNumberXPercent: 50,
@@ -863,7 +865,9 @@ export function generateGarmentPieces(
           const xPercent = Math.max(10, Math.min(90, config.shortNumberXPercent ?? 50));
           const yPercent = Math.max(15, Math.min(85, config.shortNumberYPercent ?? 45));
           const shortScale = Math.max(0.4, Math.min(2.5, config.shortNumberScale ?? 1));
-          const shortCacheKey = `SHORT|${orderItem.playerNumber}|${pieceType}|${targetSize}|${localBbox.width.toFixed(2)}|${localBbox.height.toFixed(2)}|${xPercent}_${yPercent}_${shortScale}|${typographyKey}`;
+          const shortScaleX = config.shortNumberScaleX ?? 1.0;
+          const shortScaleY = config.shortNumberScaleY ?? 1.0;
+          const shortCacheKey = `SHORT|${orderItem.playerNumber}|${pieceType}|${targetSize}|${localBbox.width.toFixed(2)}|${localBbox.height.toFixed(2)}|${xPercent}_${yPercent}_${shortScale}_${shortScaleX}_${shortScaleY}|${typographyKey}`;
           let cachedShort = getFromLruCache(dorsalVectorCache, shortCacheKey);
 
           if (!cachedShort) {
@@ -884,6 +888,8 @@ export function generateGarmentPieces(
               strokeColor: configuredStroke,
               strokeWidthMm: configuredStrokeWidth,
               textAlign: 'center',
+              customScaleX: shortScaleX,
+              customScaleY: shortScaleY,
             };
             const shortNumberFitting = computeTextFitting(orderItem.playerNumber, shortNumberRule);
             cachedShort = { svg: shortNumberFitting.svgContent, warnings: [] };

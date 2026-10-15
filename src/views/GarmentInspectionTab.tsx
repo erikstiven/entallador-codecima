@@ -748,6 +748,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
       (generationConfig.shortNumberXPercent ?? 50) !== 50 ||
       (generationConfig.shortNumberYPercent ?? 45) !== 45 ||
       (generationConfig.shortNumberScale ?? 1) !== 1 ||
+      (generationConfig.shortNumberScaleX ?? 1) !== 1 ||
+      (generationConfig.shortNumberScaleY ?? 1) !== 1 ||
       generationConfig.includeSizeMark === true
   );
 
@@ -2107,6 +2109,75 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                                 </div>
                               </div>
 
+                              {/* Proporción (Ancho y Alto) */}
+                              <div className="space-y-1.5">
+                                <span className="text-[11px] font-semibold text-slate-600 block">
+                                  Proporción (Ancho y Alto):
+                                </span>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      applyCalibrationChange({
+                                        shortNumberScaleX: Math.max(
+                                          0.4,
+                                          Number(((generationConfig.shortNumberScaleX ?? 1) - 0.05).toFixed(2))
+                                        ),
+                                      })
+                                    }
+                                    className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                                    title="Hacer número de pantaloneta más estrecho / delgado"
+                                  >
+                                    ↔️ Más Delgado
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      applyCalibrationChange({
+                                        shortNumberScaleX: Math.min(
+                                          2.5,
+                                          Number(((generationConfig.shortNumberScaleX ?? 1) + 0.05).toFixed(2))
+                                        ),
+                                      })
+                                    }
+                                    className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                                    title="Hacer número de pantaloneta más ancho"
+                                  >
+                                    ↔️ Más Ancho
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      applyCalibrationChange({
+                                        shortNumberScaleY: Math.max(
+                                          0.4,
+                                          Number(((generationConfig.shortNumberScaleY ?? 1) - 0.05).toFixed(2))
+                                        ),
+                                      })
+                                    }
+                                    className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                                    title="Hacer número de pantaloneta más bajo / corto"
+                                  >
+                                    ↕️ Más Corto
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      applyCalibrationChange({
+                                        shortNumberScaleY: Math.min(
+                                          2.5,
+                                          Number(((generationConfig.shortNumberScaleY ?? 1) + 0.05).toFixed(2))
+                                        ),
+                                      })
+                                    }
+                                    className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer active:scale-95 shadow-2xs"
+                                    title="Hacer número de pantaloneta más alto"
+                                  >
+                                    ↕️ Más Alto
+                                  </button>
+                                </div>
+                              </div>
+
                               {/* Mover */}
                               <div className="space-y-1">
                                 <span className="text-[11px] font-semibold text-slate-600 block">
@@ -2367,6 +2438,8 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
                           shortNumberXPercent: 50,
                           shortNumberYPercent: 45,
                           shortNumberScale: 1,
+                          shortNumberScaleX: 1,
+                          shortNumberScaleY: 1,
                           includeSizeMark: false,
                           sizeMarkColor: '#000000',
                           sizeMarkFontSizeMm: 8,

@@ -8,6 +8,7 @@ import {
   getPatternSetsFromDb, 
   deletePatternSetFromDb 
 } from './patternRepository';
+import { polygonToSvgPath } from '@/core/geometry/transform';
 
 interface PatternStoreState {
   patternSets: PatternSet[];
@@ -34,6 +35,12 @@ interface PatternStoreState {
   discardAllUnassignedPieces: () => void;
   deletePieceFromSize: (sizeName: string, pieceId: string) => void;
   updatePieceType: (sizeName: string, pieceId: string, newType: PieceType) => void;
+  duplicatePieceInSize: (
+    sizeName: string,
+    pieceId: string,
+    options?: { mirrorHorizontal?: boolean; newType?: PieceType }
+  ) => void;
+  flipPieceHorizontal: (sizeName: string, pieceId: string) => void;
   clearAllPatterns: () => void;
 }
 
@@ -533,6 +540,158 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
       dbService.scheduleAutoSave();
     } catch (err) {
       console.error('Error actualizando tipo de pieza en SQLite:', err);
+    }
+  },
+
+  duplicatePieceInSize: (sizeName: string, pieceId: string, options?: { mirrorHorizontal?: boolean; newType?: PieceType }) => {
+    const { activePatternSet } = get();
+    if (!activePatternSet) return;
+
+    const newSizes = activePatternSet.sizes.map((s) => {
+      if (s.sizeName.toUpperCase() !== sizeName.toUpperCase()) return s;
+
+      const sourcePiece = s.pieces.find((p) => p.id === pieceId);
+      if (!sourcePiece) return s;
+
+      // Si es pantaloneta izquierda o manga izquierda, por defecto se espeja y convierte a pierna/manga derecha
+      const shouldMirror = options?.mirrorHorizontal ?? (
+        sourcePiece.pieceType === 'PANTALONETA_IZQ' || sourcePiece.pieceType === 'MANGA_IZQ'
+      );
+
+      let targetType: PieceType = options?.newType || sourcePiece.pieceType;
+      if (!options?.newType) {
+        if (sourcePiece.pieceType === 'PANTALONETA_IZQ') {
+          targetType = 'PANTALONETA_DER';
+        } else if (sourcePiece.pieceType === 'MANGA_IZQ') {
+          targetType = 'MANGA_DER';
+        }
+      }
+
+      const w = sourcePiece.bbox.width;
+      const duplicatedPolygon = shouldMirror
+        ? sourcePiece.cutPolygon.map((pt) => ({
+            x: Number((w - pt.x).toFixed(2)),
+            y: pt.y,
+          }))
+        : sourcePiece.cutPolygon.map((pt) => ({ ...pt }));
+
+      const duplicatedSvgPath = shouldMirror
+        ? polygonToSvgPath(duplicatedPolygon)
+        : sourcePiece.svgPathData;
+
+      const duplicatedSeam = sourcePiece.seamPolygon
+        ? (shouldMirror
+            ? sourcePiece.seamPolygon.map((pt) => ({
+                x: Number((w - pt.x).toFixed(2)),
+                y: pt.y,
+              }))
+            : sourcePiece.seamPolygon.map((pt) => ({ ...pt })))
+        : undefined;
+
+      const duplicatedLabelAnchor = sourcePiece.labelAnchor
+        ? (shouldMirror
+            ? {
+                x: Number((w - sourcePiece.labelAnchor.x).toFixed(2)),
+                y: sourcePiece.labelAnchor.y,
+              }
+            : { ...sourcePiece.labelAnchor })
+        : undefined;
+
+      const duplicatedPiece: PatternPiece = {
+        ...sourcePiece,
+        id: `piece_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        pieceType: targetType,
+        pieceName: `T${s.sizeName}_${targetType}`,
+        cutPolygon: duplicatedPolygon,
+        seamPolygon: duplicatedSeam,
+        labelAnchor: duplicatedLabelAnchor,
+        svgPathData: duplicatedSvgPath,
+        bbox: { ...sourcePiece.bbox },
+        allowedRotationsDeg: getDefaultRotationsForPieceType(targetType),
+        isAssigned: true,
+      };
+
+      return {
+        ...s,
+        pieces: [...s.pieces, duplicatedPiece],
+      };
+    });
+
+    const updatedSet: PatternSet = {
+      ...activePatternSet,
+      sizes: newSizes,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updatedSets = get().patternSets.map((s) => s.id === updatedSet.id ? updatedSet : s);
+    set({ activePatternSet: updatedSet, patternSets: updatedSets });
+
+    try {
+      savePatternSetToDb(dbService, updatedSet);
+      dbService.scheduleAutoSave();
+    } catch (err) {
+      console.error('Error duplicando pieza en SQLite:', err);
+    }
+  },
+
+  flipPieceHorizontal: (sizeName: string, pieceId: string) => {
+    const { activePatternSet } = get();
+    if (!activePatternSet) return;
+
+    const newSizes = activePatternSet.sizes.map((s) => {
+      if (s.sizeName.toUpperCase() !== sizeName.toUpperCase()) return s;
+
+      return {
+        ...s,
+        pieces: s.pieces.map((piece) => {
+          if (piece.id !== pieceId) return piece;
+
+          const w = piece.bbox.width;
+          const flippedPolygon = piece.cutPolygon.map((pt) => ({
+            x: Number((w - pt.x).toFixed(2)),
+            y: pt.y,
+          }));
+
+          const flippedSvgPath = polygonToSvgPath(flippedPolygon);
+
+          const flippedSeam = piece.seamPolygon?.map((pt) => ({
+            x: Number((w - pt.x).toFixed(2)),
+            y: pt.y,
+          }));
+
+          const flippedLabelAnchor = piece.labelAnchor
+            ? {
+                x: Number((w - piece.labelAnchor.x).toFixed(2)),
+                y: piece.labelAnchor.y,
+              }
+            : undefined;
+
+          return {
+            ...piece,
+            cutPolygon: flippedPolygon,
+            seamPolygon: flippedSeam,
+            labelAnchor: flippedLabelAnchor,
+            svgPathData: flippedSvgPath,
+            bbox: { ...piece.bbox },
+          };
+        }),
+      };
+    });
+
+    const updatedSet: PatternSet = {
+      ...activePatternSet,
+      sizes: newSizes,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updatedSets = get().patternSets.map((s) => s.id === updatedSet.id ? updatedSet : s);
+    set({ activePatternSet: updatedSet, patternSets: updatedSets });
+
+    try {
+      savePatternSetToDb(dbService, updatedSet);
+      dbService.scheduleAutoSave();
+    } catch (err) {
+      console.error('Error volteando pieza en SQLite:', err);
     }
   },
 

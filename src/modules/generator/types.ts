@@ -56,6 +56,8 @@ export interface GenerationConfig {
   shortNumberXPercent?: number; // Posición horizontal dentro de la pieza (0-100)
   shortNumberYPercent?: number; // Posición vertical dentro de la pieza (0-100)
   shortNumberScale?: number; // Escala uniforme del número
+  shortNumberScaleX?: number; // Escala de ancho (0.6 a 1.6, default 1.0)
+  shortNumberScaleY?: number; // Escala de alto (0.6 a 1.6, default 1.0)
 
   // Personalización dinámica de número en delantero (Pecho / Frente de camiseta)
   includeFrontNumber?: boolean;
