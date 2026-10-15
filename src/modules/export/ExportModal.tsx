@@ -48,8 +48,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [exportSuccessDone, setExportSuccessDone] = useState<boolean>(false);
   const [downloadedFiles, setDownloadedFiles] = useState<ExportResult[]>([]);
 
+  const getInitialFormat = (): ExportOptions['format'] => {
+    const pref = settings.defaultExportFormat;
+    if (pref === 'SVG' || pref === 'PDF') return pref;
+    return 'SVG';
+  };
+
   const [selectedFormat, setSelectedFormat] = useState<ExportOptions['format']>(
-    settings.defaultExportFormat || 'SVG'
+    getInitialFormat()
   );
   const includeCalibration = false;
   const includeCutContour = false;
@@ -60,7 +66,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setSelectedFormat(settings.defaultExportFormat || 'SVG');
+      const pref = settings.defaultExportFormat;
+      setSelectedFormat(pref === 'SVG' || pref === 'PDF' ? pref : 'SVG');
       setIncludeSeamLabels(settings.autoIncludeLabels ?? true);
     } else {
       setIsExporting(false);
@@ -220,13 +227,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       maxWidth="lg"
       title={
         <span className="flex items-center gap-2">
-          Exportar Producción a Escala Real
-          <span className="text-[10px] px-2 py-0.5 rounded-md bg-violet-100 text-violet-800 border border-violet-200 font-mono">
+          Exportar Nesting
+          <span className="hidden text-[10px] px-2 py-0.5 rounded-md bg-violet-100 text-violet-800 border border-violet-200 font-mono" aria-hidden="true">
             {formatDisplay} 1:1
           </span>
         </span>
       }
-      subtitle="Archivo vectorial 1:1 listo para impresión en plotter / RIP / Illustrator"
+      subtitle={false ? "Archivo vectorial 1:1 listo para impresión en plotter / RIP / Illustrator" : undefined}
       icon={<Printer className="w-5 h-5 text-violet-700" />}
       closeOnBackdropClick={!isExporting}
       closeOnEscape={!isExporting}
@@ -306,30 +313,33 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             <label className="text-xs font-semibold text-slate-700 block mb-1.5">
               Formato de Exportación (Selecciona uno)
             </label>
-            <div className="grid grid-cols-4 gap-2 text-xs">
-              {(['SVG', 'PDF', 'EPS', 'EXCEL_SUMMARY'] as const).map((fmt) => (
-                <button
-                  key={fmt}
-                  type="button"
-                  disabled={isExporting}
-                  onClick={() => {
-                    setSelectedFormat(fmt);
-                    setExportSuccessDone(false);
-                  }}
-                  className={`py-2 px-1.5 rounded-lg border font-mono font-bold text-center transition-all ${
-                    isExporting ? 'opacity-50 cursor-not-allowed ' : 'cursor-pointer '
-                  }${
-                    selectedFormat === fmt
-                      ? 'bg-violet-600 text-white border-violet-500 shadow-xs'
-                      : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-200'
-                  }`}
-                >
-                  {fmt === 'EXCEL_SUMMARY' ? 'Excel' : `${fmt} 1:1`}
-                </button>
-              ))}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {(['SVG', 'PDF', 'EPS', 'EXCEL_SUMMARY'] as const).map((fmt) => {
+                const isHidden = fmt === 'EPS' || fmt === 'EXCEL_SUMMARY';
+                return (
+                  <button
+                    key={fmt}
+                    type="button"
+                    disabled={isExporting}
+                    onClick={() => {
+                      setSelectedFormat(fmt);
+                      setExportSuccessDone(false);
+                    }}
+                    className={`${isHidden ? 'hidden ' : ''}py-2 px-1.5 rounded-lg border font-mono font-bold text-center transition-all ${
+                      isExporting ? 'opacity-50 cursor-not-allowed ' : 'cursor-pointer '
+                    }${
+                      selectedFormat === fmt
+                        ? 'bg-violet-600 text-white border-violet-500 shadow-xs'
+                        : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-200'
+                    }`}
+                  >
+                    {fmt === 'EXCEL_SUMMARY' ? 'Excel' : `${fmt} 1:1`}
+                  </button>
+                );
+              })}
             </div>
             {selectedFormat === 'EPS' && (
-              <div className="mt-2 p-2.5 rounded-lg bg-violet-50 border border-violet-200 text-[11px] text-violet-900 flex items-start gap-2">
+              <div className="hidden mt-2 p-2.5 rounded-lg bg-violet-50 border border-violet-200 text-[11px] text-violet-900 items-start gap-2" aria-hidden="true">
                 <Info className="w-3.5 h-3.5 text-violet-600 shrink-0 mt-0.5" />
                 <span>
                   <strong>EPS Level 3 (Curvas 1:1):</strong> Motor aislado vía Inkscape CLI para RIPs (Mimaki, Epson, Wasatch) y plotters industriales.
@@ -418,8 +428,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </label>
           </div>
 
-          {/* Summary Strip */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between text-xs text-slate-600">
+          {/* Summary Strip (Ocultado a petición manteniendo el código intacto) */}
+          <div className="hidden bg-slate-50 border border-slate-200 rounded-xl p-3 items-center justify-between text-xs text-slate-600" aria-hidden="true">
             <div className="flex items-center gap-2">
               <Ruler className="w-4 h-4 text-violet-600" />
               <span>

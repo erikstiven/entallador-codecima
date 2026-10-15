@@ -553,7 +553,7 @@ export const ProductionNestingView: React.FC = () => {
               }`}
             >
               <Download className="w-3.5 h-3.5" />
-              <span>🖨️ Exportar Producción 1:1 (PDF / SVG)</span>
+              <span>🖨️ Exportar Nesting</span>
             </button>
             <button
               type="button"
