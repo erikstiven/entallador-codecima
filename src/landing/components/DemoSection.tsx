@@ -1,40 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { CimaTexAppMockV2 } from './CimaTexAppMockV2';
 
 export const DemoSection: React.FC = () => {
   const { t } = useLanguage();
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
-
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe || typeof IntersectionObserver === 'undefined') return;
-
-    let played = false;
-    const triggerPlay = () => {
-      if (played) return;
-      played = true;
-      iframe.contentWindow?.postMessage('sbm:play', '*');
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry && entry.isIntersecting && !(entry.intersectionRatio < 0.5)) {
-          observer.disconnect();
-          if (iframe.contentDocument?.readyState === 'complete') {
-            triggerPlay();
-          } else {
-            iframe.addEventListener('load', triggerPlay, { once: true });
-          }
-        }
-      },
-      { threshold: [0, 0.5, 1] }
-    );
-
-    observer.observe(iframe);
-    return () => observer.disconnect();
-  }, []);
 
   const appMockRecord = (t.appMock ?? {}) as Record<string, string | undefined>;
   const subtitle = appMockRecord.subtitle ?? t.appMock?.description;
@@ -94,7 +63,6 @@ export const DemoSection: React.FC = () => {
         <div className="w-full border-t border-black/10 bg-background">
           <CimaTexAppMockV2 />
           <iframe
-            ref={iframeRef}
             src="/app-mock.html#designer"
             title="CimaTex"
             className="hidden"

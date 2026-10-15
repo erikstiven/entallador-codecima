@@ -56,6 +56,8 @@ const initialModalState: AlertModalConfig = {
   resolve: undefined,
 };
 
+let activeModalResolve: ((value: boolean) => void) | null = null;
+
 export const useAlertStore = create<AlertStoreState>((set, get) => ({
   modal: initialModalState,
   toasts: [],
@@ -69,11 +71,10 @@ export const useAlertStore = create<AlertStoreState>((set, get) => ({
     isDestructive,
   }) => {
     return new Promise<boolean>((resolve) => {
-      // Si ya había un resolver pendiente, ciérralo
-      const prevResolve = get().modal.resolve;
-      if (prevResolve) {
-        prevResolve(false);
+      if (activeModalResolve) {
+        activeModalResolve(false);
       }
+      activeModalResolve = resolve;
 
       const destructive =
         isDestructive !== undefined
@@ -90,7 +91,6 @@ export const useAlertStore = create<AlertStoreState>((set, get) => ({
           cancelText: cancelButtonText,
           icon,
           isDestructive: destructive,
-          resolve,
         },
       });
     });
@@ -103,10 +103,10 @@ export const useAlertStore = create<AlertStoreState>((set, get) => ({
     icon = 'info',
   }) => {
     return new Promise<boolean>((resolve) => {
-      const prevResolve = get().modal.resolve;
-      if (prevResolve) {
-        prevResolve(true);
+      if (activeModalResolve) {
+        activeModalResolve(true);
       }
+      activeModalResolve = resolve;
 
       set({
         modal: {
@@ -117,23 +117,24 @@ export const useAlertStore = create<AlertStoreState>((set, get) => ({
           confirmText: confirmButtonText,
           icon,
           isDestructive: false,
-          resolve,
         },
       });
     });
   },
 
   closeModal: (confirmed: boolean) => {
-    const { resolve } = get().modal;
+    const resolver = activeModalResolve;
+    activeModalResolve = null;
+
     set({
       modal: {
         ...get().modal,
         isOpen: false,
-        resolve: undefined,
       },
     });
-    if (resolve) {
-      resolve(confirmed);
+
+    if (resolver) {
+      resolver(confirmed);
     }
   },
 

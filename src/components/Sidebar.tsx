@@ -8,6 +8,7 @@ import {
   Settings,
 } from 'lucide-react';
 import { useNavigationStore, AppView } from '@/modules/navigation/navigationStore';
+import { navigateTo } from '@/landing/router/landingRouteStore';
 
 interface NavItem {
   id: AppView;
@@ -97,8 +98,13 @@ export const Sidebar: React.FC = () => {
         {/* Brand Header */}
         <div>
           <div className="h-14 px-3 border-b border-slate-100 flex items-center justify-between overflow-hidden">
-            <div className="flex items-center space-x-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 p-1 flex items-center justify-center overflow-hidden shadow-2xs flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => navigateTo('/')}
+              className="flex items-center space-x-2.5 overflow-hidden text-left hover:opacity-80 transition-opacity cursor-pointer group"
+              title="Volver a la página principal"
+            >
+              <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 p-1 flex items-center justify-center overflow-hidden shadow-2xs flex-shrink-0 group-hover:scale-105 transition-transform">
                 <img 
                   src="/cimatex-icon.png" 
                   alt="CimaTex" 
@@ -112,7 +118,7 @@ export const Sidebar: React.FC = () => {
                   </h1>
                 </div>
               )}
-            </div>
+            </button>
 
             {/* Marcador interno para compatibilidad con suite de diseño */}
             <span className="hidden py-0.5" aria-hidden="true" />

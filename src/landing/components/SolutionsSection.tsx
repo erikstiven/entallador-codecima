@@ -33,10 +33,10 @@ export const SolutionsSection: React.FC = () => {
               src="/shirt-scroll/sublimifyer-scroll.mp4"
               data-playback-rate={SOLUTIONS_VIDEO_PLAYBACK_RATE}
               className="pointer-events-none block w-full"
-              autoPlay
               muted
               loop
               playsInline
+              preload="none"
               disablePictureInPicture
               controlsList="nodownload noplaybackrate noremoteplayback"
               ref={(el) => {

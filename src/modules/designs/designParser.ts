@@ -165,13 +165,46 @@ export function parseDesignSvg(
     { type: 'SHORT_ESPALDA', regex: /id=["'][^"']*(?:SHORT_ESPALDA|SHORT_D|PANTALONETA_D)[^"']*["']/i },
   ];
 
+/**
+ * Extrae un grupo <g ...>...</g> respetando el anidamiento de subgrupos internos.
+ * Evita el truncamiento prematuro que ocurre con regex no codiciosa ([\s\S]*?)<\/g>.
+ */
+function extractBalancedSvgGroup(svg: string, idPattern: RegExp): string | null {
+  const openTagMatch = svg.match(new RegExp(`<g\\b[^>]*${idPattern.source}[^>]*>`, 'i'));
+  if (!openTagMatch || openTagMatch.index === undefined) {
+    return null;
+  }
+
+  const startIndex = openTagMatch.index;
+  let depth = 0;
+  const tagRegex = /<\/?g\b[^>]*>/gi;
+  tagRegex.lastIndex = startIndex;
+
+  let match: RegExpExecArray | null;
+  while ((match = tagRegex.exec(svg)) !== null) {
+    const tag = match[0];
+    if (tag.endsWith('/>')) {
+      continue;
+    }
+    if (tag.startsWith('</')) {
+      depth--;
+      if (depth === 0) {
+        return svg.substring(startIndex, match.index + tag.length);
+      }
+    } else {
+      depth++;
+    }
+  }
+
+  return openTagMatch[0];
+}
+
   let hasExplicitPieces = false;
   for (const entry of piecePatterns) {
-    const groupRegex = new RegExp(`<g\\b[^>]*${entry.regex.source}[^>]*>([\\s\\S]*?)<\\/g>`, 'i');
-    const match = svgContent.match(groupRegex);
-    if (match) {
+    const groupContent = extractBalancedSvgGroup(svgContent, entry.regex);
+    if (groupContent) {
       hasExplicitPieces = true;
-      const pieceSvg = commonDefsAndStyle ? `${commonDefsAndStyle}\n${match[0]}` : match[0];
+      const pieceSvg = commonDefsAndStyle ? `${commonDefsAndStyle}\n${groupContent}` : groupContent;
       pieceArtworks[entry.type] = {
         pieceType: entry.type,
         svgArtContent: pieceSvg,
@@ -202,6 +235,16 @@ export function parseDesignSvg(
       pieceType: 'MANGA_DER',
       svgArtContent: svgContent,
       placeholders: createDefaultPlaceholderRules('MANGA_DER'),
+    };
+    pieceArtworks['SHORT_FRENTE'] = {
+      pieceType: 'SHORT_FRENTE',
+      svgArtContent: svgContent,
+      placeholders: createDefaultPlaceholderRules('SHORT_FRENTE'),
+    };
+    pieceArtworks['SHORT_ESPALDA'] = {
+      pieceType: 'SHORT_ESPALDA',
+      svgArtContent: svgContent,
+      placeholders: createDefaultPlaceholderRules('SHORT_ESPALDA'),
     };
   }
 

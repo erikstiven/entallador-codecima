@@ -76,7 +76,7 @@ export const HeroSection: React.FC = () => {
   return (
     <section className="w-full overflow-hidden">
       <div className="relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900 bg-[radial-gradient(#00000010_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff12_1px,transparent_1px)] bg-[size:14px_14px]">
-        {/* Physics card marquee hidden as requested */}
+        {/* Physics card marquee */}
         <div className="hidden" aria-hidden="true">
           <HeroCardMarquee labels={labels} />
         </div>

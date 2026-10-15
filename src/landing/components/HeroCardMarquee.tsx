@@ -436,7 +436,7 @@ export const HeroCardMarquee: React.FC<{ labels: HeroMarqueeLabels }> = ({
       const track = trackRef.current;
       const groupWidth = groupWidthRef.current;
 
-      if (track && groupWidth > 0) {
+      if (track && groupWidth > 0 && track.offsetParent !== null) {
         const dt = prevTime ? Math.min((now - prevTime) / 1000, 0.05) : 1 / 60;
         const targetScroll = Math.max(
           0,

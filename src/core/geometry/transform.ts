@@ -104,17 +104,59 @@ export function getOrientedPolygon(
   targetXMm: number,
   targetYMm: number
 ): Polygon2D {
-  if (rotationDeg === 0) {
-    return polygon.map((p) => ({ x: p.x + targetXMm, y: p.y + targetYMm }));
+  const normDeg = ((rotationDeg % 360) + 360) % 360;
+  const len = polygon.length;
+
+  if (normDeg === 0) {
+    const res = new Array<Point2D>(len);
+    for (let i = 0; i < len; i++) {
+      res[i] = { x: polygon[i].x + targetXMm, y: polygon[i].y + targetYMm };
+    }
+    return res;
   }
 
-  const rotated = polygon.map((p) => rotatePoint(p, rotationDeg, { x: 0, y: 0 }));
-  const bbox = computeBoundingBox(rotated);
+  // Pre-calcular cos y sin exactos para rotaciones estándar (0, 90, 180, 270)
+  // eliminando la imprecisión de coma flotante (ej: 6.12e-17) y llamadas trigonométricas repetitivas
+  let cos: number;
+  let sin: number;
+  if (normDeg === 90) {
+    cos = 0;
+    sin = 1;
+  } else if (normDeg === 180) {
+    cos = -1;
+    sin = 0;
+  } else if (normDeg === 270) {
+    cos = 0;
+    sin = -1;
+  } else {
+    const rad = (normDeg * Math.PI) / 180.0;
+    cos = Math.cos(rad);
+    sin = Math.sin(rad);
+  }
 
-  return rotated.map((p) => ({
-    x: p.x - bbox.minX + targetXMm,
-    y: p.y - bbox.minY + targetYMm,
-  }));
+  let minX = Infinity;
+  let minY = Infinity;
+  const rotX = new Float64Array(len);
+  const rotY = new Float64Array(len);
+
+  for (let i = 0; i < len; i++) {
+    const px = polygon[i].x;
+    const py = polygon[i].y;
+    const rx = px * cos - py * sin;
+    const ry = px * sin + py * cos;
+    rotX[i] = rx;
+    rotY[i] = ry;
+    if (rx < minX) minX = rx;
+    if (ry < minY) minY = ry;
+  }
+
+  const shiftX = targetXMm - minX;
+  const shiftY = targetYMm - minY;
+  const result = new Array<Point2D>(len);
+  for (let i = 0; i < len; i++) {
+    result[i] = { x: rotX[i] + shiftX, y: rotY[i] + shiftY };
+  }
+  return result;
 }
 
 /**

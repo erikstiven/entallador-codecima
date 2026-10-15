@@ -33,6 +33,38 @@ export default defineConfig(({ mode }) => {
     worker: {
       format: 'es',
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('jspdf') || id.includes('pdf-lib') || id.includes('svg2pdf.js')) {
+                return 'vendor-pdf';
+              }
+              if (id.includes('xlsx') || id.includes('exceljs')) {
+                return 'vendor-excel';
+              }
+              if (id.includes('sql.js')) {
+                return 'vendor-db';
+              }
+              if (id.includes('opentype.js')) {
+                return 'vendor-fonts';
+              }
+              if (id.includes('clipper2-wasm')) {
+                return 'vendor-geometry';
+              }
+              if (id.includes('lucide-react')) {
+                return 'vendor-icons';
+              }
+              if (id.includes('react') || id.includes('react-dom') || id.includes('zustand')) {
+                return 'vendor-framework';
+              }
+            }
+          },
+        },
+      },
+      chunkSizeWarningLimit: 1200,
+    },
     test: {
       globals: true,
       environment: 'node',

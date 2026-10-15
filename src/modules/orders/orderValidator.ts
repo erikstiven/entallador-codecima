@@ -23,18 +23,23 @@ export function normalizePlayerName(raw: string): string {
  */
 export function normalizePlayerNumber(raw: string | number): string {
   if (raw === undefined || raw === null) return '';
-  return String(raw).trim();
+  let str = String(raw).trim();
+  // Quitar sufijo decimal generado por Excel cuando lee enteros como flotantes (ej: "10.0" -> "10")
+  if (/^\d+\.0$/.test(str)) {
+    str = str.replace(/\.0$/, '');
+  }
+  return str;
 }
 
 /**
- * Normaliza la denominación de la talla (ej. "TALLA 28", "T-28", "t28" -> "28", "m" -> "M")
+ * Normaliza la denominación de la talla (ej. "TALLA 28", "T-28", "T 28", "t28" -> "28", "m" -> "M")
  */
 export function normalizeSizeName(raw: string | number): string {
   if (raw === undefined || raw === null) return '';
   const str = String(raw).trim().toUpperCase();
 
-  // Si viene con prefijo como "TALLA 28", "T-28", "T28", "TALLA M", "T-L", "SZ-XL", extraer denominación
-  const match = str.match(/^(?:TALLA\s*|T-?|SZ-?)([A-Z0-9]+)$/i);
+  // Si viene con prefijo como "TALLA 28", "T-28", "T 28", "T28", "TALLA M", "T-L", "SZ-XL", extraer denominación
+  const match = str.match(/^(?:TALLA\s*|T-?\s*|SZ-?\s*)([A-Z0-9]+)$/i);
   if (match) {
     return match[1];
   }

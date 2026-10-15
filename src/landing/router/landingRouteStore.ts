@@ -185,7 +185,36 @@ export function navigateTo(target: string): void {
   }
 }
 
-let listenersAttached = false;
+let listenersRefCount = 0;
+let removeGlobalListeners: (() => void) | null = null;
+
+function attachGlobalListeners(syncFromLocation: () => void) {
+  listenersRefCount++;
+  if (listenersRefCount === 1) {
+    const handleLocationChange = () => {
+      syncFromLocation();
+      const currentHash = window.location.hash;
+      if (currentHash && !currentHash.startsWith('#/')) {
+        scrollToSectionHash(currentHash);
+      }
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    removeGlobalListeners = () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
+  }
+}
+
+function detachGlobalListeners() {
+  listenersRefCount = Math.max(0, listenersRefCount - 1);
+  if (listenersRefCount === 0 && removeGlobalListeners) {
+    removeGlobalListeners();
+    removeGlobalListeners = null;
+  }
+}
 
 export function useAppRoute(): AppRouteState & {
   navigateTo: (target: string) => void;
@@ -199,23 +228,10 @@ export function useAppRoute(): AppRouteState & {
   );
 
   useEffect(() => {
-    if (typeof window === 'undefined' || listenersAttached) return;
-    listenersAttached = true;
-
-    const handleLocationChange = () => {
-      syncFromLocation();
-      const currentHash = window.location.hash;
-      if (currentHash && !currentHash.startsWith('#/')) {
-        scrollToSectionHash(currentHash);
-      }
-    };
-
-    window.addEventListener('popstate', handleLocationChange);
-    window.addEventListener('hashchange', handleLocationChange);
+    if (typeof window === 'undefined') return;
+    attachGlobalListeners(syncFromLocation);
     return () => {
-      window.removeEventListener('popstate', handleLocationChange);
-      window.removeEventListener('hashchange', handleLocationChange);
-      listenersAttached = false;
+      detachGlobalListeners();
     };
   }, [syncFromLocation]);
 

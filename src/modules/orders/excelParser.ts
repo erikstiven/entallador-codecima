@@ -34,13 +34,24 @@ function mapColumnIndices(headers: string[]): Record<string, number> {
   const map: Record<string, number> = {};
 
   headers.forEach((h, idx) => {
+    const rawTrimmed = String(h).trim().toLowerCase();
     const clean = cleanHeaderName(h);
 
-    if (['talla', 'tallas', 'size', 'talle', 'tamano', 'medida'].includes(clean)) {
+    if (
+      ['talla', 'tallas', 'size', 'talle', 'tamano', 'medida', 't'].includes(clean) ||
+      rawTrimmed === 't.' ||
+      rawTrimmed === 't'
+    ) {
       map.size = idx;
     } else if (['nombre', 'jugador', 'name', 'player', 'atleta', 'apellido'].includes(clean)) {
       map.name = idx;
-    } else if (['numero', 'num', 'dorsal', 'number', 'no', 'numcamiseta'].includes(clean)) {
+    } else if (
+      ['numero', 'num', 'dorsal', 'number', 'no', 'n', 'numcamiseta'].includes(clean) ||
+      rawTrimmed === '#' ||
+      rawTrimmed === 'n°' ||
+      rawTrimmed === 'nº' ||
+      rawTrimmed === 'no.'
+    ) {
       map.number = idx;
     } else if (['tipo', 'prenda', 'tipoprenda', 'uniforme', 'item', 'type'].includes(clean)) {
       map.garmentType = idx;

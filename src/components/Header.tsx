@@ -14,6 +14,7 @@ import {
 import { useNavigationStore } from '@/modules/navigation/navigationStore';
 import { useSystemSettingsStore } from '@/modules/settings/systemSettingsStore';
 import { useAuthStore } from '@/landing/auth/authStore';
+import { navigateTo } from '@/landing/router/landingRouteStore';
 import { getRoleTheme } from '@/core/theme/userRoleTokens';
 
 interface NotificationItem {
@@ -349,6 +350,7 @@ export const Header: React.FC = () => {
                   onClick={() => {
                     setIsUserMenuOpen(false);
                     logout();
+                    navigateTo('/');
                   }}
                   className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 font-medium flex items-center gap-2.5 cursor-pointer"
                 >

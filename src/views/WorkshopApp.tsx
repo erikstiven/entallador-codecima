@@ -67,6 +67,13 @@ export const WorkshopApp: React.FC = () => {
         void restoreAndRegisterCustomFonts();
       })
       .catch((err) => console.error('Error inicializando SQLite:', err));
+
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('overflow-hidden', 'select-none');
+        document.documentElement.classList.add('landing-active');
+      }
+    };
   }, []);
 
   const renderCurrentView = () => {

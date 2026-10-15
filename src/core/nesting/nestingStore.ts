@@ -75,13 +75,37 @@ export const useNestingStore = create<NestingState>((set, get) => ({
     set({ isNesting: true, nestingProgress: 0 });
     const { nestingMode, nestingAlgorithm, spacingMm, printableWidthMm, maxSheetLengthMm } = get();
 
-    // Flyweight: Asegurar que svgContent no se duplique en el store ni se serialice al Web Worker
+    // Flyweight: Mapear explícitamente los campos geométricos para el Web Worker.
+    // Solo si svgContent es una propiedad propia de valor (tests o piezas con SVG directo),
+    // se transfiere al registro. Si es un getter calculado de GeneratedPiece, NO se evalúa
+    // para evitar instanciar cientos de MB de cadenas SVG crudas en memoria.
     const lightweightPieces: NestingPieceInput[] = pieces.map((p) => {
-      const { svgContent, ...rest } = p;
-      if (typeof svgContent === 'string' && svgContent.length > 0) {
-        pieceSvgRegistry.set(p.id, svgContent);
+      const pAny = p as any;
+      const desc = Object.getOwnPropertyDescriptor(p, 'svgContent');
+      if (desc && !desc.get && typeof desc.value === 'string' && desc.value.length > 0) {
+        pieceSvgRegistry.set(p.id, desc.value);
       }
-      return rest;
+
+      return {
+        id: p.id,
+        orderItemId: p.orderItemId,
+        pieceId: p.pieceId,
+        playerName: p.playerName,
+        playerNumber: p.playerNumber,
+        sizeName: p.sizeName,
+        pieceType: p.pieceType,
+        bbox: {
+          width: p.bbox.width,
+          height: p.bbox.height,
+        },
+        areaMm2: p.areaMm2,
+        allowedRotations: pAny.allowedRotations ?? pAny.allowedRotationsDeg ?? [0],
+        cutPolygon: p.cutPolygon,
+        isLocked: pAny.isLocked,
+        xMm: pAny.xMm,
+        yMm: pAny.yMm,
+        rotationDeg: pAny.rotationDeg,
+      };
     });
 
     const options: NestingOptions = {
