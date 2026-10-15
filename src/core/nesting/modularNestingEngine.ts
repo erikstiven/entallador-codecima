@@ -1319,6 +1319,7 @@ export function performModularNesting(
         } else {
           // --- Tallas adultas extra grandes que no caben juntas en ancho ---
           // Delantero y Espalda se apilan en la columna izquierda a X = sideMarginMm
+          const playerStartY = jerseyY;
           if (del) {
             placedPieces.push({
               ...del,
@@ -1347,23 +1348,95 @@ export function performModularNesting(
             jerseyY += hEsp + spacingMm;
           }
 
-          // Acomodar mangas en la columna derecha de forma continua sin reiniciar Y ni dejar huecos
+          const playerBottomY = jerseyY;
+          const maxBodyW = Math.max(wDel, wEsp);
+          const rowRightEdge = sideMarginMm + maxBodyW + spacingMm;
+          const availableRightWidth = printableWidthMm - rowRightEdge - sideMarginMm;
+
           const candidatesToPlace = [...leftoverSleeves];
           leftoverSleeves.length = 0;
 
-          const collarsToPlace = [...rowCollars, ...leftoverCollars];
-          leftoverCollars.length = 0;
+          let sleeveCurrY = continuousCol1Y;
+          let sleeveToggle = 90;
 
-          const rowRight = sideMarginMm + Math.max(wDel, wEsp);
-          placeSleevesInCorridor(candidatesToPlace, rowRight);
+          while (candidatesToPlace.length > 0) {
+            const sm = candidatesToPlace[0];
+            const sW = sm.bbox.height;
+            const sH = sm.bbox.width;
 
+            const safeX = getMinSafeXForYRange(
+              placedPieces,
+              sleeveCurrY,
+              sleeveCurrY + sH,
+              spacingMm,
+              rowRightEdge
+            );
+            const currentAvailableW = printableWidthMm - safeX - sideMarginMm;
+
+            // 1. ¿Caben 2 mangas en paralelo en el ancho libre a la derecha?
+            if (
+              candidatesToPlace.length >= 2 &&
+              currentAvailableW >= sW * 2 + spacingMm &&
+              sleeveCurrY + sH <= playerBottomY + 0.5
+            ) {
+              const sm2 = candidatesToPlace[1];
+              const sW2 = sm2.bbox.height;
+              const sH2 = sm2.bbox.width;
+              placedPieces.push(
+                {
+                  ...sm,
+                  xMm: safeX,
+                  yMm: Number(sleeveCurrY.toFixed(2)),
+                  rotationDeg: 90,
+                  effectiveWidthMm: sW,
+                  effectiveHeightMm: sH,
+                  isLocked: false,
+                  sheetIndex: sheetIdx,
+                },
+                {
+                  ...sm2,
+                  xMm: Number((safeX + sW + spacingMm).toFixed(2)),
+                  yMm: Number(sleeveCurrY.toFixed(2)),
+                  rotationDeg: 90,
+                  effectiveWidthMm: sW2,
+                  effectiveHeightMm: sH2,
+                  isLocked: false,
+                  sheetIndex: sheetIdx,
+                }
+              );
+              sleeveCurrY += Math.max(sH, sH2) + spacingMm;
+              candidatesToPlace.splice(0, 2);
+              continue;
+            }
+
+            // 2. Columna única pegada al cuerpo a partir de safeX
+            if (sW > currentAvailableW) break;
+            if (sleeveCurrY + sH > playerBottomY + 0.5) break;
+
+            placedPieces.push({
+              ...sm,
+              xMm: safeX,
+              yMm: Number(sleeveCurrY.toFixed(2)),
+              rotationDeg: sleeveToggle,
+              effectiveWidthMm: sW,
+              effectiveHeightMm: sH,
+              isLocked: false,
+              sheetIndex: sheetIdx,
+            });
+
+            sleeveCurrY += sH + spacingMm;
+            sleeveToggle = sleeveToggle === 90 ? 270 : 90;
+            candidatesToPlace.splice(0, 1);
+          }
+
+          continuousCol1Y = sleeveCurrY;
+          continuousCol2Y = sleeveCurrY;
           leftoverSleeves.push(...candidatesToPlace);
-          leftoverCollars.push(...collarsToPlace);
-        }
 
           if (cuello) leftoverCollars.push(cuello);
           for (const o of playerSet.otherPieces) leftoverCollars.push(o);
         }
+      }
 
       const jerseyBottomY = Math.max(jerseyY, continuousCol1Y, continuousCol2Y);
 

@@ -908,62 +908,57 @@ export const ProductionNestingView: React.FC = () => {
             </div>
           </div>}
 
-          {/* TIRA DE PESTAÑAS DE PLIEGOS PARTICIONADOS (PARTE 1, PARTE 2...) */}
+          {/* SELECTOR DE PARTES / PLIEGOS PARTICIONADOS EN UN SELECT COMPACTO Y MODERNO */}
           {sheets.length > 0 && (
-            <div className="bg-white border-b border-slate-200 px-6 py-2 overflow-x-auto flex items-center justify-between gap-3 flex-shrink-0 scrollbar-thin shadow-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-500 uppercase font-mono font-bold">Partes / Pliegos:</span>
-                {sheets.map((sheet, idx) => {
-                  const isSelected = !viewAllSheets && idx === activeSheetIndex;
-                  const isCamiseta = sheet.garmentType === 'CAMISETA';
-                  const lengthM = (sheet.heightMm / 1000).toFixed(2);
-
-                  return (
-                    <button
-                      key={sheet.id || idx}
-                      onClick={() => {
-                        setViewAllSheets(false);
-                        setActiveSheetIndex(idx);
-                      }}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all flex-shrink-0 cursor-pointer ${
-                        isSelected
-                          ? 'bg-violet-600 border-violet-600 text-white shadow-xs font-bold'
-                          : 'bg-white border-slate-200 text-slate-700 hover:text-slate-900 hover:border-slate-300 shadow-xs'
-                      }`}
-                    >
-                      {isCamiseta ? (
-                        <Shirt className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-500'}`} />
-                      ) : (
-                        <Scissors className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-500'}`} />
-                      )}
-                      <span>{sheet.title}</span>
-                      <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${isSelected ? 'bg-violet-800 text-amber-300' : 'bg-slate-100 text-slate-700'}`}>
-                        {lengthM} m
-                      </span>
-                      <span className={`text-[10px] ${isSelected ? 'text-violet-200' : 'text-slate-400'}`}>
-                        ({sheet.placedPieces.length} pzs)
-                      </span>
-                    </button>
-                  );
-                })}
+            <div className="bg-white border-b border-slate-200 px-6 py-2 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5 font-mono">
+                  <Layers className="w-4 h-4 text-violet-600" />
+                  <span>PARTE / PLIEGO:</span>
+                </span>
+                <select
+                  value={viewAllSheets ? 'ALL' : activeSheetIndex}
+                  onChange={(e) => {
+                    if (e.target.value === 'ALL') {
+                      setViewAllSheets(true);
+                    } else {
+                      setViewAllSheets(false);
+                      setActiveSheetIndex(Number(e.target.value));
+                    }
+                  }}
+                  className="bg-white border border-slate-300 hover:border-violet-500 rounded-lg px-3 py-1.5 text-xs font-bold font-mono text-violet-700 shadow-2xs focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                >
+                  {sheets.map((sheet, idx) => {
+                    const isCamiseta = sheet.garmentType === 'CAMISETA';
+                    const lengthM = (sheet.heightMm / 1000).toFixed(2);
+                    return (
+                      <option key={sheet.id || idx} value={idx}>
+                        {isCamiseta ? '👕' : '🩳'} {sheet.title} — {lengthM} m ({sheet.placedPieces.length} pzs)
+                      </option>
+                    );
+                  })}
+                  <option value="ALL">👁️ Ver Rollo Completo ({sheets.length} partes)</option>
+                </select>
 
                 <button
-                  onClick={() => setViewAllSheets(true)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all flex-shrink-0 cursor-pointer ${
+                  type="button"
+                  onClick={() => setViewAllSheets(!viewAllSheets)}
+                  className={`px-2.5 py-1.5 rounded-lg border text-xs font-mono font-semibold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 ${
                     viewAllSheets
-                      ? 'bg-violet-600 border-violet-600 text-white shadow-xs font-bold'
-                      : 'bg-white border-slate-200 text-slate-700 hover:text-slate-900 hover:border-slate-300 shadow-xs'
+                      ? 'bg-violet-600 text-white border-violet-600 shadow-xs'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                   }`}
+                  title={viewAllSheets ? 'Ver pliego individual' : 'Ver todo el rollo completo'}
                 >
-                  <Layers className={`w-3.5 h-3.5 ${viewAllSheets ? 'text-white' : 'text-violet-600'}`} />
-                  <span>Ver Rollo Completo</span>
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>{viewAllSheets ? 'Ver Pliego' : 'Ver Todo'}</span>
                 </button>
               </div>
 
               {activeSheet && !viewAllSheets && (
-                <div className="hidden lg:flex items-center gap-2 text-[11px] font-mono text-slate-500">
+                <div className="flex items-center gap-2 text-xs font-mono text-slate-600">
                   <span className="text-slate-400">Jugadores en esta parte:</span>
-                  <span className="text-slate-700 font-semibold truncate max-w-xs">
+                  <span className="text-violet-700 font-bold truncate max-w-md bg-violet-50 px-2 py-0.5 rounded border border-violet-200">
                     {activeSheet.playerNames.join(', ')}
                   </span>
                 </div>
