@@ -1303,13 +1303,20 @@ export function performModularNesting(
           }
 
           const rowRightEdge = (esp ? espX + wEsp : delX + wDel) + spacingMm;
+          const availableRightWidth = printableWidthMm - rowRightEdge - sideMarginMm;
           const candidatesToPlace = [...leftoverSleeves];
           leftoverSleeves.length = 0;
 
           const collarsToPlace = [...rowCollars, ...leftoverCollars];
           leftoverCollars.length = 0;
 
-          placeSleevesInCorridor(candidatesToPlace, rowRightEdge);
+          const minSleeveDimension = candidatesToPlace.length > 0
+            ? Math.min(...candidatesToPlace.map((c) => Math.min(c.bbox.width, c.bbox.height)))
+            : 150;
+
+          if (availableRightWidth >= minSleeveDimension) {
+            placeSleevesInCorridor(candidatesToPlace, rowRightEdge);
+          }
 
           // Si sobran mangas que no cupieron en esta fila, guardar para siguientes filas o la base
           leftoverSleeves.push(...candidatesToPlace);
@@ -1351,12 +1358,20 @@ export function performModularNesting(
           const playerBottomY = jerseyY;
           const maxBodyW = Math.max(wDel, wEsp);
           const rowRightEdge = sideMarginMm + maxBodyW + spacingMm;
-          const availableRightWidth = printableWidthMm - rowRightEdge - sideMarginMm;
 
           const candidatesToPlace = [...leftoverSleeves];
           leftoverSleeves.length = 0;
 
-          let sleeveCurrY = continuousCol1Y;
+          const safeAtContinuous = getMinSafeXForYRange(
+            placedPieces,
+            continuousCol1Y,
+            continuousCol1Y + 50,
+            spacingMm,
+            rowRightEdge
+          );
+          let sleeveCurrY = (safeAtContinuous > rowRightEdge + 1)
+            ? Math.max(continuousCol1Y, playerStartY)
+            : continuousCol1Y;
           let sleeveToggle = 90;
 
           while (candidatesToPlace.length > 0) {

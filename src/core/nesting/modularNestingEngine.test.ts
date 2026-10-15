@@ -476,16 +476,8 @@ describe('modularNestingEngine', () => {
     });
 
     console.log('Result sheets count:', result.sheets?.length);
-    for (const p of gen.pieces) {
-      if (p.pieceType.startsWith('MANGA') && p.playerName === 'CARLOS') {
-        console.log(`[CARLOS ${p.pieceType}] bbox=${JSON.stringify(p.bbox)} cutPolyLen=${p.cutPolygon?.length}`);
-      }
-    }
     for (const sheet of result.sheets || []) {
-      console.log(`Sheet #${sheet.sheetNumber} (${sheet.garmentType}) height=${sheet.heightMm}:`);
-      for (const p of sheet.placedPieces) {
-        console.log(`  [${p.playerName || 'NO_NAME'}] ${p.pieceType} x=${p.xMm} y=${p.yMm} w=${p.effectiveWidthMm} h=${p.effectiveHeightMm} rot=${p.rotationDeg}`);
-      }
+      console.log(`Sheet #${sheet.sheetNumber} (${sheet.garmentType}) height=${sheet.heightMm} players=${sheet.playerNames.join(', ')}:`);
 
       // Validar que la manga de Carlos llena el espacio lateral junto a Camila (sin hueco muerto)
       const carlosMangaIzq = sheet.placedPieces.find((p) => p.playerName === 'CARLOS' && p.pieceType === 'MANGA_IZQ');
@@ -807,6 +799,85 @@ describe('modularNestingEngine', () => {
         const gap = nextTop - currentBottom;
         // El gap debe ser el spacing normal (~4 mm), nunca un hueco de 280 mm
         expect(gap).toBeLessThanOrEqual(15);
+      }
+    });
+
+    it('simula exactamente el pedido de Colombia de 20 jugadores y verifica PARTE 3', async () => {
+      const colombiaPath = 'C:/Users/Det-Pc/Downloads/Equipo_de_Colombia_Uniformes.xlsx';
+      const svgPath = path.resolve(__dirname, '../../../tests/fixtures/pruebas/moldes 2026.svg');
+      if (!fs.existsSync(colombiaPath) || !fs.existsSync(svgPath)) return;
+
+      const excelBuf = fs.readFileSync(colombiaPath);
+      const parsedExcel = parseExcelBuffer(excelBuf);
+      const svgContent = fs.readFileSync(svgPath, 'utf8');
+      const { patternSet } = parsePatternSvg(svgContent, 'TEST', 'FUTBOL', 'moldes.svg');
+      console.log('Item sizes:', [...new Set(parsedExcel.items.map(it => it.sizeName))]);
+      console.log('patternSet keys:', Object.keys(patternSet || {}));
+      console.log('patternSet sizes:', (patternSet as any)?.sizes);
+      const dummyDesign = parseDesignSvg('<svg width="100" height="100"><rect width="100" height="100" fill="red"/></svg>', 'DUMMY', 'FUTBOL');
+      (dummyDesign as any).pieceArtworks = {
+        DELANTERO: { id: 'a1', pieceType: 'DELANTERO', svgContent: '<svg width="100" height="100"><rect fill="yellow"/></svg>' },
+        DELANTERO_V: { id: 'a2', pieceType: 'DELANTERO_V', svgContent: '<svg width="100" height="100"><rect fill="yellow"/></svg>' },
+        ESPALDA: { id: 'a3', pieceType: 'ESPALDA', svgContent: '<svg width="100" height="100"><rect fill="yellow"/></svg>' },
+        MANGA_IZQ: { id: 'a4', pieceType: 'MANGA_IZQ', svgContent: '<svg width="100" height="100"><rect fill="yellow"/></svg>' },
+        MANGA_DER: { id: 'a5', pieceType: 'MANGA_DER', svgContent: '<svg width="100" height="100"><rect fill="yellow"/></svg>' },
+      };
+      const normalizedItems = parsedExcel.items.map((it: any) => ({
+        ...it,
+        garmentType: 'CAMISETA',
+        necklineType: 'V',
+        isValid: true,
+        errors: [],
+      }));
+      const gen = generateGarmentPieces(normalizedItems, patternSet, dummyDesign, { productionScope: 'CAMISETA_ONLY' });
+
+      console.log('ParsedExcel items:', parsedExcel.items.length, 'Gen pieces:', gen.pieces.length);
+      const nestingPieces: NestingPieceInput[] = gen.pieces.map((p: any) => ({
+        id: p.id,
+        orderItemId: p.orderItemId,
+        pieceId: p.pieceId || p.id,
+        pieceType: p.pieceType,
+        playerName: p.playerName,
+        playerNumber: p.playerNumber,
+        sizeName: p.sizeName,
+        bbox: p.bbox,
+        areaMm2: p.bbox.width * p.bbox.height,
+        allowedRotations: [0, 90, 180, 270],
+        cutPolygon: p.cutPolygon,
+        svgContent: p.svgContent,
+      }));
+
+      const res = performModularNesting(nestingPieces, {
+        printableWidthMm: 1120,
+        maxSheetLengthMm: 5000,
+        spacingMm: 3,
+      });
+
+      console.log('=== COLOMBIA TEST: TOTAL SHEETS ===', res.sheets?.length);
+      for (const sheet of res.sheets || []) {
+        console.log(`SHEET #${sheet.sheetNumber} (${sheet.garmentType}) length=${(sheet.heightMm / 1000).toFixed(2)}m players=${sheet.playerNames.join(', ')}`);
+        // Validar no solapamiento
+        const pieces = sheet.placedPieces;
+        for (let i = 0; i < pieces.length; i++) {
+          const a = pieces[i];
+          expect(a.xMm).toBeGreaterThanOrEqual(0);
+          expect(a.xMm + a.effectiveWidthMm).toBeLessThanOrEqual(1120);
+
+          for (let j = i + 1; j < pieces.length; j++) {
+            const b = pieces[j];
+            const overlapX = Math.max(0, Math.min(a.xMm + a.effectiveWidthMm, b.xMm + b.effectiveWidthMm) - Math.max(a.xMm, b.xMm));
+            const overlapY = Math.max(0, Math.min(a.yMm + a.effectiveHeightMm, b.yMm + b.effectiveHeightMm) - Math.max(a.yMm, b.yMm));
+            if (overlapX > 0.1 && overlapY > 0.1) {
+              const polyA = getOrientedPolygon(a.cutPolygon, a.rotationDeg, a.xMm, a.yMm);
+              const polyB = getOrientedPolygon(b.cutPolygon, b.rotationDeg, b.xMm, b.yMm);
+              const intersectionArea = await calculatePolygonalIntersectionArea(polyA, polyB);
+              expect(
+                intersectionArea,
+                `Colision en pliego #${sheet.sheetNumber} entre ${a.playerName} (${a.pieceType}) y ${b.playerName} (${b.pieceType})`
+              ).toBeLessThan(1.0);
+            }
+          }
+        }
       }
     });
   });
