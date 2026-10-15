@@ -779,18 +779,18 @@ exportMoldesParaCimatex();`;
                     size="sm"
                     onClick={() => appendFileInputRef.current?.click()}
                     disabled={isAppendingSvg || isImportingSvg}
-                    className="shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
-                    title="Anexar piezas desde otro archivo SVG (ej. pantalonetas) a este mismo molde"
+                    className="shadow-xs cursor-pointer font-medium"
+                    title="Anexar más piezas o moldes desde otro archivo SVG a este catálogo"
                   >
                     {isAppendingSvg ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
-                        <span>Anexando piezas...</span>
+                        <span>Anexando moldes...</span>
                       </>
                     ) : (
                       <>
                         <Layers className="w-3.5 h-3.5" />
-                        <span>+ Anexar Piezas SVG (ej. Pantalonetas)</span>
+                        <span>+ Anexar Más Moldes al Catálogo</span>
                       </>
                     )}
                   </Button>
