@@ -12,8 +12,47 @@ import { normalizeSizeName } from '@/modules/orders/orderValidator';
 /**
  * Expresión regular para clasificar el tipo de pieza a partir de su identificador
  */
-function detectPieceType(identifier: string): PieceType | null {
-  const clean = identifier.toUpperCase();
+/**
+ * Detecta si un identificador o texto tiene indicios de pierna/manga izquierda o derecha.
+ * Soporta nomenclaturas industriales de patronaje:
+ * - Izquierda: "26_I", "26-I", "26 I", "T26_I", "26_IZQ", "26-IZQ", "26 IZQ", "SHORT_I", "SHORT_F", "IZQUIERDA", "LEFT", "_L"
+ * - Derecha: "26_D", "26-D", "26 D", "T26_D", "26_DER", "26-DER", "26 DER", "SHORT_D", "SHORT_A", "SHORT_E", "DERECHA", "RIGHT", "_R"
+ */
+export function detectSideSuffix(text: string): 'IZQ' | 'DER' | null {
+  const clean = text.toUpperCase().trim();
+
+  // 1. Detección de lado Izquierdo (Frente / Pierna Izquierda / Manga Izquierda)
+  if (
+    /(?:^|[-_\s])(IZQ|IZQUIERDA|I|L|LEFT|F|FRENTE)(?:[-_\s]|$)/i.test(clean) ||
+    clean.endsWith('_I') ||
+    clean.endsWith('-I') ||
+    clean.endsWith(' I')
+  ) {
+    return 'IZQ';
+  }
+
+  // 2. Detección de lado Derecho (Espalda / Pierna Derecha / Manga Derecha)
+  if (
+    /(?:^|[-_\s])(DER|DERECHA|D|R|RIGHT|E|A|TRASERO|ESPALDA)(?:[-_\s]|$)/i.test(clean) ||
+    clean.endsWith('_D') ||
+    clean.endsWith('-D') ||
+    clean.endsWith(' D')
+  ) {
+    return 'DER';
+  }
+
+  return null;
+}
+
+/**
+ * Clasifica el tipo de pieza a partir de su identificador o texto asociado,
+ * con soporte para contexto geométrico opcional (short, manga, torso).
+ */
+export function detectPieceType(
+  identifier: string,
+  context?: { isShort?: boolean; isSleeve?: boolean }
+): PieceType | null {
+  const clean = identifier.toUpperCase().trim();
 
   if (clean.includes('CUELLO_V') || clean.includes('DELANTERO_V') || clean.includes('FRENTE_V') || clean.includes('V_NECK') || clean.includes('_V')) {
     return 'DELANTERO_V';
@@ -21,12 +60,14 @@ function detectPieceType(identifier: string): PieceType | null {
   if (clean.includes('CUELLO_RED') || clean.includes('DELANTERO_RED') || clean.includes('ROUND_NECK') || clean.includes('_REDONDO')) {
     return 'DELANTERO_REDONDO';
   }
-  if (clean.includes('DELANTERO') || clean.includes('FRENTE') || clean.includes('FRONT')) {
+  if ((clean.includes('DELANTERO') || clean.includes('FRENTE') || clean.includes('FRONT')) && !clean.includes('SHORT') && !clean.includes('PANTALONETA')) {
     return 'DELANTERO';
   }
-  if (clean.includes('ESPALDA') || clean.includes('TRASERO') || clean.includes('BACK')) {
+  if ((clean.includes('ESPALDA') || clean.includes('TRASERO') || clean.includes('BACK')) && !clean.includes('SHORT') && !clean.includes('PANTALONETA')) {
     return 'ESPALDA';
   }
+
+  // Mangas
   if (clean.includes('MANGA_I') || clean.includes('MANGA_IZQ') || clean.includes('SLEEVE_L') || clean.includes('MANGA_IZQUIERDA')) {
     return 'MANGA_IZQ';
   }
@@ -34,50 +75,61 @@ function detectPieceType(identifier: string): PieceType | null {
     return 'MANGA_DER';
   }
   if (clean.includes('MANGA') || clean.includes('SLEEVE')) {
-    return 'MANGA_IZQ'; // Predeterminado para mangas no especificadas
+    const side = detectSideSuffix(clean);
+    if (side === 'DER') return 'MANGA_DER';
+    return 'MANGA_IZQ';
   }
-  if (clean.includes('SHORT_FRENTE')) {
-    return 'SHORT_FRENTE';
-  }
-  if (clean.includes('SHORT_ESPALDA') || clean.includes('SHORT_TRASERO')) {
-    return 'SHORT_ESPALDA';
-  }
-  if (clean.includes('PANTALONETA_I') || clean.includes('PANTALONETA_IZQ') || clean.includes('SHORT_I') || clean.includes('SHORT_IZQ') || clean.includes('SHORT_F')) {
-    return 'PANTALONETA_IZQ';
-  }
-  if (clean.includes('PANTALONETA_D') || clean.includes('PANTALONETA_DER') || clean.includes('SHORT_D') || clean.includes('SHORT_DER') || clean.includes('SHORT_E') || clean.includes('SHORT_A')) {
-    return 'PANTALONETA_DER';
-  }
-  if (clean.includes('PANTALONETA') || clean.includes('SHORT')) {
-    return 'PANTALONETA_IZQ';
-  }
+
+  // Cuello / Rib
   if (clean.includes('CUELLO') || clean.includes('COLLAR') || clean.includes('RIB')) {
     return 'CUELLO';
+  }
+
+  // Shorts / Pantalonetas con palabras explícitas
+  const isExplicitShort = clean.includes('PANTALONETA') || clean.includes('SHORT') || clean.includes('BERMUDA');
+  if (isExplicitShort) {
+    const side = detectSideSuffix(clean);
+    if (side === 'DER') return 'PANTALONETA_DER';
+    return 'PANTALONETA_IZQ';
+  }
+
+  // Detección contextual por sufijo de lado (ej. "26_I", "26_D", "26-I", "26-D", "T26_I", "T26_D")
+  const side = detectSideSuffix(clean);
+  if (side && context?.isShort) {
+    return side === 'DER' ? 'PANTALONETA_DER' : 'PANTALONETA_IZQ';
+  }
+  if (side && context?.isSleeve) {
+    return side === 'DER' ? 'MANGA_DER' : 'MANGA_IZQ';
   }
 
   return null;
 }
 
 /**
- * Expresión regular para extraer la talla de un identificador (ej. "T28", "TALLA_30", "SZ_S", "M")
+ * Expresión regular para extraer la talla de un identificador o texto (ej. "T28", "TALLA_30", "SZ_S", "M", "26_I", "26 D", "26")
  */
-function detectSizeName(identifier: string): string | null {
-  const clean = identifier.toUpperCase();
+export function detectSizeName(identifier: string): string | null {
+  const clean = identifier.toUpperCase().trim();
 
-  // Patrón 1: T28, TALLA28, T_28, TALLA_30
+  // Patrón 0: Número o talla sola como "26", "28", "30", "S", "M", "L", "XL", "XXL"
+  if (/^\b(XXL|XL|XS|S|M|L|\d{1,2})\b$/i.test(clean)) {
+    return normalizeSizeName(clean);
+  }
+
+  // Patrón 1: T28, TALLA28, T_28, TALLA_30, SZ_28
   const matchNum = clean.match(/(?:TALLA|T|SZ)[-_]?(\d+)/i);
   if (matchNum) {
     return matchNum[1];
   }
 
   // Patrón 2: Talla alfanumérica al inicio o entre delimitadores: T_S, TALLA_M, T_XL, TS_
-  const matchAlpha = clean.match(/(?:TALLA|T|SZ)[-_]?(XXL|XL|XS|S|M|L)(?:[-_]|\b)/i);
+  const matchAlpha = clean.match(/(?:TALLA|T|SZ)[-_]?(XXL|XL|XS|S|M|L)(?:[-_\s]|\b)/i);
   if (matchAlpha) {
     return matchAlpha[1];
   }
 
-  // Patrón 3: Si contiene delimitadores (ej. "28_DELANTERO" o "M_ESPALDA")
-  const matchDirect = clean.match(/\b(\d+|XXL|XL|XS|S|M|L)[-_]/i);
+  // Patrón 3: Si contiene delimitadores (ej. "28_DELANTERO", "26_I", "26 D", "M_ESPALDA")
+  const matchDirect = clean.match(/\b(\d+|XXL|XL|XS|S|M|L)[-_\s]/i);
   if (matchDirect) {
     return normalizeSizeName(matchDirect[1]);
   }
@@ -210,52 +262,58 @@ export function parsePatternSvg(
     // Descartar trazados insignificantes o líneas guía internas (ej. líneas de escote o piquetes)
     if (areaMm2 < 8000 || bbox.width < 60 || bbox.height < 60) continue;
 
+    // Contexto geométrico físico
+    const isShortGeo = bbox.height >= 320 && areaMm2 >= 130000;
+    const isSleeveGeo = bbox.height <= 300 && bbox.width > bbox.height * 1.15 && areaMm2 < 130000;
+
     // Intentar clasificar automáticamente talla y tipo de pieza
     let detectedSize = detectSizeName(originalId);
-    let detectedType = detectPieceType(originalId);
+    let detectedType = detectPieceType(originalId, { isShort: isShortGeo, isSleeve: isSleeveGeo });
 
-    // Si no se detectó talla por el ID, buscar la etiqueta de texto más cercana a la pieza
-    if (!detectedSize) {
-      let closestDist = Infinity;
-      let bestSize: string | null = null;
-      const centerX = (bbox.minX + bbox.maxX) / 2;
-      const centerY = (bbox.minY + bbox.maxY) / 2;
+    // Buscar la etiqueta de texto más cercana a la pieza (dentro o contigua al trazado)
+    let closestLabel: ExtractedTextLabel | null = null;
+    let closestDist = Infinity;
+    const centerX = (bbox.minX + bbox.maxX) / 2;
+    const centerY = (bbox.minY + bbox.maxY) / 2;
 
-      for (const lbl of textLabels) {
-        const matchSize = detectSizeName(lbl.text) || (lbl.text.match(/^\d{2}$/) ? lbl.text : null);
-        if (!matchSize) continue;
+    for (const lbl of textLabels) {
+      // Distancia euclidiana al centro de la pieza o a su caja delimitadora
+      const dx = Math.max(0, Math.max(bbox.minX - lbl.x, lbl.x - bbox.maxX));
+      const dy = Math.max(0, Math.max(bbox.minY - lbl.y, lbl.y - bbox.maxY));
+      const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Distancia euclidiana al centro de la pieza o a su caja delimitadora
-        const dx = Math.max(0, Math.max(bbox.minX - lbl.x, lbl.x - bbox.maxX));
-        const dy = Math.max(0, Math.max(bbox.minY - lbl.y, lbl.y - bbox.maxY));
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < closestDist && dist <= 420) {
-          closestDist = dist;
-          bestSize = normalizeSizeName(matchSize);
-        }
-      }
-
-      if (bestSize) {
-        detectedSize = bestSize;
+      if (dist < closestDist && dist <= 420) {
+        closestDist = dist;
+        closestLabel = lbl;
       }
     }
 
-    // Heurística geométrica para clasificar el tipo de pieza si no viene en el ID:
+    // Si no se detectó talla por el ID, extraerla de la etiqueta de texto más cercana
+    if (!detectedSize && closestLabel) {
+      const matchSize = detectSizeName(closestLabel.text);
+      if (matchSize) {
+        detectedSize = matchSize;
+      }
+    }
+
+    // Si no se detectó el tipo por el ID, extraerlo de la etiqueta de texto más cercana (ej. "26_I", "26_D", "26 I")
+    if (!detectedType && closestLabel) {
+      detectedType = detectPieceType(closestLabel.text, { isShort: isShortGeo, isSleeve: isSleeveGeo });
+    }
+
+    // Heurística geométrica para clasificar el tipo de pieza si no viene en el ID ni en el texto:
     if (!detectedType) {
       if ((bbox.height >= 450 && bbox.height > bbox.width) || (areaMm2 >= 95000 && Math.min(bbox.width, bbox.height) >= 380)) {
-        // Torso: delantero o espalda (se refinará en post-procesamiento por área)
+        // Torso: delantero o espalda (se refinará en post-procesamiento por escote/área)
         const existingForSize = sizeMap[detectedSize || ''] || [];
         const hasDelantero = existingForSize.some((p) => p.pieceType.includes('DELANTERO'));
         detectedType = hasDelantero ? 'ESPALDA' : 'DELANTERO';
-      } else if (bbox.height <= 300 && bbox.width > bbox.height * 1.15 && areaMm2 < 130000) {
-        // Manga corta de fútbol: altura entre 130 y 300 mm y área menor a 130.000 mm²
+      } else if (isSleeveGeo) {
+        // Manga corta de fútbol
         detectedType = 'MANGA_IZQ';
-      } else if (bbox.height >= 320 && areaMm2 >= 130000) {
-        // Pantaloneta / Short: pierna deportiva con tiro, altura >= 320 mm y área mayor a 130.000 mm²
-        const existingForSize = sizeMap[detectedSize || ''] || [];
-        const hasShortIzq = existingForSize.some((p) => p.pieceType === 'PANTALONETA_IZQ' || p.pieceType === 'SHORT_FRENTE');
-        detectedType = hasShortIzq ? 'PANTALONETA_DER' : 'PANTALONETA_IZQ';
+      } else if (isShortGeo) {
+        // Pantaloneta / Short
+        detectedType = 'PANTALONETA_IZQ';
       } else if (bbox.width > bbox.height * 2.2 && bbox.height <= 140) {
         // Cuello / Rib
         detectedType = 'CUELLO';
@@ -292,6 +350,8 @@ export function parsePatternSvg(
       pieceName: humanPieceName,
       cutPolygon: normalizedPolygon,
       bbox: normalizedBbox,
+      canvasMinX: Number(bbox.minX.toFixed(2)),
+      canvasMinY: Number(bbox.minY.toFixed(2)),
       areaMm2,
       allowedRotationsDeg,
       svgPathData: pathSvg,
@@ -316,7 +376,15 @@ export function parsePatternSvg(
   // Post-procesado inteligente por talla (resolución de variantes de cuello y lados de pantaloneta):
   for (const sizeName of Object.keys(sizeMap)) {
     const piecesInSize = sizeMap[sizeName];
-    const isTorso = (p: PatternPiece) => (p.bbox.height >= 450 && p.bbox.height > p.bbox.width) || (p.areaMm2 >= 95000 && Math.min(p.bbox.width, p.bbox.height) >= 380);
+    const isTorso = (p: PatternPiece) => {
+      if (p.pieceType.includes('PANTALONETA') || p.pieceType.includes('SHORT') || p.pieceType.includes('MANGA') || p.pieceType.includes('CUELLO')) {
+        return false;
+      }
+      if (p.pieceType.includes('DELANTERO') || p.pieceType.includes('ESPALDA')) {
+        return true;
+      }
+      return (p.bbox.height >= 480 && p.bbox.height > p.bbox.width * 1.05 && p.areaMm2 >= 120000);
+    };
     const torsoPieces = piecesInSize.filter(isTorso);
 
     const getTorsoNeckDrop = (p: PatternPiece): number => {
@@ -383,21 +451,49 @@ export function parsePatternSvg(
 
     // Post-procesado para mangas y pantalonetas en esta talla:
     const nonTorsoPieces = piecesInSize.filter((p) => !isTorso(p));
-    const sleeveCandidates = nonTorsoPieces.filter(p => p.bbox.height <= 300 && p.bbox.width > p.bbox.height * 1.15 && p.areaMm2 < 130000);
-    const pantalonetaCandidates = nonTorsoPieces.filter(p => p.bbox.height >= 320 && p.areaMm2 >= 130000);
+    const sleeveCandidates = nonTorsoPieces.filter(p => p.pieceType.includes('MANGA') || (p.bbox.height <= 300 && p.bbox.width > p.bbox.height * 1.15 && p.areaMm2 < 130000));
+    const pantalonetaCandidates = nonTorsoPieces.filter(p => p.pieceType.includes('PANTALONETA') || p.pieceType.includes('SHORT') || (p.bbox.height >= 300 && p.areaMm2 >= 100000));
 
     if (sleeveCandidates.length > 0) {
-      sleeveCandidates.forEach((slv, idx) => {
-        slv.pieceType = idx === 0 ? 'MANGA_IZQ' : 'MANGA_DER';
+      const hasExplicitIzq = sleeveCandidates.some((p) => p.pieceType === 'MANGA_IZQ');
+      const hasExplicitDer = sleeveCandidates.some((p) => p.pieceType === 'MANGA_DER');
+
+      if (sleeveCandidates.length === 2 && hasExplicitIzq && hasExplicitDer) {
+        // Ambas mangas ya tienen su lado específico (una IZQ y una DER)
+      } else if (sleeveCandidates.length === 2) {
+        // Ordenar de izquierda a derecha por posición horizontal original en el lienzo
+        sleeveCandidates.sort((a, b) => (a.canvasMinX ?? a.bbox.minX) - (b.canvasMinX ?? b.bbox.minX));
+        sleeveCandidates[0].pieceType = 'MANGA_IZQ';
+        sleeveCandidates[1].pieceType = 'MANGA_DER';
+      } else if (sleeveCandidates.length === 1 && !hasExplicitIzq && !hasExplicitDer) {
+        sleeveCandidates[0].pieceType = 'MANGA_IZQ';
+      }
+
+      sleeveCandidates.forEach((slv) => {
         slv.pieceName = `T${sizeName}_MANGA`;
         slv.allowedRotationsDeg = getDefaultRotationsForPieceType(slv.pieceType);
       });
     }
 
     if (pantalonetaCandidates.length > 0) {
-      pantalonetaCandidates.forEach((pnt, idx) => {
-        pnt.pieceType = idx === 0 ? 'PANTALONETA_IZQ' : 'PANTALONETA_DER';
-        pnt.pieceName = `T${sizeName}_PANTALONETA`;
+      const hasExplicitIzq = pantalonetaCandidates.some((p) => p.pieceType === 'PANTALONETA_IZQ');
+      const hasExplicitDer = pantalonetaCandidates.some((p) => p.pieceType === 'PANTALONETA_DER');
+
+      if (pantalonetaCandidates.length === 2 && hasExplicitIzq && hasExplicitDer) {
+        // Ambas piernas de pantaloneta ya tienen su lado específico (una IZQ y una DER, ej. "26_I" y "26_D")
+      } else if (pantalonetaCandidates.length === 2) {
+        // Si no vienen ambas explícitas, ordenar de izquierda a derecha por posición horizontal original en el lienzo (canvasMinX)
+        pantalonetaCandidates.sort((a, b) => (a.canvasMinX ?? a.bbox.minX) - (b.canvasMinX ?? b.bbox.minX));
+        pantalonetaCandidates[0].pieceType = 'PANTALONETA_IZQ';
+        pantalonetaCandidates[1].pieceType = 'PANTALONETA_DER';
+      } else if (pantalonetaCandidates.length === 1 && !hasExplicitIzq && !hasExplicitDer) {
+        pantalonetaCandidates[0].pieceType = 'PANTALONETA_IZQ';
+      }
+
+      pantalonetaCandidates.forEach((pnt) => {
+        pnt.pieceName = pnt.pieceType === 'PANTALONETA_DER'
+          ? `T${sizeName}_PANTALONETA_DER`
+          : `T${sizeName}_PANTALONETA_IZQ`;
         pnt.allowedRotationsDeg = getDefaultRotationsForPieceType(pnt.pieceType);
       });
     }

@@ -49,4 +49,77 @@ describe('Pattern SVG Parser (Pruebas sobre Molde Real de Illustrator)', () => {
     expect(patternSet.unassignedPieces[0].originalElementId).toBe('PIEZA_SUELTA_ESPALDA_EXTRA');
     expect(patternSet.unassignedPieces[0].isAssigned).toBe(false);
   });
+
+  it('debe empatar correctamente 26_I como PANTALONETA_IZQ y 26_D como PANTALONETA_DER incluso si 26_D viene primero en el XML', () => {
+    // Simulamos un SVG donde la pierna derecha 26_D fue escrita primero en el XML
+    const svgWithShorts = `<?xml version="1.0" encoding="utf-8"?>
+    <svg xmlns="http://www.w3.org/2000/svg" width="1000mm" height="800mm" viewBox="0 0 1000 800">
+      <!-- Pierna Derecha primero en XML pero a la derecha en X (X=500..880, Y=50..450, alto 400mm, área > 130000mm²) -->
+      <path id="26_D" d="M 500,50 L 880,50 L 880,450 L 500,450 Z" />
+      <!-- Pierna Izquierda segunda en XML pero a la izquierda en X (X=50..430, Y=50..450) -->
+      <path id="26_I" d="M 50,50 L 430,50 L 430,450 L 50,450 Z" />
+    </svg>`;
+
+    const result = parsePatternSvg(svgWithShorts, 'SHORT 26', 'FUTBOL', 'shorts.svg');
+    expect(result.patternSet.sizes.length).toBe(1);
+
+    const size26 = result.patternSet.sizes[0];
+    expect(size26.sizeName).toBe('26');
+    expect(size26.pieces.length).toBe(2);
+
+    const pieceIzq = size26.pieces.find((p) => p.pieceType === 'PANTALONETA_IZQ');
+    const pieceDer = size26.pieces.find((p) => p.pieceType === 'PANTALONETA_DER');
+
+    expect(pieceIzq).toBeDefined();
+    expect(pieceDer).toBeDefined();
+    expect(pieceIzq?.originalElementId).toBe('26_I');
+    expect(pieceDer?.originalElementId).toBe('26_D');
+    expect(pieceIzq?.pieceName).toBe('T26_PANTALONETA_IZQ');
+    expect(pieceDer?.pieceName).toBe('T26_PANTALONETA_DER');
+  });
+
+  it('debe empatar correctamente cuando las etiquetas 26_I y 26_D vienen como texto flotante <text> dentro del molde', () => {
+    const svgWithTextLabels = `<?xml version="1.0" encoding="utf-8"?>
+    <svg xmlns="http://www.w3.org/2000/svg" width="1000mm" height="800mm" viewBox="0 0 1000 800">
+      <!-- Molde Izquierdo con ID genérico -->
+      <path id="trazado_izq" d="M 50,50 L 430,50 L 430,450 L 50,450 Z" />
+      <text x="240" y="250">26_I</text>
+
+      <!-- Molde Derecho con ID genérico -->
+      <path id="trazado_der" d="M 500,50 L 880,50 L 880,450 L 500,450 Z" />
+      <text x="690" y="250">26_D</text>
+    </svg>`;
+
+    const result = parsePatternSvg(svgWithTextLabels, 'SHORT 26 TEXT', 'FUTBOL', 'shorts_text.svg');
+    const size26 = result.patternSet.sizes[0];
+
+    const pieceIzq = size26.pieces.find((p) => p.pieceType === 'PANTALONETA_IZQ');
+    const pieceDer = size26.pieces.find((p) => p.pieceType === 'PANTALONETA_DER');
+
+    expect(pieceIzq).toBeDefined();
+    expect(pieceDer).toBeDefined();
+    expect(pieceIzq?.originalElementId).toBe('trazado_izq');
+    expect(pieceDer?.originalElementId).toBe('trazado_der');
+    expect(pieceIzq?.pieceName).toBe('T26_PANTALONETA_IZQ');
+    expect(pieceDer?.pieceName).toBe('T26_PANTALONETA_DER');
+  });
+
+  it('debe clasificar la pieza izquierda en X como PANTALONETA_IZQ y la derecha en X como PANTALONETA_DER cuando no hay indicio de lado', () => {
+    const svgWithoutSideLabels = `<?xml version="1.0" encoding="utf-8"?>
+    <svg xmlns="http://www.w3.org/2000/svg" width="1000mm" height="800mm" viewBox="0 0 1000 800">
+      <!-- Pierna a la derecha en el lienzo (X=500..880) escrita primero en el XML -->
+      <path id="T26_SHORT_1" d="M 500,50 L 880,50 L 880,450 L 500,450 Z" />
+      <!-- Pierna a la izquierda en el lienzo (X=50..430) escrita segunda en el XML -->
+      <path id="T26_SHORT_2" d="M 50,50 L 430,50 L 430,450 L 50,450 Z" />
+    </svg>`;
+
+    const result = parsePatternSvg(svgWithoutSideLabels, 'SHORT 26 SPATIAL', 'FUTBOL', 'shorts_spatial.svg');
+    const size26 = result.patternSet.sizes[0];
+
+    const pieceIzq = size26.pieces.find((p) => p.pieceType === 'PANTALONETA_IZQ');
+    const pieceDer = size26.pieces.find((p) => p.pieceType === 'PANTALONETA_DER');
+
+    expect(pieceIzq?.originalElementId).toBe('T26_SHORT_2');
+    expect(pieceDer?.originalElementId).toBe('T26_SHORT_1');
+  });
 });

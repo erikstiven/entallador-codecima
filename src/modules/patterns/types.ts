@@ -14,6 +14,8 @@ export interface PatternPiece {
   allowedRotationsDeg: number[]; // [0], [0, 180], etc.
   svgPathData: string; // Definición Bézier original
   originalElementId: string; // ID original en el SVG/Illustrator
+  canvasMinX?: number; // Posición X absoluta en el lienzo original (mm)
+  canvasMinY?: number; // Posición Y absoluta en el lienzo original (mm)
   labelAnchor?: Point2D;
   placeholders: PiecePlaceholder[];
   isAssigned: boolean;
