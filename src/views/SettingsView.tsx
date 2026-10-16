@@ -73,7 +73,7 @@ type SettingsTab = 'SYSTEM' | 'PRODUCTION';
 export const SettingsView: React.FC = () => {
   const { profiles, activeProfile, setActiveProfile, updateActiveProfile, addProfile, deleteProfile } = useProfileStore();
   const { settings, updateSettings, resetSettings } = useSystemSettingsStore();
-  const { patternSets } = usePatternStore();
+  const { patternSets, clearAllPatterns } = usePatternStore();
   const { designs } = useDesignStore();
   const { unit, unitLabel, unitStep, precision, toDisplay, toInternalMm, format } = useUnits();
   
@@ -467,6 +467,35 @@ export const SettingsView: React.FC = () => {
                 onChange={handleRestoreBackupFile}
               />
             </div>
+
+            {/* Zona Administrativa: Vaciado Seguro de Biblioteca de Moldes */}
+            {patternSets.length > 0 && (
+              <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div>
+                  <span className="font-bold text-slate-800 block">Vaciado Administrativo de Molderías</span>
+                  <span className="text-[11px] text-slate-500">Elimina todos los conjuntos de moldes guardados en la base de datos local para reiniciar el catálogo.</span>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={async () => {
+                    const confirmed = await showAlert.confirm(
+                      '¿Limpiar TODOS los moldes de la biblioteca?',
+                      '¡ADVERTENCIA DE SEGURIDAD! Esta acción administrativa eliminará permanentemente todos los conjuntos de moldes guardados en la base de datos local. Se recomienda descargar una copia de seguridad (.cimatex) antes. ¿Estás completamente seguro?'
+                    );
+                    if (confirmed) {
+                      clearAllPatterns();
+                      showAlert.toast('info', 'Biblioteca de moldes vaciada por completo');
+                    }
+                  }}
+                  className="text-xs border-red-200 bg-red-50 text-red-700 hover:bg-red-100 cursor-pointer shrink-0"
+                  title="Vacía toda la base de datos de moldes cargados"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                  <span>Limpiar Biblioteca de Moldes</span>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -73,7 +73,6 @@ export const PatternsView: React.FC = () => {
     updatePieceType,
     duplicatePieceInSize,
     flipPieceHorizontal,
-    clearAllPatterns,
     saveActiveSet,
   } = usePatternStore();
 
@@ -1020,31 +1019,6 @@ exportMoldesParaCimatex();`;
                     <Trash2 className="w-3.5 h-3.5 text-red-500" />
                     <span>Eliminar Molde</span>
                   </Button>
-
-                  {patternSets.length > 0 && (
-                    <div className="flex items-center pl-2 ml-1 border-l border-slate-200">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={async () => {
-                          const confirmed = await showAlert.confirm(
-                            '¿Limpiar TODOS los moldes de la biblioteca?',
-                            '¡ADVERTENCIA DE SEGURIDAD! Esta acción administrativa eliminará permanentemente todos los conjuntos de moldes guardados en la base de datos local. ¿Estás completamente seguro?'
-                          );
-                          if (confirmed) {
-                            clearAllPatterns();
-                            showAlert.toast('info', 'Biblioteca de moldes vaciada por completo');
-                            setCatalogMode('CATALOG');
-                          }
-                        }}
-                        className="text-xs border-red-200 bg-red-50 text-red-700 hover:bg-red-100 cursor-pointer"
-                        title="Vacia toda la base de datos de moldes cargados"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                        <span>Limpiar Biblioteca</span>
-                      </Button>
-                    </div>
-                  )}
                 </div>
               </div>
 
