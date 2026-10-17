@@ -99,7 +99,11 @@ export const useNestingStore = create<NestingState>((set, get) => ({
           height: p.bbox.height,
         },
         areaMm2: p.areaMm2,
-        allowedRotations: pAny.allowedRotations ?? pAny.allowedRotationsDeg ?? [0],
+        allowedRotations: pAny.allowedRotations ?? pAny.allowedRotationsDeg ?? (
+          p.pieceType.toUpperCase().startsWith('SHORT') || p.pieceType.toUpperCase().startsWith('PANTALONETA')
+            ? [0, 90, 180, 270]
+            : [0]
+        ),
         cutPolygon: p.cutPolygon,
         isLocked: pAny.isLocked,
         xMm: pAny.xMm,
@@ -113,7 +117,7 @@ export const useNestingStore = create<NestingState>((set, get) => ({
       maxSheetLengthMm: customOptions.maxSheetLengthMm ?? maxSheetLengthMm,
       spacingMm: customOptions.spacingMm ?? spacingMm,
       groupingMode: customOptions.groupingMode ?? nestingMode,
-      allowRotation: customOptions.allowRotation ?? false,
+      allowRotation: customOptions.allowRotation ?? true,
     };
 
     const result = await executeNestingWithWorker(

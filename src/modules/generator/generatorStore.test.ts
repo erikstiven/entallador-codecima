@@ -6,6 +6,9 @@ import { useDesignStore } from '@/modules/designs/designStore';
 import { PatternSet } from '@/modules/patterns/types';
 import { MasterDesign } from '@/modules/designs/types';
 
+import fs from 'fs';
+import { parsePatternSvg } from '@/modules/patterns/patternParser';
+
 describe('generatorStore - Generación Completa y Auto-Vinculación de Moldes Separados', () => {
   beforeEach(() => {
     useGeneratorStore.getState().clearGenerated();
@@ -193,5 +196,13 @@ describe('generatorStore - Generación Completa y Auto-Vinculación de Moldes Se
     expect(res!.pieces.length).toBe(6);
     expect(res!.pieces.filter((p) => p.pieceType.startsWith('PANTALONETA')).length).toBe(2);
     expect(res!.pieces.filter((p) => p.pieceType.startsWith('DELANTERO') || p.pieceType === 'ESPALDA' || p.pieceType.startsWith('MANGA')).length).toBe(4);
+  });
+
+  it('carga y valida dimensiones de moldes pantalonetas 2026.svg', () => {
+    const svgPath = 'C:/Users/USUARIO/Downloads/moldes muestra/moldes pantalonetas 2026.svg';
+    if (!fs.existsSync(svgPath)) return;
+    const svg = fs.readFileSync(svgPath, 'utf8');
+    const { patternSet } = parsePatternSvg(svg, 'PANTALONETAS', 'SHORT', 'moldes pantalonetas 2026.svg');
+    expect(patternSet.sizes.length).toBeGreaterThanOrEqual(10);
   });
 });

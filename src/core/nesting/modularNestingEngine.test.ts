@@ -129,6 +129,46 @@ describe('modularNestingEngine', () => {
     expect(placedIzq.rotationDeg).toBe(180);
   });
 
+  it('debe estructurar parejas de pantalonetas con tiro-con-tiro (0°/180° y 90°/270°) en un solo pliego eficiente sin desperdicio', () => {
+    // Caso de taller: T28 (vertical), T34 (apaisado)
+    const pieces: NestingPieceInput[] = [
+      createMockPiece('t28_izq', 'play_1', 'JUAN', 'PANTALONETA_IZQ', 490, 383),
+      createMockPiece('t28_der', 'play_1', 'JUAN', 'PANTALONETA_DER', 490, 383),
+      createMockPiece('t34_izq', 'play_2', 'PEDRO', 'PANTALONETA_IZQ', 610, 465),
+      createMockPiece('t34_der', 'play_2', 'PEDRO', 'PANTALONETA_DER', 610, 465),
+    ];
+    for (const p of pieces) {
+      p.allowedRotations = [0, 90, 180, 270];
+    }
+
+    const result = performModularNesting(pieces, {
+      printableWidthMm: 1120,
+      maxSheetLengthMm: 5000,
+      spacingMm: 3,
+    });
+
+    expect(result.sheets).toHaveLength(1);
+    expect(result.sheets![0].garmentType).toBe('SHORT');
+    expect(result.placedPieces).toHaveLength(4);
+
+    // T28 debe estar a 0° y 180° vertical
+    const t28Der = result.placedPieces.find((p) => p.id === 't28_der')!;
+    const t28Izq = result.placedPieces.find((p) => p.id === 't28_izq')!;
+    expect(t28Der.rotationDeg).toBe(0);
+    expect(t28Izq.rotationDeg).toBe(180);
+
+    // T34 en 1120mm debe estar a 90° y 270° (apaisado) para caber de a 2 en la fila
+    const t34Der = result.placedPieces.find((p) => p.id === 't34_der')!;
+    const t34Izq = result.placedPieces.find((p) => p.id === 't34_izq')!;
+    expect([90, 270]).toContain(t34Der.rotationDeg);
+    expect([90, 270]).toContain(t34Izq.rotationDeg);
+    expect(t34Der.rotationDeg).not.toBe(t34Izq.rotationDeg);
+
+    // Ambas parejas deben estar cada una en su propia fila con sus 2 piernas juntas
+    expect(Math.abs(t28Der.yMm - t28Izq.yMm)).toBeLessThan(5);
+    expect(Math.abs(t34Der.yMm - t34Izq.yMm)).toBeLessThan(5);
+  });
+
   it('debe particionar en múltiples pliegos si la altura acumulada supera maxSheetLengthMm (500 cm)', () => {
     const pieces: NestingPieceInput[] = [];
     for (let i = 1; i <= 12; i++) {

@@ -172,7 +172,7 @@ export function getDefaultRotationsForPieceType(pieceType: PieceType): number[] 
     case 'PANTALONETA_DER':
     case 'SHORT_FRENTE':
     case 'SHORT_ESPALDA':
-      return [0, 180]; // Permite giro de 180° si la trama del diseño lo admite
+      return [0, 90, 180, 270]; // Permite tiro-con-tiro (180°) y apaisado (90°, 270°) para maximizar aprovechamiento
     case 'CUELLO':
       return [0, 90, 180, 270]; // Rotación libre para piezas pequeñas de rib / cuello
     default:

@@ -2269,73 +2269,321 @@ export function performModularNesting(
     let currentSheet = createNewSheet('SHORT');
     let shortRowY = topMarginMm;
 
-    // 1. Recopilar la cola de piezas de short organizadas por jugador
-    interface ShortPiecePlan {
+    // Helper para rotar puntos poligonales
+    const rotatePolyPoints = (poly: Point2D[], deg: number): Point2D[] => {
+      if (deg === 0) return poly;
+      const rad = (deg * Math.PI) / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      return poly.map((pt) => ({
+        x: pt.x * cos - pt.y * sin,
+        y: pt.x * sin + pt.y * cos,
+      }));
+    };
+
+    // Helper para calcular el acomodo interlocked entre dos piezas (tiro-con-tiro / parejas)
+    interface PairInterlockResult {
+      p1: NestingPieceInput;
+      rot1: number;
+      w1: number;
+      h1: number;
+      x1Rel: number;
+      y1Rel: number;
+      p2: NestingPieceInput;
+      rot2: number;
+      w2: number;
+      h2: number;
+      x2Rel: number;
+      y2Rel: number;
+      totalWidth: number;
+      totalHeight: number;
+    }
+
+    const computePairInterlocking = (
+      p1: NestingPieceInput,
+      rot1: number,
+      p2: NestingPieceInput,
+      rot2: number,
+      gap: number
+    ): PairInterlockResult => {
+      const getPoly = (p: NestingPieceInput): Point2D[] => {
+        if (p.cutPolygon && p.cutPolygon.length >= 3) {
+          return p.cutPolygon;
+        }
+        return [
+          { x: 0, y: 0 },
+          { x: p.bbox.width, y: 0 },
+          { x: p.bbox.width, y: p.bbox.height },
+          { x: 0, y: p.bbox.height },
+        ];
+      };
+
+      const poly1Rot = rotatePolyPoints(getPoly(p1), rot1);
+      const poly2Rot = rotatePolyPoints(getPoly(p2), rot2);
+
+      const minX1 = Math.min(...poly1Rot.map((pt) => pt.x));
+      const minY1 = Math.min(...poly1Rot.map((pt) => pt.y));
+      const maxX1 = Math.max(...poly1Rot.map((pt) => pt.x));
+      const maxY1 = Math.max(...poly1Rot.map((pt) => pt.y));
+      const p1Norm = poly1Rot.map((pt) => ({ x: pt.x - minX1, y: pt.y - minY1 }));
+      const w1 = maxX1 - minX1;
+      const h1 = maxY1 - minY1;
+
+      const minX2 = Math.min(...poly2Rot.map((pt) => pt.x));
+      const minY2 = Math.min(...poly2Rot.map((pt) => pt.y));
+      const maxX2 = Math.max(...poly2Rot.map((pt) => pt.x));
+      const maxY2 = Math.max(...poly2Rot.map((pt) => pt.y));
+      const p2Norm = poly2Rot.map((pt) => ({ x: pt.x - minX2, y: pt.y - minY2 }));
+      const w2 = maxX2 - minX2;
+      const h2 = maxY2 - minY2;
+
+      const maxH = Math.max(h1, h2);
+      const step = 2.0;
+
+      // Perfil 1: max X para cada Y
+      const p1MaxX = new Array(Math.ceil(maxH / step) + 1).fill(-Infinity);
+      for (let i = 0; i < p1Norm.length; i++) {
+        const a = p1Norm[i];
+        const b = p1Norm[(i + 1) % p1Norm.length];
+        const yStart = Math.min(a.y, b.y);
+        const yEnd = Math.max(a.y, b.y);
+        const iStart = Math.max(0, Math.floor(yStart / step));
+        const iEnd = Math.min(p1MaxX.length - 1, Math.ceil(yEnd / step));
+        for (let yi = iStart; yi <= iEnd; yi++) {
+          const y = yi * step;
+          if (y >= yStart && y <= yEnd && yEnd > yStart) {
+            const x = a.x + ((y - a.y) * (b.x - a.x)) / (b.y - a.y);
+            if (x > p1MaxX[yi]) p1MaxX[yi] = x;
+          }
+        }
+      }
+
+      // Perfil 2: min X para cada Y
+      const p2MinX = new Array(Math.ceil(maxH / step) + 1).fill(Infinity);
+      for (let i = 0; i < p2Norm.length; i++) {
+        const a = p2Norm[i];
+        const b = p2Norm[(i + 1) % p2Norm.length];
+        const yStart = Math.min(a.y, b.y);
+        const yEnd = Math.max(a.y, b.y);
+        const iStart = Math.max(0, Math.floor(yStart / step));
+        const iEnd = Math.min(p2MinX.length - 1, Math.ceil(yEnd / step));
+        for (let yi = iStart; yi <= iEnd; yi++) {
+          const y = yi * step;
+          if (y >= yStart && y <= yEnd && yEnd > yStart) {
+            const x = a.x + ((y - a.y) * (b.x - a.x)) / (b.y - a.y);
+            if (x < p2MinX[yi]) p2MinX[yi] = x;
+          }
+        }
+      }
+
+      let requiredShiftX = 0;
+      for (let yi = 0; yi < p1MaxX.length; yi++) {
+        if (p1MaxX[yi] > -Infinity && p2MinX[yi] < Infinity) {
+          const needed = p1MaxX[yi] - p2MinX[yi] + gap;
+          if (needed > requiredShiftX) requiredShiftX = needed;
+        }
+      }
+
+      if (requiredShiftX <= 0) {
+        requiredShiftX = w1 + gap;
+      }
+
+      const totalWidth = Number((requiredShiftX + w2).toFixed(2));
+      const totalHeight = Number(maxH.toFixed(2));
+
+      return {
+        p1,
+        rot1,
+        w1,
+        h1,
+        x1Rel: 0,
+        y1Rel: (totalHeight - h1) / 2,
+        p2,
+        rot2,
+        w2,
+        h2,
+        x2Rel: requiredShiftX,
+        y2Rel: (totalHeight - h2) / 2,
+        totalWidth,
+        totalHeight,
+      };
+    };
+
+    interface ShortPlacedPieceInBlock {
       piece: NestingPieceInput;
-      playerSet: PlayerShortSet;
       rotationDeg: number;
+      xRel: number;
+      yRel: number;
       w: number;
       h: number;
     }
 
-    const shortItemsToPlace: ShortPiecePlan[] = [];
-    const canRotate180 = customOptions?.allowRotation !== false;
+    interface ShortBlockPlan {
+      playerSet: PlayerShortSet;
+      items: ShortPlacedPieceInBlock[];
+      blockWidth: number;
+      blockHeight: number;
+    }
+
+    const shortBlocks: ShortBlockPlan[] = [];
+    const canRotate = customOptions?.allowRotation !== false;
+    const maxUsefulW = printableWidthMm - (sideMarginMm * 2);
 
     for (const playerSet of shortPlayerList) {
       const pIzq = playerSet.pantaIzq;
       const pDer = playerSet.pantaDer;
 
-      // Si el jugador tiene ambas piernas, aplicar modo puzzle tiro-con-tiro (0° der al derecho con dorsal, 180° izq si está permitido)
       if (pIzq && pDer) {
-        const izqRotAllowed = canRotate180 && (pIzq.allowedRotations?.includes(180) ?? false);
-        const derRotAllowed = canRotate180 && (pDer.allowedRotations?.includes(180) ?? false);
+        const derRots = canRotate ? (pDer.allowedRotations ?? [0]) : [0];
+        const izqRots = canRotate ? (pIzq.allowedRotations ?? [0]) : [0];
+        const hasRotationPermission = derRots.some((r) => r !== 0) || izqRots.some((r) => r !== 0);
 
-        // Modo puzzle: Derecha a 0° (primero a la izquierda, dorsal visible al derecho), Izquierda a 180° (o 0° si no está permitido)
-        const rotDer = 0;
-        const rotIzq = izqRotAllowed ? 180 : 0;
+        if (hasRotationPermission) {
+          type CandidateSpec = [NestingPieceInput, number, NestingPieceInput, number];
+          const candidateSpecs: CandidateSpec[] = [];
 
-        shortItemsToPlace.push({
-          piece: pDer,
-          playerSet,
-          rotationDeg: rotDer,
-          w: pDer.bbox.width,
-          h: pDer.bbox.height,
-        });
+          if (derRots.includes(0) && izqRots.includes(180)) candidateSpecs.push([pDer, 0, pIzq, 180]);
+          if (izqRots.includes(0) && derRots.includes(180)) candidateSpecs.push([pIzq, 0, pDer, 180]);
+          if (derRots.includes(90) && izqRots.includes(270)) candidateSpecs.push([pDer, 90, pIzq, 270]);
+          if (izqRots.includes(90) && derRots.includes(270)) candidateSpecs.push([pIzq, 90, pDer, 270]);
+          if (derRots.includes(270) && izqRots.includes(90)) candidateSpecs.push([pDer, 270, pIzq, 90]);
+          if (izqRots.includes(270) && derRots.includes(90)) candidateSpecs.push([pIzq, 270, pDer, 90]);
+          if (derRots.includes(90) && izqRots.includes(90)) candidateSpecs.push([pDer, 90, pIzq, 90]);
+          if (derRots.includes(0) && izqRots.includes(0)) candidateSpecs.push([pDer, 0, pIzq, 0]);
 
-        shortItemsToPlace.push({
-          piece: pIzq,
-          playerSet,
-          rotationDeg: rotIzq,
-          w: pIzq.bbox.width,
-          h: pIzq.bbox.height,
-        });
+          const candidateResults = candidateSpecs.map(([pA, rotA, pB, rotB]) =>
+            computePairInterlocking(pA, rotA, pB, rotB, spacingMm)
+          );
+
+          const validCandidates = candidateResults.filter((c) => c.totalWidth <= maxUsefulW);
+          validCandidates.sort((a, b) => {
+            const hDiff = Number((a.totalHeight - b.totalHeight).toFixed(1));
+            if (hDiff !== 0) return hDiff;
+            const wDiff = Number((a.totalWidth - b.totalWidth).toFixed(1));
+            if (wDiff !== 0) return wDiff;
+            // Preferencia por puzzle tiro-con-tiro (donde rot1 !== rot2)
+            const aIsPuzzle = (a.rot1 === 0 && a.rot2 === 180) || (a.rot1 === 90 && a.rot2 === 270);
+            const bIsPuzzle = (b.rot1 === 0 && b.rot2 === 180) || (b.rot1 === 90 && b.rot2 === 270);
+            if (aIsPuzzle && !bIsPuzzle) return -1;
+            if (!aIsPuzzle && bIsPuzzle) return 1;
+            return 0;
+          });
+
+          if (validCandidates.length > 0) {
+            const best = validCandidates[0];
+            shortBlocks.push({
+              playerSet,
+              items: [
+                {
+                  piece: best.p1,
+                  rotationDeg: best.rot1,
+                  xRel: best.x1Rel,
+                  yRel: best.y1Rel,
+                  w: best.w1,
+                  h: best.h1,
+                },
+                {
+                  piece: best.p2,
+                  rotationDeg: best.rot2,
+                  xRel: best.x2Rel,
+                  yRel: best.y2Rel,
+                  w: best.w2,
+                  h: best.h2,
+                },
+              ],
+              blockWidth: best.totalWidth,
+              blockHeight: best.totalHeight,
+            });
+          } else {
+            for (const singlePiece of [pDer, pIzq]) {
+              shortBlocks.push({
+                playerSet,
+                items: [
+                  {
+                    piece: singlePiece,
+                    rotationDeg: 0,
+                    xRel: 0,
+                    yRel: 0,
+                    w: singlePiece.bbox.width,
+                    h: singlePiece.bbox.height,
+                  },
+                ],
+                blockWidth: singlePiece.bbox.width,
+                blockHeight: singlePiece.bbox.height,
+              });
+            }
+          }
+        } else {
+          // Si allowedRotations solo tiene [0] (sin permiso de rotación), acomodar individualmente
+          for (const singlePiece of [pDer, pIzq]) {
+            shortBlocks.push({
+              playerSet,
+              items: [
+                {
+                  piece: singlePiece,
+                  rotationDeg: 0,
+                  xRel: 0,
+                  yRel: 0,
+                  w: singlePiece.bbox.width,
+                  h: singlePiece.bbox.height,
+                },
+              ],
+              blockWidth: singlePiece.bbox.width,
+              blockHeight: singlePiece.bbox.height,
+            });
+          }
+        }
       } else if (pDer) {
-        shortItemsToPlace.push({
-          piece: pDer,
+        shortBlocks.push({
           playerSet,
-          rotationDeg: 0,
-          w: pDer.bbox.width,
-          h: pDer.bbox.height,
+          items: [
+            {
+              piece: pDer,
+              rotationDeg: 0,
+              xRel: 0,
+              yRel: 0,
+              w: pDer.bbox.width,
+              h: pDer.bbox.height,
+            },
+          ],
+          blockWidth: pDer.bbox.width,
+          blockHeight: pDer.bbox.height,
         });
       } else if (pIzq) {
-        shortItemsToPlace.push({
-          piece: pIzq,
+        shortBlocks.push({
           playerSet,
-          rotationDeg: 0,
-          w: pIzq.bbox.width,
-          h: pIzq.bbox.height,
+          items: [
+            {
+              piece: pIzq,
+              rotationDeg: 0,
+              xRel: 0,
+              yRel: 0,
+              w: pIzq.bbox.width,
+              h: pIzq.bbox.height,
+            },
+          ],
+          blockWidth: pIzq.bbox.width,
+          blockHeight: pIzq.bbox.height,
         });
       }
 
       // Piezas accesorias del jugador (pretinas, ribetes, vivos de pantaloneta)
       if (playerSet.otherPieces && playerSet.otherPieces.length > 0) {
         for (const other of playerSet.otherPieces) {
-          shortItemsToPlace.push({
-            piece: other,
+          shortBlocks.push({
             playerSet,
-            rotationDeg: 0,
-            w: other.bbox.width,
-            h: other.bbox.height,
+            items: [
+              {
+                piece: other,
+                rotationDeg: 0,
+                xRel: 0,
+                yRel: 0,
+                w: other.bbox.width,
+                h: other.bbox.height,
+              },
+            ],
+            blockWidth: other.bbox.width,
+            blockHeight: other.bbox.height,
           });
         }
       }
@@ -2344,48 +2592,53 @@ export function performModularNesting(
     // 2. Empaquetado dinámico en filas (Multi-Piece Shelf Packing)
     // Permite que quepan 2, 3 o 4 pantalonetas según el ancho del plóter (1.12m, 1.60m, 1.80m, etc.)
     interface ShortRowPlan {
-      items: ShortPiecePlan[];
+      blocks: ShortBlockPlan[];
       rowWidth: number;
       rowHeight: number;
     }
 
     const rows: ShortRowPlan[] = [];
-    let currentRowItems: ShortPiecePlan[] = [];
+    let currentRowBlocks: ShortBlockPlan[] = [];
     let currentRowWidth = 0;
     let currentRowHeight = 0;
 
-    for (const item of shortItemsToPlace) {
-      const addedWidth = currentRowItems.length > 0 ? spacingMm + item.w : item.w;
+    for (const block of shortBlocks) {
+      const addedWidth = currentRowBlocks.length > 0 ? spacingMm + block.blockWidth : block.blockWidth;
 
-      // Si excede el ancho útil y ya hay al menos una pieza en la fila: cerrar fila e iniciar nueva
-      if (currentRowItems.length > 0 && currentRowWidth + addedWidth + (sideMarginMm * 2) > printableWidthMm) {
+      if (currentRowBlocks.length > 0 && currentRowWidth + addedWidth + (sideMarginMm * 2) > printableWidthMm) {
         rows.push({
-          items: currentRowItems,
+          blocks: currentRowBlocks,
           rowWidth: currentRowWidth,
           rowHeight: currentRowHeight,
         });
-        currentRowItems = [item];
-        currentRowWidth = item.w;
-        currentRowHeight = item.h;
+        currentRowBlocks = [block];
+        currentRowWidth = block.blockWidth;
+        currentRowHeight = block.blockHeight;
       } else {
-        currentRowItems.push(item);
+        currentRowBlocks.push(block);
         currentRowWidth += addedWidth;
-        currentRowHeight = Math.max(currentRowHeight, item.h);
+        currentRowHeight = Math.max(currentRowHeight, block.blockHeight);
       }
     }
 
-    if (currentRowItems.length > 0) {
+    if (currentRowBlocks.length > 0) {
       rows.push({
-        items: currentRowItems,
+        blocks: currentRowBlocks,
         rowWidth: currentRowWidth,
         rowHeight: currentRowHeight,
       });
     }
 
     // 3. Posicionar cada fila centrada simétricamente y particionar pliegos de ser necesario
-    for (const row of rows) {
-      // Particionado de pliego si supera maxSheetLengthMm
-      if (shortRowY + row.rowHeight + topMarginMm > maxSheetLengthMm && currentSheet.placedPieces.length > 0) {
+    for (let rIdx = 0; rIdx < rows.length; rIdx++) {
+      const row = rows[rIdx];
+      const remainingRowsHeight = rows.slice(rIdx).reduce((acc, r) => acc + r.rowHeight + spacingMm, 0);
+
+      // Particionado elástico de pliego (regla del 15% para evitar piezas huérfanas al final)
+      const exceedsMax = shortRowY + row.rowHeight + topMarginMm > maxSheetLengthMm;
+      const canAbsorbRemaining = shortRowY + remainingRowsHeight + topMarginMm <= maxSheetLengthMm * 1.15;
+
+      if (exceedsMax && currentSheet.placedPieces.length > 0 && !canAbsorbRemaining) {
         const sheetHeight = Math.max(topMarginMm, shortRowY - spacingMm + topMarginMm);
         currentSheet.heightMm = Number(sheetHeight.toFixed(2));
         currentSheet.fileName = `PARTE_${currentSheet.sheetNumber}_SHORTS_${printableWidthMm.toFixed(0)}x${currentSheet.heightMm.toFixed(0)}mm`;
@@ -2398,32 +2651,35 @@ export function performModularNesting(
       const leftoverWidth = Math.max(0, printableWidthMm - row.rowWidth);
       const rowStartX = Math.max(sideMarginMm, Number((leftoverWidth / 2.0).toFixed(2)));
 
-      let currentX = rowStartX;
+      let currentBlockX = rowStartX;
 
-      for (const item of row.items) {
-        // Alinear verticalmente en la fila (centrado vertical suave si difieren en altura)
-        const verticalOffset = Math.max(0, Number(((row.rowHeight - item.h) / 2.0).toFixed(2)));
-        const finalY = Number((shortRowY + verticalOffset).toFixed(2));
+      for (const block of row.blocks) {
+        const blockVerticalOffset = (row.rowHeight - block.blockHeight) / 2.0;
 
-        const placed: PlacedNestingPiece = {
-          ...item.piece,
-          xMm: Number(currentX.toFixed(2)),
-          yMm: finalY,
-          rotationDeg: item.rotationDeg,
-          effectiveWidthMm: item.w,
-          effectiveHeightMm: item.h,
-          isLocked: false,
-          sheetIndex: currentSheet.sheetNumber - 1,
-        };
+        for (const item of block.items) {
+          const finalX = currentBlockX + item.xRel;
+          const finalY = shortRowY + blockVerticalOffset + item.yRel;
 
-        currentSheet.placedPieces.push(placed);
-        allPlacedPieces.push(placed);
+          const placed: PlacedNestingPiece = {
+            ...item.piece,
+            xMm: Number(finalX.toFixed(2)),
+            yMm: Number(finalY.toFixed(2)),
+            rotationDeg: item.rotationDeg,
+            effectiveWidthMm: Number(item.w.toFixed(2)),
+            effectiveHeightMm: Number(item.h.toFixed(2)),
+            isLocked: false,
+            sheetIndex: currentSheet.sheetNumber - 1,
+          };
 
-        if (!currentSheet.playerNames.includes(item.playerSet.playerName)) {
-          currentSheet.playerNames.push(item.playerSet.playerName);
+          currentSheet.placedPieces.push(placed);
+          allPlacedPieces.push(placed);
+
+          if (!currentSheet.playerNames.includes(block.playerSet.playerName)) {
+            currentSheet.playerNames.push(block.playerSet.playerName);
+          }
         }
 
-        currentX += item.w + spacingMm;
+        currentBlockX += block.blockWidth + spacingMm;
       }
 
       shortRowY += row.rowHeight + spacingMm;
