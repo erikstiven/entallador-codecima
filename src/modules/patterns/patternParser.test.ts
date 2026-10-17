@@ -122,4 +122,68 @@ describe('Pattern SVG Parser (Pruebas sobre Molde Real de Illustrator)', () => {
     expect(pieceIzq?.originalElementId).toBe('T26_SHORT_2');
     expect(pieceDer?.originalElementId).toBe('T26_SHORT_1');
   });
+
+  it('debe parsear correctamente plantillas generadas con múltiples tallas donde los IDs tienen sufijo de talla y grupos transform translate', () => {
+    const svgTemplate = `<?xml version="1.0" encoding="utf-8"?>
+    <svg xmlns="http://www.w3.org/2000/svg" width="2000mm" height="2000mm" viewBox="0 0 2000 2000">
+      <g id="LÍNEA_DE_CORTE">
+        <g id="CORTE_DELANTERO_V_26" transform="translate(30.00, 30.00)">
+          <path id="DELANTERO_V_26" d="M 0,0 L 300,0 L 300,500 L 0,500 Z" />
+        </g>
+        <g id="CORTE_ESPALDA_26" transform="translate(350.00, 30.00)">
+          <path id="ESPALDA_26" d="M 0,0 L 300,0 L 300,500 L 0,500 Z" />
+        </g>
+        <g id="CORTE_DELANTERO_V_28" transform="translate(30.00, 600.00)">
+          <path id="DELANTERO_V_28" d="M 0,0 L 320,0 L 320,530 L 0,530 Z" />
+        </g>
+        <g id="CORTE_ESPALDA_28" transform="translate(370.00, 600.00)">
+          <path id="ESPALDA_28" d="M 0,0 L 320,0 L 320,530 L 0,530 Z" />
+        </g>
+      </g>
+      <g id="TEXTOS_Y_REFERENCIAS">
+        <text x="45.00" y="55.00">DELANTERO_V — TALLA 26</text>
+        <text x="365.00" y="55.00">ESPALDA — TALLA 26</text>
+        <text x="45.00" y="625.00">DELANTERO_V — TALLA 28</text>
+        <text x="385.00" y="625.00">ESPALDA — TALLA 28</text>
+      </g>
+    </svg>`;
+
+    const result = parsePatternSvg(svgTemplate, 'PLANTILLA TEST', 'FUTBOL', 'plantilla.svg');
+    expect(result.patternSet.sizes.length).toBe(2);
+
+    const size26 = result.patternSet.sizes.find(s => s.sizeName === '26');
+    const size28 = result.patternSet.sizes.find(s => s.sizeName === '28');
+
+    expect(size26).toBeDefined();
+    expect(size28).toBeDefined();
+    expect(size26?.pieces.length).toBe(2);
+    expect(size28?.pieces.length).toBe(2);
+
+    expect(size26?.pieces.find(p => p.pieceType === 'DELANTERO_V')).toBeDefined();
+    expect(size26?.pieces.find(p => p.pieceType === 'ESPALDA')).toBeDefined();
+    expect(size28?.pieces.find(p => p.pieceType === 'DELANTERO_V')).toBeDefined();
+    expect(size28?.pieces.find(p => p.pieceType === 'ESPALDA')).toBeDefined();
+  });
+
+  it('no debe clasificar IDs sintéticos path_1, path_2 como tallas y debe usar etiquetas de texto flotantes', () => {
+    const svgAnonymous = `<?xml version="1.0" encoding="utf-8"?>
+    <svg xmlns="http://www.w3.org/2000/svg" width="1000mm" height="800mm" viewBox="0 0 1000 800">
+      <!-- Path sin id (se le asigna path_1 internamente). Texto 28_D cerca -->
+      <path d="M 500,50 L 880,50 L 880,450 L 500,450 Z" />
+      <text x="650" y="200">28_D</text>
+
+      <!-- Path sin id (path_2). Texto 28_I cerca -->
+      <path d="M 50,50 L 430,50 L 430,450 L 50,450 Z" />
+      <text x="200" y="200">28_I</text>
+    </svg>`;
+
+    const result = parsePatternSvg(svgAnonymous, 'TEST ANONYMOUS', 'FUTBOL', 'anon.svg');
+    // Debe haber 1 sola talla ("28") con 2 piezas (PANTALONETA_DER y PANTALONETA_IZQ), NUNCA tallas "1" y "2"
+    expect(result.patternSet.sizes.length).toBe(1);
+    expect(result.patternSet.sizes[0].sizeName).toBe('28');
+    expect(result.patternSet.sizes[0].pieces.length).toBe(2);
+    expect(result.patternSet.sizes[0].pieces.some(p => p.pieceType === 'PANTALONETA_DER')).toBe(true);
+    expect(result.patternSet.sizes[0].pieces.some(p => p.pieceType === 'PANTALONETA_IZQ')).toBe(true);
+  });
 });
+

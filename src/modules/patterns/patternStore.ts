@@ -30,6 +30,7 @@ interface PatternStoreState {
   saveActiveSet: () => void;
   setActivePatternSet: (set: PatternSet | null) => void;
   renamePatternSet: (id: string, newName: string) => void;
+  duplicatePatternSet: (id: string) => PatternSet | null;
   deletePatternSet: (id: string) => void;
   discardUnassignedPiece: (pieceId: string) => void;
   discardAllUnassignedPieces: () => void;
@@ -406,6 +407,66 @@ export const usePatternStore = create<PatternStoreState>((set, get) => ({
     } catch (err) {
       console.error('Error renombrando molde en SQLite:', err);
     }
+  },
+
+  duplicatePatternSet: (id) => {
+    const original = get().patternSets.find((s) => s.id === id);
+    if (!original) return null;
+
+    const timestamp = Date.now();
+    const newId = `set_${timestamp}_${Math.random().toString(36).substring(2, 6)}`;
+    const newName = `${original.name} (COPIA)`;
+
+    const duplicatedSizes = original.sizes.map((size) => ({
+      ...size,
+      id: `size_${size.sizeName}_${timestamp}_${Math.random().toString(36).substring(2, 6)}`,
+      pieces: size.pieces.map((piece) => ({
+        ...piece,
+        id: `piece_${piece.pieceType}_${timestamp}_${Math.random().toString(36).substring(2, 6)}`,
+        cutPolygon: piece.cutPolygon.map((pt) => ({ ...pt })),
+        seamPolygon: piece.seamPolygon?.map((pt) => ({ ...pt })),
+        bbox: { ...piece.bbox },
+        allowedRotationsDeg: [...piece.allowedRotationsDeg],
+        placeholders: piece.placeholders?.map((pl) => ({ ...pl })) || [],
+      })),
+    }));
+
+    const duplicatedUnassigned = (original.unassignedPieces || []).map((piece) => ({
+      ...piece,
+      id: `piece_${timestamp}_${Math.random().toString(36).substring(2, 6)}`,
+      cutPolygon: piece.cutPolygon.map((pt) => ({ ...pt })),
+      bbox: { ...piece.bbox },
+      allowedRotationsDeg: [...piece.allowedRotationsDeg],
+    }));
+
+    const newSet: PatternSet = {
+      ...original,
+      id: newId,
+      name: newName,
+      sizes: duplicatedSizes,
+      unassignedPieces: duplicatedUnassigned,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const sanitized = sanitizePatternSet(newSet);
+    const updatedSets = [...get().patternSets, sanitized];
+
+    persistActivePatternId(sanitized);
+    set({
+      patternSets: updatedSets,
+      activePatternSet: sanitized,
+      selectedPieceForAssignment: sanitized.unassignedPieces.length > 0 ? sanitized.unassignedPieces[0] : null,
+    });
+
+    try {
+      savePatternSetToDb(dbService, sanitized);
+      dbService.scheduleAutoSave();
+    } catch (err) {
+      console.error('Error guardando copia de molde en SQLite:', err);
+    }
+
+    return sanitized;
   },
 
   deletePatternSet: (id) => {

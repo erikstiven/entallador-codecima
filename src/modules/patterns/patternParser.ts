@@ -54,6 +54,11 @@ export function detectPieceType(
 ): PieceType | null {
   const clean = identifier.toUpperCase().trim();
 
+  // Ignorar identificadores sintéticos genéricos generados por el parser o editores (ej: "PATH_1", "PATH_2")
+  if (/^(?:PATH|ELEMENT|SHAPE|POLY|RECT|LINE|ITEM|LAYER|CAPA|OBJETO)[-_\s]?\d+$/i.test(clean)) {
+    return null;
+  }
+
   if (clean.includes('CUELLO_V') || clean.includes('DELANTERO_V') || clean.includes('FRENTE_V') || clean.includes('V_NECK') || clean.includes('_V')) {
     return 'DELANTERO_V';
   }
@@ -111,27 +116,38 @@ export function detectPieceType(
 export function detectSizeName(identifier: string): string | null {
   const clean = identifier.toUpperCase().trim();
 
+  // Ignorar identificadores sintéticos genéricos generados por el parser o editores (ej: "PATH_1", "PATH_2", "ELEMENT_1", "SHAPE_1")
+  if (/^(?:PATH|ELEMENT|SHAPE|POLY|RECT|LINE|ITEM|LAYER|CAPA|OBJETO)[-_\s]?\d+$/i.test(clean)) {
+    return null;
+  }
+
   // Patrón 0: Número o talla sola como "26", "28", "30", "S", "M", "L", "XL", "XXL"
   if (/^\b(XXL|XL|XS|S|M|L|\d{1,2})\b$/i.test(clean)) {
     return normalizeSizeName(clean);
   }
 
-  // Patrón 1: T28, TALLA28, T_28, TALLA_30, SZ_28
-  const matchNum = clean.match(/(?:TALLA|T|SZ)[-_]?(\d+)/i);
+  // Patrón 1: T28, TALLA28, T_28, TALLA_30, SZ_28, TALLA 28, T 28
+  const matchNum = clean.match(/(?:TALLA|T|SZ)[-_\s]?(\d+)/i);
   if (matchNum) {
     return matchNum[1];
   }
 
-  // Patrón 2: Talla alfanumérica al inicio o entre delimitadores: T_S, TALLA_M, T_XL, TS_
-  const matchAlpha = clean.match(/(?:TALLA|T|SZ)[-_]?(XXL|XL|XS|S|M|L)(?:[-_\s]|\b)/i);
+  // Patrón 2: Talla alfanumérica al inicio o entre delimitadores: T_S, TALLA_M, T_XL, TS_, TALLA S
+  const matchAlpha = clean.match(/(?:TALLA|T|SZ)[-_\s]?(XXL|XL|XS|S|M|L)(?:[-_\s]|\b)/i);
   if (matchAlpha) {
     return matchAlpha[1];
   }
 
-  // Patrón 3: Si contiene delimitadores (ej. "28_DELANTERO", "26_I", "26 D", "M_ESPALDA")
+  // Patrón 3: Si contiene delimitadores con talla al inicio o en el medio (ej. "28_DELANTERO", "26_I", "26 D", "M_ESPALDA")
   const matchDirect = clean.match(/\b(\d+|XXL|XL|XS|S|M|L)[-_\s]/i);
   if (matchDirect) {
     return normalizeSizeName(matchDirect[1]);
+  }
+
+  // Patrón 4: Talla numérica o alfanumérica al final del identificador precedida por delimitador (ej. "DELANTERO_REDONDO_28", "ESPALDA_28", "MANGA_IZQ_S", "CORTE_DELANTERO_V_30")
+  const matchSuffix = clean.match(/[-_\s](\d+|XXL|XL|XS|S|M|L)$/i);
+  if (matchSuffix) {
+    return normalizeSizeName(matchSuffix[1]);
   }
 
   return null;
@@ -250,11 +266,67 @@ export function parsePatternSvg(
 
     // Extraer id="..." o data-name="..." o inkscape:label="..."
     const idMatch = attrs.match(/\b(?:id|data-name|inkscape:label)\s*=\s*["']([^"']+)["']/i);
-    const originalId = idMatch ? idMatch[1] : `path_${elementIndex}`;
+    let originalId = idMatch ? idMatch[1] : `path_${elementIndex}`;
+
+    // Obtener contexto del grupo contenedor <g ...> inmediato
+    const preceding = svgContent.slice(Math.max(0, match.index - 450), match.index);
+    const parentGroupMatch = preceding.match(/<g\b([^>]*)>[\s\r\n]*$/i);
+    let parentGroupId = '';
+    let parentTransformX = 0;
+    let parentTransformY = 0;
+
+    if (parentGroupMatch) {
+      const gAttrs = parentGroupMatch[1];
+      const gIdMatch = gAttrs.match(/\b(?:id|data-name|inkscape:label)\s*=\s*["']([^"']+)["']/i);
+      if (gIdMatch) {
+        parentGroupId = gIdMatch[1];
+      }
+      const gTransMatch = gAttrs.match(/\btransform\s*=\s*["'][^"']*translate\s*\(\s*([^\s,]+)[,\s]+([^\s,]+)\s*\)/i);
+      if (gTransMatch) {
+        parentTransformX = parseFloat(gTransMatch[1]) || 0;
+        parentTransformY = parseFloat(gTransMatch[2]) || 0;
+      }
+    }
+
+    // Si el id es genérico (ej. path_1), verificar si el <path> está dentro de un grupo <g id="...">
+    if (originalId.startsWith('path_') && parentGroupId) {
+      originalId = parentGroupId;
+    }
+
+    // Descartar trazados que correspondan a líneas de costura, marcos de fondo o guías técnicas
+    const upperId = (originalId + ' ' + parentGroupId).toUpperCase();
+    if (
+      upperId.includes('COSTURA') || 
+      upperId.includes('SEAM') || 
+      upperId.includes('FONDO') || 
+      upperId.includes('GUIA') || 
+      upperId.includes('GUIDE')
+    ) {
+      continue;
+    }
 
     // Extraer polígono y métricas en milímetros reales
     const cutPolygon = parseSvgPathToPolygon(d, viewport);
     if (cutPolygon.length < 3) continue; // Descartar trazados degenerados
+
+    // Detectar transformación translate en el path
+    let pathTransformX = 0;
+    let pathTransformY = 0;
+    const pathTransMatch = attrs.match(/\btransform\s*=\s*["'][^"']*translate\s*\(\s*([^\s,]+)[,\s]+([^\s,]+)\s*\)/i);
+    if (pathTransMatch) {
+      pathTransformX = parseFloat(pathTransMatch[1]) || 0;
+      pathTransformY = parseFloat(pathTransMatch[2]) || 0;
+    }
+
+    const totalTx = (pathTransformX + parentTransformX) * viewport.scaleX;
+    const totalTy = (pathTransformY + parentTransformY) * viewport.scaleY;
+
+    if (totalTx !== 0 || totalTy !== 0) {
+      cutPolygon.forEach((pt) => {
+        pt.x += totalTx;
+        pt.y += totalTy;
+      });
+    }
 
     const bbox = computeBoundingBox(cutPolygon);
     const areaMm2 = calculatePolygonArea(cutPolygon);
@@ -266,39 +338,44 @@ export function parsePatternSvg(
     const isShortGeo = bbox.height >= 320 && areaMm2 >= 130000;
     const isSleeveGeo = bbox.height <= 300 && bbox.width > bbox.height * 1.15 && areaMm2 < 130000;
 
-    // Intentar clasificar automáticamente talla y tipo de pieza
-    let detectedSize = detectSizeName(originalId);
-    let detectedType = detectPieceType(originalId, { isShort: isShortGeo, isSleeve: isSleeveGeo });
+    // Intentar clasificar automáticamente talla y tipo de pieza usando ID de path y de grupo padre
+    let detectedSize = detectSizeName(originalId) || (parentGroupId ? detectSizeName(parentGroupId) : null);
+    let detectedType = detectPieceType(originalId, { isShort: isShortGeo, isSleeve: isSleeveGeo }) ||
+                       (parentGroupId ? detectPieceType(parentGroupId, { isShort: isShortGeo, isSleeve: isSleeveGeo }) : null);
 
-    // Buscar la etiqueta de texto más cercana a la pieza (dentro o contigua al trazado)
+    // Buscar todas las etiquetas de texto dentro o contiguas a la pieza en posición real de lienzo
+    const nearbyLabels: { label: ExtractedTextLabel; dist: number }[] = [];
     let closestLabel: ExtractedTextLabel | null = null;
     let closestDist = Infinity;
-    const centerX = (bbox.minX + bbox.maxX) / 2;
-    const centerY = (bbox.minY + bbox.maxY) / 2;
 
     for (const lbl of textLabels) {
-      // Distancia euclidiana al centro de la pieza o a su caja delimitadora
+      // Distancia euclidiana a la caja delimitadora de la pieza
       const dx = Math.max(0, Math.max(bbox.minX - lbl.x, lbl.x - bbox.maxX));
       const dy = Math.max(0, Math.max(bbox.minY - lbl.y, lbl.y - bbox.maxY));
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      if (dist < closestDist && dist <= 420) {
-        closestDist = dist;
-        closestLabel = lbl;
+      if (dist <= 420) {
+        nearbyLabels.push({ label: lbl, dist });
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestLabel = lbl;
+        }
       }
     }
 
-    // Si no se detectó talla por el ID, extraerla de la etiqueta de texto más cercana
-    if (!detectedSize && closestLabel) {
-      const matchSize = detectSizeName(closestLabel.text);
-      if (matchSize) {
-        detectedSize = matchSize;
-      }
+    // Ordenar etiquetas por cercanía y generar texto combinado (resuelve tags separados ej. "34" y "_I")
+    nearbyLabels.sort((a, b) => a.dist - b.dist);
+    const combinedNearbyText = nearbyLabels.map((item) => item.label.text).join(' ');
+
+    // Si no se detectó talla por el ID, extraerla del texto combinado o más cercano
+    if (!detectedSize && nearbyLabels.length > 0) {
+      detectedSize = detectSizeName(combinedNearbyText) || (closestLabel ? detectSizeName(closestLabel.text) : null);
     }
 
-    // Si no se detectó el tipo por el ID, extraerlo de la etiqueta de texto más cercana (ej. "26_I", "26_D", "26 I")
-    if (!detectedType && closestLabel) {
-      detectedType = detectPieceType(closestLabel.text, { isShort: isShortGeo, isSleeve: isSleeveGeo });
+    // Si no se detectó el tipo por el ID, extraerlo del texto combinado o más cercano (ej. "34 _I", "26_D", "26 I")
+    if (!detectedType && nearbyLabels.length > 0) {
+      detectedType = detectPieceType(combinedNearbyText, { isShort: isShortGeo, isSleeve: isSleeveGeo }) ||
+                     (closestLabel ? detectPieceType(closestLabel.text, { isShort: isShortGeo, isSleeve: isSleeveGeo }) : null);
     }
 
     // Heurística geométrica para clasificar el tipo de pieza si no viene en el ID ni en el texto:
@@ -405,48 +482,69 @@ export function parsePatternSvg(
 
     if (torsoPieces.length === 3) {
       // 3 piezas de torso en la misma talla:
-      // 1. Menor caída de escote: ESPALDA (cuello alto cerrado, caída mínima)
-      // 2. Caída media: DELANTERO CUELLO REDONDO
-      // 3. Mayor caída de escote: DELANTERO CUELLO EN V (el escote en V cala más profundo y resta tela)
-      const drops = torsoPieces.map(getTorsoNeckDrop);
-      const minDrop = Math.min(...drops);
-      const maxDrop = Math.max(...drops);
-      if (maxDrop - minDrop > 15) {
-        torsoPieces.sort((a, b) => getTorsoNeckDrop(a) - getTorsoNeckDrop(b));
+      // Si ya vienen con tipos específicos distintos, preservarlos
+      const hasEspalda = torsoPieces.some(p => p.pieceType === 'ESPALDA');
+      const hasV = torsoPieces.some(p => p.pieceType === 'DELANTERO_V');
+      const hasRed = torsoPieces.some(p => p.pieceType === 'DELANTERO_REDONDO');
+
+      if (hasEspalda && hasV && hasRed) {
+        torsoPieces.forEach(p => {
+          p.pieceName = `T${sizeName}_${p.pieceType}`;
+          p.allowedRotationsDeg = getDefaultRotationsForPieceType(p.pieceType);
+        });
       } else {
-        torsoPieces.sort((a, b) => b.areaMm2 - a.areaMm2);
+        const drops = torsoPieces.map(getTorsoNeckDrop);
+        const minDrop = Math.min(...drops);
+        const maxDrop = Math.max(...drops);
+        if (maxDrop - minDrop > 15) {
+          torsoPieces.sort((a, b) => getTorsoNeckDrop(a) - getTorsoNeckDrop(b));
+        } else {
+          torsoPieces.sort((a, b) => b.areaMm2 - a.areaMm2);
+        }
+
+        torsoPieces[0].pieceType = 'ESPALDA';
+        torsoPieces[0].pieceName = `T${sizeName}_ESPALDA`;
+        torsoPieces[0].allowedRotationsDeg = getDefaultRotationsForPieceType('ESPALDA');
+
+        torsoPieces[1].pieceType = 'DELANTERO_REDONDO';
+        torsoPieces[1].pieceName = `T${sizeName}_DELANTERO_REDONDO`;
+        torsoPieces[1].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO_REDONDO');
+
+        torsoPieces[2].pieceType = 'DELANTERO_V';
+        torsoPieces[2].pieceName = `T${sizeName}_DELANTERO_V`;
+        torsoPieces[2].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO_V');
       }
-
-      torsoPieces[0].pieceType = 'ESPALDA';
-      torsoPieces[0].pieceName = `T${sizeName}_ESPALDA`;
-      torsoPieces[0].allowedRotationsDeg = getDefaultRotationsForPieceType('ESPALDA');
-
-      torsoPieces[1].pieceType = 'DELANTERO_REDONDO';
-      torsoPieces[1].pieceName = `T${sizeName}_DELANTERO_REDONDO`;
-      torsoPieces[1].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO_REDONDO');
-
-      torsoPieces[2].pieceType = 'DELANTERO_V';
-      torsoPieces[2].pieceName = `T${sizeName}_DELANTERO_V`;
-      torsoPieces[2].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO_V');
     } else if (torsoPieces.length === 2) {
       // 2 piezas de torso en la misma talla:
-      // La ESPALDA tiene cuello alto cerrado (menor caída de escote en el centro superior).
-      // El DELANTERO tiene escote profundo (mayor caída de escote en el centro superior).
-      const drop0 = getTorsoNeckDrop(torsoPieces[0]);
-      const drop1 = getTorsoNeckDrop(torsoPieces[1]);
-      if (Math.abs(drop0 - drop1) > 15) {
-        torsoPieces.sort((a, b) => getTorsoNeckDrop(a) - getTorsoNeckDrop(b));
+      const hasEspalda = torsoPieces.some(p => p.pieceType === 'ESPALDA');
+      const hasV = torsoPieces.some(p => p.pieceType === 'DELANTERO_V');
+      const hasRed = torsoPieces.some(p => p.pieceType === 'DELANTERO_REDONDO');
+
+      if (hasEspalda && (hasV || hasRed)) {
+        torsoPieces.forEach(p => {
+          p.pieceName = `T${sizeName}_${p.pieceType}`;
+          p.allowedRotationsDeg = getDefaultRotationsForPieceType(p.pieceType);
+        });
       } else {
-        torsoPieces.sort((a, b) => b.areaMm2 - a.areaMm2);
+        const drop0 = getTorsoNeckDrop(torsoPieces[0]);
+        const drop1 = getTorsoNeckDrop(torsoPieces[1]);
+        if (Math.abs(drop0 - drop1) > 15) {
+          torsoPieces.sort((a, b) => getTorsoNeckDrop(a) - getTorsoNeckDrop(b));
+        } else {
+          torsoPieces.sort((a, b) => b.areaMm2 - a.areaMm2);
+        }
+
+        torsoPieces[0].pieceType = 'ESPALDA';
+        torsoPieces[0].pieceName = `T${sizeName}_ESPALDA`;
+        torsoPieces[0].allowedRotationsDeg = getDefaultRotationsForPieceType('ESPALDA');
+
+        const specificType = (torsoPieces[1].pieceType === 'DELANTERO_V' || torsoPieces[1].pieceType === 'DELANTERO_REDONDO')
+          ? torsoPieces[1].pieceType
+          : 'DELANTERO';
+        torsoPieces[1].pieceType = specificType;
+        torsoPieces[1].pieceName = `T${sizeName}_${specificType}`;
+        torsoPieces[1].allowedRotationsDeg = getDefaultRotationsForPieceType(specificType);
       }
-
-      torsoPieces[0].pieceType = 'ESPALDA';
-      torsoPieces[0].pieceName = `T${sizeName}_ESPALDA`;
-      torsoPieces[0].allowedRotationsDeg = getDefaultRotationsForPieceType('ESPALDA');
-
-      torsoPieces[1].pieceType = 'DELANTERO';
-      torsoPieces[1].pieceName = `T${sizeName}_DELANTERO`;
-      torsoPieces[1].allowedRotationsDeg = getDefaultRotationsForPieceType('DELANTERO');
     }
 
     // Post-procesado para mangas y pantalonetas en esta talla:

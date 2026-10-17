@@ -98,4 +98,22 @@ describe('usePatternStore: Duplicado y Modo Espejo de Moldes', () => {
     expect(duplicated.cutPolygon[0].x).toBe(250);
     expect(duplicated.cutPolygon[1].x).toBe(50);
   });
+
+  it('duplicatePatternSet clona un molde completo con nombre (COPIA) e IDs únicos', () => {
+    const { duplicatePatternSet } = usePatternStore.getState();
+
+    const copy = duplicatePatternSet('set_test_patterns');
+
+    expect(copy).not.toBeNull();
+    expect(copy!.name).toBe('TEST MOLDERIA (COPIA)');
+    expect(copy!.id).not.toBe('set_test_patterns');
+    expect(copy!.sizes.length).toBe(1);
+    expect(copy!.sizes[0].pieces.length).toBe(1);
+    expect(copy!.sizes[0].pieces[0].id).not.toBe('piece_pantaloneta_t26');
+    expect(copy!.sizes[0].pieces[0].pieceType).toBe('PANTALONETA_IZQ');
+
+    const sets = usePatternStore.getState().patternSets;
+    expect(sets.length).toBe(2);
+    expect(sets.some((s) => s.id === copy!.id)).toBe(true);
+  });
 });

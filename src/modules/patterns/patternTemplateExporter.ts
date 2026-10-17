@@ -67,13 +67,13 @@ export function generateIllustratorTemplateSvg(patternSet: PatternSet): string {
 
     // Capa de corte
     cutLayer += `  <g id="CORTE_${piece.pieceType}_${sizeName}" transform="translate(${x.toFixed(2)}, ${y.toFixed(2)})">\n`;
-    cutLayer += `    <path d="${cutPath}" />\n`;
+    cutLayer += `    <path id="${piece.pieceType}_${sizeName}" data-name="${piece.pieceType}_${sizeName}" d="${cutPath}" />\n`;
     cutLayer += `  </g>\n`;
 
     // Capa de costura
     if (seamPath) {
       seamLayer += `  <g id="COSTURA_${piece.pieceType}_${sizeName}" transform="translate(${x.toFixed(2)}, ${y.toFixed(2)})">\n`;
-      seamLayer += `    <path d="${seamPath}" />\n`;
+      seamLayer += `    <path id="COSTURA_${piece.pieceType}_${sizeName}" data-name="COSTURA_${piece.pieceType}_${sizeName}" d="${seamPath}" />\n`;
       seamLayer += `  </g>\n`;
     }
 

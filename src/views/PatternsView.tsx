@@ -63,6 +63,7 @@ export const PatternsView: React.FC = () => {
     importSvg,
     appendSvgToActiveSet,
     renamePatternSet,
+    duplicatePatternSet,
     selectPieceForAssignment,
     assignPieceManually,
     setActivePatternSet,
@@ -619,6 +620,20 @@ exportMoldesParaCimatex();`;
                               </button>
                               <button
                                 type="button"
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  const copy = duplicatePatternSet(set.id);
+                                  if (copy) {
+                                    showAlert.toast('success', `Copia creada: "${copy.name}"`);
+                                  }
+                                }}
+                                className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-2 cursor-pointer"
+                              >
+                                <Copy className="w-3.5 h-3.5 text-slate-500" />
+                                <span>Duplicar moldería</span>
+                              </button>
+                              <button
+                                type="button"
                                 onClick={(e) => handleStartRenameCard(set, e)}
                                 className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 font-medium flex items-center gap-2 cursor-pointer"
                               >
@@ -986,6 +1001,23 @@ exportMoldesParaCimatex();`;
                   >
                     <Download className="w-3.5 h-3.5 text-violet-600" />
                     <span>Descargar Plantilla Illustrator</span>
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      if (!activePatternSet) return;
+                      const copy = duplicatePatternSet(activePatternSet.id);
+                      if (copy) {
+                        showAlert.toast('success', `Copia creada: "${copy.name}"`);
+                      }
+                    }}
+                    className="shadow-2xs cursor-pointer"
+                    title="Crear una copia duplicada exacta de este molde en la biblioteca"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Duplicar Molde</span>
                   </Button>
 
                   <Button
