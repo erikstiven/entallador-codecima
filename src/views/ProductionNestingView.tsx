@@ -213,6 +213,8 @@ export const ProductionNestingView: React.FC = () => {
     setPrintableWidthMm,
     maxSheetLengthMm,
     setMaxSheetLengthMm,
+    rotationPolicy,
+    setRotationPolicy,
     runNesting, 
     reoptimizeUnlocked,
     clearNesting,
@@ -681,8 +683,9 @@ export const ProductionNestingView: React.FC = () => {
               <details className="group relative">
                 <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-xs hover:border-violet-500">
                   <Settings2 className="h-3.5 w-3.5 text-violet-600" />
-                  <span>Configuración</span>
-                  <span className="font-mono text-[10px] text-slate-500">{printableWidthMm} mm · {spacingMm} mm</span>
+                  <span className="font-mono text-[10px] text-slate-500">
+                    {printableWidthMm} mm · {spacingMm} mm · {rotationPolicy === 'AUTO' ? 'Auto' : rotationPolicy === 'CABEZA_COLA' ? 'Cabeza-Cola' : '0°'}
+                  </span>
                 </summary>
                 <div className="absolute left-0 top-full z-50 mt-2 flex min-w-max flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
               {/* 1. Selector de Ancho de Bobina */}
@@ -778,6 +781,31 @@ export const ProductionNestingView: React.FC = () => {
                   />
                   <span className="text-[10px] font-mono text-slate-500">mm</span>
                 </div>
+              </div>
+
+              {/* 4. Selector de Política de Rotación para Sublimación */}
+              <div
+                className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
+                title="Política de rotación: respeta la dirección del diseño y allowedRotations del molde sin espejar"
+              >
+                <span className="text-[10px] text-slate-500 uppercase font-mono font-bold">Rotación:</span>
+                <select
+                  value={rotationPolicy}
+                  disabled={isNesting}
+                  onChange={async (e) => {
+                    const newPolicy = e.target.value as 'AUTO' | 'CABEZA_COLA' | 'ESTRICTO_VERTICAL';
+                    setRotationPolicy(newPolicy);
+                    if (nestingPieceInputs.length > 0) {
+                      const res = await runNesting(nestingPieceInputs, { printableWidthMm, maxSheetLengthMm, spacingMm, rotationPolicy: newPolicy });
+                      showAlert.toast('success', `✅ Acomodo reoptimizado (${newPolicy}): ${(res?.utilizationPercent ?? 0).toFixed(1)}%`);
+                    }
+                  }}
+                  className="bg-transparent text-emerald-700 font-bold font-mono focus:outline-none cursor-pointer"
+                >
+                  <option value="AUTO" className="bg-white text-slate-800">Auto (Según Molde)</option>
+                  <option value="CABEZA_COLA" className="bg-white text-slate-800">Cabeza-Cola (0° y 180°)</option>
+                  <option value="ESTRICTO_VERTICAL" className="bg-white text-slate-800">Estricto Vertical (0° fijo)</option>
+                </select>
               </div>
                 </div>
               </details>

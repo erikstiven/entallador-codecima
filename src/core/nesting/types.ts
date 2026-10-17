@@ -42,6 +42,7 @@ export interface NestingOptions {
   spacingMm: number; // minimum distance between any two pieces, e.g. 6.0 mm
   groupingMode: NestingGroupingMode;
   allowRotation?: boolean; // whether to allow piece rotations if allowed by piece
+  rotationPolicy?: 'AUTO' | 'CABEZA_COLA' | 'ESTRICTO_VERTICAL'; // Política de rotación para sublimación
   sideMarginMm?: number; // margen de seguridad lateral izquierdo y derecho (ej. 5.0 mm)
   topMarginMm?: number; // margen de seguridad superior e inferior (ej. 5.0 mm)
   splitByGarmentType?: boolean; // separar camisetas y shorts en pliegos/archivos independientes

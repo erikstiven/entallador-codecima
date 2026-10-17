@@ -28,6 +28,7 @@ interface NestingState {
   spacingMm: number;
   printableWidthMm: number;
   maxSheetLengthMm: number;
+  rotationPolicy: 'AUTO' | 'CABEZA_COLA' | 'ESTRICTO_VERTICAL';
   selectedPieceId: string | null;
 
   // Actions
@@ -36,6 +37,7 @@ interface NestingState {
   setSpacingMm: (spacing: number) => void;
   setPrintableWidthMm: (width: number) => void;
   setMaxSheetLengthMm: (lengthMm: number) => void;
+  setRotationPolicy: (policy: 'AUTO' | 'CABEZA_COLA' | 'ESTRICTO_VERTICAL') => void;
   setActiveSheetIndex: (index: number) => void;
   setSelectedPieceId: (id: string | null) => void;
   
@@ -59,6 +61,7 @@ export const useNestingStore = create<NestingState>((set, get) => ({
   spacingMm: 3.0,
   printableWidthMm: 1120.0,
   maxSheetLengthMm: 5000.0, // 5.0 metros estándar industrial
+  rotationPolicy: 'AUTO',
   selectedPieceId: null,
 
   setNestingMode: (mode) => set({ nestingMode: mode }),
@@ -66,6 +69,7 @@ export const useNestingStore = create<NestingState>((set, get) => ({
   setSpacingMm: (spacing) => set({ spacingMm: spacing }),
   setPrintableWidthMm: (width) => set({ printableWidthMm: width }),
   setMaxSheetLengthMm: (lengthMm) => set({ maxSheetLengthMm: lengthMm }),
+  setRotationPolicy: (policy) => set({ rotationPolicy: policy }),
   setActiveSheetIndex: (index) => set({ activeSheetIndex: index }),
   setSelectedPieceId: (id) => set({ selectedPieceId: id }),
 
@@ -73,7 +77,7 @@ export const useNestingStore = create<NestingState>((set, get) => ({
     const runId = ++currentRunId;
     terminateActiveNestingWorkers();
     set({ isNesting: true, nestingProgress: 0 });
-    const { nestingMode, nestingAlgorithm, spacingMm, printableWidthMm, maxSheetLengthMm } = get();
+    const { nestingMode, nestingAlgorithm, spacingMm, printableWidthMm, maxSheetLengthMm, rotationPolicy } = get();
 
     // Flyweight: Mapear explícitamente los campos geométricos para el Web Worker.
     // Solo si svgContent es una propiedad propia de valor (tests o piezas con SVG directo),
@@ -117,7 +121,8 @@ export const useNestingStore = create<NestingState>((set, get) => ({
       maxSheetLengthMm: customOptions.maxSheetLengthMm ?? maxSheetLengthMm,
       spacingMm: customOptions.spacingMm ?? spacingMm,
       groupingMode: customOptions.groupingMode ?? nestingMode,
-      allowRotation: customOptions.allowRotation ?? true,
+      allowRotation: customOptions.allowRotation ?? (customOptions.rotationPolicy ? customOptions.rotationPolicy !== 'ESTRICTO_VERTICAL' : rotationPolicy !== 'ESTRICTO_VERTICAL'),
+      rotationPolicy: customOptions.rotationPolicy ?? rotationPolicy,
     };
 
     const result = await executeNestingWithWorker(

@@ -169,6 +169,41 @@ describe('modularNestingEngine', () => {
     expect(Math.abs(t34Der.yMm - t34Izq.yMm)).toBeLessThan(5);
   });
 
+  it('debe respetar estrictamente rotationPolicy ESTRICTO_VERTICAL y CABEZA_COLA para sublimación sin reflejos', () => {
+    const pieces: NestingPieceInput[] = [
+      createMockPiece('sh_izq', 'play_1', 'CAMILO', 'PANTALONETA_IZQ', 610, 465),
+      createMockPiece('sh_der', 'play_1', 'CAMILO', 'PANTALONETA_DER', 610, 465),
+    ];
+    for (const p of pieces) {
+      p.allowedRotations = [0, 90, 180, 270];
+    }
+
+    // Caso 1: Con ESTRICTO_VERTICAL, ninguna pieza se rota (todas a 0°)
+    const resEstricto = performModularNesting(pieces, {
+      printableWidthMm: 1120,
+      rotationPolicy: 'ESTRICTO_VERTICAL',
+    });
+    for (const p of resEstricto.placedPieces) {
+      expect(p.rotationDeg).toBe(0);
+    }
+
+    // Caso 2: Con CABEZA_COLA, solo se permiten 0° y 180° (nunca 90° ni 270°)
+    const resCabezaCola = performModularNesting(pieces, {
+      printableWidthMm: 1600, // En 1600 cabe 0°/180°
+      rotationPolicy: 'CABEZA_COLA',
+    });
+    for (const p of resCabezaCola.placedPieces) {
+      expect([0, 180]).toContain(p.rotationDeg);
+    }
+
+    // Caso 3: Verificar que las piezas NUNCA se reflejan ni invierten (rotaciones son 0, 90, 180, 270 limpias)
+    for (const p of [...resEstricto.placedPieces, ...resCabezaCola.placedPieces]) {
+      expect([0, 90, 180, 270]).toContain(p.rotationDeg);
+      expect(p.effectiveWidthMm).toBeGreaterThan(0);
+      expect(p.effectiveHeightMm).toBeGreaterThan(0);
+    }
+  });
+
   it('debe particionar en múltiples pliegos si la altura acumulada supera maxSheetLengthMm (500 cm)', () => {
     const pieces: NestingPieceInput[] = [];
     for (let i = 1; i <= 12; i++) {

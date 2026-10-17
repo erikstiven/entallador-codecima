@@ -2427,15 +2427,26 @@ export function performModularNesting(
 
     const shortBlocks: ShortBlockPlan[] = [];
     const canRotate = customOptions?.allowRotation !== false;
+    const rotationPolicy = customOptions?.rotationPolicy ?? (canRotate ? 'AUTO' : 'ESTRICTO_VERTICAL');
     const maxUsefulW = printableWidthMm - (sideMarginMm * 2);
+
+    const filterRotationsByPolicy = (allowed: number[]) => {
+      if (rotationPolicy === 'ESTRICTO_VERTICAL' || !canRotate) {
+        return [0];
+      }
+      if (rotationPolicy === 'CABEZA_COLA') {
+        return allowed.filter((r) => r === 0 || r === 180);
+      }
+      return allowed;
+    };
 
     for (const playerSet of shortPlayerList) {
       const pIzq = playerSet.pantaIzq;
       const pDer = playerSet.pantaDer;
 
       if (pIzq && pDer) {
-        const derRots = canRotate ? (pDer.allowedRotations ?? [0]) : [0];
-        const izqRots = canRotate ? (pIzq.allowedRotations ?? [0]) : [0];
+        const derRots = filterRotationsByPolicy(pDer.allowedRotations ?? [0]);
+        const izqRots = filterRotationsByPolicy(pIzq.allowedRotations ?? [0]);
         const hasRotationPermission = derRots.some((r) => r !== 0) || izqRots.some((r) => r !== 0);
 
         if (hasRotationPermission) {
