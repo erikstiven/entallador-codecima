@@ -45,9 +45,9 @@ const getPatternPieceSortOrder = (type: string): number => {
   if (type.startsWith('MANGA_IZQ') || type === 'MANGA_I') return 5.2;
   if (type.startsWith('MANGA')) return 5.3;
   if (type === 'CUELLO') return 6;
-  // Vista de frente al jugador: Pierna Derecha primero (tarjeta izquierda), Pierna Izquierda después (tarjeta derecha)
-  if (type === 'PANTALONETA_DER' || type === 'SHORT_DER' || type === 'SHORT_D' || type === 'SHORT_ESPALDA') return 7.1;
-  if (type === 'PANTALONETA_IZQ' || type === 'SHORT_IZQ' || type === 'SHORT_I' || type === 'SHORT_FRENTE') return 7.2;
+  // En pantalla: Tarjeta izquierda = Pantaloneta Izquierda, Tarjeta derecha = Pantaloneta Derecha
+  if (type === 'PANTALONETA_IZQ' || type === 'SHORT_IZQ' || type === 'SHORT_I' || type === 'SHORT_FRENTE') return 7.1;
+  if (type === 'PANTALONETA_DER' || type === 'SHORT_DER' || type === 'SHORT_D' || type === 'SHORT_ESPALDA') return 7.2;
   if (type.startsWith('SHORT') || type.startsWith('PANTALONETA')) return 7.3;
   return 8;
 };
