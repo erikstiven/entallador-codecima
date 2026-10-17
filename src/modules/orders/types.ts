@@ -56,6 +56,7 @@ export interface OrderValidationConfig {
   allowSpecialCharacters?: boolean;
   activePatternSet?: any;
   activeDesign?: any;
+  allPatternSets?: any[];
 }
 
 export interface OrderSummary {

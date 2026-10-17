@@ -663,5 +663,31 @@ describe('Garment Generator Engine (Fusión de Molde + Diseño + Jugador)', () =
     expect(rightPointAtY200).toBeDefined();
     expect(rightPointAtY200!.x).toBe(0); // Invertido en espejo matemático exacto
   });
+
+  it('genera correctamente las 6 piezas (4 de camiseta + 2 de pantaloneta) para pedidos con prenda COMPLETO', () => {
+    const fullOrder: OrderItem[] = [
+      {
+        id: 'ord_completo_1',
+        rowNumber: 1,
+        playerName: 'MATEO',
+        playerNumber: '10',
+        sizeName: '28',
+        garmentType: 'COMPLETO',
+        quantity: 1,
+        isValid: true,
+        errors: [],
+        warnings: [],
+      },
+    ];
+
+    const result = generateGarmentPieces(fullOrder, mockPatternSet, mockDesign);
+    expect(result.pieces.length).toBe(6);
+    expect(result.pieces.some((p) => p.pieceType === 'DELANTERO' || p.pieceType === 'DELANTERO_REDONDO')).toBe(true);
+    expect(result.pieces.some((p) => p.pieceType === 'ESPALDA')).toBe(true);
+    expect(result.pieces.some((p) => p.pieceType === 'MANGA_IZQ')).toBe(true);
+    expect(result.pieces.some((p) => p.pieceType === 'MANGA_DER')).toBe(true);
+    expect(result.pieces.some((p) => p.pieceType === 'PANTALONETA_IZQ' || p.pieceType === 'SHORT_FRENTE')).toBe(true);
+    expect(result.pieces.some((p) => p.pieceType === 'PANTALONETA_DER' || p.pieceType === 'SHORT_ESPALDA')).toBe(true);
+  });
 });
 

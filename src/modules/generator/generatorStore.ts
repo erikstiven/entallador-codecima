@@ -121,6 +121,84 @@ export const useGeneratorStore = create<GeneratorStoreState>((set, get) => ({
       return null;
     }
 
+    // Auto-vinculación inteligente: si el pedido incluye pantalonetas y el molde activo no las tiene,
+    // buscar en la biblioteca un molde complementario que sí tenga piezas de pantaloneta y unificarlas
+    const allPatternSets = usePatternStore.getState().patternSets;
+    const orderNeedsShorts = orderItems.some(
+      (it) => it.isValid && (it.garmentType === 'SHORT' || it.garmentType === 'COMPLETO')
+    ) && generationConfig.productionScope !== 'CAMISETA_ONLY';
+    const patternHasShorts = patternSet.sizes.some((sz) =>
+      sz.pieces.some((p) => p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT'))
+    );
+
+    if (orderNeedsShorts && !patternHasShorts && allPatternSets.length > 1) {
+      const partnerSet = allPatternSets.find(
+        (ps) =>
+          ps.id !== patternSet.id &&
+          ps.sizes.some((sz) =>
+            sz.pieces.some((p) => p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT'))
+          )
+      );
+      if (partnerSet) {
+        patternSet = {
+          ...patternSet,
+          sizes: patternSet.sizes.map((sz) => {
+            const matchingPartnerSize = partnerSet.sizes.find(
+              (psz) => psz.sizeName.toUpperCase() === sz.sizeName.toUpperCase()
+            );
+            if (!matchingPartnerSize) return sz;
+            const partnerShortPieces = matchingPartnerSize.pieces.filter(
+              (p) => p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT')
+            );
+            const existingIds = new Set(sz.pieces.map((p) => p.id));
+            const piecesToAdd = partnerShortPieces.filter((p) => !existingIds.has(p.id));
+            return {
+              ...sz,
+              pieces: [...sz.pieces, ...piecesToAdd],
+            };
+          }),
+        };
+      }
+    }
+
+    // Auto-vinculación inversa: si el pedido incluye camisetas y el molde activo no las tiene
+    const orderNeedsCamiseta = orderItems.some(
+      (it) => it.isValid && (it.garmentType === 'CAMISETA' || it.garmentType === 'COMPLETO')
+    ) && generationConfig.productionScope !== 'SHORT_ONLY';
+    const patternHasCamiseta = patternSet.sizes.some((sz) =>
+      sz.pieces.some((p) => p.pieceType.startsWith('DELANTERO') || p.pieceType === 'ESPALDA')
+    );
+
+    if (orderNeedsCamiseta && !patternHasCamiseta && allPatternSets.length > 1) {
+      const partnerCamisetaSet = allPatternSets.find(
+        (ps) =>
+          ps.id !== patternSet.id &&
+          ps.sizes.some((sz) =>
+            sz.pieces.some((p) => p.pieceType.startsWith('DELANTERO') || p.pieceType === 'ESPALDA')
+          )
+      );
+      if (partnerCamisetaSet) {
+        patternSet = {
+          ...patternSet,
+          sizes: patternSet.sizes.map((sz) => {
+            const matchingPartnerSize = partnerCamisetaSet.sizes.find(
+              (psz) => psz.sizeName.toUpperCase() === sz.sizeName.toUpperCase()
+            );
+            if (!matchingPartnerSize) return sz;
+            const partnerCamisetaPieces = matchingPartnerSize.pieces.filter(
+              (p) => !p.pieceType.startsWith('PANTALONETA') && !p.pieceType.startsWith('SHORT')
+            );
+            const existingIds = new Set(sz.pieces.map((p) => p.id));
+            const piecesToAdd = partnerCamisetaPieces.filter((p) => !existingIds.has(p.id));
+            return {
+              ...sz,
+              pieces: [...sz.pieces, ...piecesToAdd],
+            };
+          }),
+        };
+      }
+    }
+
     set({ isGenerating: true });
 
     try {

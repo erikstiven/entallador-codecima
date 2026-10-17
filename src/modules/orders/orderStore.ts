@@ -33,7 +33,7 @@ interface OrderState {
   setSport: (sport: string) => void;
   setAvailableSizes: (sizes: string[]) => void;
   setStrictNumberUniqueness: (strict: boolean) => void;
-  setValidationContext: (context: { activePatternSet?: any; activeDesign?: any }) => void;
+  setValidationContext: (context: { activePatternSet?: any; activeDesign?: any; allPatternSets?: any[] }) => void;
   setAllGarmentTypes: (garmentType: GarmentType) => void;
   setAllNecklineTypes: (necklineType: NecklineType) => void;
   applyMassEdit: (options: {
@@ -70,7 +70,7 @@ export const useOrderStore = create<OrderState>()(
   setTeamName: (teamName) => set({ teamName }),
   setSport: (sport) => set({ sport }),
   
-  setValidationContext: ({ activePatternSet, activeDesign }) => {
+  setValidationContext: ({ activePatternSet, activeDesign, allPatternSets }) => {
     const nextPattern = activePatternSet !== undefined ? activePatternSet : get().activePatternSet;
     const nextDesign = activeDesign !== undefined ? activeDesign : get().activeDesign;
     let nextSizes = get().availableSizes;
@@ -83,6 +83,7 @@ export const useOrderStore = create<OrderState>()(
       strictNumberUniqueness,
       activePatternSet: nextPattern,
       activeDesign: nextDesign,
+      allPatternSets,
     });
     set({
       activePatternSet: nextPattern,

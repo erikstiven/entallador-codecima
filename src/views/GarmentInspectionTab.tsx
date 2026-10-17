@@ -630,7 +630,7 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
 
   const [selectedSizeFilter, setSelectedSizeFilter] = useState<string>('TODAS');
   const [selectedPlayerIndex, setSelectedPlayerIndex] = useState<number>(0);
-  const [garmentTypeFilter, setGarmentTypeFilter] = useState<'CAMISETA' | 'SHORT' | 'ALL'>('CAMISETA');
+  const [garmentTypeFilter, setGarmentTypeFilter] = useState<'CAMISETA' | 'SHORT' | 'ALL'>('ALL');
 
   const filteredPlayers = useMemo(() => {
     if (selectedSizeFilter === 'TODAS') return playerGroups;
@@ -973,7 +973,13 @@ export const GarmentInspectionTab: React.FC<GarmentInspectionTabProps> = ({
             title="Confirmar revisión de uniformes y pasar al Rollo de Sublimación"
             className="flex items-center gap-2 px-5 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border disabled:border-slate-200 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95"
           >
-            <span>Pasar al Rollo de Sublimación</span>
+            <span>
+              {garmentTypeFilter === 'CAMISETA' && orderHasShorts
+                ? 'Pasar Camisetas al Rollo'
+                : garmentTypeFilter === 'SHORT'
+                ? 'Pasar Shorts al Rollo'
+                : 'Pasar al Rollo de Sublimación'}
+            </span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

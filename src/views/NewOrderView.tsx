@@ -79,8 +79,9 @@ export const NewOrderView: React.FC = () => {
     setValidationContext({
       activePatternSet: currentPatternSet,
       activeDesign: currentDesign,
+      allPatternSets: patternSets,
     });
-  }, [currentPatternSet, currentDesign]);
+  }, [currentPatternSet, currentDesign, patternSets]);
 
   // Cobertura del Molde Maestro
   const hasCamisetaPattern = useMemo(() => {
@@ -145,15 +146,29 @@ export const NewOrderView: React.FC = () => {
     }
 
     if (currentPatternSet && shortItems.length > 0 && !hasShortPattern) {
+      const hasAlternativeShortSet = patternSets.some(
+        (ps) =>
+          ps.id !== currentPatternSet.id &&
+          ps.sizes.some((sz) =>
+            sz.pieces.some((p) => p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT'))
+          )
+      );
+      if (hasAlternativeShortSet) {
+        return {
+          type: 'info' as const,
+          title: 'Moldería de Short Vinculada Automáticamente',
+          message: `El molde activo ("${currentPatternSet.name}") contiene piezas de camiseta. CimaTex vinculará automáticamente las pantalonetas desde tu biblioteca de moldes para completar el uniforme de 6 piezas.`,
+        };
+      }
       return {
         type: 'warning' as const,
         title: 'Molde sin Moldería de Short',
-        message: `El molde activo ("${currentPatternSet.name}") no incluye piezas de Short / Pantaloneta en sus tallas.`,
+        message: `El molde activo ("${currentPatternSet.name}") no incluye piezas de Short / Pantaloneta en sus tallas. Anexa el archivo SVG de pantaloneta en Molderías para producir el uniforme completo.`,
       };
     }
 
     return null;
-  }, [items, currentDesign, currentPatternSet, hasShortDesign, hasCamisetaDesign, hasShortPattern]);
+  }, [items, currentDesign, currentPatternSet, patternSets, hasShortDesign, hasCamisetaDesign, hasShortPattern]);
 
   const handleClearOrder = async () => {
     if (items.length === 0) return;
@@ -511,6 +526,31 @@ export const NewOrderView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Banner de compatibilidad inteligente de producción */}
+      {incompatibilityBanner && (
+        <div
+          className={`rounded-2xl p-4 border flex items-start gap-3 shadow-2xs ${
+            incompatibilityBanner.type === 'danger'
+              ? 'bg-rose-50/80 border-rose-200 text-rose-900'
+              : incompatibilityBanner.type === 'info'
+              ? 'bg-sky-50/80 border-sky-200 text-sky-900'
+              : 'bg-amber-50/80 border-amber-200 text-amber-900'
+          }`}
+        >
+          {incompatibilityBanner.type === 'danger' ? (
+            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+          ) : incompatibilityBanner.type === 'info' ? (
+            <CheckCircle2 className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+          ) : (
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          )}
+          <div className="space-y-1 text-xs">
+            <h4 className="font-bold">{incompatibilityBanner.title}</h4>
+            <p className="opacity-90 leading-relaxed">{incompatibilityBanner.message}</p>
+          </div>
+        </div>
+      )}
 
       {/* 3. TARJETAS KPI (4 tarjetas compactas, limpias y conectadas) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
@@ -1056,7 +1096,8 @@ export const NewOrderView: React.FC = () => {
                   setActiveDesign(currentDesign);
                 }
 
-                // Generar prendas con el store
+                // Generar prendas con el store asegurando producción completa (camisetas y shorts)
+                useGeneratorStore.getState().updateConfig({ productionScope: 'ALL' });
                 const { generatePieces } = useGeneratorStore.getState();
                 const res = generatePieces();
                 if (!res) {

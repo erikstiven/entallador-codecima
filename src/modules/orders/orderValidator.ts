@@ -220,9 +220,33 @@ export function validateOrderItem(
       const pieces = patternSize.pieces;
 
       if (item.garmentType === 'CAMISETA' || item.garmentType === 'COMPLETO') {
-        const hasFront = pieces.some((p: any) => p.pieceType && p.pieceType.startsWith('DELANTERO'));
-        const hasBack = pieces.some((p: any) => p.pieceType === 'ESPALDA');
-        const hasManga = pieces.some((p: any) => p.pieceType && p.pieceType.startsWith('MANGA'));
+        let hasFront = pieces.some((p: any) => p.pieceType && p.pieceType.startsWith('DELANTERO'));
+        let hasBack = pieces.some((p: any) => p.pieceType === 'ESPALDA');
+        let hasManga = pieces.some((p: any) => p.pieceType && p.pieceType.startsWith('MANGA'));
+
+        if ((!hasFront || !hasBack || !hasManga) && Array.isArray(config.allPatternSets) && config.allPatternSets.length > 1) {
+          const partnerCamiseta = config.allPatternSets.find(
+            (ps: any) =>
+              ps.id !== pattern.id &&
+              Array.isArray(ps.sizes) &&
+              ps.sizes.some(
+                (s: any) =>
+                  (s.sizeName.toUpperCase() === sizeUpper || normalizeSizeName(s.sizeName) === normalizeSizeName(item.sizeName)) &&
+                  Array.isArray(s.pieces) &&
+                  s.pieces.some((p: any) => p.pieceType && p.pieceType.startsWith('DELANTERO'))
+              )
+          );
+          if (partnerCamiseta) {
+            const partnerSize = partnerCamiseta.sizes.find(
+              (s: any) => s.sizeName.toUpperCase() === sizeUpper || normalizeSizeName(s.sizeName) === normalizeSizeName(item.sizeName)
+            );
+            if (partnerSize && Array.isArray(partnerSize.pieces)) {
+              if (!hasFront && partnerSize.pieces.some((p: any) => p.pieceType && p.pieceType.startsWith('DELANTERO'))) hasFront = true;
+              if (!hasBack && partnerSize.pieces.some((p: any) => p.pieceType === 'ESPALDA')) hasBack = true;
+              if (!hasManga && partnerSize.pieces.some((p: any) => p.pieceType && p.pieceType.startsWith('MANGA'))) hasManga = true;
+            }
+          }
+        }
 
         const missingPattern: string[] = [];
         if (!hasFront) missingPattern.push('delantero');
@@ -239,9 +263,26 @@ export function validateOrderItem(
       }
 
       if (item.garmentType === 'SHORT' || item.garmentType === 'COMPLETO') {
-        const hasShort = pieces.some(
+        let hasShort = pieces.some(
           (p: any) => p.pieceType && (p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT'))
         );
+
+        if (!hasShort && Array.isArray(config.allPatternSets) && config.allPatternSets.length > 1) {
+          const hasShortInPartner = config.allPatternSets.some(
+            (ps: any) =>
+              ps.id !== pattern.id &&
+              Array.isArray(ps.sizes) &&
+              ps.sizes.some(
+                (s: any) =>
+                  (s.sizeName.toUpperCase() === sizeUpper || normalizeSizeName(s.sizeName) === normalizeSizeName(item.sizeName)) &&
+                  Array.isArray(s.pieces) &&
+                  s.pieces.some((p: any) => p.pieceType && (p.pieceType.startsWith('PANTALONETA') || p.pieceType.startsWith('SHORT')))
+              )
+          );
+          if (hasShortInPartner) {
+            hasShort = true;
+          }
+        }
 
         if (!hasShort) {
           errors.push({

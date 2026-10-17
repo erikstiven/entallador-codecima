@@ -683,11 +683,15 @@ export function generateGarmentPieces(
       }
     }
     if (effectiveGarmentType === 'SHORT' || effectiveGarmentType === 'COMPLETO') {
-      if (!masterDesign.pieceArtworks['SHORT_FRENTE'] && !masterDesign.pieceArtworks['PANTALONETA_IZQ']) {
-        missingArtworkGroups.push('diseño de la pierna izquierda');
-      }
-      if (!masterDesign.pieceArtworks['SHORT_ESPALDA'] && !masterDesign.pieceArtworks['PANTALONETA_DER']) {
-        missingArtworkGroups.push('diseño de la pierna derecha');
+      const hasLeftShort = Boolean(masterDesign.pieceArtworks['SHORT_FRENTE'] || masterDesign.pieceArtworks['PANTALONETA_IZQ']);
+      const hasRightShort = Boolean(masterDesign.pieceArtworks['SHORT_ESPALDA'] || masterDesign.pieceArtworks['PANTALONETA_DER']);
+      const hasAnyShort = hasLeftShort || hasRightShort || Boolean((masterDesign.pieceArtworks as any)['SHORT']);
+
+      // En confección deportiva, si se subió un arte para pantaloneta se aplica o espeja a ambas piernas.
+      // Si no se subió arte específico pero el diseño tiene colores, se genera al tono con su dorsal.
+      // Solo se advierte si no hay artes de pantaloneta ni colores definidos.
+      if (!hasAnyShort && (!masterDesign.colors || masterDesign.colors.length === 0)) {
+        missingArtworkGroups.push('diseño de pantaloneta');
       }
     }
     if (missingArtworkGroups.length > 0) {
